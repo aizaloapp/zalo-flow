@@ -1,0 +1,14 @@
+#!/bin/sh
+# Pre-commit hook: Block commits if forbidden private patterns are detected
+
+FORBIDDEN_PATTERNS="160\.187\.|43\.134\.|5\.231\.|dragonfarm2509|cloudflare.*workers|bitwarden|D1_DATABASE|R2_BUCKET|aizaloapp@users"
+
+echo "🔍 Running Anti-IP-Leak Pre-commit scan..."
+
+if grep -rnE "$FORBIDDEN_PATTERNS" --exclude-dir={.git,node_modules,sessions} --exclude="*.enc" --exclude="*.session" .; then
+  echo "❌ BLOCKED: Found private IP/infrastructure references. Remove them before committing."
+  exit 1
+fi
+
+echo "✅ Pre-commit check passed!"
+exit 0

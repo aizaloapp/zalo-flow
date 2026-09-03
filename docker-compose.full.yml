@@ -1,0 +1,47 @@
+# ==============================================================================
+# FULL SELF-HOSTED STACK (Zalo-Flow + PostgreSQL + Redis)
+# ==============================================================================
+
+services:
+  # 1. Zalo-Flow Bridge Core
+  zalo-flow:
+    build: .
+    container_name: zalo-flow-core
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    volumes:
+      - ./sessions:/app/sessions
+    depends_on:
+      - postgres
+      - redis
+
+  # 2. PostgreSQL Shared Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: zalo-flow-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-securepassword123}
+      POSTGRES_DB: ${DB_NAME:-zaloflow_db}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  # 3. Redis Cache & Job Queue
+  redis:
+    image: redis:7-alpine
+    container_name: zalo-flow-redis
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+
+volumes:
+  postgres_data:
+  redis_data:

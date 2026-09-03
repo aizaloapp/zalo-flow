@@ -1,0 +1,1393 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="referrer" content="no-referrer">
+  <title>Zalo-Flow — Trung Tâm Điều Khiển Zalo (Local-First)</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💬</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" media="print" onload="this.media='all'">
+  <noscript>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap">
+  </noscript>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+
+  <!-- Reconnect Banner -->
+  <div class="reconnect-banner" id="reconnect-banner">
+    🔄 Mất kết nối thời gian thực. Đang tự động kết nối lại...
+  </div>
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="brand-group">
+      <h1 class="brand-logo">Zalo-Flow</h1>
+      <span class="brand-badge">LOCAL-FIRST</span>
+    </div>
+
+    <div class="header-status">
+      <div class="status-pill" id="zalo-status-pill" onclick="openZaloLoginModal()" style="cursor: pointer; transition: all 0.2s ease;" title="Bấm để xem thông tin / Đăng nhập / Đổi tài khoản Zalo">
+        <div class="dot" id="zalo-header-dot"></div>
+        <span id="zalo-account-name">Đã Kết Nối (Online)</span>
+      </div>
+      <div class="status-pill ram-pill" id="ram-status-pill" title="Mức tiêu thụ RAM thực tế / Ngưỡng an toàn (150MB)">
+        <div class="dot" id="ram-header-dot" style="background: #34d399; box-shadow: 0 0 8px #34d399;"></div>
+        <span id="ram-usage-text">RAM: ~58MB</span>
+      </div>
+      <button class="filter-btn" id="phone-lookup-btn" onclick="openPhoneLookupModal()" title="Tra cứu Profile Zalo qua Số Điện Thoại">
+        🔍 Tra SĐT
+      </button>
+      <button class="filter-btn" id="sync-all-btn" onclick="syncAllHistoryWithProgress()" title="Đồng bộ toàn bộ danh bạ và tin nhắn lịch sử Zalo">
+        🔄 Đồng Bộ Lịch Sử
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Container: Rail + Workspace -->
+  <div class="app-container">
+    
+    <!-- Left Navigation Rail (52px) -->
+    <nav class="nav-rail">
+      <button class="rail-btn active" data-tooltip="💬 Hội Thoại" onclick="switchMainView('chat')">
+        💬
+      </button>
+      <button class="rail-btn" data-tooltip="🏷️ Thẻ Phân Loại" onclick="openModal('modal-tags')">
+        🏷️
+      </button>
+      <button class="rail-btn" data-tooltip="⚡ Tin Nhắn Nhanh" onclick="openModal('modal-quick-msg')">
+        ⚡
+      </button>
+      <button class="rail-btn" data-tooltip="📢 Chiến Dịch Remarketing" onclick="openModal('modal-campaigns')">
+        📢
+      </button>
+      <button class="rail-btn" id="rail-btn-ai" data-tooltip="🧠 Trung Tâm AI (5 Tabs)" onclick="openModal('modal-ai-brain')">
+        🧠
+      </button>
+      <button class="rail-btn" data-tooltip="💾 Sao Lưu & Phục Hồi" onclick="openModal('modal-backup')">
+        💾
+      </button>
+    </nav>
+
+    <!-- Main Layout: 2 Columns (Sidebar + Chat) -->
+    <div class="app-layout" id="app-layout">
+      
+      <!-- Left Sidebar: Conversations -->
+      <aside class="sidebar-pane">
+        <div class="sidebar-search-box">
+          <div class="search-input-wrap">
+            <span class="search-icon">🔍</span>
+            <input type="text" class="search-input" id="search-input" placeholder="Tìm theo tên hoặc ID..." oninput="handleSearch(this.value)">
+          </div>
+
+          <div class="filter-segmented-bar">
+            <button class="segmented-tab active" data-filter="all" onclick="setFilter('all')">Tất cả</button>
+            <button class="segmented-tab" data-filter="unread" onclick="setFilter('unread')">Chưa đọc</button>
+            <button class="segmented-tab" data-filter="personal" onclick="setFilter('personal')">Cá nhân</button>
+            <button class="segmented-tab" data-filter="group" onclick="setFilter('group')">Nhóm</button>
+          </div>
+
+          <div class="tag-filter-row">
+            <span class="tag-filter-label">📌 Lọc theo Thẻ:</span>
+            <select class="tag-filter-select" id="tag-filter-select" onchange="handleTagFilterChange(this.value)">
+              <option value="">Tất cả Thẻ</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="conversation-list" id="conversation-list">
+          <!-- Dynamic conversation cards rendered here -->
+        </div>
+      </aside>
+
+      <!-- Right Chat Pane -->
+      <main class="chat-pane" id="chat-pane">
+        
+        <!-- Empty State -->
+        <div class="chat-empty-state" id="chat-empty-state">
+          <div class="icon">💬</div>
+          <h3>Chọn khách hàng để xem lịch sử</h3>
+          <p>Mọi tin nhắn của Khách hàng, Bot AI tự động và Admin can thiệp sẽ xuất hiện tại đây theo thời gian thực.</p>
+        </div>
+
+        <!-- Active Chat Container -->
+        <div class="chat-pane-content" id="chat-pane-content" style="display: none;">
+          
+          <!-- Chat Header -->
+          <div class="chat-header">
+            <div class="chat-header-user">
+              <button class="filter-btn" id="back-btn" style="display: none; padding: 4px 8px;" onclick="closeChatMobile()">← Quay lại</button>
+              <div class="conv-avatar" id="active-chat-avatar">Z</div>
+              <div>
+                <div class="chat-title" id="active-chat-name">Đang tải...</div>
+                <div class="chat-header-tags-box" id="active-chat-tags"></div>
+              </div>
+            </div>
+
+            <div class="chat-controls">
+              <button class="filter-btn btn-toggle-ai" id="btn-toggle-ai" onclick="toggleActiveThreadAi()" title="Bật/Tắt Bot AI tự động trả lời cho cuộc trò chuyện này">
+                ⚡ Bot AI: BẬT
+              </button>
+              <button class="filter-btn" id="btn-header-exemplar" onclick="promptSetCurrentChatAsExemplar()" title="Lấy đoạn hội thoại này làm mẫu cho AI (Few-Shot)">
+                ⭐ Đặt làm mẫu
+              </button>
+              <button class="filter-btn" onclick="openTagAssignModal()" title="Gắn thẻ phân loại cho khách này">
+                🏷️ Phân loại
+              </button>
+              <button class="filter-btn" id="btn-toggle-crm" onclick="toggleCustomerInfoPanel()" title="Mở thông tin và ghi chú CRM khách hàng" style="border-color: rgba(56, 189, 248, 0.4); color: #38bdf8; background: rgba(56, 189, 248, 0.1);">
+                📑 Thông tin
+              </button>
+              <button class="filter-btn" id="thread-sync-btn" onclick="syncCurrentThread()" title="Kéo thêm lịch sử từ Zalo">
+                📥 Kéo Lịch Sử
+              </button>
+            </div>
+          </div>
+
+          <!-- Message Stream -->
+          <div class="messages-stream" id="messages-stream">
+            <!-- Dynamic message bubbles rendered here -->
+          </div>
+
+          <!-- Chat Input Bar & Autocomplete Popup -->
+          <div class="chat-input-bar-wrap">
+            <!-- Quick Message Popover (1-click picker) -->
+            <div class="quick-msg-popover" id="quick-msg-popover">
+              <div class="quick-msg-header">
+                <span id="quick-msg-popover-title">⚡ Tin nhắn nhanh (0)</span>
+                <span class="quick-msg-manage-btn" onclick="openModal('modal-quick-msg')">Quản lý</span>
+              </div>
+              <div class="quick-msg-list" id="quick-msg-popover-list">
+                <!-- Items populated dynamically -->
+              </div>
+              <div class="quick-msg-footer-hint">Gợi ý: Nhập <b style="color: #38bdf8;">/</b> vào ô chat để chọn nhanh</div>
+            </div>
+
+            <div class="quick-autocomplete-popup" id="quick-autocomplete-popup"></div>
+
+            <!-- Toolbar Actions: Quick Msg, Image, Doc -->
+            <div class="chat-toolbar">
+              <button class="toolbar-btn" id="btn-quick-msg-toggle" onclick="toggleQuickMsgPopover(event)" title="Tin nhắn nhanh (hoặc gõ / vào ô chat)">⚡</button>
+              <button class="toolbar-btn" onclick="document.getElementById('chat-image-input').click()" title="Gửi hình ảnh (hoặc Dán ảnh Ctrl + V)">🖼️</button>
+              <button class="toolbar-btn" onclick="document.getElementById('chat-file-input').click()" title="Đính kèm tài liệu / tệp tin">📎</button>
+              <input type="file" id="chat-image-input" accept="image/*" multiple style="display: none;" onchange="handleFileInputChange(event, 'image')">
+              <input type="file" id="chat-file-input" accept=".pdf,.doc,.docx,.xls,.xlsx,.zip,.rar,.txt" multiple style="display: none;" onchange="handleFileInputChange(event, 'document')">
+              <div class="toolbar-divider"></div>
+              <div class="toolbar-hint">Gõ <b style="color: #38bdf8;">/</b> gửi nhanh • Dán ảnh (<b style="color: #38bdf8;">Ctrl + V</b>)</div>
+            </div>
+
+            <!-- Quote Preview Bar -->
+            <div class="quote-preview-bar" id="quote-preview-bar">
+              <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0;">
+                <div class="quote-preview-sender" id="quote-preview-sender">Trả lời: -</div>
+                <div class="quote-preview-text" id="quote-preview-text">-</div>
+              </div>
+              <button type="button" class="quote-preview-close" onclick="cancelQuote()" title="Hủy trích dẫn">&times;</button>
+            </div>
+
+            <!-- Attachment Preview Bar -->
+            <div class="attachment-preview-bar" id="attachment-preview-bar">
+              <img id="attachment-preview-img" class="attachment-thumb" src="" alt="preview" style="display: none;">
+              <div id="attachment-preview-info" style="font-size: 0.8rem; color: #cbd5e1; flex: 1;"></div>
+              <button type="button" class="quote-preview-close" onclick="cancelAttachment()" title="Hủy đính kèm">&times;</button>
+            </div>
+            
+            <div class="chat-input-bar">
+              <input type="text" class="chat-input" id="chat-input" placeholder="Nhập tin nhắn đến khách hàng (Gõ / để chọn tin nhanh, Enter để gửi)..." onkeydown="handleInputKey(event)" oninput="handleChatInput(this.value)">
+              <button class="btn-quick-like" onclick="sendQuickLike()" title="Gửi nhanh Like 👍">👍</button>
+              <button class="send-btn" id="send-btn" onclick="sendMessage()">
+                <span>Gửi</span>
+                <span>✈️</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+      </main>
+
+    </div>
+
+  </div>
+
+  <!-- 🏷️ MODAL 1: QUẢN LÝ THẺ PHÂN LOẠI (TAGS) -->
+  <div class="modal-overlay" id="modal-tags">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h2 class="modal-title">🏷️ Quản Lý Thẻ Phân Loại Khách Hàng</h2>
+        <button class="modal-close-btn" onclick="closeModal('modal-tags')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Tên Thẻ Mới</label>
+          <input type="text" class="form-input" id="tag-name-input" placeholder="VD: Khách VIP, Quan tâm BĐS, Kèo thơm...">
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Màu Sắc Thẻ</label>
+          <div class="color-swatches" id="color-swatches-palette">
+            <!-- 10 Preset Colors -->
+          </div>
+        </div>
+
+        <button class="send-btn" style="align-self: flex-start;" onclick="createTag()">+ Tạo Thẻ Mới</button>
+        
+        <hr style="border: none; border-top: 1px solid var(--border); margin: 12px 0;">
+
+        <label class="form-label">Danh Sách Thẻ Hiện Có</label>
+        <div id="tags-manager-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="filter-btn" onclick="closeModal('modal-tags')">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🏷️ MODAL 1.5: GẮN THẺ CHO KHÁCH HÀNG HIỆN TẠI -->
+  <div class="modal-overlay" id="modal-assign-tag">
+    <div class="modal-dialog" style="max-width: 480px;">
+      <div class="modal-header">
+        <h2 class="modal-title">🏷️ Gắn Thẻ Khách Hàng</h2>
+        <button class="modal-close-btn" onclick="closeModal('modal-assign-tag')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="display: flex; gap: 8px;">
+          <input type="text" class="form-input" id="quick-tag-input" placeholder="Tạo nhanh thẻ mới..." style="padding: 8px 12px; font-size: 0.84rem;">
+          <button class="send-btn" style="padding: 8px 14px; font-size: 0.8rem; white-space: nowrap;" onclick="createQuickTagFromAssign()">+ Tạo & Gắn</button>
+        </div>
+
+        <label class="form-label" style="margin-top: 4px;">Chọn thẻ để gắn / gỡ:</label>
+        <div id="assign-tags-list" style="display: flex; flex-direction: column; gap: 8px; max-height: 280px; overflow-y: auto;"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="filter-btn" onclick="closeModal('modal-assign-tag')">Xong</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ⚡ MODAL 2: QUẢN LÝ TIN NHẮN NHANH (QUICK MESSAGES) -->
+  <div class="modal-overlay" id="modal-quick-msg">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h2 class="modal-title">⚡ Quản Lý Tin Nhắn Nhanh</h2>
+        <button class="modal-close-btn" onclick="closeModal('modal-quick-msg')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="qm-id">
+        <div style="display: grid; grid-template-columns: 140px 1fr; gap: 10px;">
+          <div class="form-group">
+            <label class="form-label">Phím Tắt</label>
+            <input type="text" class="form-input" id="qm-shortcut" placeholder="/banggia">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Tiêu Đề Mẫu</label>
+            <input type="text" class="form-input" id="qm-title" placeholder="Báo giá sản phẩm">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nội Dung Tin Nhắn</label>
+          <textarea class="form-textarea" id="qm-content" placeholder="Nhập nội dung mẫu câu trả lời..."></textarea>
+        </div>
+
+        <!-- Đính Kèm File / Ảnh Cho Tin Nhắn Nhanh (Tối đa 5 tệp) -->
+        <div class="form-group">
+          <label class="form-label" style="display: flex; justify-content: space-between; align-items: center;">
+            <span>📎 Đính Kèm Ảnh / Tài Liệu (Tối đa 5 tệp)</span>
+            <span id="qm-attachment-count-hint" style="font-size: 0.72rem; color: var(--text-muted);">0/5 tệp (Tối đa 10MB/tệp)</span>
+          </label>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+              <input type="file" id="qm-file-input" style="display: none;" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.zip,.txt" onchange="handleQuickMsgFileUpload(this, 'main')">
+              <button type="button" class="filter-btn" id="qm-file-btn" onclick="document.getElementById('qm-file-input').click()" style="padding: 6px 12px; font-size: 0.8rem; display: flex; align-items: center; gap: 5px;">
+                <span>📁</span><span id="qm-file-btn-text">Thêm Ảnh / Tệp</span>
+              </button>
+              <button type="button" class="filter-btn" id="qm-clear-all-btn" onclick="clearQuickMsgAttachment('main')" style="display: none; padding: 6px 10px; font-size: 0.76rem; color: #f87171; background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.25);">
+                🗑️ Gỡ tất cả
+              </button>
+            </div>
+            <!-- Danh sách các chips đính kèm (tối đa 5 tệp) -->
+            <div id="qm-attachments-container" style="display: flex; gap: 6px; flex-wrap: wrap;"></div>
+          </div>
+          <input type="hidden" id="qm-media-url">
+          <input type="hidden" id="qm-media-type">
+          <input type="hidden" id="qm-media-name">
+        </div>
+
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <button class="send-btn" id="qm-submit-btn" style="align-self: flex-start;" onclick="saveQuickMessageFromModal()">+ Thêm Mẫu Tin</button>
+          <button class="filter-btn" id="qm-cancel-edit-btn" style="display: none; align-self: flex-start; background: rgba(255,255,255,0.08);" onclick="cancelQuickMsgEdit()">❌ Hủy Sửa</button>
+        </div>
+
+        <hr style="border: none; border-top: 1px solid var(--border); margin: 12px 0;">
+
+        <label class="form-label">Danh Sách Mẫu Câu Đang Có</label>
+        <div id="qm-manager-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="filter-btn" onclick="closeModal('modal-quick-msg')">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 💾 MODAL 3.5: SAO LƯU & PHỤC HỒI DỮ LIỆU (BACKUP & RESTORE) -->
+  <div class="modal-overlay" id="modal-backup">
+    <div class="modal-dialog" style="max-width: 580px;">
+      <div class="modal-header">
+        <h2 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+          <span>💾 Sao Lưu & Phục Hồi Dữ Liệu</span>
+        </h2>
+        <button class="modal-close-btn" onclick="closeModal('modal-backup')">&times;</button>
+      </div>
+      <div class="modal-body" style="display: flex; flex-direction: column; gap: 16px;">
+        
+        <!-- SECTION 1: XUẤT DỮ LIỆU -->
+        <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 10px;">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <label class="form-label" style="color: #38bdf8; font-weight: 800; font-size: 0.85rem; margin: 0; text-transform: uppercase;">
+              📥 1. Xuất Dữ Liệu (Backup JSON)
+            </label>
+            <span style="font-size: 0.72rem; color: #94a3b8; font-weight: 600;">Chuẩn Open JSON</span>
+          </div>
+          <p style="font-size: 0.78rem; color: #cbd5e1; margin: 0; line-height: 1.45;">
+            Xuất toàn bộ kho <b>Tin Nhắn Nhanh</b>, <b>Thẻ Phân Loại</b>, <b>Chiến Dịch</b> và <b>Kịch Bản AI</b> thành 1 file JSON chuẩn để lưu trữ an toàn hoặc chia sẻ cho máy khác.
+          </p>
+          <div style="display: flex; gap: 8px; margin-top: 4px;">
+            <button class="send-btn" style="padding: 8px 16px; font-size: 0.82rem; display: inline-flex; align-items: center; gap: 6px;" onclick="exportBackupData()">
+              <span>📥 Tải File Backup (.json)</span>
+            </button>
+            <button class="filter-btn" style="padding: 8px 14px; font-size: 0.8rem;" onclick="copyBackupJsonToClipboard()">
+              📋 Sao Chép JSON
+            </button>
+          </div>
+        </div>
+
+        <!-- SECTION 2: NHẬP DỮ LIỆU -->
+        <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 10px;">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <label class="form-label" style="color: #34d399; font-weight: 800; font-size: 0.85rem; margin: 0; text-transform: uppercase;">
+              📤 2. Nhập & Hợp Nhất (Import JSON)
+            </label>
+            <span style="font-size: 0.72rem; color: #34d399; font-weight: 700; background: rgba(52,211,153,0.1); padding: 2px 8px; border-radius: 12px; border: 1px solid rgba(52,211,153,0.2);">An Toàn: Không Xóa Cũ</span>
+          </div>
+          <p style="font-size: 0.78rem; color: #cbd5e1; margin: 0; line-height: 1.45;">
+            Chọn tệp JSON backup để nạp vào hệ thống. Cơ chế <b>Hợp nhất thông minh (Smart Merge)</b> sẽ tự động thêm mới các mục chưa có và bỏ qua các mục trùng lặp mà không làm mất dữ liệu hiện tại.
+          </p>
+          
+          <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 4px;">
+            <input type="file" id="backup-import-file-input" accept=".json" style="display: none;" onchange="handleBackupFileSelected(event)">
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <button class="filter-btn" style="padding: 8px 16px; font-size: 0.82rem; color: #34d399; border-color: rgba(52,211,153,0.4); font-weight: 700;" onclick="document.getElementById('backup-import-file-input').click()">
+                📂 Chọn Tệp JSON...
+              </button>
+              <span id="backup-selected-filename" style="font-size: 0.76rem; color: #94a3b8; font-style: italic;">Chưa chọn tệp nào</span>
+            </div>
+            
+            <button class="send-btn" id="btn-do-import" style="display: none; background: linear-gradient(135deg, #059669, #10b981); margin-top: 4px; padding: 8px 16px; font-size: 0.82rem;" onclick="executeBackupImport()">
+              ⚡ Tiến Hành Nạp Dữ Liệu Vào Hệ Thống
+            </button>
+          </div>
+
+          <div id="backup-import-result-box" style="display: none; background: rgba(0,0,0,0.4); border: 1px solid rgba(52,211,153,0.3); border-radius: 8px; padding: 10px 12px; font-size: 0.78rem; line-height: 1.5;"></div>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button class="filter-btn" onclick="closeModal('modal-backup')">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+
+
+  <!-- 📢 MODAL 4: CHIẾN DỊCH REMARKETING DASHBOARD -->
+  <div class="modal-overlay" id="modal-campaigns">
+    <div class="modal-dialog" style="max-width: 960px; width: 95vw;">
+      <div class="modal-header" style="padding: 16px 20px;">
+        <div>
+          <h2 class="modal-title" style="display: flex; align-items: center; gap: 8px; font-size: 1.15rem;">
+            <span>📢 Chiến dịch Remarketing</span>
+          </h2>
+          <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">
+            Tự động hóa gửi thông điệp chăm sóc &amp; ưu đãi an toàn tới khách hàng Zalo.
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <button class="send-btn" onclick="openCampaignEditor()" style="padding: 7px 16px; font-size: 0.82rem; font-weight: 700; border-radius: 8px; display: flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #06b6d4, #3b82f6);">
+            <span>➕</span>
+            <span>Tạo mới</span>
+          </button>
+          <button class="modal-close-btn" onclick="closeModal('modal-campaigns')">&times;</button>
+        </div>
+      </div>
+
+      <div class="modal-body" style="gap: 12px; padding: 16px 20px;">
+        <!-- SEARCH & FILTER BAR -->
+        <div style="display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+          <div style="flex: 1; min-width: 240px; position: relative;">
+            <input type="text" class="form-input" id="camp-search-input" placeholder="🔍 Tìm theo tên chiến dịch..." oninput="filterCampaignsList()" style="padding-left: 12px; font-size: 0.82rem;">
+          </div>
+          <div style="width: 180px;">
+            <select class="form-select" id="camp-filter-status" onchange="filterCampaignsList()" style="font-size: 0.82rem; padding: 7px 10px;">
+              <option value="all">Tất cả trạng thái</option>
+              <option value="enabled">Đang bật (● Bật)</option>
+              <option value="disabled">Đã tắt (○ Tắt)</option>
+              <option value="running">Đang chạy (Running)</option>
+              <option value="completed">Đã hoàn thành</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- TABLE HEADER -->
+        <div class="camp-table-header" style="display: grid; grid-template-columns: 2.2fr 1.3fr 1.1fr 0.9fr 1.3fr; gap: 10px; padding: 10px 14px; background: rgba(0,0,0,0.3); border-radius: 8px; font-size: 0.75rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">
+          <div>CHIẾN DỊCH</div>
+          <div>ĐỐI TƯỢNG</div>
+          <div>THỜI GIAN GỬI</div>
+          <div style="text-align: center;">TRẠNG THÁI</div>
+          <div style="text-align: right;">THAO TÁC</div>
+        </div>
+
+        <!-- CAMPAIGNS TABLE BODY -->
+        <div id="campaigns-table-body" style="display: flex; flex-direction: column; gap: 10px; max-height: 480px; overflow-y: auto; padding-right: 2px;">
+          <div style="text-align: center; color: var(--text-muted); font-size: 0.84rem; padding: 30px;">Đang tải danh sách chiến dịch...</div>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="padding: 12px 20px; display: flex; justify-content: space-between; align-items: center;">
+        <div id="camp-stats-summary" style="font-size: 0.78rem; color: var(--text-muted);"></div>
+        <button class="filter-btn" onclick="closeModal('modal-campaigns')">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ➕ SUB-MODAL: TẠO MỚI / CHỈNH SỬA CHIẾN DỊCH (CAMPAIGN EDITOR) -->
+  <div class="modal-overlay" id="modal-campaign-editor">
+    <div class="modal-dialog" style="max-width: 700px; width: 95vw;">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title" id="camp-editor-title">➕ Tạo Chiến Dịch Mới</h2>
+          <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">Cấu hình nội dung Spintax, đính kèm media và thời gian gửi an toàn.</div>
+        </div>
+        <button class="modal-close-btn" onclick="closeCampaignEditor()">&times;</button>
+      </div>
+
+      <div class="modal-body" style="gap: 12px;">
+        <input type="hidden" id="camp-edit-id">
+
+        <!-- ROW 1: TÊN & MÔ TẢ -->
+        <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 10px;">
+          <div class="form-group">
+            <label class="form-label" style="font-weight: 700; font-size: 0.8rem; color: #38bdf8;">Tên Chiến Dịch (*)</label>
+            <input type="text" class="form-input" id="camp-edit-name" placeholder="Ví dụ: Ưu đãi tri ân tháng 9...">
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="font-weight: 700; font-size: 0.8rem; color: var(--text-muted);">Mô Tả / Ghi Chú</label>
+            <input type="text" class="form-input" id="camp-edit-desc" placeholder="Ghi chú mục đích chiến dịch...">
+          </div>
+        </div>
+
+        <!-- SECTION 2: HÌNH THỨC GỬI TIN -->
+        <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <label class="form-label" style="color: #38bdf8; font-weight: 800; font-size: 0.82rem; margin: 0; text-transform: uppercase; letter-spacing: 0.5px;">
+              ⏰ Hình Thức Gửi Tin:
+            </label>
+            <div style="display: flex; gap: 10px;">
+              <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.8rem; font-weight: 700; color: #f8fafc; background: rgba(0,0,0,0.4); padding: 5px 12px; border-radius: 20px; border: 1px solid var(--border);">
+                <input type="radio" name="camp-schedule-mode-radio" value="now" onchange="toggleCampScheduleModeUI()" style="accent-color: #38bdf8;">
+                <span>⚡ Gửi ngay bây giờ</span>
+              </label>
+              <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.8rem; font-weight: 700; color: #f8fafc; background: rgba(0,0,0,0.4); padding: 5px 12px; border-radius: 20px; border: 1px solid var(--border);">
+                <input type="radio" name="camp-schedule-mode-radio" value="scheduled" checked onchange="toggleCampScheduleModeUI()" style="accent-color: #38bdf8;">
+                <span>⏰ Lên lịch hẹn giờ</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- SUB-CARD: LÊN LỊCH CHI TIẾT (NGÀY + GIỜ + PRESETS + TẦN SUẤT) -->
+          <div id="camp-schedule-detail-card" style="display: flex; flex-direction: column; gap: 10px; background: rgba(0,0,0,0.35); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 10px; padding: 12px;">
+            <!-- SUB-ROW 1: NGÀY & GIỜ -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" style="font-size: 0.73rem; font-weight: 700; color: #94a3b8; margin-bottom: 4px; text-transform: uppercase;">
+                  📅 Ngày Bắt Đầu Gửi (Click chọn):
+                </label>
+                <input type="date" class="form-input" id="camp-start-date" style="font-size: 0.8rem; padding: 6px 10px;">
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" style="font-size: 0.73rem; font-weight: 700; color: #94a3b8; margin-bottom: 4px; text-transform: uppercase;">
+                  ⏰ Giờ Gửi (Giờ VN - Click chọn):
+                </label>
+                <input type="time" class="form-input" id="camp-schedule-time" value="08:30" style="font-size: 0.8rem; padding: 6px 10px;">
+              </div>
+            </div>
+
+            <!-- SUB-ROW 2: CHỌN NHANH MỐC GIỜ (PRESETS) -->
+            <div style="display: flex; flex-direction: column; gap: 5px;">
+              <label class="form-label" style="font-size: 0.72rem; font-weight: 700; color: #f59e0b; margin-bottom: 0; text-transform: uppercase;">
+                ⚡ Chọn Nhanh Mốc Giờ:
+              </label>
+              <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                <button type="button" class="filter-btn camp-preset-btn" onclick="setCampSchedulePreset('15min')" style="font-size: 0.73rem; padding: 3px 8px; color: #38bdf8; font-weight: 600;">⚡ Sau 15 phút</button>
+                <button type="button" class="filter-btn camp-preset-btn" onclick="setCampSchedulePreset('tomorrow_morning')" style="font-size: 0.73rem; padding: 3px 8px; color: #34d399; font-weight: 600;">🌅 Sáng mai (08:30)</button>
+                <button type="button" class="filter-btn camp-preset-btn" onclick="setCampSchedulePreset('tomorrow_afternoon')" style="font-size: 0.73rem; padding: 3px 8px; color: #fb923c; font-weight: 600;">🌇 Chiều mai (14:30)</button>
+                <button type="button" class="filter-btn camp-preset-btn" onclick="setCampSchedulePreset('next_monday')" style="font-size: 0.73rem; padding: 3px 8px; color: #c084fc; font-weight: 600;">📅 Thứ 2 tới (09:00)</button>
+                <button type="button" class="filter-btn camp-preset-btn" onclick="setCampSchedulePreset('next_month_1st')" style="font-size: 0.73rem; padding: 3px 8px; color: #f472b6; font-weight: 600;">🗓️ Mùng 1 tháng sau</button>
+              </div>
+            </div>
+
+            <!-- SUB-ROW 3: TẦN SUẤT LẶP LẠI -->
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" style="font-size: 0.73rem; font-weight: 700; color: #94a3b8; margin-bottom: 4px; text-transform: uppercase;">
+                🔁 Tần Suất Lặp Lại:
+              </label>
+              <select class="form-select" id="camp-recurrence" style="font-size: 0.8rem; padding: 6px 10px;">
+                <option value="once">⏹️ Không lặp lại (Chỉ gửi 1 lần đúng ngày &amp; giờ trên)</option>
+                <option value="daily">🔄 Hàng ngày (Mỗi ngày vào giờ này)</option>
+                <option value="weekly">📅 Hàng tuần (Mỗi tuần vào thứ này, giờ này)</option>
+                <option value="monthly">🗓️ Hàng tháng (Mỗi tháng vào ngày này, giờ này)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 3: NỘI DUNG TIN NHẮN TỰ ĐỘNG -->
+        <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+            <label class="form-label" style="color: #38bdf8; font-weight: 800; font-size: 0.82rem; margin: 0; text-transform: uppercase; letter-spacing: 0.5px;">
+              💬 Nội Dung Tin Nhắn Tự Động:
+            </label>
+            <div style="display: flex; gap: 6px;">
+              <button type="button" class="filter-btn" style="padding: 2px 8px; font-size: 0.72rem;" onclick="insertCampSpintaxVar('{name}')">+ Tên {name}</button>
+              <button type="button" class="filter-btn" style="padding: 2px 8px; font-size: 0.72rem;" onclick="insertCampSpintaxTemplate()">+ Mẫu Spintax</button>
+            </div>
+          </div>
+
+          <!-- CHỌN TỪ TIN NHẮN MẪU (TÙY CHỌN) -->
+          <div>
+            <label class="form-label" style="font-size: 0.72rem; color: #94a3b8; font-weight: 700; margin-bottom: 3px; text-transform: uppercase;">
+              Chọn từ tin nhắn mẫu (Tùy chọn):
+            </label>
+            <select class="form-select" id="camp-template-select" onchange="applyCampQuickMsgTemplate(this.value)" style="font-size: 0.8rem; padding: 6px 10px;">
+              <option value="">-- Chọn tin nhắn nhanh mẫu --</option>
+            </select>
+          </div>
+
+          <textarea class="form-textarea" id="camp-edit-message" style="height: 85px; font-size: 0.82rem; line-height: 1.45;" placeholder="{Chào|Xin chào|Hello} {name} nhé, {chúc bạn|chúc anh/chị} {ngày mới tràn đầy năng lượng|tuần mới gặt hái nhiều thành công}!"></textarea>
+          
+          <div style="display: flex; justify-content: flex-end;">
+            <button type="button" class="filter-btn" style="font-size: 0.72rem; padding: 3px 10px; color: #38bdf8;" onclick="previewCampSpintax()">🎲 Xem Thử 3 Tin Nhắn Ngẫu Nhiên Sẽ Sinh Ra</button>
+          </div>
+          <div id="camp-spintax-preview-box" style="display: none; background: rgba(0,0,0,0.4); border: 1px dashed rgba(56,189,248,0.4); border-radius: 8px; padding: 8px 12px; font-size: 0.75rem;"></div>
+
+          <!-- ĐÍNH KÈM ẢNH / TÀI LIỆU -->
+          <div style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 8px; margin-top: 4px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <input type="file" id="camp-media-file-input" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.rar,.txt" style="display: none;" onchange="handleCampMediaUpload(event)">
+              <button type="button" class="filter-btn" onclick="document.getElementById('camp-media-file-input').click()" style="padding: 4px 12px; font-size: 0.76rem; color: #38bdf8; font-weight: 700; display: inline-flex; align-items: center; gap: 5px;">
+                <span>📎</span>
+                <span>Đính kèm ảnh / tài liệu (Tối đa 5)</span>
+              </button>
+              <span id="camp-media-count-hint" style="font-size: 0.74rem; color: #94a3b8; font-weight: 600;">Đã đính kèm: 0/5 tệp</span>
+            </div>
+            <div id="camp-attachments-container" style="display: flex; flex-wrap: wrap; gap: 10px; min-height: 40px; align-items: center; padding: 4px 0;">
+              <div style="font-size: 0.74rem; color: var(--text-muted);">Chưa có tệp đính kèm. Bấm nút phía trên để thêm tối đa 5 hình ảnh hoặc file PDF/Docx.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 4: BỘ LỌC ĐỐI TƯỢNG NHẬN TIN -->
+        <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <label class="form-label" style="color: #38bdf8; font-weight: 800; font-size: 0.82rem; margin: 0; text-transform: uppercase; letter-spacing: 0.5px;">
+              🎯 Bộ Lọc Đối Tượng Nhận Tin:
+            </label>
+          </div>
+
+          <!-- LOẠI HỘI THOẠI -->
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+            <span style="font-size: 0.74rem; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Loại Hội Thoại:</span>
+            <div style="display: flex; gap: 12px; font-size: 0.78rem;">
+              <label style="display: flex; align-items: center; gap: 4px; cursor: pointer; color: #fff;">
+                <input type="radio" name="camp-target-type-radio" value="all" checked onchange="updateCampaignEditorTargetsUI()" style="accent-color: #38bdf8;">
+                <span>Tất cả</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 4px; cursor: pointer; color: #fff;">
+                <input type="radio" name="camp-target-type-radio" value="direct" onchange="updateCampaignEditorTargetsUI()" style="accent-color: #38bdf8;">
+                <span>👤 Cá nhân</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 4px; cursor: pointer; color: #fff;">
+                <input type="radio" name="camp-target-type-radio" value="group" onchange="updateCampaignEditorTargetsUI()" style="accent-color: #38bdf8;">
+                <span>👥 Nhóm</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- TỪ KHÓA LỌC -->
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" style="font-size: 0.73rem; font-weight: 700; color: #94a3b8; margin-bottom: 4px; text-transform: uppercase;">
+              Từ Khóa (Tên / SĐT / Nội Dung):
+            </label>
+            <input type="text" class="form-input" id="camp-target-keyword" placeholder="Nhập từ khóa lọc nếu có..." style="font-size: 0.8rem; padding: 6px 10px;">
+          </div>
+
+          <!-- THẺ PHÂN LOẠI (BẤM ĐỂ CHỌN NHIỀU THẺ) -->
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <label class="form-label" style="font-size: 0.73rem; font-weight: 700; color: #94a3b8; margin-bottom: 0; text-transform: uppercase;">
+              Thẻ Phân Loại (Bấm để chọn nhiều thẻ):
+            </label>
+            <div id="camp-target-tags-selector" style="display: flex; flex-wrap: wrap; gap: 6px; max-height: 90px; overflow-y: auto;"></div>
+          </div>
+        </div>
+
+        <!-- ROW 6: ADVANCED SAFE GUARDRAILS (COLLAPSIBLE) -->
+        <details style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 8px 12px;">
+          <summary style="cursor: pointer; font-size: 0.76rem; font-weight: 700; color: #94a3b8;">⚙️ Cấu Hình Giãn Cách An Toàn &amp; Chống Ban (Nâng cao)</summary>
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 8px;">
+            <div class="form-group">
+              <label class="form-label" style="font-size: 0.7rem; color: var(--text-muted);">Độ trễ tối thiểu (ms)</label>
+              <input type="number" class="form-input" id="camp-delay-min" value="10000" min="3000" style="font-size: 0.75rem; padding: 4px 6px;">
+            </div>
+            <div class="form-group">
+              <label class="form-label" style="font-size: 0.7rem; color: var(--text-muted);">Độ trễ tối đa (ms)</label>
+              <input type="number" class="form-input" id="camp-delay-max" value="25000" min="5000" style="font-size: 0.75rem; padding: 4px 6px;">
+            </div>
+            <div class="form-group">
+              <label class="form-label" style="font-size: 0.7rem; color: var(--text-muted);">Kích thước lô (tin)</label>
+              <input type="number" class="form-input" id="camp-batch-size" value="25" min="5" max="50" style="font-size: 0.75rem; padding: 4px 6px;">
+            </div>
+            <div class="form-group">
+              <label class="form-label" style="font-size: 0.7rem; color: var(--text-muted);">Nghỉ giữa lô (ms)</label>
+              <input type="number" class="form-input" id="camp-batch-pause" value="180000" min="30000" style="font-size: 0.75rem; padding: 4px 6px;">
+            </div>
+          </div>
+        </details>
+      </div>
+
+      <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 8px;">
+        <button class="filter-btn" onclick="closeCampaignEditor()">Hủy</button>
+        <button class="send-btn" onclick="saveCampaign()" style="padding: 8px 20px; font-weight: 700;">💾 Lưu Chiến Dịch</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 📜 SUB-MODAL: XEM NHẬT KÝ CHIẾN DỊCH (CAMPAIGN LOGS) -->
+  <div class="modal-overlay" id="modal-campaign-logs">
+    <div class="modal-dialog" style="max-width: 760px; width: 95vw;">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title" id="camp-logs-title">📜 Nhật Ký Gửi Chiến Dịch</h2>
+          <div id="camp-logs-subtitle" style="font-size: 0.78rem; color: #38bdf8; margin-top: 2px;"></div>
+        </div>
+        <button class="modal-close-btn" onclick="closeCampaignLogs()">&times;</button>
+      </div>
+      <div class="modal-body" style="gap: 10px;">
+        <div id="camp-logs-summary-bar" style="display: flex; gap: 12px; background: rgba(0,0,0,0.3); padding: 8px 14px; border-radius: 8px; font-size: 0.8rem;"></div>
+        <div id="camp-logs-table-container" style="max-height: 400px; overflow-y: auto;">
+          <div style="text-align: center; color: var(--text-muted); font-size: 0.82rem; padding: 25px;">Đang tải nhật ký...</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="filter-btn" onclick="closeCampaignLogs()">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Image Lightbox Modal -->
+  <div class="image-lightbox" id="image-lightbox" onclick="closeImagePreview()">
+    <img id="lightbox-img" src="" alt="Preview">
+  </div>
+
+  <!-- 👤 CRM DRAWER BACKDROP & SIDEBAR -->
+  <div class="drawer-backdrop" id="drawer-backdrop" onclick="closeCustomerInfoDrawer()"></div>
+
+  <aside class="customer-info-pane" id="customer-info-pane">
+    <div class="crm-panel-header">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 1.1rem;">👤</span>
+        <span style="font-weight: 800; font-size: 0.95rem; color: #fff;">Thông Tin Hội Thoại</span>
+      </div>
+      <button class="modal-close-btn" onclick="toggleCustomerInfoPanel()" title="Đóng drawer">&times;</button>
+    </div>
+
+    <div class="crm-panel-body">
+      <div>
+        <label class="crm-field-label">🆔 Zalo UID / Nhóm:</label>
+        <div style="display: flex; gap: 6px; align-items: center;">
+          <input type="text" id="crm-uid-input" class="crm-input" readonly style="color: #94a3b8; background: rgba(0,0,0,0.6); font-family: monospace; font-size: 0.78rem;">
+          <button class="filter-btn" onclick="copyUidToClipboard()" title="Sao chép ID" style="padding: 6px 10px; font-size: 0.75rem; flex-shrink: 0;">📋</button>
+        </div>
+      </div>
+
+      <div>
+        <label class="crm-field-label">📞 Số Điện Thoại:</label>
+        <input type="text" id="crm-phone-input" class="crm-input" placeholder="09xxxxxxxxx">
+      </div>
+
+      <div>
+        <label class="crm-field-label">✉️ Email / Gmail:</label>
+        <input type="email" id="crm-email-input" class="crm-input" placeholder="khachhang@gmail.com">
+      </div>
+
+      <div>
+        <label class="crm-field-label">📍 Địa Chỉ Giao Hàng / Nhà Riêng:</label>
+        <textarea id="crm-address-input" class="crm-input" style="min-height: 55px;" placeholder="Địa chỉ khách hàng..."></textarea>
+      </div>
+
+      <div>
+        <label class="crm-field-label">🎯 Nhu Cầu Quan Tâm:</label>
+        <textarea id="crm-needs-input" class="crm-input" style="min-height: 60px;" placeholder="Nhu cầu sản phẩm, dịch vụ quan tâm..."></textarea>
+      </div>
+
+      <div>
+        <label class="crm-field-label">📝 Ghi Chú Nội Bộ:</label>
+        <textarea id="crm-notes-input" class="crm-input" style="min-height: 60px;" placeholder="Ghi chú nhân viên trực chat..."></textarea>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px;">
+        <button class="send-btn" onclick="saveCurrentCrmInfo()" style="padding: 8px 18px; font-size: 0.84rem;">💾 Lưu Thông Tin</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ↪️ MODAL FORWARD MESSAGE -->
+  <div class="modal-overlay" id="modal-forward-msg">
+    <div class="modal-dialog" style="max-width: 480px;">
+      <div class="modal-header">
+        <h2 class="modal-title">↪️ Chuyển Tiếp Tin Nhắn</h2>
+        <button class="modal-close-btn" onclick="closeModal('modal-forward-msg')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 8px;">Nội dung tin nhắn chuyển tiếp:</div>
+        <div id="forward-preview-text" style="background: rgba(0,0,0,0.4); border: 1px solid var(--border); border-radius: 8px; padding: 10px; font-size: 0.84rem; color: #f1f5f9; margin-bottom: 14px; max-height: 100px; overflow-y: auto;">-</div>
+        
+        <div class="form-group">
+          <label class="form-label">Chọn người nhận (từ danh bạ đã có):</label>
+          <div id="forward-targets-list" style="max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; border: 1px solid var(--border); border-radius: 8px; padding: 8px; background: rgba(0,0,0,0.2);">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="filter-btn" onclick="closeModal('modal-forward-msg')">Hủy</button>
+        <button class="send-btn" id="btn-submit-forward" onclick="submitForwardMessage()">↪️ Gửi Chuyển Tiếp</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🔍 MODAL PHONE LOOKUP (Audit C1 Guardrail #7 Safe) -->
+  <div class="phone-lookup-modal-backdrop" id="modal-phone-lookup">
+    <div class="phone-lookup-card">
+      <div class="phone-lookup-header">
+        <div class="phone-lookup-title">
+          <span>🔍</span>
+          <span>Tra Cứu Zalo Qua Số Điện Thoại</span>
+        </div>
+        <button class="phone-lookup-close-btn" onclick="closePhoneLookupModal()">&times;</button>
+      </div>
+      <div class="phone-lookup-body">
+        <div class="phone-lookup-input-wrap">
+          <input type="tel" id="lookup-phone-input" class="crm-input" placeholder="Nhập số điện thoại (ví dụ: 0912345678)..." onkeydown="if(event.key==='Enter') executePhoneLookup()">
+          <button class="send-btn" id="btn-do-lookup" onclick="executePhoneLookup()" style="padding: 8px 16px; font-size: 0.84rem; white-space: nowrap;">Tra Cứu</button>
+        </div>
+
+        <div id="phone-lookup-loading" style="display: none; text-align: center; color: var(--primary); font-size: 0.86rem; padding: 12px;">
+          ⏳ Đang tra cứu thông tin từ máy chủ Zalo...
+        </div>
+
+        <div id="phone-lookup-error" style="display: none; color: var(--danger); font-size: 0.84rem; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); padding: 10px; border-radius: 8px;"></div>
+
+        <div class="phone-lookup-result" id="phone-lookup-result">
+          <img id="lookup-res-avatar" class="phone-lookup-avatar" src="" alt="Avatar" onerror="this.src='https://chat.zalo.me/assets/default-avatar.png'">
+          <div id="lookup-res-name" class="phone-lookup-name">-</div>
+          <div id="lookup-res-uid" style="font-size: 0.74rem; color: var(--text-dim); font-family: var(--font-mono);">-</div>
+          <div id="lookup-res-badge" class="phone-lookup-status-badge">-</div>
+          <div id="lookup-res-note" style="font-size: 0.76rem; color: #fbbf24; text-align: center; line-height: 1.4; display: none;"></div>
+          <button id="lookup-res-btn" class="phone-lookup-action-btn primary" onclick="startChatWithLookupUser()">💬 Mở Cuộc Trò Chuyện</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🧠 MODAL TRUNG TÂM TRÍ TUỆ & ĐIỀU KHIỂN AI 5 TABS -->
+  <div class="modal-overlay" id="modal-ai-brain">
+    <div class="modal-dialog" style="max-width: 900px; max-height: 92vh; display: flex; flex-direction: column;">
+      <div class="modal-header" style="padding: 14px 20px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.4rem;">🧠</span>
+            <div>
+              <h2 class="modal-title" style="font-size: 1.05rem;">Trung Tâm Trí Tuệ &amp; Điều Khiển AI (5 Tabs)</h2>
+              <div style="font-size: 0.76rem; color: var(--text-muted);">Hệ thống AI Auto-Reply &amp; Trợ Lý Zalo độc lập (Local-First Engine)</div>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <button type="button" class="filter-btn" id="btn-global-ai-toggle" onclick="toggleAiAutoReply()" style="padding: 5px 12px; font-size: 0.78rem; font-weight: 700;">
+              ⚡ Bot AI: TẮT
+            </button>
+            <button class="modal-close-btn" onclick="closeModal('modal-ai-brain')">&times;</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI 5 TABS NAVIGATION -->
+      <div class="ai-tabs-nav" style="display: grid; grid-template-columns: repeat(5, 1fr); border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.3);">
+        <button class="ai-tab-btn active" onclick="switchKnowledgeTab('soul')" id="tab-btn-soul">🎭 1. Giọng điệu</button>
+        <button class="ai-tab-btn" onclick="switchKnowledgeTab('memory')" id="tab-btn-memory">📚 2. Tri thức</button>
+        <button class="ai-tab-btn" onclick="switchKnowledgeTab('brain')" id="tab-btn-brain">🌐 3. Bộ Não AI</button>
+        <button class="ai-tab-btn" onclick="switchKnowledgeTab('scope')" id="tab-btn-scope">🎯 4. Phạm vi</button>
+        <button class="ai-tab-btn" onclick="switchKnowledgeTab('sim')" id="tab-btn-sim">🧪 5. Thử nghiệm</button>
+      </div>
+
+      <div class="modal-body" style="flex: 1; overflow-y: auto; padding: 16px 20px;">
+        
+        <!-- TAB 1: GIỌNG ĐIỆU & NHÂN CÁCH (SOUL & FEW-SHOT) -->
+        <div class="ai-tab-pane" id="pane-soul">
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <label class="form-label" style="font-weight: 700; color: #38bdf8; font-size: 0.82rem; margin: 0;">
+                  🎭 Hướng Dẫn Phong Cách &amp; Nhân Cách (SOUL):
+                </label>
+                <div style="display: flex; gap: 5px;">
+                  <button type="button" class="filter-btn" style="font-size: 0.72rem; padding: 2px 7px;" onclick="applyAiPreset('friendly')">Tươi vui, thân thiện</button>
+                  <button type="button" class="filter-btn" style="font-size: 0.72rem; padding: 2px 7px;" onclick="applyAiPreset('b2b')">Chuyên gia B2B</button>
+                  <button type="button" class="filter-btn" style="font-size: 0.72rem; padding: 2px 7px;" onclick="applyAiPreset('support')">Hỗ trợ kỹ thuật</button>
+                </div>
+              </div>
+              <textarea class="form-textarea" id="ai-soul-input" style="height: 110px; font-size: 0.82rem;" placeholder="Mô tả phong cách xưng hô, tính cách của Bot (Ví dụ: Bạn là trợ lý tư vấn khách hàng của shop thời trang X, xưng Em và gọi Anh/Chị...)..."></textarea>
+            </div>
+
+            <!-- FEW-SHOT EXEMPLAR SECTION -->
+            <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border); border-radius: 10px; padding: 12px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <div>
+                  <div style="font-weight: 700; font-size: 0.82rem; color: #fbbf24; display: flex; align-items: center; gap: 6px;">
+                    <span>⭐ Hội Thoại Mẫu Thực Tế (Few-Shot Exemplar)</span>
+                  </div>
+                  <div style="font-size: 0.74rem; color: var(--text-muted);">AI sẽ học trực tiếp từ cách bạn tư vấn thực tế cho khách để trả lời chuẩn mực nhất.</div>
+                </div>
+                <div style="display: flex; gap: 6px;">
+                  <button type="button" class="filter-btn" style="padding: 4px 10px; font-size: 0.75rem; color: #38bdf8; font-weight: 700;" onclick="openExemplarPickerModal()">
+                    📥 Chọn từ khách hàng
+                  </button>
+                  <button type="button" class="filter-btn" id="btn-edit-exemplar" style="padding: 4px 10px; font-size: 0.75rem;" onclick="editCurrentExemplarDialogue()">
+                    ✏️ Sửa
+                  </button>
+                  <button type="button" class="filter-btn" id="btn-delete-exemplar" style="padding: 4px 10px; font-size: 0.75rem; color: #f87171;" onclick="deleteAiExemplar()">
+                    🗑️ Xóa
+                  </button>
+                </div>
+              </div>
+
+              <div id="ai-exemplar-preview-box" style="background: rgba(0,0,0,0.3); border: 1px dashed rgba(255,255,255,0.12); border-radius: 8px; padding: 10px; font-size: 0.78rem; max-height: 130px; overflow-y: auto; color: #e2e8f0;">
+                <span style="color: var(--text-muted); font-style: italic;">Chưa có hội thoại mẫu. Bấm "Chọn từ khách hàng" hoặc bấm ⭐ trên thanh chat để trích xuất 1-click.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 2: TRI THỨC & BẢNG GIÁ (MEMORY) -->
+        <div class="ai-tab-pane" id="pane-memory" style="display: none;">
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <label class="form-label" style="font-weight: 700; color: #38bdf8; font-size: 0.82rem; margin: 0;">
+                  📚 Bảng Giá, Sản Phẩm &amp; Quy Định (MEMORY):
+                </label>
+                <button type="button" class="filter-btn" style="font-size: 0.72rem; padding: 2px 8px; color: #34d399;" onclick="showSecondBrainWikiPreview()">
+                  👁️ Xem Full System Prompt
+                </button>
+              </div>
+              <textarea class="form-textarea" id="ai-memory-input" style="height: 140px; font-size: 0.82rem;" placeholder="Nhập thông tin sản phẩm, tính năng, bảng giá, địa chỉ showroom, chính sách đổi trả, phí ship..."></textarea>
+            </div>
+
+            <!-- AUTO-SYNCED Q&A SECTION -->
+            <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border); border-radius: 10px; padding: 12px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <div>
+                  <div style="font-weight: 700; font-size: 0.82rem; color: #38bdf8;">⚡ Tự Động Tích Hợp Q&amp;A (Hỏi - Đáp Nhanh)</div>
+                  <div style="font-size: 0.74rem; color: var(--text-muted);">Mọi tin nhắn nhanh có điền "Câu hỏi khách hàng" đều được AI tự động nạp làm tri thức phản hồi.</div>
+                </div>
+                <button type="button" class="filter-btn" style="padding: 3px 8px; font-size: 0.74rem;" onclick="openModal('modal-quick-msg')">Quản lý Q&amp;A</button>
+              </div>
+              <div id="ai-memory-qna-count" style="font-size: 0.76rem; color: #a7f3d0;">Đang tải danh sách Q&amp;A...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 3: BỘ NÃO AI & REST ENDPOINT (UNIVERSAL REST + FALLBACK) -->
+        <div class="ai-tab-pane" id="pane-brain" style="display: none;">
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+            
+            <!-- MODEL CHÍNH -->
+            <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border); border-radius: 12px; padding: 14px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <div style="font-weight: 800; font-size: 0.84rem; color: #38bdf8; text-transform: uppercase;">
+                  🎯 1. Nhà Cung Cấp &amp; Model Chính (Primary Engine)
+                </div>
+                <div id="primary-status-badge" class="ai-hub-badge">Chưa kiểm tra</div>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; margin-bottom: 10px;">
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label class="form-label" style="font-size: 0.74rem;">Nhà cung cấp:</label>
+                  <select class="form-select" id="ai-provider-select" onchange="handleProviderTypeChange(this.value)">
+                    <option value="gemini">Google Gemini (Native REST)</option>
+                    <option value="deepseek">DeepSeek AI (V3 / R1)</option>
+                    <option value="zai">Z.AI GLM (Zhipu / BigModel)</option>
+                    <option value="groq">Groq (Siêu tốc độ &lt; 1s)</option>
+                    <option value="openai">OpenAI (GPT-4o / Mini)</option>
+                    <option value="openrouter">OpenRouter (Đa mô hình)</option>
+                    <option value="ollama">Ollama (Chạy Offline máy cục bộ)</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label class="form-label" style="font-size: 0.74rem;">Model thực thi:</label>
+                  <select class="form-select" id="ai-model-select"></select>
+                </div>
+              </div>
+
+              <div class="form-group" style="margin-bottom: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <label class="form-label" style="font-size: 0.74rem;">API Key (Mã hóa AES-256-CBC an toàn):</label>
+                  <span id="ai-key-status-label" style="font-size: 0.72rem; color: #94a3b8;">Chưa nhập key</span>
+                </div>
+                <div style="display: flex; gap: 6px;">
+                  <input type="password" class="form-input" id="ai-apikey-input" placeholder="Nhập API Key mới để lưu hoặc để trống nếu đã có...">
+                  <button type="button" class="filter-btn" onclick="toggleAiKeyVisibility('ai-apikey-input')" style="padding: 6px 10px;">👁️</button>
+                </div>
+              </div>
+
+              <div class="form-group" style="margin-bottom: 10px;">
+                <label class="form-label" style="font-size: 0.74rem;">Base URL tùy chỉnh (Tùy chọn cho Proxy / Ollama):</label>
+                <input type="text" class="form-input" id="ai-baseurl-input" placeholder="Ví dụ: http://localhost:11434/v1 hoặc https://api.deepseek.com/v1">
+              </div>
+
+              <div style="display: flex; justify-content: flex-end; gap: 8px;">
+                <button type="button" class="filter-btn" onclick="scanAvailableModels(false)" style="font-size: 0.76rem; padding: 4px 10px;">🔄 Quét Model</button>
+                <button type="button" class="filter-btn" id="btn-ping-primary" onclick="testAiHubConnection(false)" style="font-size: 0.76rem; padding: 4px 12px; color: #38bdf8; font-weight: 700;">
+                  ⚡ Test Kết Nối Trực Tiếp (Live Ping)
+                </button>
+              </div>
+            </div>
+
+            <!-- AUTO-FALLBACK SHIELD -->
+            <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border); border-radius: 12px; padding: 14px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #34d399; font-weight: 800; font-size: 0.84rem; text-transform: uppercase; margin: 0;">
+                  <input type="checkbox" id="ai-fallback-enabled" onchange="toggleFallbackFieldsUI()" style="accent-color: #34d399; width: 16px; height: 16px;">
+                  <span>🛡️ 2. Lá Chắn Dự Phòng Tự Động (Auto-Fallback Shield)</span>
+                </label>
+                <div id="fallback-status-badge" class="ai-hub-badge">Tắt</div>
+              </div>
+
+              <div id="fallback-settings-card" style="display: none; flex-direction: column; gap: 10px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 10px;">
+                <div style="font-size: 0.74rem; color: var(--text-muted);">
+                  Khi Model chính gặp lỗi 429 (Hết Quota), 503 hoặc Timeout quá thời gian, hệ thống tự động gọi ngay Model dự phòng để không gián đoạn khách hàng.
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px;">
+                  <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" style="font-size: 0.74rem;">Nhà cung cấp dự phòng:</label>
+                    <select class="form-select" id="ai-fallback-provider-select" onchange="handleFallbackProviderChange(this.value)">
+                      <option value="deepseek">DeepSeek AI</option>
+                      <option value="gemini">Google Gemini</option>
+                      <option value="zai">Z.AI GLM</option>
+                      <option value="groq">Groq</option>
+                      <option value="openai">OpenAI</option>
+                      <option value="openrouter">OpenRouter</option>
+                      <option value="ollama">Ollama (Offline)</option>
+                    </select>
+                  </div>
+                  <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" style="font-size: 0.74rem;">Model dự phòng:</label>
+                    <select class="form-select" id="ai-fallback-model-select"></select>
+                  </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label class="form-label" style="font-size: 0.74rem;">API Key dự phòng (Nếu khác Model chính):</label>
+                  <div style="display: flex; gap: 6px;">
+                    <input type="password" class="form-input" id="ai-fallback-apikey-input" placeholder="Nhập API Key dự phòng...">
+                    <button type="button" class="filter-btn" onclick="toggleAiKeyVisibility('ai-fallback-apikey-input')" style="padding: 6px 10px;">👁️</button>
+                  </div>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end;">
+                  <button type="button" class="filter-btn" id="btn-ping-fallback" onclick="testAiHubConnection(true)" style="font-size: 0.76rem; padding: 4px 12px; color: #34d399; font-weight: 700;">
+                    ⚡ Test Kết Nối Model Dự Phòng
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 4: PHẠM VI & GIỚI HẠN (TARGET, COOLDOWN, SCOPE) -->
+        <div class="ai-tab-pane" id="pane-scope" style="display: none;">
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+            
+            <!-- NHÓM VÀ COOLDOWN -->
+            <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px;">
+              <div style="font-weight: 800; font-size: 0.82rem; color: #38bdf8; text-transform: uppercase;">
+                🛡️ Quy Tắc An Toàn &amp; Nhường Quyền Nhân Viên:
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label class="form-label" style="font-size: 0.74rem; font-weight: 700;">⏳ Smart Cooldown (Phút):</label>
+                  <input type="number" class="form-input" id="ai-admin-cooldown" value="15" min="0" max="1440" style="font-size: 0.8rem;">
+                  <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 3px;">Khi Admin nhắn tay, Bot AI sẽ tự động nhường quyền trong X phút.</div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label class="form-label" style="font-size: 0.74rem; font-weight: 700;">📦 Gom Tin Nhắn Dồn Dập (Giây):</label>
+                  <input type="number" class="form-input" id="ai-debounce-sec" value="3" min="1" max="10" style="font-size: 0.8rem;">
+                  <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 3px;">Gom các tin nhắn gửi liên tiếp của khách trước khi gọi AI.</div>
+                </div>
+              </div>
+
+              <div style="display: flex; flex-direction: column; gap: 8px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 8px;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #f8fafc; font-size: 0.78rem;">
+                  <input type="checkbox" id="ai-allow-groups" style="accent-color: #38bdf8; width: 15px; height: 15px;">
+                  <span>👥 Cho phép Bot AI trả lời trong Nhóm Chat (Cảnh báo: Tắt mặc định để tránh spam nhóm)</span>
+                </label>
+
+                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                  <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #f8fafc; font-size: 0.78rem;">
+                    <input type="checkbox" id="ai-auto-tag-lead" style="accent-color: #38bdf8; width: 15px; height: 15px;">
+                    <span>🏷️ Tự động gắn thẻ cho Khách Hàng Mới nhắn tin:</span>
+                  </label>
+                  <select class="form-select" id="ai-default-lead-tag-select" style="font-size: 0.78rem; padding: 4px 8px; width: auto; min-width: 150px;"></select>
+                </div>
+              </div>
+            </div>
+
+            <!-- BỘ LỌC ĐỐI TƯỢNG (WHITELIST / BLACKLIST) -->
+            <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px;">
+              <div style="font-weight: 800; font-size: 0.82rem; color: #38bdf8; text-transform: uppercase;">
+                🎯 Bộ Lọc Thẻ Phân Loại:
+              </div>
+
+              <div style="display: flex; gap: 14px; font-size: 0.78rem;">
+                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                  <input type="radio" name="ai-target-mode" value="all" checked onchange="updateAiTagFilterUI()" style="accent-color: #38bdf8;">
+                  <span>Tất cả khách hàng</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                  <input type="radio" name="ai-target-mode" value="blacklist" onchange="updateAiTagFilterUI()" style="accent-color: #38bdf8;">
+                  <span>🚫 Blacklist (Bỏ qua thẻ chọn)</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                  <input type="radio" name="ai-target-mode" value="whitelist" onchange="updateAiTagFilterUI()" style="accent-color: #38bdf8;">
+                  <span>✅ Whitelist (Chỉ trả lời thẻ chọn)</span>
+                </label>
+              </div>
+
+              <div id="ai-tags-selector-wrap" style="display: none; flex-direction: column; gap: 5px; margin-top: 4px;">
+                <div id="ai-tags-selector-box" style="display: flex; flex-wrap: wrap; gap: 6px; max-height: 80px; overflow-y: auto;"></div>
+              </div>
+            </div>
+
+            <!-- SCOPE / ĐIỀU CẤM KỴ -->
+            <div>
+              <label class="form-label" style="font-weight: 700; color: #f87171; font-size: 0.82rem; margin-bottom: 4px;">
+                🚫 Ranh Giới &amp; Điều Cấm Kỵ (SCOPE):
+              </label>
+              <textarea class="form-textarea" id="ai-scope-input" style="height: 80px; font-size: 0.82rem;" placeholder="Những điều AI TUYỆT ĐỐI không được nói hoặc cam kết (Ví dụ: Không cung cấp số tài khoản cá nhân, không hứa hẹn giảm giá quá 10%)..."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 5: PHÒNG THỬ NGHIỆM (SIMULATOR PLAYGROUND) -->
+        <div class="ai-tab-pane" id="pane-sim" style="display: none;">
+          <div style="display: flex; flex-direction: column; gap: 10px; height: 380px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div style="font-size: 0.76rem; color: var(--text-muted);">
+                Trò chuyện trực tiếp với AI theo đúng cấu hình SOUL, MEMORY, SCOPE và MODEL đang chọn.
+              </div>
+              <button type="button" class="filter-btn" onclick="clearSimChatHistory()" style="font-size: 0.72rem; padding: 2px 8px;">
+                🧹 Xóa lịch sử test
+              </button>
+            </div>
+
+            <!-- SIMULATOR CHAT STREAM -->
+            <div id="sim-chat-stream" style="flex: 1; background: rgba(0,0,0,0.4); border: 1px solid var(--border); border-radius: 10px; padding: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
+              <div style="text-align: center; color: var(--text-muted); font-size: 0.78rem; padding: 20px;">
+                👋 Hãy gõ câu hỏi thử nghiệm để kiểm tra phản xạ của Bot AI...
+              </div>
+            </div>
+
+            <!-- SIMULATOR INPUT BAR -->
+            <div style="display: flex; gap: 8px;">
+              <input type="text" class="form-input" id="sim-chat-input" placeholder="Gõ tin nhắn thử nghiệm (ví dụ: Shop còn hàng không, giá bao nhiêu?)..." onkeydown="if(event.key==='Enter') sendSimMessage()">
+              <button type="button" class="send-btn" id="btn-send-sim" onclick="sendSimMessage()" style="padding: 8px 18px; font-size: 0.84rem; white-space: nowrap;">
+                Gửi Test 🚀
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="modal-footer" style="padding: 12px 20px; display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <button class="filter-btn" onclick="resetAiDefaults()" style="font-size: 0.78rem;">Khôi phục mặc định</button>
+          <button class="filter-btn wiki-open-btn" id="btn-open-second-brain-wiki" onclick="openSecondBrainWikiModal()" style="font-size: 0.78rem; border-color: #06b6d4; color: #38bdf8; display: flex; align-items: center; gap: 5px;" title="Xem toàn bộ cấu trúc tri thức được tổng hợp thành Second Brain Wiki">
+            👁️ Xem Second Brain Wiki
+          </button>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button class="filter-btn" onclick="closeModal('modal-ai-brain')">Đóng</button>
+          <button class="send-btn" id="btn-save-ai-settings" onclick="saveKnowledgeSettings()" style="padding: 8px 20px; font-size: 0.86rem; font-weight: 700;">
+            💾 Lưu Cấu Hình AI Suite
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ⭐ MODAL CHỌN KHÁCH HÀNG LẤY MẪU CHAT (EXEMPLAR PICKER) -->
+  <div class="modal-overlay" id="ai-exemplar-picker-modal">
+    <div class="modal-dialog" style="max-width: 500px;">
+      <div class="modal-header">
+        <h2 class="modal-title" style="font-size: 0.98rem;">⭐ Chọn Khách Hàng Để Lấy Mẫu Chat</h2>
+        <button class="modal-close-btn" onclick="closeExemplarPickerModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="text" class="form-input" id="exemplar-user-search" placeholder="Tìm tên khách hàng..." oninput="filterExemplarUsersList(this.value)" style="margin-bottom: 8px;">
+        <div id="exemplar-users-list" style="max-height: 260px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; border: 1px solid var(--border); border-radius: 8px; padding: 6px; background: rgba(0,0,0,0.2);"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="filter-btn" onclick="closeExemplarPickerModal()">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ⭐ MODAL XEM & TINH CHỈNH ĐOẠN CHAT MẪU (EXEMPLAR CONFIRM) -->
+  <div class="modal-overlay" id="ai-exemplar-confirm-modal">
+    <div class="modal-dialog" style="max-width: 550px;">
+      <div class="modal-header">
+        <h2 class="modal-title" style="font-size: 0.98rem;">⭐ Tinh Chỉnh Hội Thoại Mẫu (Few-Shot)</h2>
+        <button class="modal-close-btn" onclick="closeAiExemplarConfirmModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="font-size: 0.76rem; color: var(--text-muted); margin-bottom: 6px;">
+          Bạn có thể chỉnh sửa lại câu chữ bên dưới trước khi lưu làm chuẩn mực cho AI:
+        </div>
+        <textarea class="form-textarea" id="ai-exemplar-edit-textarea" style="height: 220px; font-size: 0.8rem; font-family: monospace;"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="filter-btn" onclick="closeAiExemplarConfirmModal()">Hủy</button>
+        <button class="send-btn" onclick="saveExemplarDialogue()">💾 Xác Nhận Làm Mẫu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🧠 MODAL MINI SECOND BRAIN WIKI VIEWER (Audit Fix C3: Nâng cấp tại chỗ) -->
+  <div class="modal-overlay" id="modal-second-brain-wiki">
+    <div class="modal-dialog" style="max-width: 820px; max-height: 90vh; display: flex; flex-direction: column;">
+      
+      <!-- MODAL HEADER -->
+      <div class="modal-header" style="padding: 14px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 1.15rem;">🧠</span>
+            <h2 class="modal-title" style="font-size: 1.05rem; font-weight: 700; color: #f8fafc; margin: 0;">
+              Mini Second Brain Wiki — Toàn Cảnh Bộ Não AI
+            </h2>
+          </div>
+          <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 2px;">
+            Tổng hợp đồng bộ tri thức: SOUL, MEMORY, Q&amp;A chuẩn mực, Few-Shot và Quy tắc ứng xử.
+          </div>
+        </div>
+        <button class="modal-close-btn" onclick="closeSecondBrainWikiModal()">&times;</button>
+      </div>
+
+      <!-- STATS BADGES BAR -->
+      <div class="wiki-stats-bar" id="wiki-stats-bar">
+        <span class="wiki-stat-badge badge-tokens" id="wiki-badge-tokens">📏 ~0 Tokens (0 ký tự)</span>
+        <span class="wiki-stat-badge badge-qna" id="wiki-badge-qna">❓ 0 Câu Q&amp;A</span>
+        <span class="wiki-stat-badge badge-fewshot" id="wiki-badge-fewshot">💬 Chưa có mẫu Chat</span>
+        <span class="wiki-stat-badge badge-model" id="wiki-badge-model">⚡ gemini-2.5-flash</span>
+      </div>
+
+      <!-- TOOLBAR & VIEW TABS -->
+      <div class="wiki-toolbar">
+        <!-- Mode Switch: Formatted vs Raw -->
+        <div style="display: flex; gap: 4px; background: rgba(15, 23, 42, 0.8); border: 1px solid var(--border); border-radius: 6px; padding: 2px;">
+          <button type="button" class="filter-btn active" id="wiki-tab-btn-formatted" onclick="switchWikiViewMode('formatted')" style="font-size: 0.75rem; padding: 4px 10px; border: none;">
+            📑 Trực Quan
+          </button>
+          <button type="button" class="filter-btn" id="wiki-tab-btn-raw" onclick="switchWikiViewMode('raw')" style="font-size: 0.75rem; padding: 4px 10px; border: none;">
+            📝 Markdown Thô
+          </button>
+        </div>
+
+        <!-- Search input -->
+        <div style="flex: 1; max-width: 280px; position: relative;">
+          <input type="text" class="form-input" id="wiki-search-input" placeholder="🔍 Tìm kiếm trong Wiki..." oninput="filterWikiContent(this.value)" style="font-size: 0.78rem; padding: 5px 10px; height: 30px;">
+        </div>
+
+        <!-- Action Buttons -->
+        <div style="display: flex; gap: 6px;">
+          <button type="button" class="filter-btn" onclick="recompileWiki()" style="font-size: 0.75rem; padding: 4px 10px;" title="Biên dịch lại từ dữ liệu mới nhất">
+            🔄 Làm Mới
+          </button>
+          <button type="button" class="filter-btn" onclick="copyWikiMarkdown()" style="font-size: 0.75rem; padding: 4px 10px; color: #38bdf8; border-color: #38bdf8;" title="Sao chép toàn bộ Markdown vào Clipboard">
+            📋 Sao Chép
+          </button>
+          <button type="button" class="filter-btn" onclick="downloadWikiMarkdown()" style="font-size: 0.75rem; padding: 4px 10px;" title="Tải file .md về máy">
+            📥 Tải .md
+          </button>
+        </div>
+      </div>
+
+      <!-- MODAL BODY: VIEWERS & EMPTY STATE -->
+      <div class="modal-body" style="flex: 1; overflow-y: auto; padding: 16px 20px; min-height: 360px; max-height: 520px; background: #020617;">
+        
+        <!-- EMPTY STATE (Audit Fix I5) -->
+        <div id="wiki-empty-state" class="wiki-empty-state" style="display: none;">
+          <div style="font-size: 2.2rem; margin-bottom: 8px;">📭</div>
+          <div style="font-size: 0.95rem; font-weight: 700; color: #f8fafc; margin-bottom: 6px;">Chưa có tri thức nào được nạp</div>
+          <div style="font-size: 0.8rem; color: var(--text-muted); max-width: 440px; margin: 0 auto 16px; line-height: 1.5;">
+            Hãy bắt đầu nhập Giọng điệu ở Tab 1 hoặc Bảng giá ở Tab 2, sau đó bấm <b>"🔄 Làm Mới"</b> để xem Wiki tổng hợp.
+          </div>
+          <button type="button" class="filter-btn" onclick="closeSecondBrainWikiModal()" style="font-size: 0.8rem; padding: 6px 14px;">Quay lại nhập liệu</button>
+        </div>
+
+        <!-- FORMATTED VIEW CONTAINER -->
+        <div id="wiki-formatted-view" class="wiki-formatted-container">
+          <!-- Rendered dynamically by app.js -->
+        </div>
+
+        <!-- RAW MARKDOWN PREVIEW CONTAINER -->
+        <div id="wiki-raw-view" style="display: none;">
+          <pre id="wiki-preview-content" style="white-space: pre-wrap; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border); border-radius: 8px; padding: 14px; color: #e2e8f0; line-height: 1.6; margin: 0;"></pre>
+        </div>
+
+      </div>
+
+      <!-- MODAL FOOTER -->
+      <div class="modal-footer" style="padding: 10px 20px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-size: 0.74rem; color: var(--text-muted);">
+          💡 Wiki này là chuẩn tri thức được đồng bộ trực tiếp vào Prompt của mọi LLM.
+        </span>
+        <button type="button" class="filter-btn" onclick="closeSecondBrainWikiModal()" style="font-size: 0.82rem; padding: 6px 16px;">Đóng</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 🔄 MODAL TIẾN TRÌNH ĐỒNG BỘ TOÀN BỘ LỊCH SỬ (BULK DEEP-SYNC) -->
+  <div class="modal-overlay" id="modal-sync-progress">
+    <div class="modal-dialog" style="max-width: 480px;">
+      <div class="modal-header">
+        <h2 class="modal-title" style="font-size: 1.05rem;">🔄 Đồng Bộ Lịch Sử Toàn Diện</h2>
+        <button class="modal-close-btn" id="btn-close-sync-modal" onclick="closeModal('modal-sync-progress')">&times;</button>
+      </div>
+      <div class="modal-body" style="display: flex; flex-direction: column; gap: 14px; text-align: center; padding: 20px 10px;">
+        <div style="font-size: 2.2rem; margin-bottom: -5px;" id="sync-icon-display">⚡</div>
+        <div style="font-size: 0.95rem; font-weight: 700; color: #f8fafc;" id="sync-status-title">
+          Đang đồng bộ danh bạ &amp; lịch sử tin nhắn...
+        </div>
+        <div style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.5;" id="sync-status-detail">
+          Hệ thống đang tải tin nhắn gốc từ máy chủ Zalo với khoảng nghỉ an toàn chống khoá tài khoản.
+        </div>
+
+        <!-- PROGRESS BAR -->
+        <div style="background: rgba(255,255,255,0.08); border-radius: 8px; height: 12px; overflow: hidden; position: relative; border: 1px solid var(--border); margin: 6px 0;">
+          <div id="sync-progress-bar-fill" style="background: linear-gradient(90deg, #0284c7, #38bdf8); width: 0%; height: 100%; transition: width 0.3s ease;"></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.78rem; color: #38bdf8; font-weight: 600;">
+          <span id="sync-progress-counter">0 / 0 hội thoại</span>
+          <span id="sync-progress-percent">0%</span>
+        </div>
+      </div>
+      <div class="modal-footer" style="justify-content: center;">
+        <button class="filter-btn" id="btn-sync-done" style="display: none; padding: 8px 24px;" onclick="closeModal('modal-sync-progress')">
+          ✓ Đã Hoàn Tất
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 📱 MODAL ĐĂNG NHẬP ZALO WEB -->
+  <div class="modal-overlay" id="modal-zalo-login">
+    <div class="modal-dialog" style="max-width: 450px; text-align: center; border-radius: 20px; background: #0e1526; border: 1px solid rgba(255,255,255,0.12); box-shadow: 0 25px 60px rgba(0,0,0,0.85); overflow: hidden;">
+      <div class="modal-header" style="border-bottom: none; padding: 22px 24px 8px; justify-content: center; position: relative;">
+        <h2 class="modal-title" style="font-size: 1.22rem; font-weight: 800; color: #38bdf8; display: flex; align-items: center; justify-content: center; gap: 8px;">
+          📱 Đăng Nhập Zalo Web
+        </h2>
+        <button class="modal-close-btn" style="position: absolute; right: 18px; top: 18px;" onclick="closeModal('modal-zalo-login')">&times;</button>
+      </div>
+
+      <div style="font-size: 0.84rem; color: #94a3b8; padding: 0 24px 16px; line-height: 1.45;">
+        Mở ứng dụng <b style="color: #f8fafc;">Zalo trên điện thoại</b>, chọn <b style="color: #38bdf8;">Quét QR</b> và hướng camera vào mã bên dưới:
+      </div>
+
+      <div class="modal-body" style="padding: 0 24px 20px;">
+        
+        <!-- Khung Card Màu Trắng Trung Tâm -->
+        <div style="background: #ffffff; border-radius: 16px; padding: 24px 16px; min-height: 250px; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+          
+          <!-- STATE 1: Chưa tạo QR / Offline -->
+          <div id="zalo-login-state-idle" style="display: flex; flex-direction: column; align-items: center; gap: 14px;">
+            <div style="font-size: 3.2rem; line-height: 1; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.15));">📱</div>
+            <p style="font-size: 0.85rem; color: #64748b; line-height: 1.5; max-width: 290px; margin: 0;">
+              Bấm nút bên dưới để yêu cầu hệ thống tạo mã QR và dùng Zalo trên điện thoại quét để bắt đầu.
+            </p>
+            <button class="send-btn" id="btn-generate-qr" onclick="generateZaloLoginQr()" style="background: linear-gradient(135deg, #0284c7, #38bdf8); color: #fff; font-weight: 700; padding: 10px 24px; border-radius: 10px; box-shadow: 0 4px 15px rgba(2,132,199,0.35); font-size: 0.9rem; border: none; cursor: pointer;">
+              ⚡ Tạo Mã QR Kết Nối
+            </button>
+          </div>
+
+          <!-- STATE 2: Đang tải / Đang chờ quét QR -->
+          <div id="zalo-login-state-qr" style="display: none; flex-direction: column; align-items: center; gap: 10px;">
+            <div id="zalo-qr-box" style="padding: 6px; background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
+              <img id="zalo-qr-img" src="" alt="Zalo QR Code" style="width: 200px; height: 200px; display: block; border-radius: 8px;">
+            </div>
+            <div id="zalo-qr-msg" style="font-size: 0.82rem; color: #0284c7; font-weight: 600; text-align: center; max-width: 290px; line-height: 1.4;">
+              Đang chờ quét mã QR...
+            </div>
+            <button class="filter-btn" style="color: #475569; border-color: #cbd5e1; font-size: 0.78rem; padding: 5px 14px; margin-top: 4px;" onclick="generateZaloLoginQr()">
+              🔄 Làm Mới Mã QR
+            </button>
+          </div>
+
+          <!-- STATE 3: Đã Đăng Nhập Thành Công (Online) -->
+          <div id="zalo-login-state-connected" style="display: none; flex-direction: column; align-items: center; gap: 8px;">
+            <img id="zalo-connected-avatar" src="" alt="Avatar" style="width: 68px; height: 68px; border-radius: 50%; border: 3px solid #10b981; object-fit: cover; box-shadow: 0 4px 12px rgba(16,185,129,0.25);" onerror="this.src='https://via.placeholder.com/68?text=Zalo'">
+            <div id="zalo-connected-name" style="font-size: 1.08rem; font-weight: 800; color: #0f172a;">Tài Khoản Zalo</div>
+            <div id="zalo-connected-id" style="font-size: 0.76rem; color: #64748b; font-family: monospace;">ID: 8963404235...</div>
+            <div style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; background: #ecfdf5; color: #059669; border-radius: 20px; font-size: 0.78rem; font-weight: 700; margin: 4px 0 10px;">
+              🟢 Đang Kết Nối (Online)
+            </div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; width: 100%;">
+              <button class="filter-btn" style="color: #0369a1; border-color: #bae6fd; background: #f0f9ff; font-size: 0.8rem; padding: 6px 14px; font-weight: 600;" onclick="generateZaloLoginQr()">
+                🔄 Đổi Tài Khoản / QR Mới
+              </button>
+              <button class="filter-btn" style="color: #b91c1c; border-color: #fecaca; background: #fef2f2; font-size: 0.8rem; padding: 6px 14px; font-weight: 600;" onclick="confirmLogoutZalo()">
+                🚪 Đăng Xuất
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Pill Trạng Thái Đáy Popup -->
+        <div style="margin-top: 18px; display: flex; justify-content: center;">
+          <div id="zalo-modal-bot-status-pill" style="display: inline-flex; align-items: center; gap: 8px; padding: 6px 16px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; font-size: 0.78rem; color: #cbd5e1;">
+            <div style="width: 8px; height: 8px; border-radius: 50%; background: #94a3b8;" id="zalo-modal-bot-dot"></div>
+            <span id="zalo-modal-bot-text">Chưa kết nối Zalo Bot</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

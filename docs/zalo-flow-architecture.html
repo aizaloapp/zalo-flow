@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sơ Đồ Kiến Trúc Hệ Thống Zalo-Flow (AIzalo Community Edition)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" integrity="sha384-ZZ1pncU3bQe8y31yfZdMFdSpttDoPmOZg2wguVK9almUodir1PghgT0eY7Mrty8H" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js" integrity="sha384-en/ztfPSRkGfME4KIm05joYXynqzUgbsG5nMrj/xEFAHXkeZfO3yMK8QQ+mP7p1/" crossorigin="anonymous"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      background: #020617;
+      min-height: 100vh;
+      padding: 2rem;
+      color: #f8fafc;
+      line-height: 1.5;
+    }
+    
+    .container {
+      max-width: 1340px;
+      margin: 0 auto;
+    }
+    
+    /* Header */
+    .header {
+      margin-bottom: 1.75rem;
+    }
+    
+    .header-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .pulse-dot {
+      width: 14px;
+      height: 14px;
+      background: #22d3ee;
+      border-radius: 50%;
+      box-shadow: 0 0 12px #22d3ee;
+      animation: pulse 2s infinite;
+      flex-shrink: 0;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.45; transform: scale(0.85); }
+    }
+    
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      color: #ffffff;
+    }
+    
+    .subtitle {
+      color: #94a3b8;
+      font-size: 0.85rem;
+      margin-left: 2rem;
+      max-width: 1100px;
+    }
+    
+    /* Toolbar */
+    .toolbar {
+      display: flex;
+      gap: 0.5rem;
+      margin-left: auto;
+      flex-shrink: 0;
+      align-items: center;
+    }
+    .toolbar-toggle {
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid #334155;
+      color: #94a3b8;
+      cursor: pointer;
+      font-size: 1.25rem;
+      line-height: 1;
+      padding: 0.3rem 0.6rem;
+      border-radius: 0.5rem;
+      transition: all 0.2s;
+    }
+    .toolbar-toggle:hover { color: #f8fafc; background: rgba(51, 65, 85, 0.8); }
+    .toolbar-actions {
+      display: none;
+      gap: 0.5rem;
+    }
+    .toolbar.expanded .toolbar-actions { display: flex; }
+    .toolbar-actions button {
+      background: rgba(30, 41, 59, 0.9);
+      border: 1px solid #334155;
+      color: #cbd5e1;
+      padding: 0.4rem 0.8rem;
+      border-radius: 0.375rem;
+      font-family: inherit;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .toolbar-actions button:hover {
+      background: #0284c7;
+      color: white;
+      border-color: #38bdf8;
+    }
+
+    /* Diagram Card */
+    .diagram-container {
+      background: rgba(15, 23, 42, 0.6);
+      border-radius: 1rem;
+      border: 1px solid #1e293b;
+      padding: 1.5rem;
+      overflow-x: auto;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(12px);
+    }
+    
+    svg {
+      width: 100%;
+      min-width: 1240px;
+      display: block;
+    }
+    
+    /* Execution Timeline */
+    .timeline {
+      background: rgba(15, 23, 42, 0.5);
+      border-radius: 0.875rem;
+      border: 1px solid #1e293b;
+      padding: 1.5rem;
+      margin-top: 1.75rem;
+    }
+
+    .timeline-header {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .timeline-header h2 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #38bdf8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .timeline-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .timeline-step {
+      display: flex;
+      gap: 0.85rem;
+      background: rgba(2, 6, 23, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 0.625rem;
+      padding: 1rem;
+    }
+
+    .step-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #0284c7;
+      color: white;
+      font-weight: 800;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      border: 2px solid #38bdf8;
+    }
+
+    .step-content h4 {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #f1f5f9;
+      margin-bottom: 0.35rem;
+    }
+
+    .step-content p {
+      font-size: 0.76rem;
+      color: #94a3b8;
+      line-height: 1.45;
+    }
+
+    /* Info Cards */
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+      gap: 1.25rem;
+      margin-top: 1.75rem;
+    }
+    
+    .card {
+      background: rgba(15, 23, 42, 0.6);
+      border-radius: 0.75rem;
+      border: 1px solid #1e293b;
+      padding: 1.25rem;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .card:hover {
+      transform: translateY(-2px);
+      border-color: #334155;
+    }
+    
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+    
+    .card-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+    
+    .card-dot.cyan { background: #22d3ee; box-shadow: 0 0 8px #22d3ee; }
+    .card-dot.emerald { background: #34d399; box-shadow: 0 0 8px #34d399; }
+    .card-dot.violet { background: #a78bfa; box-shadow: 0 0 8px #a78bfa; }
+    .card-dot.amber { background: #fbbf24; box-shadow: 0 0 8px #fbbf24; }
+    .card-dot.rose { background: #fb7185; box-shadow: 0 0 8px #fb7185; }
+    
+    .card h3 {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    
+    .card ul {
+      list-style: none;
+      color: #94a3b8;
+      font-size: 0.76rem;
+    }
+    
+    .card li {
+      margin-bottom: 0.45rem;
+      position: relative;
+      padding-left: 1rem;
+    }
+    .card li::before {
+      content: "•";
+      position: absolute;
+      left: 0;
+      color: #38bdf8;
+    }
+    
+    .footer {
+      text-align: center;
+      margin-top: 2rem;
+      color: #64748b;
+      font-size: 0.75rem;
+      border-top: 1px solid #1e293b;
+      padding-top: 1.25rem;
+    }
+
+    @media print {
+      body { background: #020617; padding: 1rem; }
+      .toolbar { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="report-container">
+    <!-- Header -->
+    <div class="header">
+      <div class="header-row">
+        <div class="pulse-dot"></div>
+        <h1>Kiến Trúc Toàn Diện Zalo-Flow (AIzalo Community Edition)</h1>
+        <div class="toolbar">
+          <div class="toolbar-actions">
+            <button onclick="copyAsImage(this)">📋 Sao chép ảnh</button>
+            <button onclick="downloadPNG(this)">🖼️ Xuất PNG</button>
+            <button onclick="downloadPDF(this)">📄 Xuất PDF</button>
+          </div>
+          <button class="toolbar-toggle" onclick="this.parentElement.classList.toggle('expanded')" title="Tùy chọn xuất ảnh" aria-label="Tùy chọn xuất ảnh">⋯</button>
+        </div>
+      </div>
+      <p class="subtitle">
+        Kiến trúc phân tán Single-Tenant tối ưu RAM &lt; 100MB: Kết nối Zalo cá nhân (zca-js), Động cơ 1-Click Bulk Deep-Sync (Tự động kéo lịch sử chuẩn Zalo WebSocket giãn cách 350ms), Vành đai Anti-Ban 3 Lớp, Trung Tâm AI Suite (Multi-turn 8 tin nhắn + Mini Second Brain Wiki Karpathy + Auto-Fallback Shield), Cơ chế Tự Chữa Lành Memory Guard Sentinel (150MB Ceiling / 112MB Soft Purge), Remarketing Đa Chu Kỳ và Đồng bộ CRM Chatwoot.
+      </p>
+    </div>
+
+    <!-- Main Diagram -->
+    <div class="diagram-container">
+      <svg viewBox="0 0 1280 800">
+        <!-- Definitions -->
+        <defs>
+          <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#64748b" />
+          </marker>
+          <marker id="arrowhead-cyan" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#22d3ee" />
+          </marker>
+          <marker id="arrowhead-emerald" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#34d399" />
+          </marker>
+          <marker id="arrowhead-amber" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#fbbf24" />
+          </marker>
+          <marker id="arrowhead-rose" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#fb7185" />
+          </marker>
+          <marker id="arrowhead-violet" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#a78bfa" />
+          </marker>
+          <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.5"/>
+          </pattern>
+        </defs>
+
+        <!-- Background Grid -->
+        <rect width="100%" height="100%" fill="url(#grid)" />
+
+        <!-- BOUNDARY 1: CORE RUNTIME INSTANCE -->
+        <rect x="220" y="30" width="1040" height="745" rx="14" fill="rgba(15, 23, 42, 0.3)" stroke="#334155" stroke-width="1.5" stroke-dasharray="8,4"/>
+        <text x="240" y="52" fill="#38bdf8" font-size="11" font-weight="700">🖥️ Zalo-Flow Core Instance (Node.js &gt;= 20.0.0 ESM · Single-Tenant RAM &lt; 100MB)</text>
+
+        <!-- BOUNDARY 2: ANTI-BAN & SECURITY PERIMETER -->
+        <rect x="245" y="70" width="225" height="345" rx="10" fill="rgba(136, 19, 55, 0.08)" stroke="#fb7185" stroke-width="1.2" stroke-dasharray="4,4"/>
+        <text x="258" y="88" fill="#fb7185" font-size="9" font-weight="700">🛡️ Vành Đai Anti-Ban &amp; Mã Hóa</text>
+
+        <!-- BOUNDARY 3: AI INTELLIGENCE SUITE PERIMETER -->
+        <rect x="500" y="70" width="505" height="345" rx="10" fill="rgba(120, 53, 15, 0.08)" stroke="#fbbf24" stroke-width="1.2" stroke-dasharray="4,4"/>
+        <text x="515" y="88" fill="#fbbf24" font-size="9" font-weight="700">🧠 Trung Tâm Trí Tuệ AI Suite (Multi-Turn Chat + Auto-Fallback)</text>
+
+        <!-- =================================================================
+             CONNECTION ARROWS
+             ================================================================= -->
+        <!-- Step 1: Inbound Zalo -> zca-js -->
+        <line x1="160" y1="215" x2="258" y2="215" stroke="#22d3ee" stroke-width="1.8" marker-end="url(#arrowhead-cyan)"/>
+        <text x="209" y="207" fill="#22d3ee" font-size="8" font-weight="600" text-anchor="middle">WSS Events</text>
+
+        <!-- 1-Click Bulk Deep-Sync: zca-js -> SQLite (Loop with 350ms delay) -->
+        <path d="M 355 435 L 355 525 L 738 525" fill="none" stroke="#22d3ee" stroke-width="2" marker-end="url(#arrowhead-cyan)"/>
+        <text x="475" y="515" fill="#22d3ee" font-size="8" font-weight="700">⚡ 1-Click Bulk Deep-Sync (350ms)</text>
+
+        <!-- zca-js -> Anti-Ban -->
+        <line x1="355" y1="245" x2="355" y2="293" stroke="#fb7185" stroke-width="1.5" marker-end="url(#arrowhead-rose)"/>
+
+        <!-- Anti-Ban -> Express Core Server -->
+        <line x1="445" y1="325" x2="528" y2="510" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrowhead-emerald)"/>
+        <text x="475" y="415" fill="#94a3b8" font-size="8" text-anchor="middle">Tin Sạch</text>
+
+        <!-- Session Vault <-> zca-js & AI Crypto -->
+        <line x1="355" y1="155" x2="355" y2="183" stroke="#fb7185" stroke-width="1.2" stroke-dasharray="3,3" marker-end="url(#arrowhead-rose)"/>
+
+        <!-- Express -> AI Debounce & Simulator -->
+        <line x1="570" y1="495" x2="570" y2="358" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#arrowhead-amber)"/>
+        <text x="595" y="425" fill="#fbbf24" font-size="8">Inbound Msg</text>
+
+        <!-- AI Debounce -> AI Prompt Compiler -->
+        <line x1="620" y1="325" x2="688" y2="325" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#arrowhead-amber)"/>
+
+        <!-- CRITICAL CONNECTION: SQLite -> AI Prompt Compiler & AiAgentAdapter (Lịch sử 8 tin nhắn + CRM Profile) -->
+        <path d="M 830 495 L 830 365" fill="none" stroke="#a78bfa" stroke-width="2" marker-end="url(#arrowhead-violet)"/>
+        <text x="870" y="425" fill="#a78bfa" font-size="8" font-weight="700">📖 Lịch sử 8 tin chat</text>
+        <text x="870" y="437" fill="#a78bfa" font-size="7.5">+ Tên &amp; Thẻ Tag CRM</text>
+
+        <!-- AI Prompt Compiler -> Universal LLM Dispatcher -->
+        <line x1="785" y1="295" x2="785" y2="248" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#arrowhead-amber)"/>
+
+        <!-- Universal LLM -> Auto-Fallback Shield -->
+        <line x1="865" y1="215" x2="888" y2="215" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#arrowhead-amber)"/>
+
+        <!-- Auto-Fallback Shield -> External Cloud LLMs -->
+        <line x1="985" y1="215" x2="1038" y2="215" stroke="#fbbf24" stroke-width="1.8" marker-end="url(#arrowhead-amber)"/>
+        <text x="1010" y="207" fill="#fbbf24" font-size="8" font-weight="600" text-anchor="middle">REST / SSL</text>
+
+        <!-- AI Reply Return -> Express & Anti-Ban Outbound -->
+        <path d="M 720 185 L 720 135 L 450 135 L 450 295 L 440 295" fill="none" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrowhead-emerald)"/>
+        <text x="585" y="127" fill="#34d399" font-size="8" font-weight="600" text-anchor="middle">Outbound AI (isBot: 1)</text>
+
+        <!-- Express Server <-> SQLite Database -->
+        <line x1="655" y1="525" x2="728" y2="525" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#arrowhead-violet)"/>
+        <text x="692" y="517" fill="#a78bfa" font-size="8" text-anchor="middle">WAL / SQL</text>
+
+        <!-- Scheduler -> SQLite Queue -->
+        <line x1="830" y1="645" x2="830" y2="558" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#arrowhead-violet)"/>
+
+        <!-- Scheduler -> Outbound Anti-Ban -->
+        <path d="M 740 675 L 355 675 L 355 358" fill="none" stroke="#fb7185" stroke-width="1.5" marker-end="url(#arrowhead-rose)"/>
+        <text x="510" y="667" fill="#fb7185" font-size="8" font-weight="600" text-anchor="middle">Broadcast Spintax (Giãn cách &gt;= 3s)</text>
+
+        <!-- Express Server <-> Web UI (SSE / REST) -->
+        <line x1="592" y1="555" x2="592" y2="643" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#arrowhead-cyan)"/>
+        <text x="618" y="605" fill="#22d3ee" font-size="8">SSE Stream</text>
+
+        <!-- Express Server <-> Adapter Hub -->
+        <line x1="620" y1="535" x2="980" y2="535" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrowhead-emerald)"/>
+        <text x="895" y="527" fill="#34d399" font-size="8" text-anchor="middle">Event Hub</text>
+
+        <!-- Adapter Hub <-> Chatwoot CRM -->
+        <line x1="1075" y1="555" x2="1075" y2="643" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <text x="1105" y="605" fill="#94a3b8" font-size="8">2-Way Sync</text>
+
+        <!-- =================================================================
+             COMPONENT NODES
+             ================================================================= -->
+
+        <!-- 1. Zalo Clients (External) -->
+        <rect x="25" y="185" width="135" height="60" rx="6" fill="#0f172a"/>
+        <rect x="25" y="185" width="135" height="60" rx="6" fill="rgba(30, 41, 59, 0.5)" stroke="#94a3b8" stroke-width="1.5"/>
+        <circle cx="40" cy="200" r="9" fill="#0284c7"/>
+        <text x="40" y="204" fill="white" font-size="9" font-weight="800" text-anchor="middle">1</text>
+        <text x="92" y="211" fill="white" font-size="10.5" font-weight="700" text-anchor="middle">Zalo Clients</text>
+        <text x="92" y="229" fill="#94a3b8" font-size="8.5" text-anchor="middle">Mobile / Web Users</text>
+
+        <!-- 2. zca-js Protocol Engine -->
+        <rect x="260" y="185" width="190" height="60" rx="6" fill="#0f172a"/>
+        <rect x="260" y="185" width="190" height="60" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <circle cx="275" cy="200" r="9" fill="#0284c7"/>
+        <text x="275" y="204" fill="white" font-size="9" font-weight="800" text-anchor="middle">2</text>
+        <text x="355" y="211" fill="white" font-size="11" font-weight="700" text-anchor="middle">zca-js Core Engine</text>
+        <text x="355" y="229" fill="#a7f3d0" font-size="8.5" text-anchor="middle">v2.1.0 · WSS Socket Listener</text>
+
+        <!-- 3. Session & AI Vault (Security) -->
+        <rect x="260" y="100" width="190" height="55" rx="6" fill="#0f172a"/>
+        <rect x="260" y="100" width="190" height="55" rx="6" fill="rgba(136, 19, 55, 0.4)" stroke="#fb7185" stroke-width="1.5"/>
+        <circle cx="275" cy="115" r="9" fill="#0284c7"/>
+        <text x="275" y="119" fill="white" font-size="9" font-weight="800" text-anchor="middle">4</text>
+        <text x="355" y="123" fill="white" font-size="10.5" font-weight="700" text-anchor="middle">Session &amp; AI Key Vault</text>
+        <text x="355" y="140" fill="#fca5a5" font-size="8.5" text-anchor="middle">Mã hóa AES-256-CBC</text>
+
+        <!-- 4. Anti-Ban Shields (Security) -->
+        <rect x="260" y="295" width="190" height="62" rx="6" fill="#0f172a"/>
+        <rect x="260" y="295" width="190" height="62" rx="6" fill="rgba(136, 19, 55, 0.4)" stroke="#fb7185" stroke-width="1.5"/>
+        <circle cx="275" cy="310" r="9" fill="#0284c7"/>
+        <text x="275" y="314" fill="white" font-size="9" font-weight="800" text-anchor="middle">3</text>
+        <text x="355" y="318" fill="white" font-size="11" font-weight="700" text-anchor="middle">Lá Chắn Anti-Ban 3 Lớp</text>
+        <text x="355" y="334" fill="#fecdd3" font-size="8" text-anchor="middle">• RateLimiter (&gt;=3s / 200 tin)</text>
+        <text x="355" y="346" fill="#fecdd3" font-size="8" text-anchor="middle">• EchoShield 30s · Flood Mute</text>
+
+        <!-- 5. 1-Click Bulk Deep-Sync Engine (Clean Module) -->
+        <rect x="260" y="380" width="190" height="65" rx="6" fill="#0f172a"/>
+        <rect x="260" y="380" width="190" height="65" rx="6" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="2"/>
+        <text x="355" y="401" fill="white" font-size="10.5" font-weight="700" text-anchor="middle">1-Click Bulk Deep-Sync</text>
+        <text x="355" y="417" fill="#a5f3fc" font-size="8" text-anchor="middle">Zalo WebSocket History Engine</text>
+        <text x="355" y="430" fill="#38bdf8" font-size="7.5" font-weight="600" text-anchor="middle">⚡ Tự động kéo 100% tin thật (350ms/p)</text>
+
+        <!-- 5b. Self-Healing Memory Guard (Audit v2) -->
+        <rect x="260" y="465" width="190" height="68" rx="6" fill="#0f172a"/>
+        <rect x="260" y="465" width="190" height="68" rx="6" fill="rgba(244, 63, 94, 0.25)" stroke="#f43f5e" stroke-width="1.5"/>
+        <circle cx="275" cy="480" r="9" fill="#e11d48"/>
+        <text x="275" y="484" fill="white" font-size="9" font-weight="800" text-anchor="middle">⚡</text>
+        <text x="355" y="485" fill="white" font-size="10.5" font-weight="700" text-anchor="middle">Self-Healing Memory Guard</text>
+        <text x="355" y="501" fill="#fecdd3" font-size="8" text-anchor="middle">• 150MB Ceiling · 112MB Soft Purge</text>
+        <text x="355" y="513" fill="#fecdd3" font-size="8" text-anchor="middle">• 5 Map Purges · RateLimiter Drain</text>
+        <text x="355" y="525" fill="#38bdf8" font-size="7.5" font-weight="600" text-anchor="middle">🔄 Auto-Restart 1.5s · WAL Flush</text>
+
+        <!-- Memory Guard -> Express Core -->
+        <line x1="450" y1="500" x2="528" y2="500" stroke="#f43f5e" stroke-width="1.5" stroke-dasharray="3,3" marker-end="url(#arrowhead-rose)"/>
+        <text x="490" y="493" fill="#f43f5e" font-size="7.5" text-anchor="middle">Watchdog</text>
+
+        <!-- Memory Guard -> SQLite (WAL Flush) -->
+        <path d="M 450 518 L 700 518 L 700 535 L 738 535" fill="none" stroke="#a78bfa" stroke-width="1.2" stroke-dasharray="3,3" marker-end="url(#arrowhead-violet)"/>
+        <text x="690" y="513" fill="#a78bfa" font-size="7.5">WAL Flush</text>
+
+        <!-- Memory Guard -> Web Dashboard (Live RAM Pill) -->
+        <path d="M 355 533 L 355 675 L 498 675" fill="none" stroke="#22d3ee" stroke-width="1.2" stroke-dasharray="3,3" marker-end="url(#arrowhead-cyan)"/>
+        <text x="420" y="670" fill="#22d3ee" font-size="7.5">RAM Pill Live</text>
+
+        <!-- 6. Express API Server Core -->
+        <rect x="530" y="495" width="125" height="60" rx="6" fill="#0f172a"/>
+        <rect x="530" y="495" width="125" height="60" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <circle cx="545" cy="510" r="9" fill="#0284c7"/>
+        <text x="545" y="514" fill="white" font-size="9" font-weight="800" text-anchor="middle">5</text>
+        <text x="595" y="521" fill="white" font-size="10.5" font-weight="700" text-anchor="middle">Express Core</text>
+        <text x="595" y="539" fill="#a7f3d0" font-size="8.5" text-anchor="middle">Port 3000 · REST &amp; SSE</text>
+
+        <!-- 7. AI Debounce Buffer & Tag Scope Filter -->
+        <rect x="520" y="295" width="100" height="63" rx="6" fill="#0f172a"/>
+        <rect x="520" y="295" width="100" height="63" rx="6" fill="rgba(251, 146, 60, 0.3)" stroke="#fb923c" stroke-width="1.5"/>
+        <text x="570" y="316" fill="white" font-size="10" font-weight="700" text-anchor="middle">AI Debounce</text>
+        <text x="570" y="332" fill="#fed7aa" font-size="8" text-anchor="middle">Gom tin 4s</text>
+        <text x="570" y="344" fill="#fed7aa" font-size="8" text-anchor="middle">Cooldown 30s</text>
+
+        <!-- 8. Multi-Turn Context & Prompt Compiler + Mini Wiki -->
+        <rect x="685" y="285" width="200" height="78" rx="6" fill="#0f172a"/>
+        <rect x="685" y="285" width="200" height="78" rx="6" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1.5"/>
+        <text x="785" y="303" fill="white" font-size="10" font-weight="700" text-anchor="middle">5-Layer Compiler + Mini Wiki</text>
+        <text x="785" y="318" fill="#fef08a" font-size="7.8" text-anchor="middle">1. SOUL · 2. MEMORY · 3. Q&amp;A</text>
+        <text x="785" y="330" fill="#fef08a" font-size="7.8" text-anchor="middle">4. FEW-SHOT · 5. 8 TIN CHAT + CRM</text>
+        <text x="785" y="344" fill="#67e8f9" font-size="7.8" font-weight="700" text-anchor="middle">📖 Mini Second Brain Wiki (Tokens x3.0)</text>
+        <text x="785" y="356" fill="#a5f3fc" font-size="7.2" text-anchor="middle">Auto Q&amp;A Mapping · Real-time Preview</text>
+
+        <!-- 9. Universal LLM Dispatcher -->
+        <rect x="690" y="185" width="175" height="60" rx="6" fill="#0f172a"/>
+        <rect x="690" y="185" width="175" height="60" rx="6" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1.5"/>
+        <circle cx="705" cy="200" r="9" fill="#0284c7"/>
+        <text x="705" y="204" fill="white" font-size="9" font-weight="800" text-anchor="middle">7</text>
+        <text x="780" y="211" fill="white" font-size="10.5" font-weight="700" text-anchor="middle">AiAgentAdapter</text>
+        <text x="780" y="229" fill="#fef08a" font-size="8.5" text-anchor="middle">Multi-turn LLM Engine</text>
+
+        <!-- 10. Auto-Fallback Shield Engine -->
+        <rect x="890" y="185" width="95" height="60" rx="6" fill="#0f172a"/>
+        <rect x="890" y="185" width="95" height="60" rx="6" fill="rgba(136, 19, 55, 0.4)" stroke="#fb7185" stroke-width="1.5"/>
+        <text x="937" y="211" fill="white" font-size="9.5" font-weight="700" text-anchor="middle">Auto-Fallback</text>
+        <text x="937" y="229" fill="#fca5a5" font-size="7.5" text-anchor="middle">429/Timeout</text>
+
+        <!-- 11. External LLM Providers -->
+        <rect x="1040" y="100" width="200" height="235" rx="8" fill="#0f172a"/>
+        <rect x="1040" y="100" width="200" height="235" rx="8" fill="rgba(120, 53, 15, 0.2)" stroke="#fbbf24" stroke-width="1.5"/>
+        <text x="1140" y="123" fill="#fbbf24" font-size="11" font-weight="700" text-anchor="middle">🌐 External LLM APIs</text>
+        <text x="1140" y="147" fill="white" font-size="9.5" text-anchor="middle">• Z.AI GLM-5.3 / 4.0</text>
+        <text x="1140" y="163" fill="#94a3b8" font-size="7.5" text-anchor="middle">(api.z.ai/api/coding/paas/v4)</text>
+        <text x="1140" y="183" fill="white" font-size="9.5" text-anchor="middle">• Google Gemini 2.5 Flash</text>
+        <text x="1140" y="203" fill="white" font-size="9.5" text-anchor="middle">• DeepSeek V3 / R1</text>
+        <text x="1140" y="223" fill="white" font-size="9.5" text-anchor="middle">• Groq (&lt; 1s Latency)</text>
+        <text x="1140" y="243" fill="white" font-size="9.5" text-anchor="middle">• OpenAI GPT-4o Mini</text>
+        <text x="1140" y="263" fill="white" font-size="9.5" text-anchor="middle">• Ollama Local (Offline)</text>
+        <text x="1140" y="285" fill="#34d399" font-size="8" font-weight="600" text-anchor="middle">⚡ Auto-Switching 0ms Drop</text>
+
+        <!-- 12. SQLite LocalStore (Database) -->
+        <rect x="740" y="495" width="180" height="60" rx="6" fill="#0f172a"/>
+        <rect x="740" y="495" width="180" height="60" rx="6" fill="rgba(76, 29, 149, 0.4)" stroke="#a78bfa" stroke-width="2"/>
+        <circle cx="755" cy="510" r="9" fill="#0284c7"/>
+        <text x="755" y="514" fill="white" font-size="9" font-weight="800" text-anchor="middle">6</text>
+        <text x="835" y="521" fill="white" font-size="11" font-weight="700" text-anchor="middle">SQLite LocalStore</text>
+        <text x="835" y="539" fill="#ddd6fe" font-size="8.5" text-anchor="middle">WAL Mode · PRAGMA Migrations</text>
+
+        <!-- 13. Campaign Scheduler (Backend) -->
+        <rect x="740" y="645" width="180" height="60" rx="6" fill="#0f172a"/>
+        <rect x="740" y="645" width="180" height="60" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <circle cx="755" cy="660" r="9" fill="#0284c7"/>
+        <text x="755" y="664" fill="white" font-size="9" font-weight="800" text-anchor="middle">8</text>
+        <text x="835" y="671" fill="white" font-size="10.5" font-weight="700" text-anchor="middle">Campaign Scheduler</text>
+        <text x="835" y="689" fill="#a7f3d0" font-size="8.5" text-anchor="middle">Background Cron · Spintax Engine</text>
+
+        <!-- 14. Adapter Hub (Backend) -->
+        <rect x="980" y="495" width="190" height="60" rx="6" fill="#0f172a"/>
+        <rect x="980" y="495" width="190" height="60" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="1075" y="521" fill="white" font-size="11" font-weight="700" text-anchor="middle">Adapter Hub</text>
+        <text x="1075" y="539" fill="#a7f3d0" font-size="8.5" text-anchor="middle">BaseAdapter Extension Isolation</text>
+
+        <!-- 15. Web Dashboard (Frontend) -->
+        <rect x="500" y="645" width="185" height="60" rx="6" fill="#0f172a"/>
+        <rect x="500" y="645" width="185" height="60" rx="6" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+        <text x="592" y="671" fill="white" font-size="11" font-weight="700" text-anchor="middle">Web Dashboard</text>
+        <text x="592" y="689" fill="#a5f3fc" font-size="8.5" text-anchor="middle">Vanilla JS &amp; CSS · 1-Click Sync</text>
+
+        <!-- 16. Chatwoot CRM (External) -->
+        <rect x="980" y="645" width="190" height="60" rx="6" fill="#0f172a"/>
+        <rect x="980" y="645" width="190" height="60" rx="6" fill="rgba(30, 41, 59, 0.5)" stroke="#94a3b8" stroke-width="1.5"/>
+        <text x="1075" y="671" fill="white" font-size="11" font-weight="700" text-anchor="middle">Chatwoot CRM</text>
+        <text x="1075" y="689" fill="#cbd5e1" font-size="8.5" text-anchor="middle">2-Way Live Sync Omnichannel</text>
+
+        <!-- =================================================================
+             LEGEND
+             ================================================================= -->
+        <rect x="25" y="495" width="180" height="260" rx="8" fill="rgba(15, 23, 42, 0.7)" stroke="#1e293b" stroke-width="1"/>
+        <text x="40" y="517" fill="white" font-size="10" font-weight="700">Chú Thích (Legend)</text>
+
+        <rect x="40" y="530" width="14" height="10" rx="2" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1"/>
+        <text x="63" y="539" fill="#94a3b8" font-size="8">Giao diện (Frontend)</text>
+
+        <rect x="40" y="550" width="14" height="10" rx="2" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1"/>
+        <text x="63" y="559" fill="#94a3b8" font-size="8">Máy chủ (Backend)</text>
+
+        <rect x="40" y="570" width="14" height="10" rx="2" fill="rgba(76, 29, 149, 0.4)" stroke="#a78bfa" stroke-width="1"/>
+        <text x="63" y="579" fill="#94a3b8" font-size="8">CSDL SQLite</text>
+
+        <rect x="40" y="590" width="14" height="10" rx="2" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1"/>
+        <text x="63" y="599" fill="#94a3b8" font-size="8">Trí tuệ AI / LLM Engine</text>
+
+        <rect x="40" y="610" width="14" height="10" rx="2" fill="rgba(136, 19, 55, 0.4)" stroke="#fb7185" stroke-width="1"/>
+        <text x="63" y="619" fill="#94a3b8" font-size="8">Bảo mật &amp; Anti-Ban</text>
+
+        <rect x="40" y="630" width="14" height="10" rx="2" fill="rgba(244, 63, 94, 0.25)" stroke="#f43f5e" stroke-width="1"/>
+        <text x="63" y="639" fill="#f43f5e" font-size="8">Tự Chữa Lành (Memory Guard)</text>
+
+        <rect x="40" y="650" width="14" height="10" rx="2" fill="rgba(251, 146, 60, 0.3)" stroke="#fb923c" stroke-width="1"/>
+        <text x="63" y="659" fill="#94a3b8" font-size="8">Bộ đệm Sự kiện (Debounce)</text>
+
+        <rect x="40" y="670" width="14" height="10" rx="2" fill="rgba(30, 41, 59, 0.5)" stroke="#94a3b8" stroke-width="1"/>
+        <text x="63" y="679" fill="#94a3b8" font-size="8">Dịch vụ Ngoại vi (External)</text>
+
+        <circle cx="47" cy="700" r="7" fill="#0284c7"/>
+        <text x="47" y="703" fill="white" font-size="8" font-weight="800" text-anchor="middle">1</text>
+        <text x="63" y="703" fill="#38bdf8" font-size="8" font-weight="700">Thứ tự luồng xử lý</text>
+      </svg>
+    </div>
+
+    <!-- Execution Timeline -->
+    <div class="timeline">
+      <div class="timeline-header">
+        <div class="card-dot emerald"></div>
+        <h2>Các Bước Vận Hành &amp; Luồng Dữ Liệu Thực Tế (Execution Flow)</h2>
+      </div>
+
+      <div class="timeline-grid">
+        <!-- Step 1 -->
+        <div class="timeline-step">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <h4>Tiếp nhận Inbound &amp; Lọc An Toàn</h4>
+            <p>Gói tin WebSocket từ máy chủ Zalo được <code>zca-js</code> giải mã, chuyển qua <code>FloodDetector</code> (chặn &gt;4 tin/s) và <code>SelfEchoShield</code> (loại trừ phản xạ lặp tin 30s) để lọc sạch trước khi vào lõi.</p>
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="timeline-step">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <h4>1-Click Bulk Deep-Sync (Đồng Bộ Toàn Bộ Lịch Sử)</h4>
+            <p>Bấm 1 nút <b>"🔄 Đồng Bộ Lịch Sử"</b>: Hệ thống tự động quét danh bạ, duyệt qua các cuộc trò chuyện gần đây, tải tin nhắn gốc qua WebSocket với khoảng nghỉ an toàn 350ms/người và hiển thị tiến trình % thời gian thực.</p>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="timeline-step">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <h4>Bộ Đệm Gom Tin (Debounce 4s &amp; Cooldown)</h4>
+            <p>Khi khách nhắn nhiều tin liên tiếp, bộ đệm thông minh gom tin trong 4s và kiểm tra Smart Cooldown 30s kèm Lead Tag Filter để quyết định kích hoạt AI.</p>
+          </div>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="timeline-step">
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <h4>Đọc Lịch Sử 8 Tin Nhắn &amp; Hồ Sơ CRM</h4>
+            <p>AiAgentAdapter truy vấn SQLite lấy <b>8 tin nhắn gần nhất</b> của cuộc trò chuyện (Multi-turn Context) kèm Tên khách hàng, Thẻ Tag CRM và Ghi chú để nạp vào bộ nhớ ngữ cảnh.</p>
+          </div>
+        </div>
+
+        <!-- Step 5 -->
+        <div class="timeline-step">
+          <div class="step-num">5</div>
+          <div class="step-content">
+            <h4>Điều Phối Đa Mô Hình &amp; Auto-Fallback</h4>
+            <p>Hệ thống gọi API Model chính (Z.AI GLM-5.3 Flash / Gemini 2.5 Flash). Nếu gặp lỗi 429 Hết Quota, 503 hoặc Timeout quá thời gian, <code>Auto-Fallback Shield</code> lập tức chuyển tuyến sang Model dự phòng trong 0ms.</p>
+          </div>
+        </div>
+
+        <!-- Step 6 -->
+        <div class="timeline-step">
+          <div class="step-num">6</div>
+          <div class="step-content">
+            <h4>Phát Tin Anti-Ban &amp; Đóng Dấu isBot</h4>
+            <p>Câu trả lời của AI được gửi đi qua <code>RateLimiter</code> (giãn cách &gt;= 3s, trần 200 tin/ngày), đóng dấu <code>isBot = 1</code> lưu vào CSDL và phát luồng SSE cập nhật Dashboard tức thì.</p>
+          </div>
+        </div>
+
+        <!-- Step 7 -->
+        <div class="timeline-step">
+          <div class="step-num">7</div>
+          <div class="step-content">
+            <h4>Biên Soạn Mini Second Brain Wiki</h4>
+            <p>Hệ thống tự động biên dịch toàn bộ cấu hình AI thành tài liệu <b>Markdown chuẩn Karpathy</b>: kết hợp SOUL, MEMORY bảng giá, tự động trích xuất cặp Hỏi - Đáp từ Tin Nhắn Nhanh (<code>quick_messages</code>) và ước tính tokens tiếng Việt (hệ số 3.0) kèm giao diện xem trước 1-Click.</p>
+          </div>
+        </div>
+
+        <!-- Step 8 -->
+        <div class="timeline-step">
+          <div class="step-num">8</div>
+          <div class="step-content">
+            <h4>Tự Chữa Lành Memory Guard Sentinel</h4>
+            <p>Canh gác RAM mỗi 30s. Nếu chạm 112MB (75%): tự xả 5 Map stores. Nếu chạm 150MB liên tục 90s: kích hoạt <b>Graceful Restart 4 bước</b> (bắn SSE, drain queue, flush WAL <code>localStore.close()</code>, auto-restart 1.5s không cần quét QR).</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Info Cards -->
+    <div class="cards">
+      <!-- Card 1 -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot cyan"></div>
+          <h3>⚡ Giao Thức Cốt Lõi &amp; Hiệu Năng</h3>
+        </div>
+        <ul>
+          <li><b>zca-js 2.1.0:</b> Mô phỏng giao thức Zalo Web Native qua WebSocket, không cần Headless Chrome.</li>
+          <li><b>Single-Tenant &lt; 100MB RAM:</b> Tiến trình Node.js ES Modules siêu nhẹ, V8 heap cap 128MB, tối ưu chạy trên VPS 512MB.</li>
+          <li><b>Universal SQLite:</b> WAL Mode, PRAGMA auto-healing, chống schema drift trên máy người dùng.</li>
+        </ul>
+      </div>
+
+      <!-- Card 2 -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot violet"></div>
+          <h3>🔄 1-Click Bulk Deep-Sync (Đồng Bộ Chuẩn)</h3>
+        </div>
+        <ul>
+          <li><b>WebSocket Direct:</b> Tải 100% tin nhắn thật, đúng người, đúng thời gian, có ảnh và file đính kèm.</li>
+          <li><b>Anti-Ban Safe Delay:</b> Giãn cách an toàn 350ms/người, có khóa chống bấm trùng lặp (Concurrency Lock).</li>
+          <li><b>Live Progress Bar:</b> Cập nhật tiến trình % thời gian thực qua Server-Sent Events (SSE).</li>
+        </ul>
+      </div>
+
+      <!-- Card 3 -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot amber"></div>
+          <h3>🧠 Trung Tâm AI Suite (5 Tabs + Mini Wiki)</h3>
+        </div>
+        <ul>
+          <li><b>Multi-Turn Contextual:</b> Tự động đọc <b>8 tin nhắn lịch sử gần nhất</b> + Hồ sơ/Thẻ Tag CRM để trả lời chuẩn xác ngữ cảnh.</li>
+          <li><b>Mini Second Brain Wiki:</b> Tự động biên dịch Markdown chuẩn Karpathy, trích xuất Q&amp;A từ Tin Nhắn Nhanh, đếm Tokens x3.0.</li>
+          <li><b>Auto-Fallback Shield:</b> Tự động chuyển tuyến 0ms khi gặp lỗi 429 Quota hoặc Timeout sang Model dự phòng.</li>
+        </ul>
+      </div>
+
+      <!-- Card 4 -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot rose"></div>
+          <h3>🛡️ Vành Đai Bảo Mật &amp; Anti-Ban 3 Lớp</h3>
+        </div>
+        <ul>
+          <li><b>Rate Limiter &amp; Drain:</b> Token Bucket giãn cách &gt;= 3s, tối đa 20 tin/phút, hỗ trợ <code>drainAll()</code> an toàn trước khi tắt.</li>
+          <li><b>Self-Echo &amp; Flood Shield:</b> Bộ đệm 30s triệt tiêu tin tự gửi, tự động Mute 5s khi nhận bão tin dồn dập.</li>
+          <li><b>AES-256-CBC Zero Leak:</b> Mã hóa toàn bộ Zalo Session Tokens và AI API Keys (Primary &amp; Fallback).</li>
+        </ul>
+      </div>
+
+      <!-- Card 5 -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot emerald"></div>
+          <h3>🛡️ Tự Chữa Lành Memory Guard (150MB Ceiling)</h3>
+        </div>
+        <ul>
+          <li><b>Ngưỡng Kép An Toàn:</b> Cảnh báo &amp; dọn mềm tại 112MB (75%), cắt cầu dao tự phục hồi tại 150MB (duy trì 90s).</li>
+          <li><b>Dọn Dẹp 5 Map Stores:</b> Tự xả bộ đệm Echo, Flood, và Debounce Timers khi bộ nhớ chạm mức cao.</li>
+          <li><b>Graceful WAL Checkpoint:</b> Drain RateLimiter queue và flush CSDL SQLite qua <code>localStore.close()</code>, tự hồi sinh 1.5s không mất session.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <p class="footer">
+      Zalo-Flow (AIzalo Community Edition) • Phiên bản 1.0.0 (Cập nhật 2026-09-01) • Single-Tenant Architecture • Giấy phép MIT Open Source • Chỉ phục vụ mục đích nghiên cứu &amp; học tập cá nhân.
+    </p>
+  </div>
+
+  <!-- Export Scripts -->
+  <script>
+    async function copyAsImage(btn) {
+      const orig = btn.textContent;
+      try {
+        const el = document.getElementById('report-container');
+        const r = el.getBoundingClientRect();
+        const pad = 24;
+        const canvas = await html2canvas(document.body, { 
+          backgroundColor: '#020617', 
+          scale: 2, 
+          useCORS: true, 
+          ignoreElements: (e) => e.classList && e.classList.contains('toolbar'), 
+          x: r.left + window.scrollX - pad, 
+          y: r.top + window.scrollY - pad, 
+          width: r.width + pad * 2, 
+          height: r.height + pad * 2 
+        });
+        const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        btn.textContent = '✓ Đã sao chép!';
+      } catch (e) {
+        btn.textContent = '✗ Lỗi sao chép';
+      }
+      setTimeout(() => btn.textContent = orig, 2000);
+    }
+
+    async function downloadPNG(btn) {
+      const orig = btn.textContent;
+      btn.textContent = '⏳ Đang tạo...';
+      try {
+        const el = document.getElementById('report-container');
+        const r = el.getBoundingClientRect();
+        const pad = 24;
+        const canvas = await html2canvas(document.body, { 
+          backgroundColor: '#020617', 
+          scale: 2, 
+          useCORS: true, 
+          ignoreElements: (e) => e.classList && e.classList.contains('toolbar'), 
+          x: r.left + window.scrollX - pad, 
+          y: r.top + window.scrollY - pad, 
+          width: r.width + pad * 2, 
+          height: r.height + pad * 2 
+        });
+        const link = document.createElement('a');
+        link.download = 'zalo-flow-architecture.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        btn.textContent = '✓ Đã tải PNG!';
+      } catch (e) {
+        btn.textContent = '✗ Lỗi xuất PNG';
+      }
+      setTimeout(() => btn.textContent = orig, 2000);
+    }
+
+    async function downloadPDF(btn) {
+      const orig = btn.textContent;
+      btn.textContent = '⏳ Đang tạo...';
+      try {
+        const el = document.getElementById('report-container');
+        const r = el.getBoundingClientRect();
+        const pad = 24;
+        const canvas = await html2canvas(document.body, { 
+          backgroundColor: '#020617', 
+          scale: 2, 
+          useCORS: true, 
+          ignoreElements: (e) => e.classList && e.classList.contains('toolbar'), 
+          x: r.left + window.scrollX - pad, 
+          y: r.top + window.scrollY - pad, 
+          width: r.width + pad * 2, 
+          height: r.height + pad * 2 
+        });
+        const imgData = canvas.toDataURL('image/png');
+        const { jsPDF } = window.jspdf;
+        const orientation = canvas.width > canvas.height ? 'landscape' : 'portrait';
+        const pdf = new jsPDF({ orientation, unit: 'px', format: [canvas.width, canvas.height], hotfixes: ['px_scaling'] });
+        pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+        pdf.save('zalo-flow-architecture.pdf');
+        btn.textContent = '✓ Đã tải PDF!';
+      } catch (e) {
+        btn.textContent = '✗ Lỗi xuất PDF';
+      }
+      setTimeout(() => btn.textContent = orig, 2000);
+    }
+  </script>
+</body>
+</html>

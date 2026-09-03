@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cơ Chế Thu Thập &amp; Lưu Trữ Lịch Sử Chat SQLite LocalStore - Zalo-Flow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" integrity="sha384-ZZ1pncU3bQe8y31yfZdMFdSpttDoPmOZg2wguVK9almUodir1PghgT0eY7Mrty8H" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js" integrity="sha384-en/ztfPSRkGfME4KIm05joYXynqzUgbsG5nMrj/xEFAHXkeZfO3yMK8QQ+mP7p1/" crossorigin="anonymous"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      background: #020617;
+      min-height: 100vh;
+      padding: 2rem;
+      color: #f8fafc;
+      line-height: 1.5;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    /* Header */
+    .header {
+      margin-bottom: 1.75rem;
+    }
+    
+    .header-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .pulse-dot {
+      width: 14px;
+      height: 14px;
+      background: #a78bfa;
+      border-radius: 50%;
+      box-shadow: 0 0 12px #a78bfa;
+      animation: pulse 2s infinite;
+      flex-shrink: 0;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.45; transform: scale(0.85); }
+    }
+    
+    h1 {
+      font-size: 1.45rem;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      color: #ffffff;
+    }
+    
+    .subtitle {
+      color: #94a3b8;
+      font-size: 0.85rem;
+      margin-left: 2rem;
+      max-width: 1000px;
+    }
+    
+    /* Toolbar */
+    .toolbar {
+      display: flex;
+      gap: 0.5rem;
+      margin-left: auto;
+      flex-shrink: 0;
+      align-items: center;
+    }
+    .toolbar-toggle {
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid #334155;
+      color: #94a3b8;
+      cursor: pointer;
+      font-size: 1.25rem;
+      line-height: 1;
+      padding: 0.3rem 0.6rem;
+      border-radius: 0.5rem;
+      transition: all 0.2s;
+    }
+    .toolbar-toggle:hover { color: #f8fafc; background: rgba(51, 65, 85, 0.8); }
+    .toolbar-actions {
+      display: none;
+      gap: 0.5rem;
+    }
+    .toolbar.expanded .toolbar-actions { display: flex; }
+    .toolbar-actions button {
+      background: rgba(30, 41, 59, 0.9);
+      border: 1px solid #334155;
+      color: #cbd5e1;
+      padding: 0.4rem 0.8rem;
+      border-radius: 0.375rem;
+      font-family: inherit;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .toolbar-actions button:hover {
+      background: #7c3aed;
+      color: white;
+      border-color: #a78bfa;
+    }
+
+    /* Diagram Card */
+    .diagram-container {
+      background: rgba(15, 23, 42, 0.6);
+      border-radius: 1rem;
+      border: 1px solid #1e293b;
+      padding: 1.5rem;
+      overflow-x: auto;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(12px);
+    }
+    
+    svg {
+      width: 100%;
+      min-width: 1100px;
+      display: block;
+    }
+    
+    /* Execution Timeline */
+    .timeline {
+      background: rgba(15, 23, 42, 0.5);
+      border-radius: 0.875rem;
+      border: 1px solid #1e293b;
+      padding: 1.5rem;
+      margin-top: 1.75rem;
+    }
+
+    .timeline-header {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .timeline-header h2 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #a78bfa;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .timeline-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .timeline-step {
+      display: flex;
+      gap: 0.85rem;
+      background: rgba(2, 6, 23, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 0.625rem;
+      padding: 1rem;
+    }
+
+    .step-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #6d28d9;
+      color: white;
+      font-weight: 800;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      border: 2px solid #a78bfa;
+    }
+
+    .step-content h4 {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #f1f5f9;
+      margin-bottom: 0.35rem;
+    }
+
+    .step-content p {
+      font-size: 0.76rem;
+      color: #94a3b8;
+      line-height: 1.45;
+    }
+
+    /* Info Cards */
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.25rem;
+      margin-top: 1.75rem;
+    }
+    
+    .card {
+      background: rgba(15, 23, 42, 0.6);
+      border-radius: 0.75rem;
+      border: 1px solid #1e293b;
+      padding: 1.25rem;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .card:hover {
+      transform: translateY(-2px);
+      border-color: #334155;
+    }
+    
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+    
+    .card-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+    
+    .card-dot.violet { background: #a78bfa; box-shadow: 0 0 8px #a78bfa; }
+    .card-dot.emerald { background: #34d399; box-shadow: 0 0 8px #34d399; }
+    .card-dot.amber { background: #fbbf24; box-shadow: 0 0 8px #fbbf24; }
+    .card-dot.cyan { background: #22d3ee; box-shadow: 0 0 8px #22d3ee; }
+    
+    .card h3 {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    
+    .card ul {
+      list-style: none;
+      color: #94a3b8;
+      font-size: 0.76rem;
+    }
+    
+    .card li {
+      margin-bottom: 0.45rem;
+      position: relative;
+      padding-left: 1rem;
+    }
+    .card li::before {
+      content: "•";
+      position: absolute;
+      left: 0;
+      color: #a78bfa;
+    }
+    
+    .footer {
+      text-align: center;
+      margin-top: 2rem;
+      color: #64748b;
+      font-size: 0.75rem;
+      border-top: 1px solid #1e293b;
+      padding-top: 1.25rem;
+    }
+
+    @media print {
+      body { background: #020617; padding: 1rem; }
+      .toolbar { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="report-container">
+    <!-- Header -->
+    <div class="header">
+      <div class="header-row">
+        <div class="pulse-dot"></div>
+        <h1>Cơ Chế Thu Thập &amp; Lưu Trữ Lịch Sử Chat SQLite LocalStore</h1>
+        <div class="toolbar">
+          <div class="toolbar-actions">
+            <button onclick="copyAsImage(this)">📋 Sao chép ảnh</button>
+            <button onclick="downloadPNG(this)">🖼️ Xuất PNG</button>
+            <button onclick="downloadPDF(this)">📄 Xuất PDF</button>
+          </div>
+          <button class="toolbar-toggle" onclick="this.parentElement.classList.toggle('expanded')" title="Tùy chọn xuất ảnh" aria-label="Tùy chọn xuất ảnh">⋯</button>
+        </div>
+      </div>
+      <p class="subtitle">
+        Khám phá quy trình 4 giai đoạn khép kín giúp Zalo-Flow thu thập tin nhắn cũ và mới từ WebSocket Zalo, bóc tách đa phương tiện và lưu trữ vĩnh viễn trong SQLite WAL Mode phục vụ AI Multi-turn và Web UI.
+      </p>
+    </div>
+
+    <!-- Main Diagram -->
+    <div class="diagram-container">
+      <svg viewBox="0 0 1160 640">
+        <!-- Definitions -->
+        <defs>
+          <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#64748b" />
+          </marker>
+          <marker id="arrowhead-cyan" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#22d3ee" />
+          </marker>
+          <marker id="arrowhead-emerald" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#34d399" />
+          </marker>
+          <marker id="arrowhead-amber" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#fbbf24" />
+          </marker>
+          <marker id="arrowhead-rose" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#fb7185" />
+          </marker>
+          <marker id="arrowhead-violet" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#a78bfa" />
+          </marker>
+          <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.5"/>
+          </pattern>
+        </defs>
+
+        <!-- Background Grid -->
+        <rect width="100%" height="100%" fill="url(#grid)" />
+
+        <!-- REGION BOUNDARY: ZALO-FLOW BACKEND CORE -->
+        <rect x="230" y="35" width="670" height="570" rx="14" fill="rgba(15, 23, 42, 0.3)" stroke="#334155" stroke-width="1.5" stroke-dasharray="8,4"/>
+        <text x="245" y="58" fill="#38bdf8" font-size="11" font-weight="700">🖥️ Tiến Trình Xử Lý Dữ Liệu Zalo-Flow (Node.js ESM · RAM &lt; 100MB)</text>
+
+        <!-- =================================================================
+             CONNECTION ARROWS (Drawn first for correct z-order)
+             ================================================================= -->
+        <!-- Zalo Server -> zca-js (WSS Inbound) -->
+        <line x1="160" y1="160" x2="268" y2="160" stroke="#22d3ee" stroke-width="1.8" marker-end="url(#arrowhead-cyan)"/>
+        <text x="214" y="152" fill="#22d3ee" font-size="8" font-weight="600" text-anchor="middle">WSS Events</text>
+
+        <!-- zca-js -> Initial Sync Request -->
+        <line x1="375" y1="190" x2="375" y2="248" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrowhead-emerald)"/>
+
+        <!-- Initial Sync -> SQLite (Ingest) -->
+        <line x1="375" y1="310" x2="375" y2="440" stroke="#a78bfa" stroke-width="1.8" marker-end="url(#arrowhead-violet)"/>
+        <text x="400" y="375" fill="#a78bfa" font-size="8" font-weight="600">Bulk Ingest</text>
+
+        <!-- zca-js -> Realtime Inbound Message -->
+        <line x1="480" y1="160" x2="548" y2="160" stroke="#fb7185" stroke-width="1.5" marker-end="url(#arrowhead-rose)"/>
+        <text x="514" y="152" fill="#fb7185" font-size="8" text-anchor="middle">Tin Đến</text>
+
+        <!-- Flood & Echo -> Message Parser -->
+        <line x1="655" y1="190" x2="655" y2="248" stroke="#fb923c" stroke-width="1.5" marker-end="url(#arrowhead-amber)"/>
+
+        <!-- Message Parser -> SQLite (addMessage) -->
+        <path d="M 655 310 L 655 470 L 490 470" fill="none" stroke="#a78bfa" stroke-width="1.8" marker-end="url(#arrowhead-violet)"/>
+        <text x="615" y="462" fill="#a78bfa" font-size="8" font-weight="600" text-anchor="middle">addMessage()</text>
+
+        <!-- SQLite -> Web UI (SSE Stream) -->
+        <line x1="375" y1="500" x2="375" y2="548" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#arrowhead-cyan)"/>
+
+        <!-- Web UI -> SQLite (GET Messages History) -->
+        <line x1="950" y1="550" x2="490" y2="500" stroke="#22d3ee" stroke-width="1.2" stroke-dasharray="3,3" marker-end="url(#arrowhead-cyan)"/>
+        <text x="730" y="535" fill="#22d3ee" font-size="7.5" text-anchor="middle">GET /messages (Phân trang)</text>
+
+        <!-- SQLite -> AiAgentAdapter (8 Tin Ngữ Cảnh) -->
+        <path d="M 480 450 L 950 290" fill="none" stroke="#a78bfa" stroke-width="2" marker-end="url(#arrowhead-violet)"/>
+        <text x="720" y="380" fill="#a78bfa" font-size="8.5" font-weight="700">📖 Lấy 8 tin gần nhất + CRM Tags</text>
+
+        <!-- Outbound Message -> zca-js -->
+        <path d="M 950 160 L 480 130" fill="none" stroke="#34d399" stroke-width="1.5" stroke-dasharray="4,4" marker-end="url(#arrowhead-emerald)"/>
+        <text x="720" y="135" fill="#34d399" font-size="8" text-anchor="middle">Outbound (Bot AI / Remarketing)</text>
+
+        <!-- =================================================================
+             COMPONENT BOXES (With Opaque Masking)
+             ================================================================= -->
+
+        <!-- 1. Zalo Cloud Server (External) -->
+        <rect x="25" y="130" width="135" height="65" rx="6" fill="#0f172a"/>
+        <rect x="25" y="130" width="135" height="65" rx="6" fill="rgba(30, 41, 59, 0.5)" stroke="#94a3b8" stroke-width="1.5"/>
+        <circle cx="40" cy="145" r="9" fill="#0284c7"/>
+        <text x="40" y="149" fill="white" font-size="9" font-weight="800" text-anchor="middle">1</text>
+        <text x="92" y="156" fill="white" font-size="10.5" font-weight="700" text-anchor="middle">Máy Chủ Zalo</text>
+        <text x="92" y="174" fill="#94a3b8" font-size="8.5" text-anchor="middle">WSS Gateway (Web/App)</text>
+
+        <!-- 2. zca-js Protocol Engine -->
+        <rect x="270" y="130" width="210" height="60" rx="6" fill="#0f172a"/>
+        <rect x="270" y="130" width="210" height="60" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <circle cx="285" cy="145" r="9" fill="#0284c7"/>
+        <text x="285" y="149" fill="white" font-size="9" font-weight="800" text-anchor="middle">2</text>
+        <text x="375" y="156" fill="white" font-size="11" font-weight="700" text-anchor="middle">zca-js Core Engine</text>
+        <text x="375" y="174" fill="#a7f3d0" font-size="8.5" text-anchor="middle">WebSocket Listener (WSS)</text>
+
+        <!-- 3. Initial Sync & Old Messages Fetcher -->
+        <rect x="270" y="250" width="210" height="60" rx="6" fill="#0f172a"/>
+        <rect x="270" y="250" width="210" height="60" rx="6" fill="rgba(251, 146, 60, 0.3)" stroke="#fb923c" stroke-width="1.5"/>
+        <circle cx="285" cy="265" r="9" fill="#0284c7"/>
+        <text x="285" y="269" fill="white" font-size="9" font-weight="800" text-anchor="middle">3</text>
+        <text x="375" y="275" fill="white" font-size="10.5" font-weight="700" text-anchor="middle">Đồng Bộ Ban Đầu (Sync)</text>
+        <text x="375" y="292" fill="#fed7aa" font-size="8" text-anchor="middle">getAllFriends · requestOldMessages</text>
+
+        <!-- 4. Flood & Echo Shield -->
+        <rect x="550" y="130" width="210" height="60" rx="6" fill="#0f172a"/>
+        <rect x="550" y="130" width="210" height="60" rx="6" fill="rgba(136, 19, 55, 0.4)" stroke="#fb7185" stroke-width="1.5"/>
+        <circle cx="565" cy="145" r="9" fill="#0284c7"/>
+        <text x="565" y="149" fill="white" font-size="9" font-weight="800" text-anchor="middle">4</text>
+        <text x="655" y="156" fill="white" font-size="10.5" font-weight="700" text-anchor="middle">Vành Đai Lọc An Toàn</text>
+        <text x="655" y="174" fill="#fecdd3" font-size="8" text-anchor="middle">Flood Mute &gt;4 tin/s · EchoShield 30s</text>
+
+        <!-- 5. Rich Message Parser -->
+        <rect x="550" y="250" width="210" height="60" rx="6" fill="#0f172a"/>
+        <rect x="550" y="250" width="210" height="60" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <circle cx="565" cy="265" r="9" fill="#0284c7"/>
+        <text x="565" y="269" fill="white" font-size="9" font-weight="800" text-anchor="middle">5</text>
+        <text x="655" y="275" fill="white" font-size="10.5" font-weight="700" text-anchor="middle">Trình Bóc Tách (Parser)</text>
+        <text x="655" y="292" fill="#a7f3d0" font-size="8" text-anchor="middle">Text · Ảnh · Docx · Quote · Reaction</text>
+
+        <!-- 6. SQLite LocalStore (Database Core) -->
+        <rect x="270" y="440" width="210" height="60" rx="6" fill="#0f172a"/>
+        <rect x="270" y="440" width="210" height="60" rx="6" fill="rgba(76, 29, 149, 0.4)" stroke="#a78bfa" stroke-width="2"/>
+        <circle cx="285" cy="455" r="9" fill="#0284c7"/>
+        <text x="285" y="459" fill="white" font-size="9" font-weight="800" text-anchor="middle">6</text>
+        <text x="375" y="465" fill="white" font-size="11" font-weight="800" text-anchor="middle">SQLite LocalStore</text>
+        <text x="375" y="482" fill="#ddd6fe" font-size="8.5" text-anchor="middle">data/zalo_flow.db (WAL Mode)</text>
+
+        <!-- 7. SSE Broadcaster -->
+        <rect x="270" y="550" width="210" height="40" rx="6" fill="#0f172a"/>
+        <rect x="270" y="550" width="210" height="40" rx="6" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+        <text x="375" y="574" fill="#a5f3fc" font-size="9.5" font-weight="700" text-anchor="middle">⚡ SSE Real-Time Broadcaster</text>
+
+        <!-- 8. AiAgentAdapter (Consumer) -->
+        <rect x="950" y="250" width="185" height="75" rx="6" fill="#0f172a"/>
+        <rect x="950" y="250" width="185" height="75" rx="6" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1.5"/>
+        <text x="1042" y="275" fill="white" font-size="11" font-weight="700" text-anchor="middle">🧠 AiAgentAdapter</text>
+        <text x="1042" y="295" fill="#fef08a" font-size="8.5" text-anchor="middle">Multi-turn Contextual</text>
+        <text x="1042" y="310" fill="#a7f3d0" font-size="8" text-anchor="middle">(Gemini · Z.AI · DeepSeek)</text>
+
+        <!-- 9. Web Dashboard (Consumer) -->
+        <rect x="950" y="535" width="185" height="65" rx="6" fill="#0f172a"/>
+        <rect x="950" y="535" width="185" height="65" rx="6" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+        <text x="1042" y="560" fill="white" font-size="11" font-weight="700" text-anchor="middle">💻 Web Dashboard</text>
+        <text x="1042" y="578" fill="#a5f3fc" font-size="8.5" text-anchor="middle">Xem Lịch Sử Vĩnh Viễn</text>
+        <text x="1042" y="590" fill="#94a3b8" font-size="7.5" text-anchor="middle">Không bao giờ bị xóa 14 ngày</text>
+
+        <!-- Legend Box -->
+        <rect x="25" y="440" width="180" height="150" rx="8" fill="rgba(15, 23, 42, 0.7)" stroke="#1e293b" stroke-width="1"/>
+        <text x="38" y="460" fill="white" font-size="9.5" font-weight="700">Chú Thích (Legend)</text>
+        
+        <rect x="38" y="472" width="12" height="8" rx="2" fill="rgba(76, 29, 149, 0.4)" stroke="#a78bfa" stroke-width="1"/>
+        <text x="56" y="479" fill="#94a3b8" font-size="7.5">CSDL SQLite (Lưu trữ)</text>
+
+        <rect x="38" y="490" width="12" height="8" rx="2" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1"/>
+        <text x="56" y="497" fill="#94a3b8" font-size="7.5">Xử lý Giao thức &amp; Parser</text>
+
+        <rect x="38" y="508" width="12" height="8" rx="2" fill="rgba(136, 19, 55, 0.4)" stroke="#fb7185" stroke-width="1"/>
+        <text x="56" y="515" fill="#94a3b8" font-size="7.5">Bảo mật &amp; Lọc an toàn</text>
+
+        <rect x="38" y="526" width="12" height="8" rx="2" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1"/>
+        <text x="56" y="533" fill="#94a3b8" font-size="7.5">Trí tuệ AI (Consumers)</text>
+
+        <rect x="38" y="544" width="12" height="8" rx="2" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1"/>
+        <text x="56" y="551" fill="#94a3b8" font-size="7.5">Giao diện Web / SSE</text>
+      </svg>
+    </div>
+
+    <!-- Execution Timeline -->
+    <div class="timeline">
+      <div class="timeline-header">
+        <div class="card-dot violet"></div>
+        <h2>Các Bước Thu Thập &amp; Vận Hành CSDL Thực Tế (Execution Steps)</h2>
+      </div>
+
+      <div class="timeline-grid">
+        <!-- Step 1 -->
+        <div class="timeline-step">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <h4>Khởi Tạo &amp; Kéo Lịch Sử Cũ (Initial Sync)</h4>
+            <p>Khi Zalo-Flow khởi động, <code>zca-js</code> gửi lệnh <code>requestOldMessages(User/Group)</code> qua WebSocket tới Zalo Server để kéo hàng loạt tin nhắn gần nhất về nạp vào SQLite.</p>
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="timeline-step">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <h4>Bắt Sự Kiện Tin Nhắn Thời Gian Thực (Inbound)</h4>
+            <p>Gói tin WebSocket từ người gửi đến được bắt qua <code>listener.on('message')</code>, đi qua <code>FloodDetector</code> và <code>SelfEchoShield</code> (30s buffer) để triệt tiêu tin rác và tin lặp.</p>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="timeline-step">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <h4>Bóc Tách Dữ Liệu Đa Phương Tiện (Parser)</h4>
+            <p>Hàm <code>parseMessage()</code> trích xuất chữ thô, link hình ảnh, tệp tài liệu (PDF, Docx), trả lời trích dẫn (Quote Text) và thả tim/cảm xúc (Reactions) thành object chuẩn.</p>
+          </div>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="timeline-step">
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <h4>Ghi Bền Vững Vào SQLite (WAL Mode)</h4>
+            <p>Lệnh <code>localStore.addMessage()</code> thực hiện INSERT vào <code>data/zalo_flow.db</code> với độ trễ &lt; 1ms, không khóa database, đảm bảo tin nhắn được lưu trữ vĩnh viễn trên máy tính.</p>
+          </div>
+        </div>
+
+        <!-- Step 5 -->
+        <div class="timeline-step">
+          <div class="step-num">5</div>
+          <div class="step-content">
+            <h4>Cung Cấp 8 Tin Nhắn Ngữ Cảnh Cho Bot AI</h4>
+            <p>Khi khách hỏi tiếp, <code>AiAgentAdapter</code> đọc 8 tin nhắn gần nhất từ SQLite để tạo thành chuỗi hội thoại đa lượt (Multi-turn), giúp AI hiểu rõ ngữ cảnh trước đó.</p>
+          </div>
+        </div>
+
+        <!-- Step 6 -->
+        <div class="timeline-step">
+          <div class="step-num">6</div>
+          <div class="step-content">
+            <h4>Phát Luồng SSE &amp; Phân Trang Trên Web</h4>
+            <p>Sự kiện <code>emitMessage</code> kích hoạt Server-Sent Events cập nhật màn hình chat tức thì, đồng thời hỗ trợ cuộn xem lại tin nhắn từ nhiều tháng trước mà không lo bị mất.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Info Cards -->
+    <div class="cards">
+      <!-- Card 1 -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot violet"></div>
+          <h3>💾 Lưu Trữ Bền Vững Vĩnh Viễn</h3>
+        </div>
+        <ul>
+          <li><b>Khắc phục Zalo Web:</b> Không bị giới hạn 14 ngày, không bao giờ bị xóa sạch khi Clear Cache hay Logout.</li>
+          <li><b>SQLite WAL Mode:</b> Đọc/Ghi đồng thời cực nhanh (&lt; 1ms), không gây nghẽn tiến trình Node.js.</li>
+        </ul>
+      </div>
+
+      <!-- Card 2 -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot amber"></div>
+          <h3>🧠 Nuôi Dưỡng Trí Tuệ Bot AI</h3>
+        </div>
+        <ul>
+          <li><b>Multi-turn Context:</b> Trích xuất 8 tin nhắn gần nhất để AI hiểu rõ khách đang hỏi về sản phẩm nào.</li>
+          <li><b>Gắn kèm Hồ Sơ CRM:</b> Kết hợp Tên khách, Thẻ Tag và Ghi chú để tư vấn đúng trọng tâm.</li>
+        </ul>
+      </div>
+
+      <!-- Card 3 -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot emerald"></div>
+          <h3>🛡️ Lọc Rác &amp; Bảo Vệ Anti-Ban</h3>
+        </div>
+        <ul>
+          <li><b>Self-Echo Shield:</b> Bộ đệm 30s loại bỏ 100% tin nhắn tự gửi bị vòng lặp.</li>
+          <li><b>Flood Detector:</b> Tự động ngắt tạm thời 5s nếu nhận trên 4 tin nhắn trong 1 giây.</li>
+        </ul>
+      </div>
+
+      <!-- Card 4 -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot cyan"></div>
+          <h3>⚡ Đồng Bộ Tức Thì (Real-Time)</h3>
+        </div>
+        <ul>
+          <li><b>WebSocket Direct:</b> Bắt trọn vẹn gói tin từ Zalo không cần mở trình duyệt Chrome.</li>
+          <li><b>Server-Sent Events (SSE):</b> Đẩy tin nhắn lên giao diện người dùng theo thời gian thực (0ms delay).</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <p class="footer">
+      Zalo-Flow (AIzalo Community Edition) • SQLite Data Flow Architecture • MIT License • Educational &amp; Research Only.
+    </p>
+  </div>
+
+  <!-- Export Scripts -->
+  <script>
+    async function copyAsImage(btn) {
+      const orig = btn.textContent;
+      try {
+        const el = document.getElementById('report-container');
+        const r = el.getBoundingClientRect();
+        const pad = 24;
+        const canvas = await html2canvas(document.body, { 
+          backgroundColor: '#020617', 
+          scale: 2, 
+          useCORS: true, 
+          ignoreElements: (e) => e.classList && e.classList.contains('toolbar'), 
+          x: r.left + window.scrollX - pad, 
+          y: r.top + window.scrollY - pad, 
+          width: r.width + pad * 2, 
+          height: r.height + pad * 2 
+        });
+        const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        btn.textContent = '✓ Đã sao chép!';
+      } catch (e) {
+        btn.textContent = '✗ Lỗi sao chép';
+      }
+      setTimeout(() => btn.textContent = orig, 2000);
+    }
+
+    async function downloadPNG(btn) {
+      const orig = btn.textContent;
+      btn.textContent = '⏳ Đang tạo...';
+      try {
+        const el = document.getElementById('report-container');
+        const r = el.getBoundingClientRect();
+        const pad = 24;
+        const canvas = await html2canvas(document.body, { 
+          backgroundColor: '#020617', 
+          scale: 2, 
+          useCORS: true, 
+          ignoreElements: (e) => e.classList && e.classList.contains('toolbar'), 
+          x: r.left + window.scrollX - pad, 
+          y: r.top + window.scrollY - pad, 
+          width: r.width + pad * 2, 
+          height: r.height + pad * 2 
+        });
+        const link = document.createElement('a');
+        link.download = 'sqlite-sync-mechanism.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        btn.textContent = '✓ Đã tải PNG!';
+      } catch (e) {
+        btn.textContent = '✗ Lỗi xuất PNG';
+      }
+      setTimeout(() => btn.textContent = orig, 2000);
+    }
+
+    async function downloadPDF(btn) {
+      const orig = btn.textContent;
+      btn.textContent = '⏳ Đang tạo...';
+      try {
+        const el = document.getElementById('report-container');
+        const r = el.getBoundingClientRect();
+        const pad = 24;
+        const canvas = await html2canvas(document.body, { 
+          backgroundColor: '#020617', 
+          scale: 2, 
+          useCORS: true, 
+          ignoreElements: (e) => e.classList && e.classList.contains('toolbar'), 
+          x: r.left + window.scrollX - pad, 
+          y: r.top + window.scrollY - pad, 
+          width: r.width + pad * 2, 
+          height: r.height + pad * 2 
+        });
+        const imgData = canvas.toDataURL('image/png');
+        const { jsPDF } = window.jspdf;
+        const orientation = canvas.width > canvas.height ? 'landscape' : 'portrait';
+        const pdf = new jsPDF({ orientation, unit: 'px', format: [canvas.width, canvas.height], hotfixes: ['px_scaling'] });
+        pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+        pdf.save('sqlite-sync-mechanism.pdf');
+        btn.textContent = '✓ Đã tải PDF!';
+      } catch (e) {
+        btn.textContent = '✗ Lỗi xuất PDF';
+      }
+      setTimeout(() => btn.textContent = orig, 2000);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+name: 🔌 Adapter Request
+description: Propose a new platform integration/adapter (e.g. Dify, Botpress, Telegram, etc.)
+labels: ["adapter", "enhancement"]
+body:
+  - type: input
+    id: platform
+    attributes:
+      label: Target Platform / Tool
+      placeholder: "e.g. Dify.ai, Make.com, Activepieces, Supabase Edge Function"
+    validations:
+      required: true
+  - type: textarea
+    id: usecase
+    attributes:
+      label: Intended Use Case
+      description: How should Zalo-Flow interact with this platform? (Inbound webhook, Outbound sync, Event triggers)
+    validations:
+      required: true

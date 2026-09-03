@@ -1,0 +1,33 @@
+name: 🐛 Bug Report
+description: Report a reproducible bug or issue in Zalo-Flow
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for taking the time to report this issue!
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Step by step instructions to reproduce the behavior.
+      placeholder: |
+        1. Set TYPEBOT_WEBHOOK_URL in .env
+        2. Run `npm start`
+        3. Trigger webhook...
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment Info
+      description: OS version, Node.js version, Docker version.
+      placeholder: "Ubuntu 22.04 / Node.js v20.12.0 / Docker 24.0.5"
+    validations:
+      required: true

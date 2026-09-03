@@ -1,0 +1,57 @@
+# ==============================================================================
+# ZALO-FLOW GITIGNORE CONFIGURATION (Zero-Leak Defense Perimeter)
+# ==============================================================================
+
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment & Secrets (NEVER COMMIT)
+.env*
+.env
+.env.local
+.env.*.local
+
+# Session & Authentication Storage
+sessions/
+*.session
+*.session.enc
+*.enc
+zalo-session.json
+credentials.json
+
+# SQLite Databases & Shards
+*.db
+*.db-shm
+*.db-wal
+test_*.db*
+
+# Docker Data Directory (Keep folder structure only)
+data/*
+!data/.gitkeep
+
+# Temporary & Scratch Workspaces
+scratch/
+temp/
+tmp/
+*.tmp
+Screenshot*.png
+test-plan.html
+
+# Visual Check Artifacts
+docs/*.visual-check.*
+
+# Logs
+logs/
+*.log
+
+# OS & IDE Generated
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj

@@ -1,0 +1,18 @@
+services:
+  zalo-flow:
+    build: .
+    container_name: zalo-flow
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:3000"
+    env_file:
+      - .env
+    volumes:
+      # Persist encrypted Zalo sessions across container restarts
+      - ./sessions:/app/sessions
+      # Persist SQLite database & uploaded media across container restarts
+      - ./data:/app/data
+    deploy:
+      resources:
+        limits:
+          memory: 256M
