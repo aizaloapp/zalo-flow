@@ -366,15 +366,15 @@ console.log('   ✅ System Memory Footprint passed!\n');
 // -----------------------------------------------------------------------------
 console.log('15. Testing AI Crypto & Zero Plaintext Masking...');
 const { encryptSecret, decryptSecret, maskApiKey } = await import('../src/utils/ai-crypto.js');
-const rawApiKey = 'AIzaSyMockSecretApiKey1234567890abcdefg';
+const rawApiKey = 'test-mock-api-key-1234567890abcdefghijklmnop';
 const encKey = encryptSecret(rawApiKey, testPassphrase);
 assert(encKey !== rawApiKey, 'Encrypted key must not equal raw key');
 const decKey = decryptSecret(encKey, testPassphrase);
 assert.strictEqual(decKey, rawApiKey, 'Decrypted key must match raw key');
 const masked = maskApiKey(rawApiKey);
-assert(masked.startsWith('AIzaSy'), 'Masked key should retain prefix');
+assert(masked.startsWith('test-m'), 'Masked key should retain prefix');
 assert(masked.includes('****'), 'Masked key must contain asterisks');
-assert(!masked.includes('MockSecretApiKey'), 'Masked key must not expose secret payload');
+assert(!masked.includes('mock-api-key'), 'Masked key must not expose secret payload');
 console.log(`   ✅ AI Crypto & Masking passed (${masked})!\n`);
 
 // -----------------------------------------------------------------------------
