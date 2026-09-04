@@ -96,18 +96,43 @@ router.post('/ai/test-connection', requireAuth, async (req, res) => {
     const { provider, model, apiKey, baseUrl, isFallback } = req.body || {};
     const settings = localStore.getAiSettings();
 
+    const targetProvider = provider || (isFallback ? settings.fallbackProvider : settings.provider) || 'gemini';
+    const isSameProvider = targetProvider === (settings.provider || 'gemini');
+
     let resolvedKey = apiKey?.trim();
     if (!resolvedKey) {
       if (isFallback) {
-        resolvedKey = settings.fallbackApiKeyEncrypted ? decryptSecret(settings.fallbackApiKeyEncrypted) : (process.env.AI_FALLBACK_API_KEY || process.env.AI_API_KEY || '');
+        if (settings.fallbackApiKeyEncrypted) {
+          resolvedKey = decryptSecret(settings.fallbackApiKeyEncrypted);
+        } else if (process.env.AI_FALLBACK_API_KEY) {
+          resolvedKey = process.env.AI_FALLBACK_API_KEY;
+        } else if (isSameProvider) {
+          resolvedKey = settings.apiKeyEncrypted ? decryptSecret(settings.apiKeyEncrypted) : (process.env.AI_API_KEY || '');
+        }
       } else {
         resolvedKey = settings.apiKeyEncrypted ? decryptSecret(settings.apiKeyEncrypted) : (process.env.AI_API_KEY || '');
       }
     }
 
+    if (resolvedKey) {
+      resolvedKey = resolvedKey.replace(/^["']|["']$/g, '').trim();
+    }
+
+    if (targetProvider !== 'ollama' && !resolvedKey) {
+      return res.status(400).json({
+        status: 'error',
+        error: isFallback 
+          ? `Nhà cung cấp dự phòng (${targetProvider.toUpperCase()}) khác nhà cung cấp chính (${(settings.provider || '').toUpperCase()}) nên không thể dùng chung key. Vui lòng nhập API Key riêng cho ${targetProvider.toUpperCase()} vào ô bên dưới!`
+          : `Chưa có API Key cho ${targetProvider.toUpperCase()}. Vui lòng nhập API Key trước khi kiểm tra!`
+      });
+    }
+
+    const defaultModel = targetProvider === 'gemini' ? 'gemini-2.0-flash' : (targetProvider === 'zai' ? 'glm-5.3-flash' : 'deepseek-chat');
+    const targetModel = model || (isFallback ? settings.fallbackModel : settings.model) || defaultModel;
+
     const testResult = await aiAgentAdapter.testConnection({
-      provider: provider || settings.provider || 'gemini',
-      model: model || settings.model || 'gemini-2.5-flash',
+      provider: targetProvider,
+      model: targetModel,
       apiKey: resolvedKey,
       baseUrl: baseUrl || (isFallback ? settings.fallbackBaseUrl : settings.baseUrl)
     });
@@ -120,15 +145,55 @@ router.post('/ai/test-connection', requireAuth, async (req, res) => {
 });
 
 // -----------------------------------------------------------------------------
-// POST /api/ai/scan-models — Fetch Curated Models for Provider
+// POST /api/ai/scan-models — Live Model Scanner with Fallback to Curated
 // -----------------------------------------------------------------------------
-router.post('/ai/scan-models', requireAuth, (req, res) => {
-  const { provider = 'gemini' } = req.body || {};
-  const list = CURATED_MODELS[provider] || CURATED_MODELS.gemini;
-  res.json({
-    status: 'success',
-    data: list
-  });
+router.post('/ai/scan-models', requireAuth, async (req, res) => {
+  try {
+    const { provider = 'gemini', apiKey, baseUrl, isFallback } = req.body || {};
+    const settings = localStore.getAiSettings();
+
+    const targetProvider = provider || (isFallback ? settings.fallbackProvider : settings.provider) || 'gemini';
+    const isSameProvider = targetProvider === (settings.provider || 'gemini');
+
+    let resolvedKey = apiKey?.trim();
+    if (!resolvedKey) {
+      if (isFallback) {
+        if (settings.fallbackApiKeyEncrypted) {
+          resolvedKey = decryptSecret(settings.fallbackApiKeyEncrypted);
+        } else if (process.env.AI_FALLBACK_API_KEY) {
+          resolvedKey = process.env.AI_FALLBACK_API_KEY;
+        } else if (isSameProvider) {
+          resolvedKey = settings.apiKeyEncrypted ? decryptSecret(settings.apiKeyEncrypted) : (process.env.AI_API_KEY || '');
+        }
+      } else {
+        resolvedKey = settings.apiKeyEncrypted ? decryptSecret(settings.apiKeyEncrypted) : (process.env.AI_API_KEY || '');
+      }
+    }
+
+    if (resolvedKey) {
+      resolvedKey = resolvedKey.replace(/^["']|["']$/g, '').trim();
+    }
+
+    const scanResult = await aiAgentAdapter.fetchLiveModels({
+      provider: targetProvider,
+      apiKey: resolvedKey,
+      baseUrl: baseUrl || (isFallback ? settings.fallbackBaseUrl : settings.baseUrl)
+    });
+
+    res.json({
+      status: 'success',
+      data: scanResult.models,
+      isLive: scanResult.isLive,
+      count: scanResult.count || scanResult.models.length
+    });
+  } catch (err) {
+    logger.warn(`AI Scan Models failed: ${err.message}`);
+    res.json({
+      status: 'success',
+      data: CURATED_MODELS[req.body?.provider || 'gemini'] || CURATED_MODELS.gemini,
+      isLive: false
+    });
+  }
 });
 
 // -----------------------------------------------------------------------------

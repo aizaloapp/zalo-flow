@@ -2824,10 +2824,10 @@ function formatChatBubbleText(str) {
 
 const CURATED_MODELS_CLIENT = {
   gemini: [
-    { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash (Khuyên dùng - Siêu nhanh, Tiết kiệm)' },
-    { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro (Tư duy sâu, Bán hàng phức tạp)' },
-    { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash' },
-    { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash' }
+    { id: 'gemini-3.6-flash', name: 'Gemini 3.6 Flash (Khuyên dùng - Siêu nhanh, Chuẩn Google)' },
+    { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash' },
+    { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash' },
+    { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro' }
   ],
   deepseek: [
     { id: 'deepseek-chat', name: 'DeepSeek V3 (Chat) — Thông minh & Rẻ' },
@@ -2977,6 +2977,23 @@ function renderAiSettingsUI() {
 
   const fallbackKeyInput = document.getElementById('ai-fallback-apikey-input');
   if (fallbackKeyInput) fallbackKeyInput.value = '';
+
+  const fallbackKeyLabel = document.getElementById('ai-fallback-key-status-label');
+  if (fallbackKeyLabel) {
+    const isSame = (aiSettingsState.fallbackProvider || 'deepseek') === (aiSettingsState.provider || 'gemini');
+    if (aiSettingsState.hasFallbackApiKey) {
+      fallbackKeyLabel.innerText = `Đã lưu key: ${aiSettingsState.maskedFallbackApiKey}`;
+      fallbackKeyLabel.style.color = '#34d399';
+    } else if (isSame) {
+      fallbackKeyLabel.innerText = '(Cùng nhà cung cấp: dùng chung key)';
+      fallbackKeyLabel.style.color = '#38bdf8';
+    } else {
+      fallbackKeyLabel.innerText = '(Chưa có key dự phòng riêng)';
+      fallbackKeyLabel.style.color = '#f59e0b';
+    }
+  }
+
+  updateAiKeyHelperHints();
 
   // Tab 4: Scope & Rules
   const adminCooldown = document.getElementById('ai-admin-cooldown');
@@ -3269,6 +3286,37 @@ function populateModelOptions(selectEl, provider, selectedModel) {
   `).join('');
 }
 
+function getProviderKeyHelp(provider) {
+  switch (provider) {
+    case 'gemini':
+      return '💡 <b>Google Gemini:</b> Miễn phí 100%, lấy key tại <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color: #38bdf8; text-decoration: underline;">Google AI Studio</a> (Key bắt đầu bằng <code>AIzaSy...</code>)';
+    case 'zai':
+      return '💡 <b>Z.AI GLM:</b> Lấy key tại <a href="https://open.bigmodel.cn/usercenter/apikeys" target="_blank" style="color: #38bdf8; text-decoration: underline;">BigModel.cn</a> hoặc <a href="https://z.ai" target="_blank" style="color: #38bdf8; text-decoration: underline;">Z.AI</a>';
+    case 'deepseek':
+      return '💡 <b>DeepSeek:</b> Cực rẻ, lấy key tại <a href="https://platform.deepseek.com/api_keys" target="_blank" style="color: #38bdf8; text-decoration: underline;">DeepSeek Platform</a> (bắt đầu bằng <code>sk-...</code>)';
+    case 'groq':
+      return '💡 <b>Groq:</b> Miễn phí siêu tốc, lấy key tại <a href="https://console.groq.com/keys" target="_blank" style="color: #38bdf8; text-decoration: underline;">Groq Console</a> (bắt đầu bằng <code>gsk_...</code>)';
+    case 'openai':
+      return '💡 <b>OpenAI:</b> Lấy key tại <a href="https://platform.openai.com/api-keys" target="_blank" style="color: #38bdf8; text-decoration: underline;">OpenAI Dashboard</a> (bắt đầu bằng <code>sk-proj-...</code>)';
+    case 'openrouter':
+      return '💡 <b>OpenRouter:</b> Lấy key tổng hợp tại <a href="https://openrouter.ai/keys" target="_blank" style="color: #38bdf8; text-decoration: underline;">OpenRouter.ai</a>';
+    case 'ollama':
+      return '💡 <b>Ollama:</b> Chạy offline nội bộ trên máy, không cần API Key';
+    default:
+      return '';
+  }
+}
+
+function updateAiKeyHelperHints() {
+  const primaryProvider = document.getElementById('ai-provider-select')?.value || 'gemini';
+  const primaryHelper = document.getElementById('ai-primary-key-helper');
+  if (primaryHelper) primaryHelper.innerHTML = getProviderKeyHelp(primaryProvider);
+
+  const fallbackProvider = document.getElementById('ai-fallback-provider-select')?.value || 'deepseek';
+  const fallbackHelper = document.getElementById('ai-fallback-key-helper');
+  if (fallbackHelper) fallbackHelper.innerHTML = getProviderKeyHelp(fallbackProvider);
+}
+
 function handleProviderTypeChange(provider) {
   const modelSelect = document.getElementById('ai-model-select');
   populateModelOptions(modelSelect, provider);
@@ -3282,11 +3330,48 @@ function handleProviderTypeChange(provider) {
     else if (provider === 'openrouter') baseUrlInput.value = 'https://openrouter.ai/api/v1';
     else baseUrlInput.value = '';
   }
+
+  updateAiKeyHelperHints();
+
+  // Re-check fallback label because relationship between primary and fallback might change
+  const fallbackProvider = document.getElementById('ai-fallback-provider-select')?.value || 'deepseek';
+  const fallbackKeyLabel = document.getElementById('ai-fallback-key-status-label');
+  if (fallbackKeyLabel) {
+    const isSame = fallbackProvider === provider;
+    if (aiSettingsState.hasFallbackApiKey) {
+      fallbackKeyLabel.innerText = `Đã lưu key: ${aiSettingsState.maskedFallbackApiKey}`;
+      fallbackKeyLabel.style.color = '#34d399';
+    } else if (isSame) {
+      fallbackKeyLabel.innerText = '(Cùng nhà cung cấp: dùng chung key)';
+      fallbackKeyLabel.style.color = '#38bdf8';
+    } else {
+      fallbackKeyLabel.innerText = '(Khác nhà cung cấp: Cần nhập key riêng)';
+      fallbackKeyLabel.style.color = '#f59e0b';
+    }
+  }
 }
 
 function handleFallbackProviderChange(provider) {
   const modelSelect = document.getElementById('ai-fallback-model-select');
   populateModelOptions(modelSelect, provider);
+
+  const primaryProvider = document.getElementById('ai-provider-select')?.value || 'gemini';
+  const fallbackKeyLabel = document.getElementById('ai-fallback-key-status-label');
+  if (fallbackKeyLabel) {
+    const isSame = provider === primaryProvider;
+    if (aiSettingsState.hasFallbackApiKey) {
+      fallbackKeyLabel.innerText = `Đã lưu key: ${aiSettingsState.maskedFallbackApiKey}`;
+      fallbackKeyLabel.style.color = '#34d399';
+    } else if (isSame) {
+      fallbackKeyLabel.innerText = '(Cùng nhà cung cấp: dùng chung key)';
+      fallbackKeyLabel.style.color = '#38bdf8';
+    } else {
+      fallbackKeyLabel.innerText = '(Khác nhà cung cấp: Cần nhập key riêng)';
+      fallbackKeyLabel.style.color = '#f59e0b';
+    }
+  }
+
+  updateAiKeyHelperHints();
 }
 
 function toggleFallbackFieldsUI() {
@@ -3298,6 +3383,7 @@ function toggleFallbackFieldsUI() {
     badge.innerText = isChecked ? 'Đã bật' : 'Tắt';
     badge.className = `ai-hub-badge ${isChecked ? 'success' : ''}`;
   }
+  updateAiKeyHelperHints();
 }
 
 function toggleAiKeyVisibility(inputId) {
@@ -3318,12 +3404,37 @@ async function testAiHubConnection(isFallback = false) {
   const model = isFallback 
     ? document.getElementById('ai-fallback-model-select')?.value 
     : document.getElementById('ai-model-select')?.value;
-  const apiKey = isFallback 
+  const rawApiKey = isFallback 
     ? document.getElementById('ai-fallback-apikey-input')?.value 
     : document.getElementById('ai-apikey-input')?.value;
+  const apiKey = (rawApiKey || '').trim().replace(/^["']|["']$/g, '');
   const baseUrl = isFallback 
     ? '' 
     : document.getElementById('ai-baseurl-input')?.value;
+
+  const primaryProvider = document.getElementById('ai-provider-select')?.value || 'gemini';
+
+  // Pre-flight check 1: Google Gemini key validation
+  if (provider === 'gemini' && apiKey && !apiKey.startsWith('AIzaSy')) {
+    alert("⚠️ [Lỗi định dạng API Key Google Gemini]:\n\nAPI Key của Google Gemini bắt buộc phải bắt đầu bằng 'AIzaSy' (lấy miễn phí tại https://aistudio.google.com/app/apikey).\n\nKey bạn vừa nhập dường như thuộc nhà cung cấp khác (như Z.AI, OpenAI) hoặc do trình duyệt tự động điền mật khẩu đăng nhập. Vui lòng dán đúng API Key của Gemini!");
+    return;
+  }
+
+  // Pre-flight check 2: Fallback key requirement when provider differs
+  if (isFallback && provider !== 'ollama') {
+    const isDifferentProvider = provider !== primaryProvider;
+    const hasExistingFallbackKey = Boolean(aiSettingsState.hasFallbackApiKey);
+    if (isDifferentProvider && !apiKey && !hasExistingFallbackKey) {
+      alert(`⚠️ [Chưa có API Key dự phòng]:\n\nNhà cung cấp dự phòng (${provider.toUpperCase()}) khác với nhà cung cấp chính (${primaryProvider.toUpperCase()}) nên không thể dùng chung key.\n\nVui lòng nhập API Key của ${provider.toUpperCase()} vào ô "API Key dự phòng" trước khi bấm kiểm tra!`);
+      return;
+    }
+  }
+
+  // Pre-flight check 3: Primary key requirement
+  if (!isFallback && provider !== 'ollama' && !apiKey && !aiSettingsState.hasApiKey) {
+    alert(`⚠️ Vui lòng nhập API Key cho ${provider.toUpperCase()} vào ô bên dưới trước khi bấm kiểm tra!`);
+    return;
+  }
 
   if (badge) {
     badge.innerText = '⏳ Đang kiểm tra...';
@@ -3364,28 +3475,52 @@ async function testAiHubConnection(isFallback = false) {
 }
 
 async function scanAvailableModels(isFallback = false) {
+  const btn = document.getElementById(isFallback ? 'btn-scan-fallback' : 'btn-scan-primary') 
+    || (!isFallback ? document.querySelector('button[onclick="scanAvailableModels(false)"]') : null);
   const provider = isFallback 
     ? document.getElementById('ai-fallback-provider-select')?.value 
     : document.getElementById('ai-provider-select')?.value;
   const modelSelect = isFallback 
     ? document.getElementById('ai-fallback-model-select') 
     : document.getElementById('ai-model-select');
+  const rawApiKey = isFallback 
+    ? document.getElementById('ai-fallback-apikey-input')?.value 
+    : document.getElementById('ai-apikey-input')?.value;
+  const apiKey = (rawApiKey || '').trim().replace(/^["']|["']$/g, '');
+  const baseUrl = isFallback 
+    ? '' 
+    : document.getElementById('ai-baseurl-input')?.value;
+
+  if (btn) btn.innerText = '⏳ Đang quét...';
 
   try {
     const res = await fetch('/api/ai/scan-models', {
       method: 'POST',
       headers: getHeaders(),
-      body: JSON.stringify({ provider })
+      body: JSON.stringify({ provider, apiKey, baseUrl, isFallback })
     });
     const result = await res.json();
-    if (result.data && Array.isArray(result.data)) {
+    if (result.data && Array.isArray(result.data) && result.data.length > 0) {
+      const currentVal = modelSelect.value;
       modelSelect.innerHTML = result.data.map(m => `
         <option value="${m.id}">${escapeHtml(m.name)}</option>
       `).join('');
-      showToast(`🔄 Đã cập nhật danh sách model cho ${provider}`, 'info');
+
+      // Keep selection if still in list, or select first one
+      if (result.data.some(m => m.id === currentVal)) {
+        modelSelect.value = currentVal;
+      }
+
+      if (result.isLive) {
+        showToast(`✅ Quét thành công ${result.count || result.data.length} model đang hoạt động từ ${provider.toUpperCase()}!`, 'info');
+      } else {
+        showToast(`🔄 Đã nạp danh sách model đề xuất cho ${provider.toUpperCase()}`, 'info');
+      }
     }
   } catch (err) {
     alert('Lỗi quét model: ' + err.message);
+  } finally {
+    if (btn) btn.innerText = '🔄 Quét Model';
   }
 }
 

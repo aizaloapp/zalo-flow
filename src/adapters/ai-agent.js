@@ -6,10 +6,10 @@ import { decryptSecret } from '../utils/ai-crypto.js';
 
 export const CURATED_MODELS = {
   gemini: [
-    { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash (Khuyên dùng - Siêu nhanh, Tiết kiệm)' },
-    { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro (Tư duy sâu, Bán hàng phức tạp)' },
-    { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash' },
-    { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash' }
+    { id: 'gemini-3.6-flash', name: 'Gemini 3.6 Flash (Khuyên dùng - Siêu nhanh, Chuẩn Google)' },
+    { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash' },
+    { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash' },
+    { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro' }
   ],
   deepseek: [
     { id: 'deepseek-chat', name: 'DeepSeek V3 (Chat) — Cực kỳ thông minh & Rẻ' },
@@ -627,11 +627,17 @@ ${scope || `1. Tuyệt đối không bịa đặt số tài khoản ngân hàng,
       logger.warn(`⚠️ [AI Auto-Fallback Triggered] Primary model ${primaryProvider}:${primaryModel} failed: ${primaryErr.message}`);
 
       if (settings.fallbackEnabled) {
-        const fallbackProvider = settings.fallbackProvider || 'openai';
+        const fallbackProvider = settings.fallbackProvider || 'deepseek';
         const fallbackModel = settings.fallbackModel || 'deepseek-chat';
-        const fallbackKey = this._resolveApiKey(settings.fallbackApiKeyEncrypted, 'AI_FALLBACK_API_KEY') || primaryKey;
+        const isSameProvider = fallbackProvider === primaryProvider;
+        const fallbackKey = this._resolveApiKey(settings.fallbackApiKeyEncrypted, 'AI_FALLBACK_API_KEY') || (isSameProvider ? primaryKey : '');
         const fallbackBaseUrl = settings.fallbackBaseUrl || '';
         const fallbackTimeout = Math.max(Number(settings.fallbackTimeoutMs || 30000), 30000);
+
+        if (!fallbackKey && fallbackProvider !== 'ollama') {
+          logger.warn(`⚠️ [AI Auto-Fallback] Bỏ qua Fallback: Nhà cung cấp dự phòng (${fallbackProvider}) khác nhà cung cấp chính (${primaryProvider}) và chưa được cài đặt API Key riêng.`);
+          throw primaryErr;
+        }
 
         logger.info(`🛡️ [AI Auto-Fallback] Switching to fallback provider: ${fallbackProvider}:${fallbackModel}...`);
         return await this.callProvider({
@@ -693,7 +699,21 @@ ${scope || `1. Tuyệt đối không bịa đặt số tài khoản ngân hàng,
    * Google Gemini REST Native API
    */
   async _callGeminiNative({ model, apiKey, systemPrompt, history = [], userMessage, timeoutMs = 35000 }) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+    if (!apiKey || typeof apiKey !== 'string' || !apiKey.trim()) {
+      throw new Error('Chưa cung cấp API Key cho Google Gemini. Vui lòng lấy key miễn phí tại https://aistudio.google.com/app/apikey');
+    }
+
+    const cleanKey = apiKey.trim().replace(/^["']|["']$/g, '');
+    if (!cleanKey.startsWith('AIzaSy')) {
+      throw new Error(`[Lỗi định dạng API Key]: API Key của Google Gemini bắt buộc phải bắt đầu bằng "AIzaSy" (gồm 39 ký tự). Bạn đang nhập key không khớp với Google Gemini (hoặc do trình duyệt tự động điền mật khẩu). Vui lòng lấy API Key miễn phí tại https://aistudio.google.com/app/apikey`);
+    }
+
+    // Auto-map deprecated Gemini model names to the Google-recommended model
+    let cleanModel = (model || 'gemini-3.6-flash').trim();
+    if (cleanModel === 'gemini-2.0-flash') cleanModel = 'gemini-3.6-flash';
+    if (cleanModel === 'gemini-2.0-flash-exp') cleanModel = 'gemini-3.6-flash';
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${cleanModel}:generateContent?key=${cleanKey}`;
 
     const contents = [];
     for (const msg of history) {
@@ -741,6 +761,16 @@ ${scope || `1. Tuyệt đối không bịa đặt số tài khoản ngân hàng,
    * OpenAI-Compatible Endpoint (OpenAI, DeepSeek, Z.AI, Groq, OpenRouter, Ollama)
    */
   async _callOpenAiCompatible({ provider, model, apiKey, baseUrl, systemPrompt, history = [], userMessage, timeoutMs = 35000 }) {
+    const cleanKey = (apiKey || '').trim().replace(/^["']|["']$/g, '');
+    if (provider !== 'ollama') {
+      if (!cleanKey) {
+        throw new Error(`API Key is required for AI Provider: ${provider}`);
+      }
+      if (cleanKey.startsWith('AIzaSy')) {
+        throw new Error(`[Lỗi nhầm lẫn API Key]: Bạn đang nhập API Key của Google Gemini (bắt đầu bằng AIzaSy) vào nhà cung cấp ${provider.toUpperCase()}. Mỗi nhà cung cấp yêu cầu API Key riêng biệt!`);
+      }
+    }
+
     let endpoint = baseUrl?.trim();
     if (!endpoint) {
       if (provider === 'deepseek') endpoint = 'https://api.deepseek.com/v1';
@@ -776,8 +806,8 @@ ${scope || `1. Tuyệt đối không bịa đặt số tài khoản ngân hàng,
     const headers = {
       'Content-Type': 'application/json'
     };
-    if (apiKey) {
-      headers['Authorization'] = `Bearer ${apiKey}`;
+    if (cleanKey) {
+      headers['Authorization'] = `Bearer ${cleanKey}`;
     }
 
     try {
@@ -833,6 +863,78 @@ ${scope || `1. Tuyệt đối không bịa đặt số tài khoản ngân hàng,
       latencyMs,
       reply: response.trim()
     };
+  }
+
+  /**
+   * Live Model Scanner (Quét Model Trực Tiếp Từ Nhà Cung Cấp)
+   */
+  async fetchLiveModels({ provider, apiKey, baseUrl, timeoutMs = 8000 }) {
+    const cleanKey = (apiKey || '').trim().replace(/^["']|["']$/g, '');
+    const curatedFallback = CURATED_MODELS[provider] || CURATED_MODELS.gemini;
+
+    if (!cleanKey && provider !== 'ollama') {
+      return { models: curatedFallback, isLive: false, reason: 'Chưa có API Key, hiển thị danh mục mặc định' };
+    }
+
+    try {
+      if (provider === 'gemini') {
+        const res = await axios.get(`https://generativelanguage.googleapis.com/v1beta/models?key=${cleanKey}`, {
+          timeout: timeoutMs
+        });
+        const list = res.data?.models || [];
+        const filtered = list
+          .filter(m => m.supportedGenerationMethods && m.supportedGenerationMethods.includes('generateContent'))
+          .map(m => {
+            const id = m.name.replace(/^models\//, '');
+            const isFlash = id.includes('flash');
+            const isPro = id.includes('pro');
+            let badge = isFlash ? '⚡ Siêu nhanh' : (isPro ? '🧠 Tư duy sâu' : '');
+            return {
+              id,
+              name: `${m.displayName || id}${badge ? ` (${badge})` : ''}`,
+              isFlash
+            };
+          });
+
+        if (filtered.length > 0) {
+          // Sort flash models to the top
+          filtered.sort((a, b) => (b.isFlash ? 1 : 0) - (a.isFlash ? 1 : 0));
+          return { models: filtered, isLive: true, count: filtered.length };
+        }
+      } else {
+        // OpenAI-compatible endpoint
+        let endpoint = (baseUrl || '').trim();
+        if (!endpoint) {
+          if (provider === 'deepseek') endpoint = 'https://api.deepseek.com/v1';
+          else if (provider === 'zai') endpoint = 'https://api.z.ai/api/coding/paas/v4';
+          else if (provider === 'groq') endpoint = 'https://api.groq.com/openai/v1';
+          else if (provider === 'openrouter') endpoint = 'https://openrouter.ai/api/v1';
+          else if (provider === 'ollama') endpoint = 'http://localhost:11434/v1';
+          else endpoint = 'https://api.openai.com/v1';
+        }
+        endpoint = endpoint.replace(/\/+$/, '') + '/models';
+
+        const headers = {};
+        if (cleanKey) headers['Authorization'] = `Bearer ${cleanKey}`;
+
+        const res = await axios.get(endpoint, { headers, timeout: timeoutMs });
+        const rawList = res.data?.data || res.data?.models || (Array.isArray(res.data) ? res.data : []);
+        if (Array.isArray(rawList) && rawList.length > 0) {
+          const list = rawList.map(m => {
+            const id = typeof m === 'string' ? m : (m.id || m.name);
+            return {
+              id,
+              name: id
+            };
+          });
+          return { models: list, isLive: true, count: list.length };
+        }
+      }
+    } catch (err) {
+      logger.warn(`[Live Model Scan] Failed to scan models from ${provider}: ${err.message}. Falling back to curated list.`);
+    }
+
+    return { models: curatedFallback, isLive: false };
   }
 }
 

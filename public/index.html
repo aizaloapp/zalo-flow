@@ -954,9 +954,10 @@
                   <span id="ai-key-status-label" style="font-size: 0.72rem; color: #94a3b8;">Chưa nhập key</span>
                 </div>
                 <div style="display: flex; gap: 6px;">
-                  <input type="password" class="form-input" id="ai-apikey-input" placeholder="Nhập API Key mới để lưu hoặc để trống nếu đã có...">
+                  <input type="password" class="form-input" id="ai-apikey-input" placeholder="Nhập API Key mới để lưu hoặc để trống nếu đã có..." autocomplete="new-password">
                   <button type="button" class="filter-btn" onclick="toggleAiKeyVisibility('ai-apikey-input')" style="padding: 6px 10px;">👁️</button>
                 </div>
+                <div id="ai-primary-key-helper" style="font-size: 0.71rem; color: #38bdf8; margin-top: 4px;"></div>
               </div>
 
               <div class="form-group" style="margin-bottom: 10px;">
@@ -965,7 +966,7 @@
               </div>
 
               <div style="display: flex; justify-content: flex-end; gap: 8px;">
-                <button type="button" class="filter-btn" onclick="scanAvailableModels(false)" style="font-size: 0.76rem; padding: 4px 10px;">🔄 Quét Model</button>
+                <button type="button" class="filter-btn" id="btn-scan-primary" onclick="scanAvailableModels(false)" style="font-size: 0.76rem; padding: 4px 10px;">🔄 Quét Model</button>
                 <button type="button" class="filter-btn" id="btn-ping-primary" onclick="testAiHubConnection(false)" style="font-size: 0.76rem; padding: 4px 12px; color: #38bdf8; font-weight: 700;">
                   ⚡ Test Kết Nối Trực Tiếp (Live Ping)
                 </button>
@@ -1007,14 +1008,19 @@
                 </div>
 
                 <div class="form-group" style="margin-bottom: 0;">
-                  <label class="form-label" style="font-size: 0.74rem;">API Key dự phòng (Nếu khác Model chính):</label>
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <label class="form-label" style="font-size: 0.74rem;">API Key dự phòng (Bắt buộc nếu khác Nhà cung cấp):</label>
+                    <span id="ai-fallback-key-status-label" style="font-size: 0.72rem; color: #94a3b8;">Chưa có key dự phòng</span>
+                  </div>
                   <div style="display: flex; gap: 6px;">
-                    <input type="password" class="form-input" id="ai-fallback-apikey-input" placeholder="Nhập API Key dự phòng...">
+                    <input type="password" class="form-input" id="ai-fallback-apikey-input" placeholder="Nhập API Key dự phòng..." autocomplete="new-password">
                     <button type="button" class="filter-btn" onclick="toggleAiKeyVisibility('ai-fallback-apikey-input')" style="padding: 6px 10px;">👁️</button>
                   </div>
+                  <div id="ai-fallback-key-helper" style="font-size: 0.71rem; color: #34d399; margin-top: 4px;"></div>
                 </div>
 
-                <div style="display: flex; justify-content: flex-end;">
+                <div style="display: flex; justify-content: flex-end; gap: 8px;">
+                  <button type="button" class="filter-btn" id="btn-scan-fallback" onclick="scanAvailableModels(true)" style="font-size: 0.76rem; padding: 4px 10px;">🔄 Quét Model</button>
                   <button type="button" class="filter-btn" id="btn-ping-fallback" onclick="testAiHubConnection(true)" style="font-size: 0.76rem; padding: 4px 12px; color: #34d399; font-weight: 700;">
                     ⚡ Test Kết Nối Model Dự Phòng
                   </button>
