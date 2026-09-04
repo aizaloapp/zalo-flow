@@ -567,7 +567,7 @@ ${scope || `1. Tuyệt đối không bịa đặt số tài khoản ngân hàng,
     const primaryModel = settings.model || 'gemini-2.5-flash';
     const primaryKey = this._resolveApiKey(settings.apiKeyEncrypted, 'AI_API_KEY');
     const primaryBaseUrl = settings.baseUrl || '';
-    const primaryTimeout = Number(settings.timeoutMs || 15000);
+    const primaryTimeout = Math.max(Number(settings.timeoutMs || 35000), 35000);
 
     try {
       return await this.callProvider({
@@ -588,7 +588,7 @@ ${scope || `1. Tuyệt đối không bịa đặt số tài khoản ngân hàng,
         const fallbackModel = settings.fallbackModel || 'deepseek-chat';
         const fallbackKey = this._resolveApiKey(settings.fallbackApiKeyEncrypted, 'AI_FALLBACK_API_KEY') || primaryKey;
         const fallbackBaseUrl = settings.fallbackBaseUrl || '';
-        const fallbackTimeout = Number(settings.fallbackTimeoutMs || 12000);
+        const fallbackTimeout = Math.max(Number(settings.fallbackTimeoutMs || 30000), 30000);
 
         logger.info(`🛡️ [AI Auto-Fallback] Switching to fallback provider: ${fallbackProvider}:${fallbackModel}...`);
         return await this.callProvider({
@@ -610,7 +610,7 @@ ${scope || `1. Tuyệt đối không bịa đặt số tài khoản ngân hàng,
   /**
    * Low-level Universal Provider Dispatcher
    */
-  async callProvider({ provider, model, apiKey, baseUrl, systemPrompt, history = [], userMessage, timeoutMs = 15000 }) {
+  async callProvider({ provider, model, apiKey, baseUrl, systemPrompt, history = [], userMessage, timeoutMs = 35000 }) {
     if (provider !== 'ollama' && !apiKey) {
       throw new Error(`API Key is required for AI Provider: ${provider}`);
     }
@@ -649,7 +649,7 @@ ${scope || `1. Tuyệt đối không bịa đặt số tài khoản ngân hàng,
   /**
    * Google Gemini REST Native API
    */
-  async _callGeminiNative({ model, apiKey, systemPrompt, history = [], userMessage, timeoutMs = 15000 }) {
+  async _callGeminiNative({ model, apiKey, systemPrompt, history = [], userMessage, timeoutMs = 35000 }) {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
     const contents = [];
@@ -697,7 +697,7 @@ ${scope || `1. Tuyệt đối không bịa đặt số tài khoản ngân hàng,
   /**
    * OpenAI-Compatible Endpoint (OpenAI, DeepSeek, Z.AI, Groq, OpenRouter, Ollama)
    */
-  async _callOpenAiCompatible({ provider, model, apiKey, baseUrl, systemPrompt, history = [], userMessage, timeoutMs = 15000 }) {
+  async _callOpenAiCompatible({ provider, model, apiKey, baseUrl, systemPrompt, history = [], userMessage, timeoutMs = 35000 }) {
     let endpoint = baseUrl?.trim();
     if (!endpoint) {
       if (provider === 'deepseek') endpoint = 'https://api.deepseek.com/v1';

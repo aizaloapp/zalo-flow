@@ -472,8 +472,9 @@ export class LocalStore extends EventEmitter {
     const isRecalled = msg.isRecalled ? 1 : 0;
 
     // Check if message already exists in DB
-    const existingMsg = this.db.prepare('SELECT id FROM messages WHERE id = ?').get(id);
+    const existingMsg = this.db.prepare('SELECT id, isBot FROM messages WHERE id = ?').get(id);
     const isNew = !existingMsg;
+    const finalIsBot = (msg.isBot ? 1 : 0) || (existingMsg?.isBot ? 1 : 0);
 
     const existing = this.getConversation(threadId);
 
@@ -481,7 +482,7 @@ export class LocalStore extends EventEmitter {
     let newUnread = existing?.unreadCount ?? 0;
     const shouldIncrement = (countUnread !== null)
       ? Boolean(countUnread)
-      : (!silent && !isHistory && isNew && !isSelf && !isBot);
+      : (!silent && !isHistory && isNew && !isSelf && !finalIsBot);
 
     if (shouldIncrement) {
       newUnread = (existing?.unreadCount || 0) + 1;
@@ -502,7 +503,7 @@ export class LocalStore extends EventEmitter {
         (id, threadId, senderId, senderName, text, isSelf, isBot, timestamp, mediaType, mediaUrl, quoteText, quoteSender, reactions, cliMsgId, status, isRecalled)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
-    insertStmt.run(id, threadId, senderId, senderName, text, isSelf, isBot, timestamp, mediaType, mediaUrl, quoteText, quoteSender, reactions, cliMsgId, status, isRecalled);
+    insertStmt.run(id, threadId, senderId, senderName, text, isSelf, finalIsBot, timestamp, mediaType, mediaUrl, quoteText, quoteSender, reactions, cliMsgId, status, isRecalled);
 
     const savedMsg = {
       id,
@@ -1139,13 +1140,13 @@ export class LocalStore extends EventEmitter {
       model: 'gemini-2.5-flash',
       baseUrl: '',
       apiKeyEncrypted: '',
-      timeoutMs: 15000,
+      timeoutMs: 35000,
       fallbackEnabled: 0,
       fallbackProvider: 'openai',
       fallbackModel: 'deepseek-chat',
       fallbackBaseUrl: 'https://api.deepseek.com/v1',
       fallbackApiKeyEncrypted: '',
-      fallbackTimeoutMs: 12000,
+      fallbackTimeoutMs: 30000,
       soulPrompt: '',
       memoryPrompt: '',
       fewShotPrompt: '',
@@ -1216,13 +1217,13 @@ export class LocalStore extends EventEmitter {
       updated.model || 'gemini-2.5-flash',
       updated.baseUrl || '',
       updated.apiKeyEncrypted || '',
-      Number(updated.timeoutMs || 15000),
+      Number(updated.timeoutMs || 35000),
       updated.fallbackEnabled ? 1 : 0,
       updated.fallbackProvider || 'openai',
       updated.fallbackModel || 'deepseek-chat',
       updated.fallbackBaseUrl || '',
       updated.fallbackApiKeyEncrypted || '',
-      Number(updated.fallbackTimeoutMs || 12000),
+      Number(updated.fallbackTimeoutMs || 30000),
       updated.soulPrompt || '',
       updated.memoryPrompt || '',
       updated.fewShotPrompt || '',
