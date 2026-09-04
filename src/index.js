@@ -199,7 +199,7 @@ app.post('/api/conversations/:threadId/sync', requireAuth, async (req, res) => {
 
 // POST /api/send-message (Send message from Web UI / Admin API)
 app.post('/api/send-message', requireAuth, async (req, res) => {
-  const { recipientId, message, isGroup = false } = req.body;
+  const { recipientId, message, isGroup = false, isBot = false } = req.body;
   if (!recipientId || !message) {
     return res.status(400).json({ error: 'recipientId và message là bắt buộc.' });
   }
@@ -209,7 +209,10 @@ app.post('/api/send-message', requireAuth, async (req, res) => {
   }
 
   try {
-    const result = await zaloClient.sendMessage(recipientId, message, Boolean(isGroup));
+    const result = await zaloClient.sendMessage(recipientId, message, Boolean(isGroup), {
+      isBot: Boolean(isBot),
+      senderName: isBot ? 'Bot AI (Tự động)' : 'Admin (Bạn)'
+    });
     res.json({ status: 'success', result });
   } catch (err) {
     logger.error(`Failed to send message to ${recipientId}: ${err.message}`);

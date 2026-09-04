@@ -202,9 +202,11 @@ export class AiAgentAdapter extends BaseAdapter {
       // Compile System Prompt with 4 Layers + Customer Context
       const systemPrompt = this.compilePrompt(settings, customerContext);
 
-      // Get recent conversation history (last 8 messages) for Multi-turn context
-      const rawHistory = this.localStore.getMessages(threadId, { limit: 8 }) || [];
-      const history = rawHistory.reverse();
+      // Get recent conversation history (last 10 messages) for Multi-turn context
+      // Note: localStore.getMessages already returns chronological order (ASC: oldest -> newest).
+      // Filter out the current incoming message to prevent duplicating it in history and userMessage.
+      const rawHistory = this.localStore.getMessages(threadId, { limit: 10 }) || [];
+      const history = rawHistory.filter(m => m.text !== incomingText);
 
       logger.info(`🧠 [AI Engine] Generating reply for ${threadId} (Context: ${history.length} msgs, Customer: "${customerContext.name || 'Khách'}") via ${settings.provider}:${settings.model}...`);
 
