@@ -211,7 +211,7 @@ export class AiAgentAdapter extends BaseAdapter {
       const replyText = await this.callModelWithFallback(systemPrompt, history, incomingText, settings, { senderName: customerContext.name });
 
       if (replyText && replyText.trim()) {
-        const cleanedReply = replyText.trim();
+        const cleanedReply = this.cleanForZalo(replyText);
         if (client && typeof client.sendMessage === 'function') {
           await client.sendMessage(threadId, cleanedReply, isGroup, {
             isBot: true,
@@ -223,6 +223,44 @@ export class AiAgentAdapter extends BaseAdapter {
     } catch (err) {
       logger.error(`❌ [AI Engine Error] Auto-reply failed for ${threadId}: ${err.message}`);
     }
+  }
+
+  /**
+   * Clean and normalize raw text for Zalo Mobile and Desktop chat
+   * Zalo chat does not render Markdown (*, **, #, `), so convert them to clean mobile text
+   */
+  cleanForZalo(text) {
+    if (!text) return '';
+    let cleaned = String(text);
+
+    // 1. Convert markdown headers (### Header -> 📌 Header)
+    cleaned = cleaned.replace(/^#{1,6}\s*(.+)$/gm, '\n📌 $1');
+
+    // 2. Headings on their own line wrapped in ** (e.g. **Bước 1: Chuẩn bị**) -> 🔹 Bước 1: Chuẩn bị
+    cleaned = cleaned.replace(/^\s*\*\*(Bước \d+[^:*]*[:*]*)\*\*\s*$/gim, '\n🔹 $1');
+    cleaned = cleaned.replace(/^\s*\*\*([^*\n]+)\*\*\s*$/gm, '\n🔹 $1');
+
+    // 3. Remove inline bold **text** or __text__
+    cleaned = cleaned.replace(/\*\*([^*]+)\*\*/g, '$1');
+    cleaned = cleaned.replace(/__([^_]+)__/g, '$1');
+
+    // 4. Remove inline italic *text* or _text_
+    cleaned = cleaned.replace(/(^|[^\s*])\*([^*\n]+)\*([^\s*]|$)/g, '$1$2$3');
+    cleaned = cleaned.replace(/(^|[^_\w])_([^_]+)_([^_\w]|$)/g, '$1$2$3');
+
+    // 5. Code blocks ```lang\ncode\n``` -> code
+    cleaned = cleaned.replace(/```[\w-]*\n?([\s\S]*?)```/g, '$1');
+
+    // 6. Inline code `code` -> code
+    cleaned = cleaned.replace(/`([^`]+)`/g, '$1');
+
+    // 7. Markdown links [text](url) -> text (url)
+    cleaned = cleaned.replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, '$1 ($2)');
+
+    // 8. Normalize multiple empty lines to max 2 newlines
+    cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
+
+    return cleaned.trim();
   }
 
   /**
@@ -282,9 +320,12 @@ export class AiAgentAdapter extends BaseAdapter {
 3. Không xưng hô robot, giữ câu từ ngắn gọn, phù hợp với văn hóa nhắn tin Zalo (1-3 câu/tin nhắn).`;
 
     const formatRules = `
-### [QUY TẮC ĐỊNH DẠNG TIN NHẮN ZALO]:
-- Hãy xuống dòng rõ ràng giữa các ý, dùng gạch đầu dòng dấu gạch ngang (-) hoặc chấm tròn (•) để tin nhắn thoáng mắt, dễ đọc trên điện thoại.
-- Giữ câu trả lời tự nhiên, ngắn gọn (1-3 câu hoặc danh sách ngắn), không viết dính chùm thành một khối chữ dài.`;
+### [QUY TẮC ĐỊNH DẠNG TIN NHẮN ZALO (BẮT BUỘC)]:
+1. Ứng dụng Zalo KHÔNG hỗ trợ hiển thị Markdown. TUYỆT ĐỐI KHÔNG dùng các ký tự markdown như: dấu sao đôi (**chữ in đậm**), dấu sao đơn (*chữ nghiêng*), dấu gạch dưới (__chữ__), dấu thăng (### Tiêu đề), hay dấu backtick (\`code\`).
+2. Khi muốn NHẤN MẠNH từ khóa hoặc làm nổi bật tiêu đề, hãy:
+   - VIẾT HOA TỪ KHÓA QUAN TRỌNG (ví dụ: BƯỚC 1: CHUẨN BỊ, LƯU Ý, HOÀN TOÀN MIỄN PHÍ).
+   - Sử dụng các biểu tượng icon sinh động ở đầu dòng (ví dụ: 🔹 Bước 1, 👉 Chú ý, 💡 Mẹo nhỏ).
+3. Luôn xuống dòng thoáng giữa các đoạn, dùng gạch đầu dòng (-) hoặc (•) cho các danh sách liệt kê để tin nhắn trên điện thoại Zalo dễ đọc nhất.`;
 
     return `### [GIỌNG ĐIỆU & NHÂN CÁCH (SOUL)]:
 ${soul}

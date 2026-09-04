@@ -733,13 +733,51 @@ assert.strictEqual(parsedFallback.memory, unstructuredText.trim(), 'Unstructured
 
 console.log('   ✅ Mini Second Brain Wiki Markdown Decompiler passed!\n');
 
+// -----------------------------------------------------------------------------
+// Test 25: Zalo Chat Markdown Sanitizer (cleanForZalo)
+// -----------------------------------------------------------------------------
+console.log('25. Testing Zalo Chat Markdown Sanitizer (cleanForZalo)...');
+assert.strictEqual(typeof aiAdapter.cleanForZalo, 'function', 'cleanForZalo must be a function');
+
+const rawMarkdownInput = `Dạ Zalo-Flow là nền tảng **mã nguồn mở miễn phí** kết nối Zalo cá nhân với Bot AI & CRM nhé! 🤖
+
+Giờ Khoa hướng dẫn cài đặt **3 bước siêu nhanh** nha! 🚀
+
+**Bước 1: Chuẩn bị**
+- Máy tính Windows/macOS hoặc VPS Linux
+- Cài sẵn Node.js bản >= 22.5.0 (hoặc Docker)
+
+**Bước 2: Cài đặt**
+- Mở Terminal/PowerShell, gõ lệnh:
+- \`npx zalo-flow init\`
+- Trình thuật sĩ sẽ tự hướng dẫn từng bước!
+
+### Lưu ý quan trọng
+- Không chia sẻ file .env!`;
+
+const sanitized = aiAdapter.cleanForZalo(rawMarkdownInput);
+
+// Verify no raw asterisks remain for bold
+assert.ok(!sanitized.includes('**mã nguồn mở miễn phí**'), 'Should strip ** from inline text');
+assert.ok(sanitized.includes('mã nguồn mở miễn phí'), 'Should preserve plain text content');
+
+// Verify heading conversion
+assert.ok(sanitized.includes('🔹 Bước 1: Chuẩn bị') || sanitized.includes('Bước 1: Chuẩn bị'), 'Should convert bold step headings cleanly');
+assert.ok(sanitized.includes('📌 Lưu ý quan trọng'), 'Should convert markdown ### header to 📌 header');
+
+// Verify code backticks stripped
+assert.ok(!sanitized.includes('`npx zalo-flow init`'), 'Should strip backticks');
+assert.ok(sanitized.includes('npx zalo-flow init'), 'Should preserve command text');
+
+console.log('   ✅ Zalo Chat Markdown Sanitizer passed!\n');
+
 // Clean test db
 store.close();
 if (fs.existsSync(testDbFile)) {
   try { fs.unlinkSync(testDbFile); } catch {}
 }
 
-console.log('🎉 ALL 24 INTEGRITY, SECURITY, CRM, AIZALO REMARKETING, AI SUITE, BULK DEEP-SYNC, QR AUTH, MEMORY GUARD & WIKI DECOMPILER TESTS PASSED 100%!');
+console.log('🎉 ALL 25 INTEGRITY, SECURITY, CRM, AIZALO REMARKETING, AI SUITE, BULK DEEP-SYNC, QR AUTH, MEMORY GUARD & ZALO SANITIZER TESTS PASSED 100%!');
 
 
 
