@@ -714,7 +714,7 @@ ${scope || `1. Tuyệt đối không bịa đặt số tài khoản ngân hàng,
       contents,
       generationConfig: {
         temperature: 0.7,
-        maxOutputTokens: 800
+        maxOutputTokens: 2048
       }
     };
 
@@ -783,15 +783,22 @@ ${scope || `1. Tuyệt đối không bịa đặt số tài khoản ngân hàng,
         model,
         messages,
         temperature: 0.7,
-        max_tokens: 800
+        max_tokens: 2048
       }, {
         headers,
         timeout: timeoutMs
       });
 
-      const content = res.data?.choices?.[0]?.message?.content;
-      if (!content) {
-        throw new Error(`${provider} returned empty response content`);
+      const messageObj = res.data?.choices?.[0]?.message;
+      let content = messageObj?.content || res.data?.choices?.[0]?.text;
+
+      // Fallback for reasoning models if content was empty but reasoning completed
+      if (!content && messageObj?.reasoning_content) {
+        content = messageObj.reasoning_content;
+      }
+
+      if (!content || !content.trim()) {
+        throw new Error(`${provider} returned empty response content (finish_reason: ${res.data?.choices?.[0]?.finish_reason || 'unknown'})`);
       }
       return content;
     } catch (err) {
