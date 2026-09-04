@@ -73,7 +73,13 @@
    - Khi kích hoạt Graceful Restart, BẮT BUỘC tuần tự thực hiện: (1) Bắn sự kiện SSE try-catch cảnh báo cho Web UI, (2) Chờ `RateLimiter.drainAll()` xả hết hàng đợi outbound (tối đa 5s) chống rớt tin, (3) Ép flush toàn bộ WAL SQLite bằng `PRAGMA wal_checkpoint(TRUNCATE);` qua `localStore.close()` để chống hỏng CSDL, rồi mới cho tiến trình thoát để supervisor (Docker/PM2) tự khởi động lại.
 33. **Windows Git Credential Switching Protocol:**
    - Khi chuyển đổi tài khoản GitHub trên Windows mà gặp lỗi `remote: Repository not found`, BẮT BUỘC phải dọn sạch cache Windows Credential Manager (`cmdkey /delete:git:https://github.com`) trước khi chạy quy trình đăng nhập mới bằng `gh auth login --web`.
-   - Luôn hướng dẫn rõ ràng bước xác thực 2FA Sudo Mode (mã bảo mật 6 số từ ứng dụng Authenticator hoặc email) phân biệt hoàn toàn với mã ghép nối thiết bị 8 ký tự (`XXXX-XXXX`).
-
+34. **Zalo Mobile Formatting & Markdown Sanitization (`cleanForZalo`):** Ứng dụng Zalo trên điện thoại không hỗ trợ bộ cú pháp Markdown hoàn chỉnh (dấu `**chữ đậm**`, `# tiêu đề`, hoặc code block sẽ bị hiển thị dưới dạng văn bản thô xấu xí). Mọi tin nhắn văn bản do bot AI sinh ra trước khi gửi vào luồng Zalo BẮT BUỘC phải đi qua bộ lọc `cleanForZalo(text)`: chuyển đổi các khối `**tiêu đề**` thành các biểu tượng dễ nhìn (`🔹`, `•`, in hoa), gỡ bỏ backticks và ký tự markdown thô, đảm bảo hiển thị thoáng mắt và chuyên nghiệp trên app di động.
+35. **Live Model Dynamic Discovery & Provider Key Isolation:**
+   - Tuyệt đối không dựa hoàn toàn vào danh sách tên model ghi cứng (hardcode) vì các nhà cung cấp AI liên tục thay đổi, nâng cấp hoặc ngừng hỗ trợ mã model cũ (như Google khai tử `gemini-2.0-flash` chuyển sang `gemini-2.5-flash`). BẮT BUỘC duy trì cơ chế **Live Model Scanner** (`POST /api/ai/scan-models`) kết nối trực tiếp đến API của hãng (`/v1beta/models`, `/models`) bằng chính API Key của người dùng để cập nhật danh sách model thực tế đang hoạt động.
+   - Khi cấu hình Lá Chắn Dự Phòng (Auto-Fallback Shield), BẮT BUỘC cô lập API Key: chỉ dùng chung key khi `fallbackProvider === primaryProvider`. Tuyệt đối không tự động chuyển tiếp API Key của nhà cung cấp này sang nhà cung cấp khác (như Z.AI sang Google Gemini) gây lỗi từ chối xác thực 400.
+   - Mọi trường nhập API Key trên giao diện BẮT BUỘC có thuộc tính `autocomplete="new-password"` để triệt tiêu nguy cơ trình duyệt tự động điền mật khẩu đăng nhập web vào.
+36. **Chronological History Order & Reasoning Model Token Headroom:**
+   - Hàm `localStore.getMessages()` đã trả về thứ tự thời gian tăng dần (`ASC` — từ cũ đến mới). Tuyệt đối không gọi thêm `.reverse()` khi nạp ngữ cảnh cho AI vì sẽ khiến bot đọc ngược thời gian dẫn đến trả lời sai lệch ngữ cảnh.
+   - Đối với các mô hình có pha lập luận/suy nghĩ (Reasoning Models như GLM-5, DeepSeek R1), BẮT BUỘC cấu hình `max_tokens >= 2048` và có nhánh dự phòng trích xuất `message.reasoning_content` nếu `message.content` rỗng, ngăn ngừa tình trạng bot cạn token giữa chừng và im lặng không phản hồi khách hàng.
 
 
