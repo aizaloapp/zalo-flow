@@ -11,7 +11,7 @@
 | Hạng Mục | Thông Số Kỹ Thuật |
 | :--- | :--- |
 | **Tên dự án** | Zalo-Flow (AIzalo Community Edition) |
-| **Giấy phép** | MIT License (Open Source, AS-IS Disclaimer) |
+| **Giấy phép** | MIT License with Commons Clause (Non-Commercial, AS-IS Disclaimer) |
 | **Mô hình phục vụ** | Single-Tenant (1 tài khoản Zalo cá nhân / 1 instance thử nghiệm) |
 | **Runtime** | Node.js >= 20.0.0 (ES Modules) |
 | **Core Dependency** | `zca-js: 2.1.0` (Khóa cứng version) |
@@ -22,7 +22,7 @@
 
 ## 🛡️ 2. Ma Trận 8 Hard Guardrails Bắt Buộc (Core Invariants)
 
-1. **Pháp Lý & Anti-Spam (Educational & Research Defense):** Mọi tài liệu và code BẮT BUỘC duy trì tuyên bố *"Phần mềm chỉ phục vụ mục đích học tập/nghiên cứu cá nhân"*. Nghiêm cấm viết hoặc hỗ trợ bất kỳ tính năng spam tin nhắn hàng loạt hoặc thu thập dữ liệu trái phép nào.
+1. **Pháp Lý, Phi Thương Mại & Anti-Spam (Educational & Research Defense):** Mọi tài liệu và code BẮT BUỘC duy trì tuyên bố *"Phần mềm chỉ phục vụ mục đích học tập/nghiên cứu cá nhân, phi thương mại"*. Nghiêm cấm viết hoặc hỗ trợ bất kỳ tính năng spam tin nhắn hàng loạt, bán lại thương mại hoặc thu thập dữ liệu trái phép nào.
 2. **Air-Gapped IP & Zero Secret Leak:** Tuyệt đối KHÔNG import mã nguồn, Cloudflare bindings, D1 schemas, IP VPS (`160.187.*`, `43.134.*`, `5.231.*`) hoặc credentials nội bộ từ dự án SaaS `Zalo-Bridge`. Mọi tệp `.env.example` phải dùng 100% placeholder dummy data.
 3. **Lightweight Memory Footprint (< 100MB RAM):** Không cài đặt các thư viện nặng nề không cần thiết. Giữ cho bản Core luôn chạy mượt mà trên môi trường RAM < 128MB.
 4. **Anti-Ban 3 Lớp Bất Biến:** Mọi tin nhắn gửi đi BẮT BUỘC đi qua `RateLimiter` (giãn cách >= 3s, tối đa 20 tin/phút) và `SelfEchoShield` (30s buffer chống loop). Mọi tin nhắn đến phải qua `FloodDetector`.

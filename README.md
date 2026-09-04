@@ -9,7 +9,7 @@
   <b>🇻🇳 Tiếng Việt</b> • <a href="README.en.md">🇬🇧 English</a>
 </p>
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![License: Non-Commercial (MIT + Commons Clause)](https://img.shields.io/badge/License-MIT%20%2B%20Commons%20Clause-blue.svg)](LICENSE)
 [![Purpose: Education & Research](https://img.shields.io/badge/Purpose-Education%20%26%20Research-orange.svg)](DISCLAIMER.md)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen.svg)](https://nodejs.org)
 [![Memory Footprint](https://img.shields.io/badge/RAM-%3C%20100MB-success.svg)](test/test-all.js)
@@ -167,4 +167,4 @@ Mọi đóng góp (Pull Request, Báo lỗi, Đề xuất cải tiến kiến tr
 - 🗺️ Xem chi tiết lộ trình: [ROADMAP.md](ROADMAP.md)
 - 💬 Thảo luận & Hỏi đáp kỹ thuật: [GitHub Discussions](https://github.com/aizaloapp/zalo-flow/discussions)
 - 🐛 Báo cáo lỗi: [GitHub Issues](https://github.com/aizaloapp/zalo-flow/issues)
-- 📜 Giấy phép: [MIT License](LICENSE) (Hoàn toàn miễn phí & Mã nguồn mở)
+- 📜 Giấy phép: [MIT License with Commons Clause (Phi thương mại)](LICENSE) (Miễn phí cho nghiên cứu, học tập cá nhân & phi thương mại)

@@ -6,7 +6,7 @@
 
 ## 1. Mục Đích Nghiên Cứu & Học Tập (Educational & Research Purpose Only)
 
-1. **Phiên bản phi thương mại:** Dự án `Zalo-Flow` được phát triển hoàn toàn dưới dạng mã nguồn mở (MIT License) nhằm mục đích **nghiên cứu kỹ thuật, học tập kiến trúc phần mềm (Adapter Pattern, Webhook Streaming), và tự động hóa thử nghiệm cá nhân**.
+1. **Phiên bản phi thương mại:** Dự án `Zalo-Flow` được phát triển hoàn toàn dưới dạng mã nguồn mở phi thương mại (MIT License with Commons Clause) nhằm mục đích **nghiên cứu kỹ thuật, học tập kiến trúc phần mềm (Adapter Pattern, Webhook Streaming), và tự động hóa thử nghiệm cá nhân**. Mọi hành vi thương mại hóa, đóng gói bán lại sản phẩm đều bị nghiêm cấm.
 2. **Không thuộc sở hữu VNG:** Phần mềm này là một dự án độc lập, sử dụng thư viện mô phỏng giao thức cộng đồng (`zca-js`). **Dự án KHÔNG liên kết, KHÔNG được ủy quyền, tài trợ hay chứng thực bởi Công ty Cổ phần VNG hay ứng dụng Zalo.**
 3. **Thương hiệu thuộc về chủ sở hữu:** Mọi tên thương mại, logo, nhãn hiệu "Zalo" và "VNG" được đề cập trong tài liệu chỉ nhằm mục đích mô tả kỹ thuật và thuộc toàn quyền sở hữu của các đơn vị nắm giữ bản quyền tương ứng.
 

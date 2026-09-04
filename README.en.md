@@ -9,7 +9,7 @@
   <a href="README.md">🇻🇳 Tiếng Việt</a> • <b>🇬🇧 English</b>
 </p>
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![License: Non-Commercial (MIT + Commons Clause)](https://img.shields.io/badge/License-MIT%20%2B%20Commons%20Clause-blue.svg)](LICENSE)
 [![Purpose: Education & Research](https://img.shields.io/badge/Purpose-Education%20%26%20Research-orange.svg)](DISCLAIMER.md)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen.svg)](https://nodejs.org)
 [![Memory Footprint](https://img.shields.io/badge/RAM-%3C%20100MB-success.svg)](test/test-all.js)
@@ -191,5 +191,5 @@ npm test
 
 ## 📄 License & Contributing
 
-Distributed under the **MIT License**. See [LICENSE](LICENSE) for details.  
+Distributed under the **MIT License with Commons Clause Condition v1.0 (Non-Commercial)**. See [LICENSE](LICENSE) for details.  
 Contributions, adapters, and bug reports are warmly welcome! See [CONTRIBUTING.md](CONTRIBUTING.md).
