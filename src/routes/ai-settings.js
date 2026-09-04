@@ -214,6 +214,121 @@ router.post('/ai/wiki-preview', requireAuth, (req, res) => {
 });
 
 // -----------------------------------------------------------------------------
+// POST /api/ai/wiki-apply — Apply & Sync Raw Markdown to Mini Second Brain Wiki
+// -----------------------------------------------------------------------------
+router.post('/ai/wiki-apply', requireAuth, (req, res) => {
+  try {
+    const { markdown, replaceQna = false } = req.body || {};
+    if (!markdown || typeof markdown !== 'string' || !markdown.trim()) {
+      return res.status(400).json({ error: 'Nội dung Markdown không được để trống.' });
+    }
+
+    const parsed = aiAgentAdapter.parseWikiMarkdown(markdown);
+    const toUpdate = {};
+    const updatedFields = [];
+
+    if (parsed.soul) {
+      toUpdate.soulPrompt = parsed.soul;
+      updatedFields.push('SOUL (Giọng điệu)');
+    }
+    if (parsed.memory) {
+      toUpdate.memoryPrompt = parsed.memory;
+      updatedFields.push('MEMORY (Bảng giá/Tri thức)');
+    }
+    if (parsed.scope) {
+      toUpdate.scopePrompt = parsed.scope;
+      updatedFields.push('SCOPE (Ranh giới & Cấm kỵ)');
+    }
+    if (parsed.fewShot) {
+      toUpdate.exemplarConversation = parsed.fewShot;
+      updatedFields.push('Few-Shot (Mẫu chat)');
+    }
+
+    // Save AI Settings to SQLite
+    const saved = localStore.saveAiSettings(toUpdate);
+
+    // Sync Q&A Pairs into Quick Messages
+    let qnaSyncedCount = 0;
+    if (parsed.qnaPairs && parsed.qnaPairs.length > 0) {
+      const existingQuickMsgs = localStore.getQuickMessages() || [];
+      
+      if (replaceQna) {
+        for (const qm of existingQuickMsgs) {
+          if (qm.customerQuestion) {
+            localStore.deleteQuickMessage(qm.id);
+          }
+        }
+      }
+
+      parsed.qnaPairs.forEach((pair) => {
+        const questionClean = pair.question.trim();
+        const answerClean = pair.answer.trim();
+
+        // Check if question already exists in quick_messages
+        const existing = (localStore.getQuickMessages() || []).find(
+          qm => qm.customerQuestion && qm.customerQuestion.trim().toLowerCase() === questionClean.toLowerCase()
+        );
+
+        if (existing) {
+          localStore.upsertQuickMessage({
+            id: existing.id,
+            shortcut: existing.shortcut,
+            customerQuestion: questionClean,
+            title: existing.title || questionClean,
+            content: answerClean,
+            mediaUrl: existing.mediaUrl || '',
+            mediaType: existing.mediaType || '',
+            mediaName: existing.mediaName || ''
+          });
+          qnaSyncedCount++;
+        } else {
+          const count = (localStore.getQuickMessages() || []).length + 1;
+          const shortcut = `/qna_${count}`;
+          localStore.upsertQuickMessage({
+            shortcut,
+            customerQuestion: questionClean,
+            title: questionClean,
+            content: answerClean
+          });
+          qnaSyncedCount++;
+        }
+      });
+      updatedFields.push(`Q&A (${qnaSyncedCount} câu hỏi đáp)`);
+    }
+
+    // Re-compile view & compute stats
+    const freshWikiMarkdown = aiAgentAdapter.compileWikiView(saved);
+    const stats = aiAgentAdapter.getWikiStats(freshWikiMarkdown, saved);
+
+    logger.info(`✅ [Mini Second Brain Wiki] Applied raw markdown. Updated fields: ${updatedFields.join(', ')}`);
+
+    res.json({
+      status: 'success',
+      message: updatedFields.length > 0
+        ? `Đã đồng bộ thành công: ${updatedFields.join(', ')}`
+        : 'Đã phân tích Markdown nhưng không tìm thấy trường thay đổi mới.',
+      data: {
+        updatedFields,
+        qnaSyncedCount,
+        parsed,
+        savedSettings: {
+          soulPrompt: saved.soulPrompt,
+          memoryPrompt: saved.memoryPrompt,
+          scopePrompt: saved.scopePrompt,
+          exemplarConversation: saved.exemplarConversation
+        },
+        wikiMarkdown: freshWikiMarkdown,
+        stats
+      }
+    });
+  } catch (err) {
+    logger.error(`Error applying wiki markdown: ${err.message}`);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+// -----------------------------------------------------------------------------
 // POST /api/ai/extract-exemplar — 1-Click Extract Real Chat to Few-Shot Sample
 // -----------------------------------------------------------------------------
 router.post('/ai/extract-exemplar', requireAuth, (req, res) => {

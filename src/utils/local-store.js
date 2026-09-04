@@ -404,6 +404,10 @@ export class LocalStore extends EventEmitter {
     };
   }
 
+  getCustomer(id) {
+    return this.getConversation(id);
+  }
+
   getConversations({ search = '', filter = 'all', tagId = '' } = {}) {
     let sql = `
       SELECT DISTINCT c.* FROM conversations c

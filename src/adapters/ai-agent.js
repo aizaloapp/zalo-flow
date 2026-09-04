@@ -104,13 +104,13 @@ export class AiAgentAdapter extends BaseAdapter {
     if (settings.targetMode === 'blacklist' && excludedTags.length > 0) {
       const isBlacklisted = threadTags.some(tagId => excludedTags.includes(tagId));
       if (isBlacklisted) {
-        logger.debug(`[AI Agent] Thread ${ctx.threadId} matches Blacklist tags. Skipping AI.`);
+        logger.info(`🎯 [AI Filter] Thread ${ctx.threadId} matches Blacklist tags. Skipping AI.`);
         return;
       }
     } else if (settings.targetMode === 'whitelist' && allowedTags.length > 0) {
       const isWhitelisted = threadTags.some(tagId => allowedTags.includes(tagId));
       if (!isWhitelisted) {
-        logger.debug(`[AI Agent] Thread ${ctx.threadId} not in Whitelist tags. Skipping AI.`);
+        logger.info(`🎯 [AI Filter] Thread ${ctx.threadId} not in Whitelist tags. Skipping AI.`);
         return;
       }
     }
@@ -187,15 +187,15 @@ export class AiAgentAdapter extends BaseAdapter {
 
       // Extract Customer CRM Profile & Tags for context awareness
       const conv = this.localStore.getConversation(threadId);
-      const customer = this.localStore.getCustomer(threadId);
-      const tags = this.localStore.getConversationTags(threadId) || [];
+      const customer = typeof this.localStore.getCustomer === 'function' ? this.localStore.getCustomer(threadId) : conv;
+      const tags = (typeof this.localStore.getConversationTags === 'function' ? this.localStore.getConversationTags(threadId) : []) || [];
       const tagNames = tags.map(t => t.name).join(', ');
 
       const customerContext = {
         name: senderName || conv?.name || customer?.name || '',
-        phone: customer?.phone || '',
+        phone: conv?.phone || customer?.phone || '',
         tags: tagNames,
-        notes: customer?.notes || '',
+        notes: conv?.notes || customer?.notes || '',
         isGroup: Boolean(isGroup)
       };
 
@@ -281,6 +281,11 @@ export class AiAgentAdapter extends BaseAdapter {
 2. Nếu không có thông tin, hãy lịch sự thông báo sẽ nhờ nhân viên liên hệ lại hỗ trợ sớm nhất.
 3. Không xưng hô robot, giữ câu từ ngắn gọn, phù hợp với văn hóa nhắn tin Zalo (1-3 câu/tin nhắn).`;
 
+    const formatRules = `
+### [QUY TẮC ĐỊNH DẠNG TIN NHẮN ZALO]:
+- Hãy xuống dòng rõ ràng giữa các ý, dùng gạch đầu dòng dấu gạch ngang (-) hoặc chấm tròn (•) để tin nhắn thoáng mắt, dễ đọc trên điện thoại.
+- Giữ câu trả lời tự nhiên, ngắn gọn (1-3 câu hoặc danh sách ngắn), không viết dính chùm thành một khối chữ dài.`;
+
     return `### [GIỌNG ĐIỆU & NHÂN CÁCH (SOUL)]:
 ${soul}
 
@@ -289,7 +294,8 @@ ${memory || 'Chưa có thông tin bổ sung.'}
 ${fewShot}${customerInfoSection}
 
 ### [RANH GIỚI & ĐIỀU CẤM KỴ (SCOPE)]:
-${scope}`;
+${scope}
+${formatRules}`;
   }
 
   /**
@@ -377,6 +383,140 @@ ${scope || `1. Tuyệt đối không bịa đặt số tài khoản ngân hàng,
 2. Nếu không có thông tin, hãy lịch sự thông báo sẽ nhờ nhân viên liên hệ lại hỗ trợ sớm nhất.
 3. Giữ câu từ ngắn gọn, phù hợp với văn hóa nhắn tin Zalo (1-3 câu/tin nhắn).`}
 `;
+  }
+
+  /**
+   * Parse / Decompile raw Markdown into structured sections (SOUL, MEMORY, Q&A, Few-Shot, SCOPE)
+   */
+  parseWikiMarkdown(rawMarkdown) {
+    if (!rawMarkdown || typeof rawMarkdown !== 'string') {
+      return {
+        soul: '',
+        memory: '',
+        scope: '',
+        fewShot: '',
+        qnaPairs: [],
+        recognizedSections: {
+          hasSoul: false,
+          hasMemory: false,
+          hasScope: false,
+          hasFewShot: false,
+          qnaCount: 0
+        }
+      };
+    }
+
+    const lines = rawMarkdown.split(/\r?\n/);
+    let currentSection = null;
+    const sections = {
+      soul: [],
+      memory: [],
+      qna: [],
+      fewshot: [],
+      scope: [],
+      other: []
+    };
+
+    // Regex for recognizing headings (#, ##, ###)
+    const headingRegex = /^#{1,3}\s+(.*)$/;
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const match = line.match(headingRegex);
+
+      if (match) {
+        const title = match[1].toLowerCase();
+        if (/soul|giọng\s*điệu|nhân\s*cách|vai\s*trò/i.test(title)) {
+          currentSection = 'soul';
+          continue;
+        } else if (/memory|tri\s*thức|bảng\s*giá|sản\s*phẩm|thông\s*tin\s*sản\s*phẩm|chính\s*sách/i.test(title)) {
+          currentSection = 'memory';
+          continue;
+        } else if (/q[&a]?a|câu\s*hỏi|hỏi\s*đáp|faq|bách\s*khoa\s*câu\s*hỏi/i.test(title)) {
+          currentSection = 'qna';
+          continue;
+        } else if (/few[-_\s]*shot|mẫu\s*hội\s*thoại|chat\s*mẫu|ví\s*dụ\s*hội\s*thoại/i.test(title)) {
+          currentSection = 'fewshot';
+          continue;
+        } else if (/scope|guardrail|ranh\s*giới|quy\s*tắc|điều\s*cấm|cấm\s*kỵ/i.test(title)) {
+          currentSection = 'scope';
+          continue;
+        } else if (title.includes('mini second brain wiki') || title.includes('hệ tri thức ai')) {
+          // Skip master document title
+          currentSection = null;
+          continue;
+        }
+      }
+
+      if (currentSection) {
+        // Skip horizontal separator lines right after heading if standalone
+        if (line.trim() === '---') continue;
+        sections[currentSection].push(line);
+      } else {
+        // Text before any recognized section or top block
+        if (line.trim() && !line.startsWith('>') && line.trim() !== '---') {
+          sections.other.push(line);
+        }
+      }
+    }
+
+    // Filter out default placeholder strings
+    const cleanSectionText = (linesArr) => {
+      const text = linesArr.join('\n').trim();
+      if (
+        text.startsWith('_Chưa thiết lập') ||
+        text.startsWith('_Chưa có dữ liệu') ||
+        text.startsWith('_Chưa có câu hỏi') ||
+        text.startsWith('_Chưa có đoạn chat')
+      ) {
+        return '';
+      }
+      return text;
+    };
+
+    let soul = cleanSectionText(sections.soul);
+    let memory = cleanSectionText(sections.memory);
+    let scope = cleanSectionText(sections.scope);
+    let fewShot = cleanSectionText(sections.fewshot);
+
+    // If completely unstructured (no standard section headings), treat entire text as memory
+    if (!soul && !memory && !scope && sections.qna.length === 0 && sections.other.length > 0) {
+      memory = cleanSectionText(sections.other);
+    }
+
+    // Parse Q&A Pairs from sections.qna
+    const qnaPairs = [];
+    const qnaText = sections.qna.join('\n');
+
+    // Matches:
+    // **1. Khách hỏi:** "Câu hỏi" \n **👉 Trả lời chuẩn:** "Câu trả lời"
+    // or Hỏi: ... \n Đáp: ...
+    // or Q: ... \n A: ...
+    const qnaBlockRegex = /(?:[-*•]\s*)?(?:\*\*|\*|\b)?(?:(?:\d+[\.\)]\s*)?(?:Khách\s*hỏi|Hỏi|Question|Q):?)\*?\*?\s*["“']?([^"\n\r”]+)["”']?\s*(?:\n|\r\n)+\s*(?:[-*•]\s*)?(?:\*\*|\*|\b)?(?:(?:👉\s*)?(?:Trả\s*lời\s*chuẩn|Trả\s*lời|Đáp|Answer|A):?)\*?\*?\s*["“']?([^"\n\r”]+)["”']?/gi;
+
+    let qMatch;
+    while ((qMatch = qnaBlockRegex.exec(qnaText)) !== null) {
+      const q = (qMatch[1] || '').trim();
+      const a = (qMatch[2] || '').trim();
+      if (q && a && !q.startsWith('_Chưa có')) {
+        qnaPairs.push({ question: q, answer: a });
+      }
+    }
+
+    return {
+      soul,
+      memory,
+      scope,
+      fewShot,
+      qnaPairs,
+      recognizedSections: {
+        hasSoul: Boolean(soul),
+        hasMemory: Boolean(memory),
+        hasScope: Boolean(scope),
+        hasFewShot: Boolean(fewShot),
+        qnaCount: qnaPairs.length
+      }
+    };
   }
 
   /**

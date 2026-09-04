@@ -1798,10 +1798,10 @@ function appendMessageElement(msg, autoScroll = true) {
         <span class="quote-sender">${escapeHtml(msg.quoteSender || 'Người gửi')}</span>
         <span class="quote-text">${escapeHtml(msg.quoteText || '')}</span>
       </div>
-      <div>${escapeHtml(msg.text)}</div>
+      <div>${formatChatBubbleText(msg.text)}</div>
     `;
   } else {
-    contentHtml = `<div>${escapeHtml(msg.text)}</div>`;
+    contentHtml = `<div>${formatChatBubbleText(msg.text)}</div>`;
   }
 
   const rawTextForAttr = encodeURIComponent(msg.text || '');
@@ -2804,6 +2804,18 @@ function escapeHtml(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
+}
+
+function formatChatBubbleText(str) {
+  if (!str) return '';
+  let text = escapeHtml(str);
+  // Parse **bold** into <strong>bold</strong>
+  text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  // Parse *italic* into <em>italic</em>
+  text = text.replace(/(^|[^*])\*(?!\s)([^*]+?)(?<!\s)\*([^*]|$)/g, '$1<em>$2</em>$3');
+  // Parse URLs into clickable links
+  text = text.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: underline; font-weight: 600;">$1</a>');
+  return text;
 }
 
 // =============================================================================
@@ -4076,8 +4088,12 @@ async function openSecondBrainWikiModal() {
       if (rawView) rawView.style.display = currentWikiViewMode === 'raw' ? 'block' : 'none';
 
       // Set raw content
+      const rawEditor = document.getElementById('wiki-raw-editor');
+      if (rawEditor) rawEditor.value = wikiMarkdown;
       const rawPre = document.getElementById('wiki-preview-content');
       if (rawPre) rawPre.textContent = wikiMarkdown;
+      const charHint = document.getElementById('wiki-editor-char-hint');
+      if (charHint) charHint.innerText = `${(wikiMarkdown.length || 0).toLocaleString()} ký tự`;
 
       // Render formatted sections
       renderFormattedWiki(wikiMarkdown);
@@ -4127,12 +4143,14 @@ function recompileWiki() {
 }
 
 async function copyWikiMarkdown() {
-  if (!currentWikiData || !currentWikiData.wikiMarkdown) {
+  const editorText = document.getElementById('wiki-raw-editor')?.value;
+  const content = editorText !== undefined ? editorText : currentWikiData?.wikiMarkdown;
+  if (!content) {
     showToast('Chưa có nội dung Wiki để sao chép', 'warning');
     return;
   }
   try {
-    await navigator.clipboard.writeText(currentWikiData.wikiMarkdown);
+    await navigator.clipboard.writeText(content);
     showToast('📋 Đã sao chép Mini Second Brain Wiki vào Clipboard!', 'info');
   } catch {
     showToast('Không thể sao chép tự động', 'error');
@@ -4140,11 +4158,13 @@ async function copyWikiMarkdown() {
 }
 
 function downloadWikiMarkdown() {
-  if (!currentWikiData || !currentWikiData.wikiMarkdown) {
+  const editorText = document.getElementById('wiki-raw-editor')?.value;
+  const content = editorText !== undefined ? editorText : currentWikiData?.wikiMarkdown;
+  if (!content) {
     showToast('Chưa có nội dung Wiki để tải xuống', 'warning');
     return;
   }
-  const blob = new Blob([currentWikiData.wikiMarkdown], { type: 'text/markdown;charset=utf-8' });
+  const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -4154,6 +4174,130 @@ function downloadWikiMarkdown() {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
   showToast('📥 Đã tải xuống file mini-second-brain-wiki.md', 'info');
+}
+
+// -----------------------------------------------------------------------------
+// Live Editor & Raw Markdown 2-Way Sync Handlers
+// -----------------------------------------------------------------------------
+function handleWikiEditorInput(text) {
+  const rawText = text || '';
+  const charCount = rawText.length;
+  const estimatedTokens = Math.round(charCount / 3.0);
+
+  const charHint = document.getElementById('wiki-editor-char-hint');
+  if (charHint) charHint.innerText = `${charCount.toLocaleString()} ký tự`;
+
+  const badgeTokens = document.getElementById('wiki-badge-tokens');
+  if (badgeTokens) {
+    badgeTokens.innerText = `📏 ~${estimatedTokens.toLocaleString()} Tokens (${charCount.toLocaleString()} ký tự)`;
+  }
+}
+
+function triggerWikiFileUpload() {
+  const fileInput = document.getElementById('wiki-file-import-input');
+  if (fileInput) {
+    fileInput.value = '';
+    fileInput.click();
+  }
+}
+
+function handleWikiFileUpload(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const content = e.target?.result;
+    if (typeof content !== 'string') return;
+
+    const rawEditor = document.getElementById('wiki-raw-editor');
+    if (rawEditor) {
+      rawEditor.value = content;
+      // Switch view to raw mode so user inspects the uploaded markdown
+      switchWikiViewMode('raw');
+      handleWikiEditorInput(content);
+      showToast(`📂 Đã nạp "${file.name}" (${content.length.toLocaleString()} ký tự). Bấm "Lưu & Áp Dụng" để đồng bộ!`, 'info');
+    }
+  };
+  reader.onerror = function() {
+    showToast('Không thể đọc tệp tin Markdown', 'error');
+  };
+  reader.readAsText(file, 'utf-8');
+}
+
+async function saveRawWikiMarkdown() {
+  const rawEditor = document.getElementById('wiki-raw-editor');
+  const content = rawEditor?.value?.trim();
+  if (!content) {
+    showToast('Nội dung Markdown đang trống!', 'warning');
+    return;
+  }
+
+  const btnSave = document.getElementById('btn-wiki-save-apply');
+  if (btnSave) btnSave.innerText = '⏳ Đang phân tích...';
+
+  try {
+    const res = await fetch('/api/ai/wiki-apply', {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ markdown: content })
+    });
+
+    const json = await res.json();
+    if (!res.ok) {
+      throw new Error(json.error || 'Không thể áp dụng Markdown');
+    }
+
+    showToast(json.message || '✅ Đã lưu và đồng bộ tri thức thành công!', 'success');
+
+    // Update parent settings inputs in dashboard form
+    if (json.data?.savedSettings) {
+      const { soulPrompt, memoryPrompt, scopePrompt, exemplarConversation } = json.data.savedSettings;
+      const soulInput = document.getElementById('ai-soul-input');
+      if (soulInput && soulPrompt !== undefined) soulInput.value = soulPrompt;
+
+      const memoryInput = document.getElementById('ai-memory-input');
+      if (memoryInput && memoryPrompt !== undefined) memoryInput.value = memoryPrompt;
+
+      const scopeInput = document.getElementById('ai-scope-input');
+      if (scopeInput && scopePrompt !== undefined) scopeInput.value = scopePrompt;
+
+      if (typeof aiSettingsState !== 'undefined' && aiSettingsState) {
+        aiSettingsState.soulPrompt = soulPrompt;
+        aiSettingsState.memoryPrompt = memoryPrompt;
+        aiSettingsState.scopePrompt = scopePrompt;
+        if (exemplarConversation) aiSettingsState.exemplarConversation = exemplarConversation;
+      }
+    }
+
+    // If Q&As were synced and loadQuickMessages exists, reload Q&A list
+    if (json.data?.qnaSyncedCount && typeof loadQuickMessages === 'function') {
+      loadQuickMessages();
+    }
+
+    // Refresh formatted view and stats
+    if (json.data?.wikiMarkdown) {
+      currentWikiData = json.data;
+      renderFormattedWiki(json.data.wikiMarkdown);
+      if (json.data.stats) {
+        const badgeTokens = document.getElementById('wiki-badge-tokens');
+        if (badgeTokens) {
+          badgeTokens.innerText = `📏 ~${(json.data.stats.estimatedTokens || 0).toLocaleString()} Tokens (${(json.data.stats.charCount || 0).toLocaleString()} ký tự)`;
+        }
+        const badgeQna = document.getElementById('wiki-badge-qna');
+        if (badgeQna) {
+          badgeQna.innerText = `❓ ${json.data.stats.qnaCount || 0} Câu Q&A`;
+        }
+      }
+    }
+
+    // Switch view back to formatted mode for visual inspection
+    switchWikiViewMode('formatted');
+  } catch (err) {
+    showToast('Lỗi: ' + err.message, 'error');
+  } finally {
+    if (btnSave) btnSave.innerText = '💾 Lưu & Áp Dụng';
+  }
 }
 
 function filterWikiContent(keyword) {

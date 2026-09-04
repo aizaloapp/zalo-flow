@@ -668,12 +668,78 @@ await drainPromise;
 
 console.log('   ✅ Self-Healing Memory Guard Sentinel & Graceful Drain passed!\n');
 
+// -----------------------------------------------------------------------------
+// Test 24: Mini Second Brain Wiki Markdown Decompiler & 2-Way Sync Engine
+// -----------------------------------------------------------------------------
+console.log('24. Testing Mini Second Brain Wiki Markdown Decompiler & 2-Way Sync Engine...');
+
+const sampleMarkdown = `# 🧠 MINI SECOND BRAIN WIKI — HỆ TRI THỨC AI
+> **Trạng thái:** 🟢 Đang Bật Tự Động Trả Lời
+> **Mô hình chính:** \`gemini:gemini-2.5-flash\`
+
+---
+
+## 🎭 1. Giọng Điệu & Nhân Cách Cốt Lõi (SOUL)
+Bạn là chuyên viên chăm sóc khách hàng vui tính, nhiệt tình của Zalo-Flow.
+
+---
+
+## 📚 2. Tri Thức Sản Phẩm & Bảng Giá Dịch Vụ (MEMORY)
+Sản phẩm Zalo-Flow là bộ khung mã nguồn mở kết nối Zalo cá nhân với Chatwoot CRM.
+Gói Cơ Bản: Miễn phí trọn đời cho mục đích học tập.
+
+---
+
+## ❓ 3. Bách Khoa Câu Hỏi & Trả Lời Chuẩn Mực (Q&A Knowledge Base)
+**1. Khách hỏi:** "Phần mềm Zalo-Flow có tốn tiền không?"
+   **👉 Trả lời chuẩn:** "Dạ Zalo-Flow là mã nguồn mở phi thương mại hoàn toàn miễn phí ạ."
+
+**2. Khách hỏi:** "Có hỗ trợ kết nối Chatwoot không?"
+   **👉 Trả lời chuẩn:** "Dạ có hỗ trợ đồng bộ 2 chiều với Chatwoot CRM rất mượt mà ạ."
+
+---
+
+## 💬 4. Mẫu Hội Thoại Thực Tế Tiêu Biểu (Few-Shot Exemplar)
+- **Khách:** Cho mình hỏi bot chạy bằng gì?
+- **Tư vấn viên (Shop):** Dạ bot chạy trên nền Node.js siêu nhẹ dưới 100MB RAM ạ!
+
+---
+
+## 🛡️ 5. Ranh Giới, Quy Tắc & Điều Cấm Kỵ (Scope & Guardrails)
+1. Không bịa đặt giá tiền ngoài danh mục.
+2. Không spam tin nhắn liên tục.
+`;
+
+const parsed = aiAdapter.parseWikiMarkdown(sampleMarkdown);
+assert.ok(parsed.recognizedSections.hasSoul, 'Should detect SOUL section');
+assert.ok(parsed.soul.includes('vui tính, nhiệt tình'), 'Soul text should match');
+
+assert.ok(parsed.recognizedSections.hasMemory, 'Should detect MEMORY section');
+assert.ok(parsed.memory.includes('Zalo-Flow là bộ khung mã nguồn mở'), 'Memory text should match');
+
+assert.ok(parsed.recognizedSections.hasScope, 'Should detect SCOPE section');
+assert.ok(parsed.scope.includes('Không bịa đặt giá tiền'), 'Scope text should match');
+
+assert.strictEqual(parsed.qnaPairs.length, 2, 'Should extract exactly 2 Q&A pairs');
+assert.strictEqual(parsed.qnaPairs[0].question, 'Phần mềm Zalo-Flow có tốn tiền không?');
+assert.strictEqual(parsed.qnaPairs[0].answer, 'Dạ Zalo-Flow là mã nguồn mở phi thương mại hoàn toàn miễn phí ạ.');
+assert.strictEqual(parsed.qnaPairs[1].question, 'Có hỗ trợ kết nối Chatwoot không?');
+
+// Test unstructured fallback
+const unstructuredText = `Đây là tài liệu sản phẩm độc quyền của cửa hàng.
+Chuyên cung cấp linh kiện máy tính và dịch vụ sửa chữa tại nhà.`;
+const parsedFallback = aiAdapter.parseWikiMarkdown(unstructuredText);
+assert.strictEqual(parsedFallback.memory, unstructuredText.trim(), 'Unstructured markdown should fallback to memory');
+
+console.log('   ✅ Mini Second Brain Wiki Markdown Decompiler passed!\n');
+
 // Clean test db
 store.close();
 if (fs.existsSync(testDbFile)) {
   try { fs.unlinkSync(testDbFile); } catch {}
 }
 
-console.log('🎉 ALL 23 INTEGRITY, SECURITY, CRM, AIZALO REMARKETING, AI SUITE, BULK DEEP-SYNC, QR AUTH & MEMORY GUARD TESTS PASSED 100%!');
+console.log('🎉 ALL 24 INTEGRITY, SECURITY, CRM, AIZALO REMARKETING, AI SUITE, BULK DEEP-SYNC, QR AUTH, MEMORY GUARD & WIKI DECOMPILER TESTS PASSED 100%!');
+
 
 
