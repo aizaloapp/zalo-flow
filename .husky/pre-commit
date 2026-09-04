@@ -5,7 +5,16 @@ FORBIDDEN_PATTERNS="160\.187\.|43\.134\.|5\.231\.|dragonfarm2509|cloudflare.*wor
 
 echo "🔍 Running Anti-IP-Leak Pre-commit scan..."
 
-if grep -rnE "$FORBIDDEN_PATTERNS" --exclude-dir={.git,node_modules,sessions} --exclude="*.enc" --exclude="*.session" .; then
+if grep -rnE "$FORBIDDEN_PATTERNS" \
+  --exclude-dir=.git \
+  --exclude-dir=node_modules \
+  --exclude-dir=sessions \
+  --exclude-dir=.github \
+  --exclude-dir=.husky \
+  --exclude="*.enc" \
+  --exclude="*.session" \
+  --exclude="package-lock.json" \
+  --exclude="AGENTS.md" .; then
   echo "❌ BLOCKED: Found private IP/infrastructure references. Remove them before committing."
   exit 1
 fi

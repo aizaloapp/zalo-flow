@@ -13,7 +13,7 @@
 | **Tên dự án** | Zalo-Flow (AIzalo Community Edition) |
 | **Giấy phép** | MIT License with Commons Clause (Non-Commercial, AS-IS Disclaimer) |
 | **Mô hình phục vụ** | Single-Tenant (1 tài khoản Zalo cá nhân / 1 instance thử nghiệm) |
-| **Runtime** | Node.js >= 20.0.0 (ES Modules) |
+| **Runtime** | Node.js >= 22.5.0 (ES Modules) |
 | **Core Dependency** | `zca-js: 2.1.0` (Khóa cứng version) |
 | **Web Server** | Express.js (Port 3000) |
 | **Mã hóa Session** | AES-256-CBC với khóa `SESSION_SECRET` (Lưu tại `sessions/*.enc`) |
