@@ -48,11 +48,11 @@ function getTotalRestarts() {
 
 /**
  * Memory Guard Sentinel & Self-Healing Circuit Breaker for Zalo-Flow (Audit v2)
- * Threshold: 150MB hard limit (Audit Fix C1), 112MB soft warning.
+ * Threshold: 350MB hard limit (optimized for local / large account operation), 263MB soft warning.
  */
 export class MemoryGuard {
   constructor(options = {}) {
-    this.maxMemoryMb = Number(options.maxMemoryMb || process.env.MAX_MEMORY_MB || 150);
+    this.maxMemoryMb = Number(options.maxMemoryMb || process.env.MAX_MEMORY_MB || 350);
     this.warnMemoryMb = Number(options.warnMemoryMb || process.env.WARN_MEMORY_MB || Math.round(this.maxMemoryMb * 0.75));
     this.checkIntervalMs = Number(options.checkIntervalSec || process.env.MEMORY_CHECK_INTERVAL_SEC || 30) * 1000;
     this.sustainedLimit = Number(options.sustainedLimit || 3);

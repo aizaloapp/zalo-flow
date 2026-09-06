@@ -54,7 +54,7 @@ Không cần biết Git, không cần cài Node.js, không cần mở màn hình
   - **Tab 4: Ranh Giới (SCOPE):** Lọc theo Nhóm/Cá nhân, Smart Cooldown (tự tắt bot khi Admin vừa nhắn tin), Whitelist/Blacklist theo Thẻ Tag.
   - **Tab 5: Giả Lập (SIMULATOR):** Sân chơi Sandbox kiểm tra phản xạ Bot AI trực tiếp trên giao diện web.
 - 📖 **Mini Second Brain Wiki Viewer (Karpathy LLM-Wiki):** Tự động biên dịch cấu hình AI thành tài liệu Markdown hoàn chỉnh, tính toán tokens tiếng Việt với hệ số 3.0 và hỗ trợ xem trước 1-Click trên Web UI.
-- 🚀 **Siêu Nhẹ (< 100MB RAM) & Tự Chữa Lành (Self-Healing Memory Guard):** Không cần mở Chromium ngầm. Canh gác RAM tự động: xả mềm 5 Map stores tại 112MB, tự khởi động lại êm ái tại 150MB trong 1.5s kèm flush SQLite WAL và drain hàng đợi.
+- 🚀 **Siêu Nhẹ (< 100MB RAM) & Tự Chữa Lành (Self-Healing Memory Guard):** Không cần mở Chromium ngầm. Canh gác RAM tự động: xả mềm 5 Map stores tại 263MB, tự khởi động lại êm ái tại 350MB trong 1.5s kèm flush SQLite WAL và drain hàng đợi (tối ưu cho tài khoản lớn > 1.000 bạn bè/nhóm).
 - 🖼️ **Nén Ảnh Thông Minh HTML5 Canvas (< 0.2s):** Tự động nén ảnh smartphone dung lượng lớn (15MB - 50MB) về chuẩn Zalo HD 2560px/90% (~1.5MB) trực tiếp trên client trước khi upload.
 - 🔄 **1-Click Bulk Deep-Sync:** Tải toàn bộ lịch sử trò chuyện gốc trực tiếp qua Zalo WebSocket với khoảng nghỉ an toàn 350ms/người và thanh tiến trình thời gian thực.
 - 💬 **Live Chat & CRM Dashboard:** Quản lý hội thoại 2 chiều, thẻ khách hàng (Tags), tin nhắn mẫu (Quick Messages) và chiến dịch Remarketing gửi kèm tệp đính kèm.

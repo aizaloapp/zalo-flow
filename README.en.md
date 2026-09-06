@@ -56,7 +56,7 @@ No Git, no Node.js installation, no command line terminals required:
 - 📖 **Mini Second Brain Wiki Viewer:** Automatically compiles AI personality, memory, and Q&A pairs into clean Karpathy Markdown with real-time Vietnamese token estimation (3.0x factor).
 - 🚀 **Ultra-Lightweight (< 100MB RAM) & Self-Healing Memory Guard:**
   - Operates without headless Chrome/Puppeteer.
-  - **2-Tier Memory Sentinel:** Soft purges 5 Map stores at 112MB, triggers **Graceful Self-Restart** if RAM sustains > 150MB for 90s, with SQLite WAL flushing and RateLimiter queue drainage. Auto-reconnects in 1.5s with zero QR re-scans.
+  - **2-Tier Memory Sentinel:** Soft purges 5 Map stores at 263MB, triggers **Graceful Self-Restart** if RAM sustains > 350MB for 90s, with SQLite WAL flushing and RateLimiter queue drainage. Auto-reconnects in 1.5s with zero QR re-scans.
 - 🖼️ **Client-Side Smart Canvas Compression (< 0.2s):** Automatically compresses large phone camera photos (15MB - 50MB) via HTML5 Canvas directly in the user's browser down to crisp Zalo HD 2560px/90% (~1.5MB) before uploading.
 - 🔄 **1-Click Bulk Deep-Sync Engine:** Downloads full native chat history directly via Zalo WebSocket with safe 350ms/contact spacing and real-time SSE progress bar.
 - 💬 **Live Chat & CRM Dashboard:** Single-page app managing 2-way live conversations, customer tags, quick response templates, and scheduled remarketing broadcasts with attachments.
