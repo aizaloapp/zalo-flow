@@ -94,5 +94,16 @@
    - BẮT BUỘC cung cấp sẵn tiện ích dừng tiến trình (`Dung-Zalo-Flow.bat` với lệnh `taskkill /F /IM node.exe`) và bộ gỡ cài đặt (Uninstaller) dọn dẹp sạch sẽ file tạm và tiến trình nền khi người dùng muốn tắt hoặc xóa ứng dụng.
 40. **Zero-Binary Git Tree & GitHub Releases Distribution Contract:**
    - Tuyệt đối KHÔNG commit các tệp nhị phân có dung lượng lớn (`.exe`, `.zip`, `.tar.gz` > 10MB) vào cây thư mục mã nguồn Git để chống làm phình to lịch sử commit (Git tree bloat). Tệp `.gitignore` BẮT BUỘC phải luôn có `installer/output/` và `*.exe`.
-   - Mọi bộ cài đặt chính thức BẮT BUỘC được phát hành thông qua **GitHub Releases** (`gh release create <tag> <file.exe>`).
    - Tệp `README.md` và `README.en.md` BẮT BUỘC phải đặt **Huy hiệu / Nút bấm Tải về Windows 1-Click (.exe)** to rõ, nổi bật ngay dưới tiêu đề chính (trỏ đến `releases/latest`) để người dùng truy cập trang chủ GitHub là thấy ngay nút tải mà không phải tìm kiếm ở sidebar.
+41. **Zalo Contact Card Payload Sanitization & Dual-Entity Isolation (`message-parser`):**
+    - Khi nhận tin nhắn danh thiếp Zalo (`chat.contact`, `share_contact`, `view_profile`), trường `description` thường chứa chuỗi JSON kỹ thuật thô (`{"phone":..., "qrCodeUrl":...}`). BẮT BUỘC lọc bỏ chuỗi này ra khỏi tên liên hệ (`isCleanName`: bỏ qua chuỗi bắt đầu bằng `{`, chứa URL, `zdn.vn` hoặc SĐT), đồng thời tự động parse JSON để trích xuất dự phòng `phone` và nạp link ảnh mã QR vào `mediaUrl`.
+    - Tuyệt đối không gộp `data.dName` (người chia sẻ danh thiếp) vào tên danh thiếp của người được chia sẻ (`title`/`name`) để tránh làm nhiễu ngữ cảnh hiểu của Bot AI và gây xấu giao diện.
+42. **Chat Bubble Rich Component CSS Pre-Wrap Immunity (`public/app.js` & `styles.css`):**
+    - Vì container `.bubble-content` mặc định sử dụng `white-space: pre-wrap;` để bảo toàn dấu xuống dòng của tin nhắn văn bản, mọi khối thẻ HTML giàu thành phần (Rich Widgets: Contact Namecard, Product Card, Call Bubble, Mini Table...) nhúng bên trong BẮT BUỘC phải có khai báo `white-space: normal !important;` và `line-height: 1.3 - 1.4;`.
+    - Không bao giờ để các ký tự newline `\n` hoặc thụt lề template string xen vào giữa các thẻ văn bản inline để ngăn chặn triệt để hiện tượng trình duyệt tự động chèn hàng loạt dòng trống làm kéo giãn chiều cao bong bóng tin nhắn và gây ngắt dòng vỡ số điện thoại.
+43. **Desktop Binary Release Synchronization Invariant (`installer/setup.iss` & GitHub Releases):**
+    - Mỗi khi có đợt cập nhật tính năng mới hoặc sửa lỗi (fix bug) quan trọng được đẩy lên nhánh chính `origin/main`, Agent BẮT BUỘC phải thực hiện quy trình **Cập Nhật Đồng Bộ Gói Cài Đặt Desktop (.exe)**:
+      1. Nâng phiên bản đồng bộ (`package.json` và `installer/setup.iss`).
+      2. Biên dịch bộ cài đặt Windows qua Inno Setup (`powershell installer/build-local.ps1`).
+      3. Phát hành tag/release mới và tải tệp `.exe` lên GitHub qua GitHub CLI (`gh release create <tag> <output.exe>`).
+    - Tuyệt đối không để xảy ra tình trạng mã nguồn Git trên nhánh `main` thì mới mà file cài đặt `.exe` trên GitHub Releases thì cũ, đảm bảo khách hàng tải bản cài đặt về máy là nhận ngay 100% tính năng mới nhất.
