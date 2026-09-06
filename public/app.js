@@ -50,6 +50,7 @@ function initApp() {
   setupSSE();
   fetchMemoryHealth();
   setInterval(fetchMemoryHealth, 30000);
+  checkAppVersion();
 }
 
 if (document.readyState === 'loading') {
@@ -4549,3 +4550,209 @@ function updateMemoryPillUI(mem) {
     }
   }
 }
+
+// -----------------------------------------------------------------------------
+// System Version & 1-Click Update Management (Audited v1)
+// -----------------------------------------------------------------------------
+let appVersionData = null;
+let isUpdatingApp = false;
+
+async function checkAppVersion(force = false) {
+  const versionTextEl = document.getElementById('version-text');
+  const versionPillEl = document.getElementById('version-status-pill');
+  const updateIndicatorEl = document.getElementById('update-indicator');
+  const recheckBtn = document.getElementById('btn-recheck-version');
+
+  if (recheckBtn && force) {
+    recheckBtn.disabled = true;
+    recheckBtn.innerText = 'Đang kiểm tra...';
+  }
+
+  try {
+    const res = await fetch(`/api/system/version${force ? '?force=true' : ''}`, {
+      headers: state.adminToken ? { 'Authorization': `Bearer ${state.adminToken}` } : {}
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    appVersionData = data;
+
+    if (versionTextEl) {
+      versionTextEl.innerText = `v${data.currentVersion}`;
+    }
+
+    if (versionPillEl) {
+      if (data.hasUpdate) {
+        versionPillEl.classList.add('has-update');
+        versionPillEl.title = `Đã có bản cập nhật mới v${data.latestVersion}! Bấm để cập nhật ngay.`;
+        if (updateIndicatorEl) updateIndicatorEl.style.display = 'inline-flex';
+      } else {
+        versionPillEl.classList.remove('has-update');
+        versionPillEl.title = `Zalo-Flow v${data.currentVersion} (${data.currentCommit || 'main'}). Bấm để kiểm tra bản mới.`;
+        if (updateIndicatorEl) updateIndicatorEl.style.display = 'none';
+      }
+    }
+
+    renderAppUpdateModalData(data);
+  } catch (err) {
+    console.warn('[App Version Check] Error:', err);
+  } finally {
+    if (recheckBtn && force) {
+      recheckBtn.disabled = false;
+      recheckBtn.innerText = '🔄 Kiểm Tra Lại';
+    }
+  }
+}
+
+function renderAppUpdateModalData(data) {
+  if (!data) return;
+
+  const currentVerEl = document.getElementById('update-modal-current-ver');
+  const commitEl = document.getElementById('update-modal-commit');
+  const latestVerEl = document.getElementById('update-modal-latest-ver');
+  const statusBadgeEl = document.getElementById('update-modal-status-badge');
+  const changelogBoxEl = document.getElementById('update-changelog-box');
+  const githubLinkEl = document.getElementById('update-github-link');
+  const startUpdateBtn = document.getElementById('btn-start-update');
+
+  if (currentVerEl) currentVerEl.innerText = `v${data.currentVersion}`;
+  if (commitEl) commitEl.innerText = `${data.currentBranch || 'main'} (${data.currentCommit || 'HEAD'})`;
+  if (latestVerEl) latestVerEl.innerText = `v${data.latestVersion}`;
+
+  if (statusBadgeEl) {
+    statusBadgeEl.classList.remove('up-to-date', 'update-ready');
+    if (data.hasUpdate) {
+      statusBadgeEl.innerText = 'Có Bản Cập Nhật Mới';
+      statusBadgeEl.classList.add('update-ready');
+    } else {
+      statusBadgeEl.innerText = 'Phiên Bản Mới Nhất';
+      statusBadgeEl.classList.add('up-to-date');
+    }
+  }
+
+  if (changelogBoxEl) {
+    changelogBoxEl.innerText = data.releaseNotes || 'Chưa có ghi chú phát hành chi tiết trên GitHub Releases.';
+  }
+
+  if (githubLinkEl && data.htmlUrl) {
+    githubLinkEl.href = data.htmlUrl;
+  }
+
+  if (startUpdateBtn) {
+    if (!data.isGitRepo) {
+      startUpdateBtn.disabled = true;
+      startUpdateBtn.style.opacity = '0.5';
+      startUpdateBtn.style.cursor = 'not-allowed';
+      startUpdateBtn.innerText = '⚠️ Không Dùng Git (Tải từ Zip)';
+    } else if (data.hasUpdate) {
+      startUpdateBtn.disabled = false;
+      startUpdateBtn.style.opacity = '1';
+      startUpdateBtn.style.cursor = 'pointer';
+      startUpdateBtn.innerText = `🚀 Cập Nhật Lên v${data.latestVersion}`;
+    } else {
+      startUpdateBtn.disabled = false;
+      startUpdateBtn.style.opacity = '1';
+      startUpdateBtn.style.cursor = 'pointer';
+      startUpdateBtn.innerText = '⚡ Đồng Bộ / Cập Nhật Lại';
+    }
+  }
+}
+
+function openAppUpdateModal() {
+  openModal('modal-app-update');
+  checkAppVersion(false);
+}
+
+async function executeAppUpdate() {
+  if (isUpdatingApp) return;
+
+  const targetVer = appVersionData?.latestVersion || 'mới nhất';
+  const confirmMsg = `Bạn có chắc chắn muốn tiến hành Cập nhật 1-Click lên phiên bản v${targetVer}?\n\n` +
+    `🛡️ Dữ liệu tệp .env, phiên Zalo và SQLite được bảo vệ 100%.\n` +
+    `Máy chủ sẽ tự động nạp lại mã nguồn mới trong khoảng 15-30 giây.`;
+
+  if (!confirm(confirmMsg)) return;
+
+  isUpdatingApp = true;
+
+  const actionsEl = document.getElementById('update-modal-actions');
+  const progressContainerEl = document.getElementById('update-progress-container');
+  const progressTextEl = document.getElementById('update-progress-text');
+  const startBtn = document.getElementById('btn-start-update');
+  const recheckBtn = document.getElementById('btn-recheck-version');
+
+  if (startBtn) startBtn.disabled = true;
+  if (recheckBtn) recheckBtn.disabled = true;
+  if (actionsEl) actionsEl.style.display = 'none';
+  if (progressContainerEl) progressContainerEl.style.display = 'block';
+
+  if (progressTextEl) {
+    progressTextEl.innerText = 'Đang khởi chạy tiến trình cập nhật độc lập...';
+  }
+
+  try {
+    const res = await fetch('/api/system/update', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(state.adminToken ? { 'Authorization': `Bearer ${state.adminToken}` } : {})
+      }
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || 'Yêu cầu cập nhật thất bại.');
+    }
+
+    if (progressTextEl) {
+      progressTextEl.innerText = 'Máy chủ đang kéo mã nguồn mới & kiểm tra cú pháp AST. Đang chờ nạp lại...';
+    }
+
+    pollServerHealthAfterUpdate();
+  } catch (err) {
+    alert(`Lỗi khi cập nhật: ${err.message}`);
+    isUpdatingApp = false;
+    if (actionsEl) actionsEl.style.display = 'flex';
+    if (progressContainerEl) progressContainerEl.style.display = 'none';
+    if (startBtn) startBtn.disabled = false;
+    if (recheckBtn) recheckBtn.disabled = false;
+  }
+}
+
+function pollServerHealthAfterUpdate() {
+  const progressTextEl = document.getElementById('update-progress-text');
+  let attempts = 0;
+  const maxAttempts = 45; // 45 * 2s = 90s max wait
+
+  const pollInterval = setInterval(async () => {
+    attempts++;
+    if (progressTextEl) {
+      progressTextEl.innerText = `Đang kết nối lại máy chủ... (${attempts * 2}s)`;
+    }
+
+    try {
+      const res = await fetch('/health', { cache: 'no-store' });
+      if (res.ok) {
+        const health = await res.json();
+        if (health && health.status === 'healthy') {
+          clearInterval(pollInterval);
+          if (progressTextEl) {
+            progressTextEl.innerText = '✅ Cập nhật thành công! Đang làm mới giao diện...';
+          }
+          setTimeout(() => {
+            window.location.reload();
+          }, 1200);
+        }
+      }
+    } catch {
+      // Server is still restarting
+    }
+
+    if (attempts >= maxAttempts) {
+      clearInterval(pollInterval);
+      if (progressTextEl) {
+        progressTextEl.innerHTML = '<span style="color: #f87171;">⚠️ Máy chủ mất nhiều thời gian hơn dự kiến để khởi động lại. Vui lòng kiểm tra console hoặc chạy lại <code>npm start</code>.</span>';
+      }
+    }
+  }, 2000);
+}
+

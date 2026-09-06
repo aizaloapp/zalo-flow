@@ -14,6 +14,7 @@ import campaignRoutes from './routes/campaigns.js';
 import chatActionRoutes from './routes/chat-actions.js';
 import aiSettingsRoutes from './routes/ai-settings.js';
 import backupRoutes from './routes/backup.js';
+import { updaterRouter } from './routes/updater.js';
 
 // Import Adapters & Utilities
 import { chatwootInboundAdapter } from './adapters/chatwoot-inbound.js';
@@ -117,6 +118,7 @@ app.use('/api', campaignRoutes);
 app.use('/api', chatActionRoutes);
 app.use('/api', aiSettingsRoutes);
 app.use('/api', backupRoutes);
+app.use('/api', updaterRouter);
 
 // -----------------------------------------------------------------------------
 // Core Conversation & Sync REST APIs

@@ -2220,3 +2220,133 @@ body {
   animation: pulse 1s infinite;
 }
 
+/* Version Pill & 1-Click Update Styles */
+.version-pill {
+  cursor: pointer;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #94a3b8;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  transition: all 0.25s ease;
+}
+
+.version-pill:hover {
+  background: rgba(30, 41, 59, 0.95);
+  border-color: #38bdf8;
+  color: #f8fafc;
+  transform: translateY(-1px);
+}
+
+.version-pill.has-update {
+  background: rgba(37, 99, 235, 0.2);
+  border-color: #3b82f6;
+  color: #60a5fa;
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.3);
+}
+
+.version-pill.has-update .update-indicator {
+  display: inline-flex !important;
+  font-weight: 700;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.15);
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  animation: updatePulse 2s infinite ease-in-out;
+}
+
+@keyframes updatePulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(0.96); }
+}
+
+.update-version-compare {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+}
+
+.version-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.version-card.current {
+  border-color: #cbd5e1;
+}
+
+.version-card.latest {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+}
+
+.version-card-label {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.version-card-val {
+  font-size: 1.15rem;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  color: #0f172a;
+}
+
+.version-card.latest .version-card-val {
+  color: #1d4ed8;
+}
+
+.version-card-commit {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+.version-card-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 12px;
+  margin-top: 4px;
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.version-card-badge.up-to-date {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.version-card-badge.update-ready {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.version-arrow {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #94a3b8;
+}
+
