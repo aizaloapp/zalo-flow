@@ -15,11 +15,21 @@
 [![CI Quality Gate](https://github.com/aizaloapp/zalo-flow/actions/workflows/ci.yml/badge.svg)](https://github.com/aizaloapp/zalo-flow/actions/workflows/ci.yml)
 [![Anti-Leak & Secret Scan](https://github.com/aizaloapp/zalo-flow/actions/workflows/secret-scan.yml/badge.svg)](https://github.com/aizaloapp/zalo-flow/actions/workflows/secret-scan.yml)
 [![Memory Footprint](https://img.shields.io/badge/RAM-%3C%20100MB-success.svg)](test/test-all.js)
-[![Tests Passing](https://img.shields.io/badge/Tests-25%2F25%20Passing-brightgreen.svg)](test/test-all.js)
+[![Tests Passing](https://img.shields.io/badge/Tests-26%2F26%20Passing-brightgreen.svg)](test/test-all.js)
 [![Docker Ready](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](docker-compose.yml)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-[Tính Năng](#-tính-năng-nổi-bật) • [Kiến Trúc Hệ Thống](#-kiến-trúc-hệ-thống) • [Cài Đặt Nhanh](#-cài-đặt-nhanh-trong-3-phút) • [Tích Hợp Chatwoot](#-hướng-dẫn-tích-hợp-chatwoot) • [Phòng Vệ Anti-Ban](#-hệ-thống-phòng-vệ-anti-ban-3-lớp) • [Lộ Trình Nghiên Cứu](#-lộ-trình-nghiên-cứu-cộng-đồng)
+[Tính Năng](#-tính-năng-nổi-bật) • [Tải Về Windows](#-tải-về-cài-đặt-1-click-cho-windows) • [Kiến Trúc Hệ Thống](#-kiến-trúc-hệ-thống) • [Cài Đặt Nhanh](#-cài-đặt-nhanh-trong-3-phút) • [Tích Hợp Chatwoot](#-hướng-dẫn-tích-hợp-chatwoot) • [Phòng Vệ Anti-Ban](#-hệ-thống-phòng-vệ-anti-ban-3-lớp)
+
+<br/>
+
+### 📥 Tải Về Cài Đặt 1-Click Cho Windows
+
+Không cần biết Git, không cần cài Node.js, không cần mở màn hình đen Terminal:
+
+[![Tải Bản Cài Đặt Windows](https://img.shields.io/badge/Windows-Download%20Setup%20v1.0.0%20(.exe)-0068FF?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/aizaloapp/zalo-flow/releases/latest)
+
+> 💡 **Tải về chạy ngay:** Bấm nút ở trên để tải file **`ZaloFlow-Setup-v1.0.0.exe`** (Chỉ **23.3MB**). Cài đặt trong 30 giây là có ngay icon Zalo-Flow ngoài Desktop!
 
 </div>
 

@@ -15,11 +15,21 @@
 [![CI Quality Gate](https://github.com/aizaloapp/zalo-flow/actions/workflows/ci.yml/badge.svg)](https://github.com/aizaloapp/zalo-flow/actions/workflows/ci.yml)
 [![Anti-Leak & Secret Scan](https://github.com/aizaloapp/zalo-flow/actions/workflows/secret-scan.yml/badge.svg)](https://github.com/aizaloapp/zalo-flow/actions/workflows/secret-scan.yml)
 [![Memory Footprint](https://img.shields.io/badge/RAM-%3C%20100MB-success.svg)](test/test-all.js)
-[![Tests Passing](https://img.shields.io/badge/Tests-25%2F25%20Passing-brightgreen.svg)](test/test-all.js)
+[![Tests Passing](https://img.shields.io/badge/Tests-26%2F26%20Passing-brightgreen.svg)](test/test-all.js)
 [![Docker Ready](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](docker-compose.yml)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-[Features](#-key-features) • [Architecture](#-system-architecture) • [Quick Start](#-quick-start-in-3-minutes) • [Chatwoot Integration](#-chatwoot-crm-integration) • [Anti-Ban Guardrails](#-3-layer-anti-ban-defense) • [Roadmap](#-community-research-roadmap)
+[Features](#-key-features) • [Download Windows](#-1-click-windows-installer-for-everyone) • [Architecture](#-system-architecture) • [Quick Start](#-quick-start-in-3-minutes) • [Chatwoot Integration](#-chatwoot-crm-integration) • [Anti-Ban Guardrails](#-3-layer-anti-ban-defense)
+
+<br/>
+
+### 📥 1-Click Windows Installer (For Everyone)
+
+No Git, no Node.js installation, no command line terminals required:
+
+[![Download Windows Setup](https://img.shields.io/badge/Windows-Download%20Setup%20v1.0.0%20(.exe)-0068FF?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/aizaloapp/zalo-flow/releases/latest)
+
+> 💡 **Download & Run:** Click the button above to download **`ZaloFlow-Setup-v1.0.0.exe`** (Only **23.3MB**). Run the installer in 30 seconds to get your Zalo-Flow desktop assistant ready!
 
 </div>
 
