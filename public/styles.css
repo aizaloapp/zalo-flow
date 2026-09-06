@@ -727,6 +727,14 @@ body {
   margin: 4px 0;
 }
 
+.contact-card-bubble {
+  white-space: normal !important;
+  line-height: 1.35;
+  width: 260px;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
 .quote-block {
   background: rgba(0, 0, 0, 0.25);
   border-left: 3px solid var(--primary);

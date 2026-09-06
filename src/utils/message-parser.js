@@ -13,6 +13,15 @@ export function isDocumentFileName(filename) {
   return DOC_EXTS.has(ext);
 }
 
+export const VN_PHONE_REGEX = /(?:\+?84|0)\s*[1-9](?:[\s.-]*\d){8,9}\b/;
+
+export function normalizeVnPhone(phoneStr) {
+  if (!phoneStr) return '';
+  const match = String(phoneStr).match(VN_PHONE_REGEX);
+  if (!match) return '';
+  return match[0].replace(/[\s.-]/g, '').replace(/^\+?84/, '0');
+}
+
 export function parseMessage(rawMsg) {
   if (!rawMsg) {
     return { type: 'text', text: '' };
@@ -22,7 +31,7 @@ export function parseMessage(rawMsg) {
 
   try {
     const data = rawMsg.data || rawMsg;
-    const content = data.content;
+    const content = data.content !== undefined ? data.content : rawMsg.content;
     const msgType = String(data.msgType || rawMsg.msgType || '');
 
     // 0. Call Message Detection (Audit I3)
@@ -46,12 +55,137 @@ export function parseMessage(rawMsg) {
     // 1. Quote Message Detection
     const quote = data.quote || rawMsg.quote;
     if (quote && (quote.msg || quote.attach)) {
+      const qText = String(quote.msg || quote.attach || '[Đính kèm]').trim();
       return {
         type: 'quote',
         text: text || String(content?.msg || content?.title || ''),
-        quoteText: String(quote.msg || '[Đính kèm]'),
+        quoteText: qText,
         quoteSender: String(quote.fromD || quote.dName || quote.ownerId || 'Người dùng'),
         mediaUrl: ''
+      };
+    }
+
+    // 1.5. Contact / Card Message Detection (Personal QR Cards & Phonebook Shared Contacts)
+    const isExplicitContact = (
+      msgType === '6' ||
+      msgType === 6 ||
+      msgType.includes('contact') ||
+      msgType.includes('recommend') ||
+      content?.type === 'contact' ||
+      content?.type === 'card' ||
+      content?.type === 'share_contact'
+    );
+
+    let contactObj = null;
+    if (content && typeof content === 'object') {
+      contactObj = content;
+    } else if (typeof content === 'string' && (content.startsWith('{') || isExplicitContact)) {
+      try {
+        const parsedJson = JSON.parse(content);
+        if (parsedJson && typeof parsedJson === 'object') {
+          contactObj = parsedJson;
+        }
+      } catch {}
+    }
+
+    if (!contactObj && data?.msgInfo) {
+      if (typeof data.msgInfo === 'object') {
+        contactObj = data.msgInfo;
+      } else if (typeof data.msgInfo === 'string') {
+        try { contactObj = JSON.parse(data.msgInfo); } catch {}
+      }
+    }
+
+    const isProfileLink = Boolean(
+      contactObj && (
+        contactObj.action === 'view_profile' ||
+        contactObj.action === 'view_contact' ||
+        (contactObj.href && String(contactObj.href).includes('zalo.me'))
+      )
+    );
+
+    const hasPhoneInPayload = Boolean(
+      contactObj && (
+        contactObj.phone ||
+        contactObj.phoneNumber ||
+        contactObj.phone_number ||
+        data?.msgInfo?.phone ||
+        VN_PHONE_REGEX.test(rawContentStr)
+      )
+    );
+
+    const isContactCard = Boolean(
+      isExplicitContact ||
+      (contactObj && (contactObj.contactUid || contactObj.qrCodeUrl)) ||
+      (isProfileLink && hasPhoneInPayload)
+    );
+
+    if (isContactCard) {
+      let detectedPhone = '';
+      let qrCodeUrl = contactObj?.qrCodeUrl || '';
+
+      // Check if description is a JSON string containing phone / qrCodeUrl
+      if (typeof contactObj?.description === 'string' && contactObj.description.trim().startsWith('{')) {
+        try {
+          const descJson = JSON.parse(contactObj.description);
+          if (descJson && typeof descJson === 'object') {
+            if (!detectedPhone && descJson.phone) detectedPhone = normalizeVnPhone(descJson.phone);
+            if (!qrCodeUrl && descJson.qrCodeUrl) qrCodeUrl = descJson.qrCodeUrl;
+          }
+        } catch {}
+      }
+
+      if (contactObj?.phone) detectedPhone = normalizeVnPhone(contactObj.phone);
+      if (!detectedPhone && contactObj?.phoneNumber) detectedPhone = normalizeVnPhone(contactObj.phoneNumber);
+      if (!detectedPhone && contactObj?.phone_number) detectedPhone = normalizeVnPhone(contactObj.phone_number);
+      if (!detectedPhone && data?.msgInfo?.phone) detectedPhone = normalizeVnPhone(data.msgInfo.phone);
+      if (!detectedPhone && contactObj?.params) {
+        const pStr = typeof contactObj.params === 'string' ? contactObj.params : JSON.stringify(contactObj.params);
+        detectedPhone = normalizeVnPhone(pStr);
+      }
+      if (!detectedPhone) {
+        detectedPhone = normalizeVnPhone(rawContentStr);
+      }
+
+      const isValidPhone = /^0\d{9,10}$/.test(detectedPhone);
+
+      const isCleanName = (str) => {
+        if (!str || typeof str !== 'string') return false;
+        const trimmed = str.trim();
+        if (!trimmed) return false;
+        if (trimmed.startsWith('{') || trimmed.startsWith('[') || trimmed.endsWith('}')) return false;
+        if (/^https?:\/\//i.test(trimmed) || trimmed.includes('zdn.vn') || trimmed.includes('zalo.me')) return false;
+        if (/^(\+?84|0)[\d\s.-]+$/.test(trimmed)) return false;
+        if (['view_profile', 'view_contact', 'chat.contact', 'contact', 'card'].includes(trimmed.toLowerCase())) return false;
+        return true;
+      };
+
+      // Priority: title (contact card owner) -> name -> contactName -> displayName -> description (if text)
+      let contactName = '';
+      if (isCleanName(contactObj?.title)) {
+        contactName = contactObj.title.trim();
+      } else if (isCleanName(contactObj?.name)) {
+        contactName = contactObj.name.trim();
+      } else if (isCleanName(contactObj?.contactName)) {
+        contactName = contactObj.contactName.trim();
+      } else if (isCleanName(contactObj?.displayName)) {
+        contactName = contactObj.displayName.trim();
+      } else if (isCleanName(contactObj?.description)) {
+        contactName = contactObj.description.trim();
+      } else if (isCleanName(data?.msgInfo?.title)) {
+        contactName = data.msgInfo.title.trim();
+      } else if (isCleanName(data?.dName)) {
+        contactName = data.dName.trim();
+      } else {
+        contactName = 'Liên hệ';
+      }
+
+      const mediaUrl = qrCodeUrl || contactObj?.avatar || contactObj?.avatarUrl || contactObj?.thumb || '';
+
+      return {
+        type: 'contact',
+        text: isValidPhone ? `📇 [Danh thiếp] ${contactName} - SĐT: ${detectedPhone}` : `📇 [Danh thiếp] ${contactName} (Không hiển thị SĐT)`,
+        mediaUrl: mediaUrl || ''
       };
     }
 

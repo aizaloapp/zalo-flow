@@ -325,6 +325,119 @@ assert.strictEqual(callParsed.text, '📞 Cuộc gọi thoại (Zalo Call)', 'Te
 console.log('   ✅ Zalo Call Parser Detection passed!\n');
 
 // -----------------------------------------------------------------------------
+// Test 12.5: Zalo Contact Card Parser Detection (6 Cases)
+// -----------------------------------------------------------------------------
+console.log('12.5. Testing Zalo Contact Card Parser Detection...');
+// Case 1: Valid phone in object
+const contact1 = parseMessage({
+  msgType: 6,
+  content: {
+    contactUid: '123456789',
+    title: 'Trần Mạnh Hùng',
+    phone: '0398561867'
+  }
+});
+assert.strictEqual(contact1.type, 'contact', 'Type should be contact');
+assert.strictEqual(contact1.text, '📇 [Danh thiếp] Trần Mạnh Hùng - SĐT: 0398561867');
+assert.strictEqual(contact1.mediaUrl, '');
+
+// Case 2: Hidden/empty phone
+const contact2 = parseMessage({
+  msgType: 'chat.contact',
+  content: {
+    contactUid: '987654321',
+    title: 'Nguyễn Văn A',
+    phone: ''
+  }
+});
+assert.strictEqual(contact2.type, 'contact');
+assert.strictEqual(contact2.text, '📇 [Danh thiếp] Nguyễn Văn A (Không hiển thị SĐT)');
+
+// Case 3: Masked phone
+const contact3 = parseMessage({
+  msgType: 'share.contact',
+  content: {
+    contactUid: '112233',
+    title: 'Lê Thị B',
+    phone: '0398***123'
+  }
+});
+assert.strictEqual(contact3.type, 'contact');
+assert.strictEqual(contact3.text, '📇 [Danh thiếp] Lê Thị B (Không hiển thị SĐT)');
+
+// Case 4: JSON string content
+const contact4 = parseMessage({
+  msgType: 'chat.contact',
+  content: JSON.stringify({
+    contactUid: '556677',
+    title: 'Đặng C',
+    phone: '0901234567'
+  })
+});
+assert.strictEqual(contact4.type, 'contact');
+assert.strictEqual(contact4.text, '📇 [Danh thiếp] Đặng C - SĐT: 0901234567');
+
+// Case 5: zca-js msgInfo format
+const contact5 = parseMessage({
+  data: {
+    msgType: 6,
+    dName: 'Phạm D',
+    msgInfo: {
+      contactUid: '998877',
+      phone: '0912345678'
+    }
+  }
+});
+assert.strictEqual(contact5.type, 'contact');
+assert.strictEqual(contact5.text, '📇 [Danh thiếp] Phạm D - SĐT: 0912345678');
+
+// Case 7: Phonebook shared contact (+84 format, action: view_profile, zalo.me href)
+const contact7 = parseMessage({
+  msgType: 'chat.link',
+  content: {
+    title: 'Chotruong',
+    description: 'A Cho CVH',
+    href: 'https://zalo.me',
+    params: 'phone=+84 348 841 731',
+    action: 'view_profile'
+  }
+});
+assert.strictEqual(contact7.type, 'contact', 'Type should be contact');
+assert(contact7.text.includes('0348841731'), 'Should normalize +84 348 841 731 to 0348841731');
+assert(contact7.text.includes('Chotruong'), 'Should include contact title');
+
+// Case 8: Quoting a contact card preserves quoteText from quote.attach
+const quotedContact = parseMessage({
+  msgType: 'chat.quote',
+  quote: {
+    msg: '',
+    attach: '[Danh thiếp] A Cho CVH',
+    fromD: 'Nguyễn Kiều'
+  },
+  content: 'Đọc số điện thoại giúp tôi'
+});
+assert.strictEqual(quotedContact.type, 'quote', 'Type should be quote');
+assert.strictEqual(quotedContact.quoteText, '[Danh thiếp] A Cho CVH', 'Should extract quoteText from quote.attach when msg is empty');
+
+// Case 9: Personal Contact Card with raw JSON in description and separate sender dName
+const contact9 = parseMessage({
+  msgType: 'chat.contact',
+  content: {
+    contactUid: '953483389',
+    title: 'Nguyễn Dũng Chính',
+    description: '{"phone":"+84938721779","qrCodeUrl":"https://qr-talk.zdn.vn/19/953483389/92dd3a48ae0747591e16.jpg"}'
+  },
+  data: {
+    dName: 'Nguyễn Kiều'
+  }
+});
+assert.strictEqual(contact9.type, 'contact', 'Type should be contact');
+assert.strictEqual(contact9.text, '📇 [Danh thiếp] Nguyễn Dũng Chính - SĐT: 0938721779', 'Text should cleanly format owner name and SĐT without JSON or sender name');
+assert.strictEqual(contact9.mediaUrl, 'https://qr-talk.zdn.vn/19/953483389/92dd3a48ae0747591e16.jpg', 'Should extract qrCodeUrl into mediaUrl');
+
+console.log('   ✅ Zalo Contact Card Parser Detection passed (9/9 cases)!\n');
+
+// -----------------------------------------------------------------------------
 // Test 13: Campaign Target Keyword Filtering & Recurrence Modes
 // -----------------------------------------------------------------------------
 console.log('13. Testing Campaign Target Keyword Filtering & Recurrence Modes...');

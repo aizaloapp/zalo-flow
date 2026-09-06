@@ -1751,6 +1751,63 @@ function appendMessageElement(msg, autoScroll = true) {
     contentHtml = '<div>[Tin nhắn đã được thu hồi]</div>';
   } else if (msg.mediaType === 'call') {
     contentHtml = '<div class="call-bubble"><span>📞</span><span>Cuộc gọi thoại (Zalo Call)</span></div>';
+  } else if (msg.mediaType === 'contact') {
+    const phoneMatch = (msg.text || '').match(/SĐT:\s*([0-9\s.-]+)/i);
+    const phone = phoneMatch ? phoneMatch[1].replace(/[\s.-]/g, '') : '';
+    const formattedPhone = (phone && phone.length === 10)
+      ? `${phone.slice(0, 4)} ${phone.slice(4, 7)} ${phone.slice(7)}`
+      : phone;
+
+    let contactName = 'Liên hệ';
+    const cardMatch = (msg.text || '').match(/\[Danh thiếp\]\s*(.*?)(?:\s*-\s*SĐT:|\s*\(Không hiển thị SĐT\)|\s*$)/i);
+    if (cardMatch && cardMatch[1]) {
+      let rawName = cardMatch[1].trim();
+      // Sanitize legacy unparsed JSON or chained sender names
+      rawName = rawName.replace(/\{.*?\}/g, '').trim();
+      const parts = rawName.split(/\s+-\s+/).map(p => p.trim()).filter(p => {
+        return p && !p.startsWith('{') && !p.endsWith('}') && !p.includes('zdn.vn') && !/^(\+?84|0)[\d\s.-]+$/.test(p);
+      });
+      if (parts.length > 0) {
+        contactName = parts[0];
+      } else if (rawName) {
+        contactName = rawName;
+      }
+    }
+
+    const qrUrl = msg.mediaUrl && msg.mediaUrl.startsWith('http') ? msg.mediaUrl : '';
+
+    contentHtml = `
+      <div class="contact-card-bubble" style="white-space:normal; line-height:1.35; width:260px; max-width:100%; box-sizing:border-box;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; padding-bottom:6px; border-bottom:1px solid rgba(255,255,255,0.08);">
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span style="font-size:1.05rem;">📇</span>
+            <span style="font-size:0.72rem; font-weight:700; color:#93c5fd; letter-spacing:0.5px; text-transform:uppercase;">Danh thiếp Zalo</span>
+          </div>
+          ${phone ? '<span style="font-size:0.68rem; background:rgba(34,197,94,0.2); color:#4ade80; padding:1px 6px; border-radius:10px; font-weight:600;">Đã có SĐT</span>' : '<span style="font-size:0.68rem; color:var(--text-muted);">Ẩn SĐT</span>'}
+        </div>
+        
+        <div style="display:flex; align-items:center; gap:10px;">
+          ${qrUrl ? `
+            <img src="${escapeHtml(qrUrl)}" alt="QR" onclick="openImagePreview('${escapeHtml(qrUrl)}')" style="width:44px; height:44px; border-radius:8px; border:1px solid rgba(255,255,255,0.2); cursor:pointer; object-fit:cover; background:#fff; flex-shrink:0;" title="Bấm để phóng to mã QR" />
+          ` : `
+            <div style="width:44px; height:44px; border-radius:50%; background:linear-gradient(135deg, #3b82f6, #1d4ed8); display:flex; align-items:center; justify-content:center; font-size:1.1rem; color:#fff; font-weight:bold; flex-shrink:0;">
+              ${escapeHtml((contactName.charAt(0) || '👤').toUpperCase())}
+            </div>
+          `}
+          <div style="flex:1; min-width:0;">
+            <div style="font-weight:700; font-size:0.92rem; color:#ffffff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(contactName)}">${escapeHtml(contactName)}</div>
+            ${phone ? `<div style="font-size:0.86rem; font-weight:600; color:#60a5fa; margin-top:2px; font-family:monospace; letter-spacing:0.5px;">${escapeHtml(formattedPhone)}</div>` : `<div style="font-size:0.72rem; color:var(--text-muted); margin-top:2px;">(Không chia sẻ SĐT)</div>`}
+          </div>
+        </div>
+
+        ${phone ? `
+          <div style="display:flex; align-items:center; gap:8px; margin-top:10px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.08);">
+            <a href="tel:${escapeHtml(phone)}" style="flex:1; text-align:center; color:#ffffff; background:#2563eb; font-size:0.75rem; font-weight:600; text-decoration:none; padding:5px 8px; border-radius:6px; display:inline-flex; align-items:center; justify-content:center; gap:4px;">📞 Gọi ngay</a>
+            <button onclick="navigator.clipboard.writeText('${escapeHtml(phone)}'); this.innerText='✅ Đã chép'; setTimeout(()=>{this.innerText='📋 Sao chép'}, 2000);" style="flex:1; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.15); color:#e2e8f0; font-size:0.75rem; font-weight:500; padding:5px 8px; border-radius:6px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:4px;">📋 Sao chép</button>
+          </div>
+        ` : ''}
+      </div>
+    `;
   } else if (msg.mediaType === 'image') {
     const authParam = state.adminToken ? `?token=${encodeURIComponent(state.adminToken)}` : '';
     const imgUrl = msg.mediaUrl ? (msg.mediaUrl.startsWith('http') ? msg.mediaUrl : msg.mediaUrl + authParam) : '';

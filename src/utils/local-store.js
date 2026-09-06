@@ -493,7 +493,7 @@ export class LocalStore extends EventEmitter {
       id: threadId,
       name: existing?.name || senderName || threadId,
       isGroup: msg.isGroup !== undefined ? msg.isGroup : (existing?.isGroup || false),
-      lastMessage: text || (mediaType === 'image' ? '[Hình ảnh]' : (mediaType === 'sticker' ? '[Sticker]' : '[Tin nhắn]')),
+      lastMessage: text || (mediaType === 'image' ? '[Hình ảnh]' : (mediaType === 'sticker' ? '[Sticker]' : (mediaType === 'contact' ? '[Danh thiếp]' : '[Tin nhắn]'))),
       lastTime: timestamp,
       unreadCount: newUnread
     });
