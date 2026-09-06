@@ -1,4 +1,4 @@
-﻿# build-local.ps1 - Build Zalo-Flow Windows Installer locally
+# build-local.ps1 - Build Zalo-Flow Windows Installer locally
 $ErrorActionPreference = 'Stop'
 Write-Host "[Builder] Starting Zalo-Flow Desktop Edition build process..." -ForegroundColor Cyan
 
@@ -37,10 +37,10 @@ Write-Host "[Builder] Compiling installer with Inno Setup ($iscc)..." -Foregroun
 $issFile = Join-Path $scriptDir "setup.iss"
 & $iscc $issFile
 
-$outputExe = Join-Path $scriptDir "output\ZaloFlow-Setup-v1.0.0.exe"
-if (Test-Path $outputExe) {
-    $sizeMb = [math]::Round(((Get-Item $outputExe).Length / 1MB), 2)
-    Write-Host "[Builder] Build successful! Output: $outputExe ($sizeMb MB)" -ForegroundColor Green
+$outputExe = Get-ChildItem (Join-Path $scriptDir "output\ZaloFlow-Setup-*.exe") | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+if ($outputExe -and (Test-Path $outputExe.FullName)) {
+    $sizeMb = [math]::Round(($outputExe.Length / 1MB), 2)
+    Write-Host "[Builder] Build successful! Output: $($outputExe.FullName) ($sizeMb MB)" -ForegroundColor Green
 } else {
     Write-Error "[Builder] Output installer not found."
 }
