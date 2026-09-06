@@ -13,6 +13,7 @@
     "init": "node bin/cli.js",
     "import:browser": "node bin/cli.js import-browser",
     "test": "node test/test-all.js",
+    "build:installer": "powershell -ExecutionPolicy Bypass -File installer/build-local.ps1",
     "lint": "node -e \"console.log('✅ Lint check passed')\""
   },
   "keywords": [

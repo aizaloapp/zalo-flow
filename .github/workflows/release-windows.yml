@@ -1,0 +1,63 @@
+name: Build & Release Windows Desktop Setup
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Integrity Tests
+        run: npm test
+
+      - name: Prune devDependencies for clean bundle
+        run: npm prune --omit=dev
+
+      - name: Download Node.js 22.14.0 LTS Portable
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path installer\tools -Force | Out-Null
+          Invoke-WebRequest -Uri "https://nodejs.org/dist/v22.14.0/win-x64/node.exe" -OutFile "installer\tools\node.exe"
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: choco install innosetup --no-progress
+
+      - name: Compile Inno Setup Installer
+        shell: pwsh
+        run: |
+          $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+          & $iscc installer\setup.iss
+
+      - name: Compute SHA256 Checksum
+        shell: pwsh
+        run: |
+          $setupExe = Get-Item installer\output\*.exe | Select-Object -First 1
+          $hash = (Get-FileHash $setupExe.FullName -Algorithm SHA256).Hash
+          Set-Content -Path ($setupExe.FullName + ".sha256") -Value $hash
+          Write-Host "Generated: $($setupExe.Name) - SHA256: $hash"
+
+      - name: Upload Installer to GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            installer/output/*.exe
+            installer/output/*.sha256

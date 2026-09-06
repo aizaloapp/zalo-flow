@@ -1,11 +1,14 @@
 import 'dotenv/config';
 import express from 'express';
+import http from 'http';
 import path from 'path';
+import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 import { logger } from './utils/logger.js';
 import { zaloClient } from './zalo-client.js';
 import { localStore } from './utils/local-store.js';
 import { requireAuth } from './middleware/auth.js';
+import { defaultRateLimiter } from './utils/rate-limiter.js';
 
 // Import Route Modules
 import tagRoutes from './routes/tags.js';
@@ -33,8 +36,9 @@ app.use(express.urlencoded({ extended: true }));
 // Serve static assets from public/
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
-const PORT = Number(process.env.PORT || 3000);
-const HOST = process.env.HOST || '0.0.0.0';
+const isPackaged = process.env.ZALOFLOW_PACKAGED === '1';
+const DEFAULT_PORT = Number(process.env.PORT || 3000);
+const HOST = isPackaged ? '127.0.0.1' : (process.env.HOST || '0.0.0.0');
 const startTime = Date.now();
 
 // Register Inbound Listeners on Zalo Client
@@ -336,32 +340,136 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
 });
 
-// Start Server
-const server = app.listen(PORT, HOST, () => {
-  logger.info(`🚀 Zalo-Flow Server is running on http://${HOST}:${PORT}`);
-  logger.info(`📊 Health check available at: http://${HOST}:${PORT}/health`);
-  zaloClient.initialize();
-  memoryGuard.startMonitoring({
-    server,
-    sseBroadcast: (event, data) => broadcastSSE(event, data)
+// -----------------------------------------------------------------------------
+// System Lifecycle & Shutdown API (Localhost only)
+// -----------------------------------------------------------------------------
+app.post('/api/system/shutdown', async (req, res) => {
+  const clientIp = req.ip || req.connection?.remoteAddress || '';
+  const isLocal = clientIp.includes('127.0.0.1') || clientIp === '::1' || clientIp.includes('localhost');
+  if (!isLocal) {
+    return res.status(403).json({ error: 'Chỉ cho phép yêu cầu tắt ứng dụng từ localhost.' });
+  }
+
+  res.json({ success: true, message: 'Đang tắt Zalo-Flow an toàn...' });
+
+  logger.info('🛑 [System] Shutdown requested via /api/system/shutdown. Draining outbound queues...');
+  try {
+    await defaultRateLimiter.drainAll(3000);
+  } catch (err) {
+    logger.warn(`[System] Notice during queue drain: ${err.message}`);
+  }
+
+  try {
+    if (typeof localStore?.close === 'function') {
+      localStore.close();
+      logger.info('✅ [System] SQLite WAL checkpointed and closed successfully.');
+    }
+  } catch (dbErr) {
+    logger.warn(`[System] Warning during DB close: ${dbErr.message}`);
+  }
+
+  setTimeout(() => {
+    logger.info('👋 [System] Server exited cleanly.');
+    process.exit(0);
+  }, 500);
+});
+
+// Helper to probe if an existing instance is already Zalo-Flow
+function probeHealth(port) {
+  return new Promise((resolve) => {
+    const req = http.get(`http://127.0.0.1:${port}/health`, { timeout: 1500 }, (res) => {
+      let body = '';
+      res.on('data', chunk => { body += chunk; });
+      res.on('end', () => {
+        try {
+          const data = JSON.parse(body);
+          resolve(Boolean(data && (data.status || data.zalo)));
+        } catch {
+          resolve(false);
+        }
+      });
+    });
+    req.on('error', () => resolve(false));
+    req.on('timeout', () => { req.destroy(); resolve(false); });
   });
-});
+}
 
-// Process signal graceful termination
-process.on('SIGTERM', () => {
-  logger.info('Received SIGTERM signal. Executing graceful shutdown...');
-  try {
-    server.close();
-    localStore.close();
-  } catch {}
-  process.exit(0);
-});
+// Start Server with resilient port fallback & single-instance detection
+function startServer(port, host, attempt = 0, maxAttempts = 5) {
+  const server = http.createServer(app);
 
-process.on('SIGINT', () => {
-  logger.info('Received SIGINT (Ctrl+C). Executing graceful shutdown...');
-  try {
-    server.close();
-    localStore.close();
-  } catch {}
-  process.exit(0);
-});
+  server.on('error', async (err) => {
+    if (err.code === 'EADDRINUSE') {
+      logger.warn(`[Port Manager] Cổng ${port} hiện đang có ứng dụng khác hoặc phiên bản Zalo-Flow cũ sử dụng.`);
+
+      if (isPackaged) {
+        // Probe if it's already Zalo-Flow running
+        const isZaloFlow = await probeHealth(port);
+        if (isZaloFlow) {
+          logger.info(`✨ [Single-Instance] Phát hiện Zalo-Flow đang chạy sẵn trên cổng ${port}. Đang mở lại tab trình duyệt và thoát tiến trình thứ hai...`);
+          try {
+            const opener = spawn('explorer', [`http://127.0.0.1:${port}`], { detached: true, stdio: 'ignore' });
+            opener.unref();
+          } catch {}
+          process.exit(0);
+        }
+      }
+
+      if (attempt < maxAttempts) {
+        const nextPort = port + 1;
+        logger.info(`[Port Manager] Đang thử kết nối với cổng kế tiếp: ${nextPort}...`);
+        startServer(nextPort, host, attempt + 1, maxAttempts);
+      } else {
+        logger.error(`[Port Manager] Không thể tìm thấy cổng trống sau ${maxAttempts} lần thử. Vui lòng tắt bớt các ứng dụng đang chiếm cổng.`);
+        process.exit(1);
+      }
+    } else {
+      logger.error(`[Server Error] ${err.message}`);
+      process.exit(1);
+    }
+  });
+
+  server.listen(port, host, () => {
+    logger.info(`🚀 Zalo-Flow Server is running on http://${host}:${port}`);
+    logger.info(`📊 Health check available at: http://${host}:${port}/health`);
+    zaloClient.initialize();
+    memoryGuard.startMonitoring({
+      server,
+      sseBroadcast: (event, data) => broadcastSSE(event, data)
+    });
+
+    // In Packaged Desktop Mode: Auto-open system default browser
+    if (isPackaged) {
+      logger.info(`🖥️ [Desktop Mode] Tự động mở trình duyệt mặc định tại: http://127.0.0.1:${port}...`);
+      try {
+        const opener = spawn('explorer', [`http://127.0.0.1:${port}`], { detached: true, stdio: 'ignore' });
+        opener.unref();
+      } catch (openErr) {
+        logger.warn(`Could not auto-open browser: ${openErr.message}`);
+      }
+    }
+  });
+
+  // Process signal graceful termination
+  process.on('SIGTERM', () => {
+    logger.info('Received SIGTERM signal. Executing graceful shutdown...');
+    try {
+      server.close();
+      localStore.close();
+    } catch {}
+    process.exit(0);
+  });
+
+  process.on('SIGINT', () => {
+    logger.info('Received SIGINT (Ctrl+C). Executing graceful shutdown...');
+    try {
+      server.close();
+      localStore.close();
+    } catch {}
+    process.exit(0);
+  });
+
+  return server;
+}
+
+startServer(DEFAULT_PORT, HOST);

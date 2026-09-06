@@ -4638,7 +4638,15 @@ function renderAppUpdateModalData(data) {
   }
 
   if (startUpdateBtn) {
-    if (!data.isGitRepo) {
+    if (data.isPackaged) {
+      startUpdateBtn.disabled = false;
+      startUpdateBtn.style.opacity = '1';
+      startUpdateBtn.style.cursor = 'pointer';
+      startUpdateBtn.onclick = () => {
+        window.open(data.htmlUrl || 'https://github.com/aizaloapp/zalo-flow/releases', '_blank');
+      };
+      startUpdateBtn.innerText = data.hasUpdate ? `📥 Tải Bộ Cài Đặt v${data.latestVersion}` : '📦 Xem Bản Phát Hành GitHub';
+    } else if (!data.isGitRepo) {
       startUpdateBtn.disabled = true;
       startUpdateBtn.style.opacity = '0.5';
       startUpdateBtn.style.cursor = 'not-allowed';
@@ -4647,11 +4655,13 @@ function renderAppUpdateModalData(data) {
       startUpdateBtn.disabled = false;
       startUpdateBtn.style.opacity = '1';
       startUpdateBtn.style.cursor = 'pointer';
+      startUpdateBtn.onclick = () => executeAppUpdate();
       startUpdateBtn.innerText = `🚀 Cập Nhật Lên v${data.latestVersion}`;
     } else {
       startUpdateBtn.disabled = false;
       startUpdateBtn.style.opacity = '1';
       startUpdateBtn.style.cursor = 'pointer';
+      startUpdateBtn.onclick = () => executeAppUpdate();
       startUpdateBtn.innerText = '⚡ Đồng Bộ / Cập Nhật Lại';
     }
   }

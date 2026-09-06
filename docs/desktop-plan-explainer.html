@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kế Hoạch Zalo-Flow Desktop Edition — Bản Chuẩn Bị Triển Khai</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .gradient-text {
+      background: linear-gradient(135deg, #0284c7 0%, #2563eb 50%, #4f46e5 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen">
+
+  <!-- Header Banner -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-50 backdrop-blur-md bg-white/90">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-extrabold text-xl shadow-md shadow-blue-500/20">
+          Z
+        </div>
+        <div>
+          <h1 class="font-bold text-lg text-slate-900 leading-tight">Zalo-Flow Desktop Edition</h1>
+          <p class="text-xs text-slate-500 font-medium">Kế hoạch triển khai hoàn thiện 100% cho Laptop / Desktop</p>
+        </div>
+      </div>
+      <div class="flex items-center space-x-3">
+        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2 animate-pulse"></span> /plan-review: [ĐỒNG Ý TRIỂN KHAI]
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <main class="max-w-6xl mx-auto px-4 py-10 space-y-12">
+
+    <section class="text-center space-y-4 max-w-3xl mx-auto">
+      <div class="inline-block px-4 py-1.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold uppercase tracking-wider">
+        Sẵn Sàng Triển Khai
+      </div>
+      <h2 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 leading-tight">
+        Tải Về ➔ Bấm Cài Đặt ➔ <span class="gradient-text">Dùng Ngay Trong 30 Giây!</span>
+      </h2>
+      <p class="text-slate-600 text-base sm:text-lg leading-relaxed">
+        Đã vượt qua 2 vòng phản biện kiến trúc gắt gao. Phiên bản này giúp <strong>chủ shop, sales và marketer</strong> có ngay trợ lý Zalo trên máy tính: <strong>không cần cài Node, không cần Git, không hiện màn hình đen Terminal</strong>.
+      </p>
+    </section>
+
+    <!-- Comparison: Before vs After -->
+    <section class="grid md:grid-cols-2 gap-6">
+      <!-- Cũ -->
+      <div class="p-6 rounded-2xl bg-white border border-rose-200 shadow-sm relative overflow-hidden">
+        <div class="absolute top-0 right-0 bg-rose-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">
+          Cách Cài Cũ (Terminal)
+        </div>
+        <div class="flex items-center space-x-3 mb-4">
+          <div class="w-10 h-10 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center font-bold text-lg">
+            ✕
+          </div>
+          <h3 class="text-lg font-bold text-slate-900">Rào cản cho người không biết code</h3>
+        </div>
+        <ul class="space-y-3 text-sm text-slate-600">
+          <li class="flex items-start">
+            <span class="text-rose-500 font-bold mr-2">•</span>
+            <span>Bắt buộc phải biết dùng <strong>Git, Node.js, Terminal</strong>.</span>
+          </li>
+          <li class="flex items-start">
+            <span class="text-rose-500 font-bold mr-2">•</span>
+            <span>Gặp lỗi màn hình đen PowerShell, lỗi chặn quyền cài đặt.</span>
+          </li>
+          <li class="flex items-start">
+            <span class="text-rose-500 font-bold mr-2">•</span>
+            <span>Tắt nhầm cửa sổ dòng lệnh đen làm app chết bất thình lình.</span>
+          </li>
+          <li class="flex items-start">
+            <span class="text-rose-500 font-bold mr-2">•</span>
+            <span><strong>90% người dùng phổ thông bỏ cuộc</strong> trước khi quét được mã QR.</span>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Mới -->
+      <div class="p-6 rounded-2xl bg-gradient-to-br from-emerald-50 to-blue-50 border border-emerald-200 shadow-sm relative overflow-hidden">
+        <div class="absolute top-0 right-0 bg-emerald-600 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">
+          Bản Mới: ZaloFlow-Setup.exe
+        </div>
+        <div class="flex items-center space-x-3 mb-4">
+          <div class="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-lg">
+            ✓
+          </div>
+          <h3 class="text-lg font-bold text-slate-900">Bấm 1 cái là chạy ngay</h3>
+        </div>
+        <ul class="space-y-3 text-sm text-slate-700 font-medium">
+          <li class="flex items-start">
+            <span class="text-emerald-600 font-bold mr-2">✓</span>
+            <span>Tải file <code>ZaloFlow-Setup.exe</code> về ➔ Bấm <strong>Next ➔ Finish</strong>.</span>
+          </li>
+          <li class="flex items-start">
+            <span class="text-emerald-600 font-bold mr-2">✓</span>
+            <span><strong>Không cần quyền Admin</strong> (cài êm cả trên máy tính công ty).</span>
+          </li>
+          <li class="flex items-start">
+            <span class="text-emerald-600 font-bold mr-2">✓</span>
+            <span>Tự tạo icon Zalo-Flow ngoài Desktop, bấm vào tự mở Chrome/Edge.</span>
+          </li>
+          <li class="flex items-start">
+            <span class="text-emerald-600 font-bold mr-2">✓</span>
+            <span>Chạy ngầm tĩnh lặng 100%, không hiện màn hình đen, <strong>RAM chỉ ~60-80MB</strong>!</span>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 4 Core Pillars of Desktop Edition -->
+    <section class="space-y-6">
+      <div class="text-center space-y-2">
+        <h3 class="text-2xl font-bold text-slate-900">4 Tính Năng Cốt Lõi Đã Được Tối Ưu Tinh Tế</h3>
+        <p class="text-slate-500 text-sm">Đáp ứng trọn vẹn tiêu chí kỹ thuật và trải nghiệm người dùng</p>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-6">
+        <!-- Trụ cột 1 -->
+        <div class="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm hover:border-blue-300 transition-all space-y-3">
+          <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-2xl">
+            📦
+          </div>
+          <h4 class="text-lg font-bold text-slate-900">1. Cài Đặt 1-Click (Inno Setup Chuẩn Quốc Tế)</h4>
+          <p class="text-sm text-slate-600 leading-relaxed">
+            Tự động giải nén và cấu hình vào thư mục <code>%LOCALAPPDATA%\Programs\ZaloFlow</code>. Đóng gói sẵn Node.js 22.14 LTS Portable. Có sẵn lối tắt Gỡ cài đặt (Uninstaller) sạch sẽ nếu không muốn dùng nữa.
+          </p>
+        </div>
+
+        <!-- Trụ cột 2 -->
+        <div class="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm hover:border-blue-300 transition-all space-y-3">
+          <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-2xl">
+            ⚡
+          </div>
+          <h4 class="text-lg font-bold text-slate-900">2. Tự Mở Trình Duyệt & Chống Mở Trùng (Zero Race)</h4>
+          <p class="text-sm text-slate-600 leading-relaxed">
+            Chính máy chủ Node sau khi khởi động thành công sẽ tự kích hoạt mở trình duyệt Chrome/Edge. Nếu bạn bấm nhầm icon 2-3 lần, app tự nhận diện và mở lại tab web chứ không bao giờ sinh ra tiến trình chạy trùng.
+          </p>
+        </div>
+
+        <!-- Trụ cột 3 -->
+        <div class="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm hover:border-blue-300 transition-all space-y-3">
+          <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-2xl">
+            🛡️
+          </div>
+          <h4 class="text-lg font-bold text-slate-900">3. Tự Động Đổi Cổng Nếu Bị Kẹt (3000 ➔ 3001)</h4>
+          <p class="text-sm text-slate-600 leading-relaxed">
+            Nếu máy tính của bạn đã có phần mềm khác (hoặc Docker) chiếm cổng 3000, server tự động chuyển sang 3001 và mở đúng web. Không bao giờ để người dùng bị văng lỗi cổng.
+          </p>
+        </div>
+
+        <!-- Trụ cột 4 -->
+        <div class="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm hover:border-blue-300 transition-all space-y-3">
+          <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-2xl">
+            🔒
+          </div>
+          <h4 class="text-lg font-bold text-slate-900">4. Cô Lập Localhost (127.0.0.1) & Tắt App An Toàn</h4>
+          <p class="text-sm text-slate-600 leading-relaxed">
+            Khóa cứng kết nối vào máy tính cá nhân, an toàn tuyệt đối khi dùng Wi-Fi quán cà phê. Nút <strong>"Dừng Zalo-Flow"</strong> gọi lệnh tắt an toàn, xả hết tin nhắn và lưu trọn vẹn CSDL trước khi thoát.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3 Simple Steps -->
+    <section class="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-6">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+        <div>
+          <h3 class="text-xl font-bold text-slate-900">3 Bước Triển Khai (Dự Kiến 1 - 1.5 Ngày)</h3>
+          <p class="text-xs text-slate-500 mt-0.5">Tiến độ cực nhanh và an toàn</p>
+        </div>
+        <span class="text-xs font-semibold px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700">Đã Phê Duyệt</span>
+      </div>
+
+      <div class="space-y-4">
+        <!-- Bước 1 -->
+        <div class="flex items-start space-x-4 p-4 rounded-xl bg-slate-50 border border-slate-100">
+          <div class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm shrink-0">
+            1
+          </div>
+          <div class="space-y-1">
+            <h5 class="font-bold text-slate-900 text-sm">Chuẩn hóa mã nguồn: Khóa 127.0.0.1, Đổi cổng kẹt & Tắt an toàn</h5>
+            <p class="text-xs text-slate-600">
+              Cấu hình cờ <code>ZALOFLOW_PACKAGED=1</code>, chặn Git pull backend, server tự mở browser, thêm endpoint shutdown an toàn.
+            </p>
+          </div>
+        </div>
+
+        <!-- Bước 2 -->
+        <div class="flex items-start space-x-4 p-4 rounded-xl bg-slate-50 border border-slate-100">
+          <div class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm shrink-0">
+            2
+          </div>
+          <div class="space-y-1">
+            <h5 class="font-bold text-slate-900 text-sm">Tạo kịch bản Inno Setup & Trình chạy ẩn không màn hình đen</h5>
+            <p class="text-xs text-slate-600">
+              Đóng gói Node 22.14 LTS Portable, viết launcher VBScript chạy ẩn tĩnh lặng, tạo shortcut Desktop và Start Menu.
+            </p>
+          </div>
+        </div>
+
+        <!-- Bước 3 -->
+        <div class="flex items-start space-x-4 p-4 rounded-xl bg-slate-50 border border-slate-100">
+          <div class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm shrink-0">
+            3
+          </div>
+          <div class="space-y-1">
+            <h5 class="font-bold text-slate-900 text-sm">Kiểm thử cài đặt thực tế & Thiết lập GitHub Actions tự đóng gói</h5>
+            <p class="text-xs text-slate-600">
+              Kiểm tra cài trên Windows, đo RAM ~60-80MB, tự động sinh file <code>ZaloFlow-Setup.exe</code> khi release trên GitHub.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Final Takeaway -->
+    <section class="p-6 rounded-2xl bg-emerald-50 border border-emerald-200 text-center space-y-3">
+      <h4 class="text-emerald-900 font-bold text-lg">Định Vị Sản Phẩm Chuẩn Xác:</h4>
+      <p class="text-emerald-800 text-sm max-w-2xl mx-auto leading-relaxed">
+        <strong>"Zalo-Flow Desktop Edition là ứng dụng hỗ trợ bán hàng & tự động hóa Zalo nhẹ nhất và dễ cài nhất cho người dùng Windows: Tải về, bấm Next ➔ Finish là có ngay trợ lý Zalo trên máy tính!"</strong>
+      </p>
+    </section>
+
+  </main>
+
+  <footer class="border-t border-slate-200 bg-white py-6 text-center text-xs text-slate-500">
+    Zalo-Flow Open Source Community Edition • Bản hoàn thiện sẵn sàng triển khai
+  </footer>
+
+</body>
+</html>

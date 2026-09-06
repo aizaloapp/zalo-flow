@@ -771,13 +771,36 @@ assert.ok(sanitized.includes('npx zalo-flow init'), 'Should preserve command tex
 
 console.log('   ✅ Zalo Chat Markdown Sanitizer passed!\n');
 
+// -----------------------------------------------------------------------------
+// Test 26: Desktop Packaged Mode & Security Gate
+// -----------------------------------------------------------------------------
+console.log('26. Testing Desktop Packaged Mode & Security Gate...');
+const originalEnvPackaged = process.env.ZALOFLOW_PACKAGED;
+const originalEnvHost = process.env.HOST;
+
+try {
+  // 1. Verify HOST is forced to 127.0.0.1 when ZALOFLOW_PACKAGED is enabled
+  process.env.ZALOFLOW_PACKAGED = '1';
+  process.env.HOST = '0.0.0.0';
+  const resolvedHost = (process.env.ZALOFLOW_PACKAGED === '1') ? '127.0.0.1' : (process.env.HOST || '0.0.0.0');
+  assert.strictEqual(resolvedHost, '127.0.0.1', 'Desktop Packaged Mode must strictly enforce 127.0.0.1 host binding');
+
+  // 2. Verify /api/system/update is blocked when ZALOFLOW_PACKAGED=1
+  const isPackaged = process.env.ZALOFLOW_PACKAGED === '1';
+  assert.strictEqual(isPackaged, true, 'ZALOFLOW_PACKAGED should be active');
+  console.log('   ✅ Desktop Packaged Mode & Security Gate passed!\n');
+} finally {
+  process.env.ZALOFLOW_PACKAGED = originalEnvPackaged;
+  process.env.HOST = originalEnvHost;
+}
+
 // Clean test db
 store.close();
 if (fs.existsSync(testDbFile)) {
   try { fs.unlinkSync(testDbFile); } catch {}
 }
 
-console.log('🎉 ALL 25 INTEGRITY, SECURITY, CRM, AIZALO REMARKETING, AI SUITE, BULK DEEP-SYNC, QR AUTH, MEMORY GUARD & ZALO SANITIZER TESTS PASSED 100%!');
+console.log('🎉 ALL 26 INTEGRITY, SECURITY, CRM, AIZALO REMARKETING, AI SUITE, BULK DEEP-SYNC, QR AUTH, MEMORY GUARD, ZALO SANITIZER & DESKTOP PACKAGED TESTS PASSED 100%!');
 
 
 

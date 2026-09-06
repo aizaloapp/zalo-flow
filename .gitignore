@@ -56,3 +56,7 @@ Thumbs.db
 *.suo
 *.ntvs*
 *.njsproj
+
+# Windows Installer Build Artifacts
+installer/tools/
+installer/output/

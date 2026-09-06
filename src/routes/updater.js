@@ -160,8 +160,9 @@ updaterRouter.get('/system/version', async (req, res) => {
     }
   }
 
+  const isPackaged = process.env.ZALOFLOW_PACKAGED === '1';
   const latestVersion = versionCache.latestVersion || currentVersion;
-  const hasUpdate = isGitRepo && compareSemver(latestVersion, currentVersion) > 0;
+  const hasUpdate = compareSemver(latestVersion, currentVersion) > 0;
 
   // Check if update lock is active
   const isUpdating = fs.existsSync(lockFile);
@@ -170,6 +171,7 @@ updaterRouter.get('/system/version', async (req, res) => {
     currentVersion,
     latestVersion,
     hasUpdate,
+    isPackaged,
     releaseNotes: versionCache.releaseNotes,
     htmlUrl: versionCache.htmlUrl,
     publishedAt: versionCache.publishedAt,
@@ -186,6 +188,13 @@ updaterRouter.get('/system/version', async (req, res) => {
  * Pre-flight safety check -> Drain RateLimiter -> Flush SQLite WAL -> Backup DB -> Spawn Standalone Updater -> Exit
  */
 updaterRouter.post('/system/update', requireAuth, async (req, res) => {
+  // 0. Server-side Gate: Block in packaged desktop mode
+  if (process.env.ZALOFLOW_PACKAGED === '1') {
+    return res.status(403).json({
+      error: 'Ứng dụng đang chạy ở phiên bản đóng gói Desktop (không sử dụng Git). Vui lòng tải bộ cài đặt mới từ GitHub Releases.'
+    });
+  }
+
   // 1. Check if git repository
   const isGitRepo = fs.existsSync(path.join(rootDir, '.git'));
   if (!isGitRepo) {
