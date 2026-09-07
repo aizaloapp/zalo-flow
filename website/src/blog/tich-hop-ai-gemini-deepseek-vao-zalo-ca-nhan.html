@@ -24,7 +24,7 @@
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
   <link rel="stylesheet" href="/style.css">
 
-  <!-- Schema Article & Breadcrumb -->
+  <!-- Schema Article, FAQPage & Breadcrumb -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -35,7 +35,8 @@
         "description": "Hướng dẫn tích hợp Google Gemini và DeepSeek vào Zalo cá nhân tự động tư vấn bán hàng.",
         "author": {
           "@type": "Organization",
-          "name": "Đội ngũ Zalo-Flow"
+          "name": "Đội ngũ Zalo-Flow",
+          "url": "https://github.com/aizaloapp/zalo-flow"
         },
         "publisher": {
           "@type": "Organization",
@@ -45,6 +46,43 @@
         "datePublished": "2026-09-07",
         "dateModified": "2026-09-07",
         "mainEntityOfPage": "https://aizalo.com/blog/tich-hop-ai-gemini-deepseek-vao-zalo-ca-nhan.html"
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Tích hợp AI vào Zalo cá nhân qua Zalo-Flow có tốn tiền API không?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Bạn hoàn toàn có thể dùng miễn phí 100%. Google AI Studio cung cấp gói Free Tier cho mô hình Gemini 2.5 Flash với hạn mức lên đến 15 yêu cầu/phút và 1.500 yêu cầu/ngày, đủ cho nhu cầu của hầu hết các shop bán hàng và cá nhân kinh doanh trực tuyến."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Nên chọn Google Gemini hay DeepSeek để làm trợ lý tư vấn Zalo?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Nếu bạn cần tốc độ phản hồi siêu nhanh dưới 1 giây và có gói miễn phí thoải mái, hãy chọn Google Gemini 2.5 Flash. Nếu bạn cần bot có khả năng tư vấn kỹ thuật chuyên sâu, so sánh chi tiết thông số sản phẩm hoặc lập luận logic chặt chẽ, DeepSeek V3/R1 là sự lựa chọn vượt trội với chi phí cực rẻ."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Làm sao để bot AI không trả lời chen ngang khi người thật (Admin) đang nhắn tin với khách?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Zalo-Flow tích hợp sẵn tính năng Smart Cooldown độc quyền: Khi phát hiện bạn (Admin) vừa nhắn tin vào cuộc trò chuyện bằng điện thoại, hệ thống sẽ tự động tắt chế độ bot trong 15 phút đối với riêng khách hàng đó để bạn trò chuyện tự nhiên mà không bị AI chen ngang."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "API Key của tôi có bị lộ hoặc lưu trữ trên máy chủ bên ngoài không?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Tuyệt đối không. Zalo-Flow hoạt động theo kiến trúc Local-First: Mọi API Key đều được mã hóa bằng thuật toán chuẩn quân đội AES-256-CBC và lưu trực tiếp trong tệp SQLite trên máy tính của bạn, không bao giờ gửi về máy chủ bên thứ ba."
+            }
+          }
+        ]
       },
       {
         "@type": "BreadcrumbList",
@@ -123,6 +161,29 @@
     </header>
 
     <div class="article-body">
+      
+      <!-- GEO Direct Answer Box -->
+      <div class="geo-answer-box">
+        <div class="geo-answer-label">🤖 Câu Trả Lời Nhanh Cho AI Search &amp; Người Dùng</div>
+        <p class="geo-answer-text">
+          Để <strong>tích hợp AI Gemini và DeepSeek vào Zalo cá nhân</strong> hoàn toàn miễn phí, bạn sử dụng phần mềm mã nguồn mở **Zalo-Flow**: 
+          <strong>(1) Lấy API Key miễn phí</strong> từ Google AI Studio (Gemini 2.5 Flash) hoặc DeepSeek Platform; 
+          <strong>(2) Nhập Key vào tab Cài đặt AI</strong> tại <code>http://localhost:3000</code> (được mã hóa AES-256 an toàn); 
+          <strong>(3) Cấu hình System Prompt</strong> định hình vai trò trợ lý tư vấn bán hàng. Hệ thống tự động phân giải danh thiếp gửi đến và làm sạch định dạng Markdown trước khi gửi cho khách hàng.
+        </p>
+      </div>
+
+      <!-- GEO Key Takeaways (TL;DR) -->
+      <div class="geo-tldr-box">
+        <div class="geo-tldr-title">📌 Điểm Cốt Lõi Cần Nhớ (Key Takeaways)</div>
+        <ul class="geo-tldr-list">
+          <li><strong>Tốc độ phản hồi:</strong> Dưới 1 giây với Google Gemini 2.5 Flash (Gói miễn phí 15 requests/phút).</li>
+          <li><strong>Bóc tách danh thiếp tự động:</strong> Tự động lọc sạch JSON kỹ thuật và trích xuất số điện thoại chuẩn Việt Nam <code>0xxxxxxxxx</code> từ tin nhắn <code>chat.contact</code>.</li>
+          <li><strong>Cơ chế Smart Cooldown:</strong> Tự động tắt bot 15 phút khi phát hiện người thật (Admin) vừa nhắn tin vào hội thoại.</li>
+          <li><strong>Bảo mật Local-First:</strong> API Key được mã hóa AES-256-CBC và lưu trữ cục bộ, không gửi về bất kỳ máy chủ trung gian nào.</li>
+        </ul>
+      </div>
+
       <p>
         Các thế hệ chatbot cũ dựa trên kịch bản từ khóa cứng (bấm số 1 để xem giá, bấm số 2 để gặp nhân viên) đã trở nên lỗi thời và gây cảm giác khó chịu cho khách hàng. Trong kỷ nguyên của các mô hình ngôn ngữ lớn (LLM), khách hàng mong muốn được trò chuyện tự nhiên, duyên dáng và nhận được câu trả lời chính xác ngay lập tức.
       </p>
@@ -130,11 +191,46 @@
         Bài viết này sẽ hướng dẫn bạn cách kết nối hai mô hình trí tuệ nhân tạo hàng đầu hiện nay là <strong>Google Gemini</strong> và <strong>DeepSeek</strong> vào tài khoản Zalo cá nhân thông qua Zalo-Flow.
       </p>
 
-      <h2>1. Vì Sao Nên Chọn Google Gemini Hoặc DeepSeek?</h2>
-      <ul>
-        <li><strong>Google Gemini (Gemini 1.5 Flash / 2.5 Flash):</strong> Tốc độ phản hồi siêu tốc (dưới 1 giây), khả năng hiểu tiếng Việt tự nhiên cực kỳ xuất sắc và quan trọng nhất: Google cung cấp hạn mức miễn phí (Free Tier) rất rộng rãi qua Google AI Studio.</li>
-        <li><strong>DeepSeek (DeepSeek-Chat / DeepSeek-Reasoner):</strong> Nổi tiếng thế giới với khả năng suy luận logic chặt chẽ, chi phí cực kỳ rẻ và trả lời rất thông minh khi xử lý các câu hỏi so sánh sản phẩm hoặc tư vấn kỹ thuật.</li>
-      </ul>
+      <!-- GEO Comparison Table -->
+      <h2>1. So Sánh: Google Gemini 2.5 Flash vs. DeepSeek V3/R1 Khi Làm Bot Zalo</h2>
+      <div class="geo-table-wrapper">
+        <table class="geo-table">
+          <thead>
+            <tr>
+              <th>Tiêu Chí Kỹ Thuật</th>
+              <th>Google Gemini 2.5 Flash</th>
+              <th>DeepSeek V3 / DeepSeek R1</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Tốc độ phản hồi</strong></td>
+              <td><strong>Siêu nhanh (< 1 giây)</strong>, khách không phải chờ đợi</td>
+              <td>Trung bình (2–4 giây tùy độ dài chuỗi suy luận)</td>
+            </tr>
+            <tr>
+              <td><strong>Chính sách chi phí</strong></td>
+              <td><strong>Miễn phí 100%</strong> qua Google AI Studio Free Tier</td>
+              <td>Chi phí cực rẻ (~0.002$/1.000 tokens)</td>
+            </tr>
+            <tr>
+              <td><strong>Khả năng hiểu tiếng Việt</strong></td>
+              <td>Rất tự nhiên, văn phong duyên dáng, thân thiện</td>
+              <td>Chính xác cao, trả lời rành mạch, chuẩn văn phạm</td>
+            </tr>
+            <tr>
+              <td><strong>Thế mạnh vượt trội</strong></td>
+              <td>CSKH phản hồi nhanh, tư vấn bán hàng cơ bản</td>
+              <td>So sánh thông số phức tạp, giải quyết khiếu nại</td>
+            </tr>
+            <tr>
+              <td><strong>Khuyên dùng cho</strong></td>
+              <td>Shop bán lẻ, dịch vụ, spa, bất động sản</td>
+              <td>Tư vấn kỹ thuật, pháp lý, báo giá chi tiết</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
       <h2>2. Cách Lấy API Key Miễn Phí Từ Google AI Studio</h2>
       <ol>
@@ -164,8 +260,8 @@ Quy tắc trả lời:
         Điều này làm bot bị "loạn" và không hiểu khách đang gửi gì. Zalo-Flow đã giải quyết triệt để bài toán này bằng bộ phân giải danh thiếp chuyên dụng:
       </p>
       <ul>
-        <li>Tự động nhận diện loại tin nhắn <code>chat.contact</code>.</li>
-        <li>Lọc sạch chuỗi JSON kỹ thuật ra khỏi tên liên hệ.</li>
+        <li>Tự động nhận diện loại tin nhắn <code>chat.contact</code> và <code>share_contact</code>.</li>
+        <li>Lọc sạch chuỗi JSON kỹ thuật ra khỏi tên hiển thị của khách hàng.</li>
         <li>Tự động chuyển đổi đầu số quốc tế <code>+84</code> thành chuẩn số điện thoại Việt Nam <code>0xxxxxxxxx</code>.</li>
         <li>Hiển thị thẻ Namecard bo góc kèm nút gọi nhanh trực tiếp trên giao diện quản trị và kích hoạt thông báo cho bạn.</li>
       </ul>
@@ -178,12 +274,46 @@ Quy tắc trả lời:
         Zalo-Flow tích hợp sẵn hàm <code>cleanForZalo()</code> chạy ngầm: Tự động chuyển đổi các thẻ tiêu đề in đậm thành các biểu tượng trực quan đẹp mắt (như 🔹, •), loại bỏ ký tự rác giúp tin nhắn hiển thị trên app Zalo điện thoại trông hoàn toàn tự nhiên như do con người gõ.
       </p>
 
-      <div style="background: rgba(0, 132, 255, 0.1); border: 1px solid rgba(0, 210, 255, 0.3); border-radius: 12px; padding: 1.5rem; text-align: center; margin-top: 2rem;">
+      <!-- GEO FAQ Section -->
+      <section class="geo-faq-section">
+        <h2>❓ Câu Hỏi Thường Gặp Về Tích Hợp AI Vào Zalo (FAQ)</h2>
+
+        <details class="geo-faq-item">
+          <summary class="geo-faq-summary">Tích hợp AI vào Zalo cá nhân qua Zalo-Flow có tốn tiền API không?</summary>
+          <div class="geo-faq-answer">
+            Bạn hoàn toàn có thể dùng miễn phí 100%. Google AI Studio cung cấp gói Free Tier cho mô hình <strong>Gemini 2.5 Flash</strong> với hạn mức lên đến 15 yêu cầu/phút và 1.500 yêu cầu/ngày, đủ cho nhu cầu của hầu hết các shop bán hàng và cá nhân kinh doanh trực tuyến.
+          </div>
+        </details>
+
+        <details class="geo-faq-item">
+          <summary class="geo-faq-summary">Nên chọn Google Gemini hay DeepSeek để làm trợ lý tư vấn Zalo?</summary>
+          <div class="geo-faq-answer">
+            Nếu bạn cần tốc độ phản hồi siêu nhanh dưới 1 giây và có gói miễn phí thoải mái, hãy chọn <strong>Google Gemini 2.5 Flash</strong>. Nếu bạn cần bot có khả năng tư vấn kỹ thuật chuyên sâu, so sánh chi tiết thông số sản phẩm hoặc lập luận logic chặt chẽ, <strong>DeepSeek V3/R1</strong> là sự lựa chọn vượt trội với chi phí cực rẻ.
+          </div>
+        </details>
+
+        <details class="geo-faq-item">
+          <summary class="geo-faq-summary">Làm sao để bot AI không trả lời chen ngang khi người thật (Admin) đang nhắn tin với khách?</summary>
+          <div class="geo-faq-answer">
+            Zalo-Flow tích hợp sẵn tính năng <strong>Smart Cooldown</strong> độc quyền: Khi phát hiện bạn (Admin) vừa nhắn tin vào cuộc trò chuyện bằng điện thoại, hệ thống sẽ tự động tắt chế độ bot trong 15 phút đối với riêng khách hàng đó để bạn trò chuyện tự nhiên mà không bị AI chen ngang.
+          </div>
+        </details>
+
+        <details class="geo-faq-item">
+          <summary class="geo-faq-summary">API Key của tôi có bị lộ hoặc lưu trữ trên máy chủ bên ngoài không?</summary>
+          <div class="geo-faq-answer">
+            Tuyệt đối không. Zalo-Flow hoạt động theo kiến trúc <strong>Local-First</strong>: Mọi API Key đều được mã hóa bằng thuật toán chuẩn quân đội AES-256-CBC và lưu trực tiếp trong tệp SQLite trên máy tính của bạn, không bao giờ gửi về máy chủ bên thứ ba.
+          </div>
+        </details>
+      </section>
+
+      <!-- CTA Box -->
+      <div style="background: rgba(0, 132, 255, 0.1); border: 1px solid rgba(0, 210, 255, 0.3); border-radius: 12px; padding: 1.5rem; text-align: center; margin-top: 2.5rem;">
         <h3 style="color: #fff; margin-bottom: 0.5rem;">Bắt Đầu Tự Động Hóa Zalo Bằng AI Ngay Hôm Nay</h3>
         <p style="color: var(--text-muted); margin-bottom: 1.25rem;">Tải Zalo-Flow miễn phí và kết nối AI trong vòng 3 phút.</p>
         <div style="display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
           <a href="https://github.com/aizaloapp/zalo-flow/releases/latest" target="_blank" rel="noopener" class="btn btn-primary">
-            🪟 Tải Về Cho Windows (.exe)
+            🪟 Tải Bản Cài Đặt Windows (.exe)
           </a>
           <a href="https://zalo.me/g/mcihan713" target="_blank" rel="noopener" class="btn btn-zalo">
             💬 Tham Gia Nhóm Zalo Hỗ Trợ

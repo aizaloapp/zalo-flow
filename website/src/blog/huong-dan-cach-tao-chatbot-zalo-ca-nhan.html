@@ -24,7 +24,7 @@
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
   <link rel="stylesheet" href="/style.css">
 
-  <!-- Schema Article & Breadcrumb -->
+  <!-- Schema Article, FAQPage & Breadcrumb -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -35,7 +35,8 @@
         "description": "Hướng dẫn từng bước cách tạo chatbot Zalo cá nhân miễn phí bằng Zalo-Flow trên Windows.",
         "author": {
           "@type": "Organization",
-          "name": "Đội ngũ Zalo-Flow"
+          "name": "Đội ngũ Zalo-Flow",
+          "url": "https://github.com/aizaloapp/zalo-flow"
         },
         "publisher": {
           "@type": "Organization",
@@ -45,6 +46,43 @@
         "datePublished": "2026-09-07",
         "dateModified": "2026-09-07",
         "mainEntityOfPage": "https://aizalo.com/blog/huong-dan-cach-tao-chatbot-zalo-ca-nhan.html"
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Tạo chatbot Zalo cá nhân bằng Zalo-Flow có cần biết lập trình không?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Hoàn toàn không cần biết lập trình. Zalo-Flow cung cấp bản cài đặt Windows Native 1-Click dạng file .exe đã tích hợp sẵn Node.js portable và cơ sở dữ liệu SQLite. Bạn chỉ cần tải về, nhấp đúp chuột cài đặt và quét mã QR là bot hoạt động ngay."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Vì sao Windows Defender SmartScreen cảnh báo khi cài đặt Zalo-Flow?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Đây là cơ chế cảnh báo tự động của Microsoft đối với các phần mềm mã nguồn mở mới phát hành chưa mua chứng chỉ số thương mại đắt tiền (Code Signing Certificate). Toàn bộ mã nguồn Zalo-Flow được công khai minh bạch trên GitHub và đạt kết quả kiểm tra sạch 100% (0/70) trên nền tảng bảo mật VirusTotal. Bạn chỉ cần bấm More info và chọn Run anyway để tiếp tục."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Chatbot Zalo cá nhân Zalo-Flow có tốn dung lượng RAM máy tính không?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Rất nhẹ, chỉ tiêu thụ dưới 100MB RAM khi chạy (trung bình khoảng 58MB - 70MB) nhờ kiến trúc không cần mở trình duyệt Chromium ngầm. Phần mềm chạy mượt mà ngay cả trên máy tính văn phòng cấu hình yếu hoặc VPS giá rẻ 70.000đ/tháng."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Zalo-Flow có mất phí duy trì hàng tháng như Zalo OA không?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Zalo-Flow là dự án mã nguồn mở miễn phí 100% cho mục đích nghiên cứu và cá nhân, không có bất kỳ khoản phí duy trì hàng tháng nào. Bạn có thể sử dụng trực tiếp các gói API AI miễn phí của Google Gemini (Gemini 2.5 Flash có hạn mức hào phóng 15 req/phút hoàn toàn free)."
+            }
+          }
+        ]
       },
       {
         "@type": "BreadcrumbList",
@@ -123,6 +161,29 @@
     </header>
 
     <div class="article-body">
+      
+      <!-- GEO Direct Answer Box -->
+      <div class="geo-answer-box">
+        <div class="geo-answer-label">🤖 Câu Trả Lời Nhanh Cho AI Search &amp; Người Dùng</div>
+        <p class="geo-answer-text">
+          Để <strong>tạo chatbot Zalo cá nhân miễn phí trong 3 phút</strong>, bạn chỉ cần thực hiện 3 bước: 
+          <strong>(1) Tải bộ cài đặt 1-Click</strong> <code>ZaloFlow-Setup-v1.0.1.exe</code> từ GitHub chính thức; 
+          <strong>(2) Vượt qua màn hình bảo vệ Microsoft SmartScreen</strong> bằng cách nhấp <code>More info</code> ➔ chọn <code>Run anyway</code> (an toàn 0/70 VirusTotal); 
+          <strong>(3) Quét mã QR bằng app Zalo điện thoại</strong> để đăng nhập và kích hoạt trợ lý AI (Gemini hoặc DeepSeek) tại <code>http://localhost:3000</code>.
+        </p>
+      </div>
+
+      <!-- GEO Key Takeaways (TL;DR) -->
+      <div class="geo-tldr-box">
+        <div class="geo-tldr-title">📌 Điểm Cốt Lõi Cần Nhớ (Key Takeaways)</div>
+        <ul class="geo-tldr-list">
+          <li><strong>Zero Code:</strong> Không cần cài Node.js, không cần biết Git hay gõ dòng lệnh terminal.</li>
+          <li><strong>Chi phí 0 đồng:</strong> Hoàn toàn miễn phí, không yêu cầu giấy phép kinh doanh hay phí duy trì như Zalo OA.</li>
+          <li><strong>Mức tiêu thụ RAM:</strong> Dưới 100MB (chỉ ~58MB RAM), nhẹ hơn 1 tab Google Chrome.</li>
+          <li><strong>Tích hợp AI:</strong> Hỗ trợ Google Gemini 2.5 Flash miễn phí và DeepSeek V3/R1 phản hồi thông minh trong 1.5s.</li>
+        </ul>
+      </div>
+
       <p>
         Nếu bạn là chủ shop bán hàng online, chuyên viên tư vấn bất động sản, tài chính hoặc bảo hiểm, việc trả lời chậm 5 phút có thể làm mất đi một khách hàng tiềm năng. Thông thường, để làm chatbot trên Zalo bạn phải đăng ký Zalo OA (yêu cầu giấy phép kinh doanh) và tốn hàng triệu đồng tiền duy trì mỗi tháng.
       </p>
@@ -130,19 +191,52 @@
         Hôm nay, chúng tôi sẽ hướng dẫn bạn <strong>cách tạo chatbot Zalo cá nhân</strong> hoàn toàn miễn phí 100% bằng giải pháp mã nguồn mở <strong>Zalo-Flow</strong>, chạy trực tiếp trên máy tính Windows chỉ trong 3 phút.
       </p>
 
-      <h2>1. Chuẩn Bị Trước Khi Cài Đặt</h2>
-      <p>Bạn chỉ cần chuẩn bị:</p>
-      <ul>
-        <li>Một máy tính chạy Windows 10 hoặc Windows 11 (hoặc máy ảo/VPS).</li>
-        <li>Điện thoại đã cài ứng dụng Zalo đăng nhập tài khoản cần tạo bot.</li>
-        <li>Không cần cài đặt Node.js hay biết gõ lệnh lập trình (bản cài đặt .exe đã tích hợp sẵn mọi thứ).</li>
-      </ul>
+      <!-- GEO Comparison Table -->
+      <h2>1. So Sánh: Chatbot Zalo Cá Nhân (Zalo-Flow) vs. Zalo Official Account (OA)</h2>
+      <div class="geo-table-wrapper">
+        <table class="geo-table">
+          <thead>
+            <tr>
+              <th>Tiêu Chí So Sánh</th>
+              <th>Zalo Official Account (Zalo OA)</th>
+              <th>Zalo-Flow (Chatbot Zalo Cá Nhân)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Chi phí duy trì</strong></td>
+              <td>Từ 399.000đ – 1.500.000đ/tháng + phí tin nhắn</td>
+              <td><strong>Miễn phí 100%</strong> trọn đời (Mã nguồn mở)</td>
+            </tr>
+            <tr>
+              <td><strong>Điều kiện đăng ký</strong></td>
+              <td>Bắt buộc Giấy phép kinh doanh (GPKD) + xét duyệt 3–7 ngày</td>
+              <td><strong>Không cần GPKD</strong>, chỉ cần quét mã QR 15 giây</td>
+            </tr>
+            <tr>
+              <td><strong>Giới hạn tương tác</strong></td>
+              <td>Giới hạn 4 tin/tháng, tính phí khi khách không phản hồi</td>
+              <td><strong>Không giới hạn</strong> nhắn tin 2 chiều với bạn bè/khách</td>
+            </tr>
+            <tr>
+              <td><strong>Trí tuệ nhân tạo (AI)</strong></td>
+              <td>Kịch bản nút bấm cứng nhắc hoặc mua gói API đắt đỏ</td>
+              <td>Kết nối <strong>Gemini Flash, DeepSeek</strong> tự động trả lời tự nhiên</td>
+            </tr>
+            <tr>
+              <td><strong>Nền tảng cài đặt</strong></td>
+              <td>Đám mây Zalo Cloud (phụ thuộc chính sách nhà mạng)</td>
+              <td>Cục bộ trên <strong>Windows Desktop</strong> hoặc Docker riêng tư</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-      <h2>2. Quy Trình 3 Bước Cài Đặt 1-Click</h2>
+      <h2>2. Quy Trình 3 Bước Cài Đặt Chatbot Zalo Cá Nhân 1-Click</h2>
 
       <h3>Bước 1: Tải bộ cài đặt Windows chính thức</h3>
       <p>
-        Truy cập trang phát hành chính thức của Zalo-Flow trên GitHub:
+        Truy cập trang phát hành chính thức của Zalo-Flow trên GitHub để tải bản cài đặt mới nhất:
       </p>
       <p>
         👉 <a href="https://github.com/aizaloapp/zalo-flow/releases/latest" target="_blank" rel="noopener" style="color: var(--cyan); font-weight: 700;">Tải về ZaloFlow-Setup-v1.0.1.exe (~23.4MB)</a>
@@ -154,7 +248,7 @@
       </p>
       <blockquote>
         ℹ️ <strong>Tại sao xuất hiện thông báo này?</strong><br>
-        Đây là cơ chế bảo vệ mặc định của Microsoft đối với các phần mềm mã nguồn mở mới phát hành chưa mua chứng chỉ Code Signing thương mại (~$300/năm). Mã nguồn Zalo-Flow được công khai 100% trên GitHub và có kết quả quét VirusTotal sạch 0/70.
+        Đây là cơ chế bảo vệ mặc định của Microsoft đối với các phần mềm mã nguồn mở mới phát hành chưa mua chứng chỉ số thương mại Code Signing Certificate (~$300 - $500/năm). Mã nguồn Zalo-Flow được công khai 100% trên GitHub và có kết quả kiểm tra sạch 100% (0/70 nhà cung cấp bảo mật) trên VirusTotal.
       </blockquote>
       <p>Cách xử lý trong 2 giây:</p>
       <ol>
@@ -175,14 +269,14 @@
         Ngay lập tức, giao diện Zalo-Flow sẽ báo <strong>"Đã kết nối thành công"</strong>. Toàn bộ danh sách bạn bè và tin nhắn sẽ được đồng bộ về máy tính của bạn.
       </p>
 
-      <h2>3. Bật Trợ Lý AI Tự Động Trả Lời</h2>
+      <h2>3. Bật Trợ Lý AI Tự Động Trả Lời (Gemini &amp; DeepSeek)</h2>
       <p>
         Để bot tự động trả lời khi bạn bận hoặc đang ngủ:
       </p>
       <ol>
         <li>Trên giao diện web <code>localhost:3000</code>, vào tab <strong>Cài đặt AI (AI Settings)</strong>.</li>
         <li>Chọn nhà cung cấp: <strong>Google Gemini</strong> (Khuyên dùng vì có gói miễn phí cực nhanh) hoặc <strong>DeepSeek</strong>.</li>
-        <li>Dán API Key của bạn vào và bấm <strong>Lưu cấu hình</strong>.</li>
+        <li>Dán API Key của bạn vào và bấm <strong>Lưu cấu hình</strong> (Key được mã hóa AES-256 an toàn).</li>
         <li>Gạt công tắc <strong>"Kích hoạt AI tự động trả lời"</strong> sang trạng thái BẬT.</li>
       </ol>
       <p>
@@ -192,11 +286,45 @@
       <h2>4. Mẹo Vận Hành Bot Hoạt Động 24/7 Ổn Định</h2>
       <ul>
         <li><strong>Chạy ngầm tàng hình (Stealth Mode):</strong> Zalo-Flow được khởi chạy qua VBScript ngầm nên không hề hiện cửa sổ màu đen CMD gây vướng mắt. Để dừng bot, chỉ cần bấm file <em>"Dừng Zalo-Flow.bat"</em>.</li>
-        <li><strong>Giữ máy không bị Sleep:</strong> Vào <em>Windows Settings ➔ Power &amp; battery ➔ Screen and sleep</em>, chọn <em>"When plugged in, put my device to sleep after: Never"</em>.</li>
-        <li><strong>Chạy trên VPS:</strong> Nếu bạn không muốn bật máy tính cá nhân 24/7, có thể thuê một VPS Windows hoặc Linux (chạy Docker) giá chỉ 70.000đ - 100.000đ/tháng để treo Zalo-Flow quanh năm suốt tháng.</li>
+        <li><strong>Giữ máy tính không bị Sleep:</strong> Vào <em>Windows Settings ➔ Power &amp; battery ➔ Screen and sleep</em>, chọn <em>"When plugged in, put my device to sleep after: Never"</em>.</li>
+        <li><strong>Chạy trên VPS 70k/tháng:</strong> Nếu bạn không muốn bật máy tính cá nhân 24/7, có thể thuê một VPS Windows hoặc Linux (chạy Docker) giá chỉ 70.000đ - 100.000đ/tháng để bot online quanh năm suốt tháng.</li>
       </ul>
 
-      <div style="background: rgba(0, 132, 255, 0.1); border: 1px solid rgba(0, 210, 255, 0.3); border-radius: 12px; padding: 1.5rem; text-align: center; margin-top: 2rem;">
+      <!-- GEO FAQ Section -->
+      <section class="geo-faq-section">
+        <h2>❓ Câu Hỏi Thường Gặp Về Tạo Chatbot Zalo Cá Nhân (FAQ)</h2>
+
+        <details class="geo-faq-item">
+          <summary class="geo-faq-summary">Tạo chatbot Zalo cá nhân bằng Zalo-Flow có cần biết lập trình không?</summary>
+          <div class="geo-faq-answer">
+            Hoàn toàn không cần biết lập trình. Zalo-Flow cung cấp bản cài đặt Windows Native 1-Click dạng file <code>.exe</code> đã tích hợp sẵn Node.js portable và cơ sở dữ liệu SQLite. Bạn chỉ cần tải về, nhấp đúp chuột cài đặt và quét mã QR là bot hoạt động ngay.
+          </div>
+        </details>
+
+        <details class="geo-faq-item">
+          <summary class="geo-faq-summary">Vì sao Windows Defender SmartScreen cảnh báo khi cài đặt Zalo-Flow?</summary>
+          <div class="geo-faq-answer">
+            Đây là cơ chế cảnh báo tự động của Microsoft đối với các phần mềm mã nguồn mở mới phát hành chưa mua chứng chỉ số thương mại đắt tiền (Code Signing Certificate). Toàn bộ mã nguồn Zalo-Flow được công khai minh bạch trên GitHub và đạt kết quả kiểm tra sạch 100% (0/70) trên nền tảng bảo mật VirusTotal. Bạn chỉ cần bấm <strong>More info</strong> và chọn <strong>Run anyway</strong> để tiếp tục.
+          </div>
+        </details>
+
+        <details class="geo-faq-item">
+          <summary class="geo-faq-summary">Chatbot Zalo cá nhân Zalo-Flow có tốn dung lượng RAM máy tính không?</summary>
+          <div class="geo-faq-answer">
+            Rất nhẹ, chỉ tiêu thụ dưới 100MB RAM khi chạy (trung bình khoảng 58MB - 70MB) nhờ kiến trúc không cần mở trình duyệt Chromium ngầm. Phần mềm chạy mượt mà ngay cả trên máy tính văn phòng cấu hình yếu hoặc VPS giá rẻ 70.000đ/tháng.
+          </div>
+        </details>
+
+        <details class="geo-faq-item">
+          <summary class="geo-faq-summary">Zalo-Flow có mất phí duy trì hàng tháng như Zalo OA không?</summary>
+          <div class="geo-faq-answer">
+            Zalo-Flow là dự án mã nguồn mở miễn phí 100% cho mục đích nghiên cứu và cá nhân, không có bất kỳ khoản phí duy trì hàng tháng nào. Bạn có thể sử dụng trực tiếp các gói API AI miễn phí của Google Gemini (Gemini 2.5 Flash có hạn mức hào phóng 15 req/phút hoàn toàn free).
+          </div>
+        </details>
+      </section>
+
+      <!-- CTA Box -->
+      <div style="background: rgba(0, 132, 255, 0.1); border: 1px solid rgba(0, 210, 255, 0.3); border-radius: 12px; padding: 1.5rem; text-align: center; margin-top: 2.5rem;">
         <h3 style="color: #fff; margin-bottom: 0.5rem;">Cần Hỗ Trợ Trong Quá Trình Cài Đặt?</h3>
         <p style="color: var(--text-muted); margin-bottom: 1.25rem;">Tham gia ngay nhóm Zalo cộng đồng để được anh em kỹ thuật hỗ trợ trực tiếp.</p>
         <a href="https://zalo.me/g/mcihan713" target="_blank" rel="noopener" class="btn btn-zalo">

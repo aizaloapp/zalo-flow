@@ -24,7 +24,7 @@
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
   <link rel="stylesheet" href="/style.css">
 
-  <!-- Schema Article & Breadcrumb -->
+  <!-- Schema Article, Breadcrumb & FAQPage (GEO) -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -66,6 +66,43 @@
             "position": 3,
             "name": "Zalo CRM Là Gì",
             "item": "https://aizalo.com/blog/zalo-crm-la-gi-giai-phap-quan-ly-tin-nhan-cskh.html"
+          }
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Zalo CRM là gì và khác gì so với Zalo cá nhân thông thường?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Zalo CRM là giải pháp hợp nhất quản lý vòng đời tương tác khách hàng trên Zalo. Khác với Zalo cá nhân thông thường chỉ chat đơn lẻ và dễ trôi tin nhắn, Zalo CRM cung cấp giao diện Live Chat tập trung trên Web, phân loại khách bằng thẻ tag màu sắc, gửi tin Remarketing tự động theo tệp với Spintax cá nhân hóa và đồng bộ dữ liệu vào cơ sở dữ liệu an toàn."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Một số Zalo có thể cho nhiều nhân viên cùng trực chat và quản lý khách hàng không?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Có. Khi kết nối Zalo-Flow với Chatwoot CRM (nền tảng CSKH đa kênh mã nguồn mở), bạn có thể phân quyền cho 5 đến 10 nhân viên cùng truy cập vào một số Zalo cá nhân duy nhất, gán hội thoại cho từng nhân viên, để lại ghi chú nội bộ (Private Note) mà khách hàng không nhìn thấy."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Zalo-Flow tích hợp với Chatwoot CRM như thế nào?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Zalo-Flow tích hợp với Chatwoot qua cơ chế Webhook 2 chiều thời gian thực. Khi có tin nhắn đến từ Zalo, Zalo-Flow chuyển tiếp ngay về hộp thư Chatwoot. Ngược lại, khi nhân viên phản hồi trên giao diện Chatwoot, Zalo-Flow sẽ điều phối gửi tin nhắn trực tiếp đến Zalo của khách hàng với đầy đủ cơ chế đệm chống nghẽn."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Dữ liệu khách hàng và lịch sử tin nhắn trong Zalo CRM được lưu trữ ở đâu?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Toàn bộ lịch sử tin nhắn, danh bạ và thẻ tag của khách hàng được lưu trữ 100% cục bộ trong cơ sở dữ liệu SQLite (hoặc Chatwoot riêng của bạn), tuyệt đối không gửi lên máy chủ trung gian của bên thứ ba, đảm bảo quyền riêng tư và an toàn dữ liệu khách hàng tuyệt đối."
+            }
           }
         ]
       }
@@ -123,6 +160,23 @@
     </header>
 
     <div class="article-body">
+      <!-- GEO Direct Answer / Quotable Snippet -->
+      <div class="geo-answer-box">
+        <span class="geo-answer-badge">Định Nghĩa Nhanh</span>
+        <p><strong>Zalo CRM</strong> là giải pháp hợp nhất quản lý vòng đời tương tác khách hàng trên Zalo, bao gồm: giao diện Live Chat tập trung trên Web, phân loại thẻ tag màu sắc, gửi tin Remarketing tự động theo tệp với Spintax cá nhân hóa và mở rộng nhiều nhân viên cùng trực chat qua Chatwoot CRM. Zalo CRM giúp kinh doanh cá nhân chống trôi tin nhắn và bảo vệ dữ liệu khách hàng 100% cục bộ.</p>
+      </div>
+
+      <!-- GEO Key Takeaways / TL;DR -->
+      <div class="geo-tldr-box">
+        <div class="geo-tldr-title">📌 Tóm Tắt Nhanh (Key Takeaways)</div>
+        <ul>
+          <li><strong>Hộp thư Live Chat tập trung:</strong> Quản lý toàn bộ hội thoại Zalo trên màn hình Web UI localhost:3000, chống trôi tin nhắn khi lượng khách tăng đột biến.</li>
+          <li><strong>Phân loại bằng thẻ tag màu sắc:</strong> Gắn nhãn khách hàng theo phễu bán hàng (Khách VIP, Đã Cọc, Quan Tâm) chỉ với 1 click chuột.</li>
+          <li><strong>Chiến dịch Remarketing Anti-Ban:</strong> Gửi tin nhắn chăm sóc lại theo tệp tag, giãn cách an toàn >= 3s, hỗ trợ Spintax biến thiên nội dung và file đính kèm.</li>
+          <li><strong>Mở rộng CSKH đa nhân viên qua Chatwoot:</strong> Kết nối đồng bộ 2 chiều thời gian thực, cho phép nhiều nhân viên cùng trực chat trên một số Zalo cá nhân duy nhất.</li>
+        </ul>
+      </div>
+
       <p>
         Trong số các kênh tiếp cận khách hàng tại Việt Nam, <strong>Zalo</strong> hiện đang giữ vị trí số 1 với hơn 75 triệu người dùng hoạt động thường xuyên. Tỷ lệ mở tin nhắn trên Zalo đạt tới <strong>90% - 95%</strong>, vượt trội hoàn toàn so với tỷ lệ mở email (chỉ khoảng 15% - 20%).
       </p>
@@ -142,6 +196,58 @@
         <li><strong>Chăm sóc lại (Remarketing) cực nhọc:</strong> Mỗi lần có chương trình khuyến mãi, nhân viên phải copy-paste từng tin nhắn gửi cho từng người bằng tay, vừa tốn công vừa dễ bị khóa nick do gửi thao tác lặp lại.</li>
         <li><strong>Dữ liệu bị phân tán:</strong> Khách gửi số điện thoại qua danh thiếp nhưng không ai ghi lại vào sổ sách, dẫn đến thất thoát tài sản khách hàng.</li>
       </ul>
+
+      <!-- GEO Comparison Table -->
+      <div class="geo-table-wrapper">
+        <table class="geo-table">
+          <thead>
+            <tr>
+              <th>Tiêu Chí So Sánh</th>
+              <th>Quản Lý Thủ Công Bằng App Zalo</th>
+              <th>Zalo CRM Tự Động (Zalo-Flow)</th>
+              <th>Zalo-Flow + Chatwoot CRM</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Số người trực chat</strong></td>
+              <td>Duy nhất 1 thiết bị / 1 người</td>
+              <td>1 - 2 người qua Web UI localhost</td>
+              <td>Không giới hạn nhân viên (Multi-agent CSKH)</td>
+            </tr>
+            <tr>
+              <td><strong>Phân loại &amp; Gắn thẻ tag</strong></td>
+              <td>Thủ công, dễ quên, không đồng bộ</td>
+              <td>Thẻ tag màu sắc tùy biến, lọc tức thì 1 giây</td>
+              <td>Thẻ tag, ghi chú nội bộ (Private Note), Macro</td>
+            </tr>
+            <tr>
+              <td><strong>Chiến dịch Remarketing</strong></td>
+              <td>Copy-paste thủ công, nguy cơ khóa nick</td>
+              <td>Tự động theo thẻ tag, Spintax <code>{name}</code></td>
+              <td>Chiến dịch tự động, phân luồng theo hàng đợi</td>
+            </tr>
+            <tr>
+              <td><strong>Cơ chế bảo vệ Anti-Ban</strong></td>
+              <td>Không có (phụ thuộc cảm tính)</td>
+              <td>Anti-Ban 3 lớp: Rate Limiter >= 3s, Cooldown</td>
+              <td>Hàng đợi an toàn điều phối qua Webhook</td>
+            </tr>
+            <tr>
+              <td><strong>Chi phí bản quyền</strong></td>
+              <td>Miễn phí (nhưng tốn nhân lực)</td>
+              <td>Miễn phí 100% (Mã nguồn mở)</td>
+              <td>Miễn phí 100% (Tự host Chatwoot)</td>
+            </tr>
+            <tr>
+              <td><strong>Bảo mật &amp; Sở hữu dữ liệu</strong></td>
+              <td>Lưu rời rạc trên điện thoại cá nhân</td>
+              <td>Lưu CSDL SQLite cục bộ trên máy tính</td>
+              <td>Toàn quyền sở hữu CSDL trên máy chủ riêng</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
       <h2>3. Zalo-Flow — Nền Tảng Zalo CRM Mã Nguồn Mở Miễn Phí</h2>
       <p>
@@ -178,6 +284,39 @@
       <p>
         Bạn không cần phải đầu tư những phần mềm CRM đắt đỏ hàng chục triệu đồng khi quy mô kinh doanh còn nhỏ. Hãy bắt đầu với một giải pháp tinh gọn, tôn trọng quyền riêng tư dữ liệu và an toàn tài khoản như Zalo-Flow để tối ưu hóa quy trình bán hàng của mình.
       </p>
+
+      <!-- GEO FAQ Section -->
+      <section class="geo-faq-section">
+        <h2>Câu Hỏi Thường Gặp Về Zalo CRM (FAQ)</h2>
+
+        <details class="geo-faq-item">
+          <summary class="geo-faq-summary">Zalo CRM là gì và khác gì so với Zalo cá nhân thông thường?</summary>
+          <div class="geo-faq-answer">
+            <p>Zalo CRM là giải pháp hợp nhất quản lý vòng đời tương tác khách hàng trên Zalo. Khác với Zalo cá nhân thông thường chỉ chat đơn lẻ và dễ trôi tin nhắn, Zalo CRM cung cấp giao diện Live Chat tập trung trên Web, phân loại khách bằng thẻ tag màu sắc, gửi tin Remarketing tự động theo tệp với Spintax cá nhân hóa và đồng bộ dữ liệu vào cơ sở dữ liệu an toàn.</p>
+          </div>
+        </details>
+
+        <details class="geo-faq-item">
+          <summary class="geo-faq-summary">Một số Zalo có thể cho nhiều nhân viên cùng trực chat và quản lý khách hàng không?</summary>
+          <div class="geo-faq-answer">
+            <p>Có. Khi kết nối Zalo-Flow với Chatwoot CRM (nền tảng CSKH đa kênh mã nguồn mở), bạn có thể phân quyền cho 5 đến 10 nhân viên cùng truy cập vào một số Zalo cá nhân duy nhất, gán hội thoại cho từng nhân viên, để lại ghi chú nội bộ (Private Note) mà khách hàng không nhìn thấy.</p>
+          </div>
+        </details>
+
+        <details class="geo-faq-item">
+          <summary class="geo-faq-summary">Zalo-Flow tích hợp với Chatwoot CRM như thế nào?</summary>
+          <div class="geo-faq-answer">
+            <p>Zalo-Flow tích hợp với Chatwoot qua cơ chế Webhook 2 chiều thời gian thực. Khi có tin nhắn đến từ Zalo, Zalo-Flow chuyển tiếp ngay về hộp thư Chatwoot. Ngược lại, khi nhân viên phản hồi trên giao diện Chatwoot, Zalo-Flow sẽ điều phối gửi tin nhắn trực tiếp đến Zalo của khách hàng với đầy đủ cơ chế đệm chống nghẽn.</p>
+          </div>
+        </details>
+
+        <details class="geo-faq-item">
+          <summary class="geo-faq-summary">Dữ liệu khách hàng và lịch sử tin nhắn trong Zalo CRM được lưu trữ ở đâu?</summary>
+          <div class="geo-faq-answer">
+            <p>Toàn bộ lịch sử tin nhắn, danh bạ và thẻ tag của khách hàng được lưu trữ 100% cục bộ trong cơ sở dữ liệu SQLite (hoặc Chatwoot riêng của bạn), tuyệt đối không gửi lên máy chủ trung gian của bên thứ ba, đảm bảo quyền riêng tư và an toàn dữ liệu khách hàng tuyệt đối.</p>
+          </div>
+        </details>
+      </section>
 
       <div style="background: rgba(0, 132, 255, 0.1); border: 1px solid rgba(0, 210, 255, 0.3); border-radius: 12px; padding: 1.5rem; text-align: center; margin-top: 2rem;">
         <h3 style="color: #fff; margin-bottom: 0.5rem;">Xây Dựng Hệ Thống Zalo CRM Của Riêng Bạn</h3>

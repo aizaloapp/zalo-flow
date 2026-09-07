@@ -24,7 +24,7 @@
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
   <link rel="stylesheet" href="/style.css">
 
-  <!-- Schema Article & Breadcrumb -->
+  <!-- Schema Article, FAQPage & Breadcrumb -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -35,7 +35,8 @@
         "description": "Hướng dẫn chi tiết cách gửi tin nhắn tự động trên Zalo an toàn tuyệt đối bằng cơ chế Anti-ban 3 lớp.",
         "author": {
           "@type": "Organization",
-          "name": "Đội ngũ Zalo-Flow"
+          "name": "Đội ngũ Zalo-Flow",
+          "url": "https://github.com/aizaloapp/zalo-flow"
         },
         "publisher": {
           "@type": "Organization",
@@ -45,6 +46,43 @@
         "datePublished": "2026-09-07",
         "dateModified": "2026-09-07",
         "mainEntityOfPage": "https://aizalo.com/blog/cach-gui-tin-nhan-tu-dong-tren-zalo-khong-bi-khoa.html"
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Một ngày tài khoản Zalo cá nhân được gửi tối đa bao nhiêu tin nhắn tự động?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Đối với tài khoản Zalo cá nhân hoạt động lâu năm (trên 6 tháng), ngưỡng an toàn là từ 200 đến 500 tin nhắn mỗi ngày. Đối với tài khoản mới tạo dưới 3 tháng, nên giới hạn ở mức 50 đến 100 tin/ngày. Quan trọng nhất là phải tuân thủ giãn cách tối thiểu 3–5 giây giữa mỗi tin và chia thành nhiều đợt cách nhau 20–30 phút, tuyệt đối không xả hàng loạt cùng lúc."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Cú pháp Spintax giúp chống khóa tài khoản Zalo như thế nào?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Spintax là kỹ thuật sử dụng cặp ngoặc nhọn {A|B|C} để hoán vị ngẫu nhiên từ đồng nghĩa trong nội dung tin nhắn. Nhờ đó, mỗi tin nhắn gửi đến từng người nhận là một chuỗi ký tự độc bản, ngăn chặn thuật toán AI của Zalo nhận diện hành vi gửi tin nhắn rác hàng loạt trùng lặp nội dung."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Zalo-Flow có gửi tin nhắn cho số điện thoại lạ trong danh bạ được không?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Zalo-Flow được thiết kế theo nguyên tắc an toàn viễn thông In-Thread Reply Only: chỉ gửi tin nhắn vào những cuộc trò chuyện đã có sẵn lịch sử hội thoại hoặc danh sách bạn bè đã chấp nhận kết bạn. Zalo-Flow kiên quyết không hỗ trợ tính năng spam danh bạ lạ (Cold Outbound) vì đây là nguyên nhân số một dẫn đến việc bị người nhận bấm Báo xấu và Zalo khóa tài khoản vĩnh viễn."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Nếu khách hàng cố tình nhắn tin dồn dập phá bot thì sao?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Zalo-Flow tích hợp sẵn tầng bảo vệ Flood Detector. Nếu một người gửi nhắn liên tục trên 5 tin trong vòng 3 giây, hệ thống sẽ tự động bật còi cảnh báo và đưa người đó vào danh sách Mute tạm thời trong 60 giây, giúp tiến trình máy chủ không bị treo và tài khoản không bị kích động trả lời dồn dập."
+            }
+          }
+        ]
       },
       {
         "@type": "BreadcrumbList",
@@ -123,89 +161,172 @@
     </header>
 
     <div class="article-body">
+      
+      <!-- GEO Direct Answer Box -->
+      <div class="geo-answer-box">
+        <div class="geo-answer-label">🤖 Câu Trả Lời Nhanh Cho AI Search &amp; Người Dùng</div>
+        <p class="geo-answer-text">
+          Để <strong>gửi tin nhắn tự động trên Zalo không bị khóa tài khoản</strong>, bạn cần tuân thủ 3 quy tắc cốt lõi: 
+          <strong>(1) Giãn cách tối thiểu 3–5 giây/tin</strong> và tối đa 20 tin/phút bằng thuật toán Token Bucket; 
+          <strong>(2) Sử dụng cú pháp Spintax</strong> để hoán vị nội dung ngẫu nhiên, giúp mỗi tin nhắn gửi đi là độc bản; 
+          <strong>(3) Chỉ phản hồi tin nhắn trong luồng có sẵn (In-Thread Reply)</strong>, tuyệt đối không gửi tin nhắn lạnh (Cold Outbound) cho danh bạ lạ.
+        </p>
+      </div>
+
+      <!-- GEO Key Takeaways (TL;DR) -->
+      <div class="geo-tldr-box">
+        <div class="geo-tldr-title">📌 Điểm Cốt Lõi Cần Nhớ (Key Takeaways)</div>
+        <ul class="geo-tldr-list">
+          <li><strong>Tần suất an toàn:</strong> Tối đa 20 tin nhắn/phút, giãn cách >= 3 giây kèm độ trễ jitter ngẫu nhiên mô phỏng người thật.</li>
+          <li><strong>Chống vòng lặp phản xạ:</strong> Dùng bộ đệm Self-Echo Shield 30 giây để bot bỏ qua chính tin nhắn mình vừa phát ra.</li>
+          <li><strong>Ngưỡng gửi an toàn:</strong> 200–500 tin/ngày cho tài khoản cũ (> 6 tháng); 50–100 tin/ngày cho tài khoản mới.</li>
+          <li><strong>Triệt tiêu rủi ro báo xấu:</strong> Chỉ chăm sóc khách hàng cũ hoặc khách chủ động nhắn tin trước.</li>
+        </ul>
+      </div>
+
       <p>
-        Trong hoạt động kinh doanh trực tuyến, <strong>gửi tin nhắn tự động trên Zalo</strong> là chìa khóa vàng giúp bạn phản hồi khách hàng trong tích tắc, gửi thông báo đơn hàng và chăm sóc tệp khách hàng cũ mà không tốn hàng giờ gõ máy thủ công.
+        Trong kinh doanh trực tuyến tại Việt Nam, <strong>Zalo cá nhân</strong> là kênh chốt đơn và chăm sóc khách hàng có tỷ lệ mở tin nhắn cao nhất (> 90%). Tuy nhiên, nỗi sợ lớn nhất của các chủ doanh nghiệp và nhân viên tư vấn là: <em>"Dùng bot tự động có bị khóa nick vĩnh viễn hoặc chặn tính năng nhắn tin không?"</em>.
       </p>
       <p>
-        Tuy nhiên, nỗi sợ lớn nhất của mọi chủ shop và nhân viên tư vấn là: <em>"Dùng bot Zalo hay tool gửi tự động có bị khóa nick, chặn tính năng nhắn tin không?"</em>. Câu trả lời là: <strong>Có, nếu bạn dùng các phần mềm spam thô sơ</strong>; nhưng <strong>hoàn toàn an toàn nếu bạn hiểu và áp dụng cơ chế Anti-ban 3 lớp</strong>.
+        Câu trả lời là: <strong>Có, nếu bạn sử dụng các công cụ spam thô sơ</strong>; nhưng <strong>hoàn toàn an toàn 100% nếu bạn áp dụng kiến trúc phòng vệ Anti-Ban 3 lớp</strong>.
       </p>
 
-      <h2>1. Vì Sao Tài Khoản Zalo Bị Hạn Chế Hoặc Khóa?</h2>
+      <h2>1. Vì Sao Tài Khoản Zalo Bị Quét Và Khóa Tính Năng?</h2>
       <p>
-        Thuật toán kiểm soát của Zalo (AI Anti-Spam Detection) tập trung quét các hành vi bất thường sau:
+        Hệ thống kiểm duyệt tự động của Zalo sử dụng học máy (AI Spam Detection) để phát hiện các tín hiệu bất thường sau:
       </p>
       <ul>
-        <li><strong>Tần suất gửi quá dồn dập:</strong> Người thật không thể gửi 10 tin nhắn trong vòng 2 giây. Nếu phần mềm của bạn xả tin dồn dập cùng lúc, hệ thống sẽ lập tức nhận diện là bot.</li>
-        <li><strong>Nội dung hoàn toàn trùng lặp:</strong> Gửi hàng trăm tin nhắn giống nhau từng dấu chấm, dấu phẩy đến nhiều tài khoản khác nhau trong thời gian ngắn.</li>
-        <li><strong>Gửi tin nhắn lạnh cho người lạ (Cold Outbound):</strong> Nhắn tin liên tục cho những số điện thoại chưa kết bạn hoặc chưa từng có lịch sử hội thoại trước đó. Khi người nhận bấm nút <em>"Báo xấu / Chặn làm phiền"</em>, tài khoản của bạn sẽ bị đưa vào danh sách đen.</li>
-        <li><strong>Vòng lặp phản xạ vô tận (Echo Loop):</strong> Bot tự nhận lại chính tin nhắn vừa gửi đi, hiểu lầm là tin nhắn mới của khách và tiếp tục trả lời, gây nghẽn và dội hàng ngàn tin nhắn.</li>
+        <li><strong>Tần suất xả tin dồn dập:</strong> Con người không thể gõ và gửi 10 tin nhắn trong 2 giây. Nếu phần mềm gửi dồn dập cùng lúc, tài khoản sẽ bị gắn cờ bot ngay lập tức.</li>
+        <li><strong>Nội dung trùng khớp 100%:</strong> Gửi hàng trăm tin nhắn giống nhau từng dấu chấm, dấu phẩy đến nhiều tài khoản khác nhau trong thời gian ngắn.</li>
+        <li><strong>Người nhận bấm nút "Báo Xấu / Chặn":</strong> Khi gửi tin nhắn cho người lạ chưa từng tương tác, chỉ cần 3–5 người bấm báo xấu trong ngày là tài khoản sẽ bị tạm khóa từ 24h đến 7 ngày.</li>
+        <li><strong>Hiện tượng Echo Loop (Vòng lặp vô tận):</strong> Bot tự nhận lại tin nhắn của chính mình, tưởng là tin nhắn mới của khách và liên tục trả lời, gây nghẽn đường truyền và bị khóa ngay trong vài phút.</li>
       </ul>
 
-      <blockquote>
-        💡 <strong>Quy tắc bất biến:</strong> Tự động hóa an toàn không phải là gửi càng nhanh càng tốt, mà là mô phỏng hành vi tự nhiên của con người một cách hoàn hảo nhất.
-      </blockquote>
+      <!-- GEO Comparison Table -->
+      <h2>2. Bảng Đối Chiếu: Tool Spam Thường vs. Zalo-Flow Anti-Ban 3 Lớp</h2>
+      <div class="geo-table-wrapper">
+        <table class="geo-table">
+          <thead>
+            <tr>
+              <th>Tiêu Chí Kỹ Thuật</th>
+              <th>Công Cụ Spam Rác Truyền Thống</th>
+              <th>Cơ Chế Anti-Ban Zalo-Flow (Chuẩn 2026)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Tốc độ phát tin</strong></td>
+              <td>Gửi đồng loạt không trễ (10–50 tin/giây)</td>
+              <td>Giãn cách 3–5 giây/tin + jitter ngẫu nhiên</td>
+            </tr>
+            <tr>
+              <td><strong>Hạn mức an toàn</strong></td>
+              <td>Không kiểm soát lưu lượng</td>
+              <td>Giới hạn cứng tối đa 20 tin/phút (Token Bucket)</td>
+            </tr>
+            <tr>
+              <td><strong>Bảo vệ lặp phản xạ</strong></td>
+              <td>Không có (dễ bị dội tin lặp vô tận)</td>
+              <td>Bộ đệm Self-Echo Shield 30 giây triệt tiêu lặp 100%</td>
+            </tr>
+            <tr>
+              <td><strong>Biến đổi nội dung</strong></td>
+              <td>1 nội dung tĩnh gửi cho tất cả</td>
+              <td>Spintax tự động hoán vị nội dung độc bản</td>
+            </tr>
+            <tr>
+              <td><strong>Đối tượng gửi</strong></td>
+              <td>Quét danh bạ lạ (Cold Outbound)</td>
+              <td>Chỉ gửi vào hội thoại có sẵn (In-Thread Only)</td>
+            </tr>
+            <tr>
+              <td><strong>Tỷ lệ sống tài khoản</strong></td>
+              <td>Bị khóa sau 1 – 3 ngày</td>
+              <td>Bền vững 100% theo thời gian</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-      <h2>2. Giải Pháp Anti-Ban 3 Lớp Bất Biến Của Zalo-Flow</h2>
+      <h2>3. Chi Tiết Kiến Trúc 3 Tầng Phòng Vệ Của Zalo-Flow</h2>
       <p>
-        Được thiết kế dựa trên các tiêu chuẩn an toàn viễn thông nghiêm ngặt, nền tảng mã nguồn mở <strong>Zalo-Flow</strong> tích hợp sẵn 3 lớp lá chắn phòng vệ tự động:
+        Nền tảng mã nguồn mở <strong>Zalo-Flow</strong> được xây dựng với nguyên tắc ưu tiên an toàn tài khoản lên trên hết:
       </p>
 
-      <h3>Lớp 1: Thuật Toán Token Bucket Rate Limiter (Giãn Cách &gt;= 3s)</h3>
+      <h3>Lớp 1: Thuật Toán Token Bucket Rate Limiter</h3>
       <p>
-        Mọi tin nhắn phát đi từ Zalo-Flow (dù là do AI trả lời tự động hay chiến dịch gửi tin Remarketing) đều bắt buộc phải đi qua một hàng đợi thông minh (FIFO Queue).
+        Mọi tin nhắn gửi đi (dù là AI tự trả lời hay chiến dịch gửi tin mẫu) đều được đẩy vào hàng đợi FIFO có điều tiết:
       </p>
       <ul>
-        <li>Mỗi tin nhắn gửi đi được giãn cách tự động <strong>tối thiểu từ 3 đến 5 giây</strong>.</li>
-        <li>Giới hạn cứng tối đa <strong>20 tin nhắn mỗi phút</strong> trên một tài khoản.</li>
-        <li>Hàng đợi có độ trễ jitter ngẫu nhiên để Zalo ghi nhận như một người đang ngồi bấm phím máy tính bình thường.</li>
+        <li>Hệ thống duy trì khoảng cách <strong>tối thiểu 3.000ms (3 giây)</strong> giữa 2 tin nhắn liên tiếp.</li>
+        <li>Tối đa <strong>20 tin nhắn trong 1 phút</strong> trên cùng một tài khoản.</li>
+        <li>Bổ sung độ trễ ngẫu nhiên từ 200ms – 800ms để mô phỏng hoàn hảo nhịp gõ phím của con người.</li>
       </ul>
 
-      <h3>Lớp 2: Bộ Đệm Chống Phản Xạ Self-Echo Shield (30s Buffer)</h3>
+      <h3>Lớp 2: Bộ Đệm Chống Phản Xạ Self-Echo Shield</h3>
       <p>
-        Khi gửi một tin nhắn ra ngoài, Zalo-Flow lập tức ghi nhận nội dung đó vào một bộ nhớ đệm thời gian thực có vòng đời 30 giây. Khi Webhook Zalo báo về sự kiện có tin nhắn mới, hệ thống sẽ đối chiếu ngay với bộ đệm. Nếu nội dung trùng khớp với tin bot vừa gửi, hệ thống sẽ <strong>lặng lẽ bỏ qua (drop silent)</strong>, triệt tiêu 100% hiện tượng bot tự nói chuyện với chính mình.
+        Khi gửi một tin nhắn ra ngoài, Zalo-Flow lưu băm (hash) nội dung vào bộ nhớ đệm 30 giây. Khi Zalo đẩy sự kiện tin nhắn mới về, hệ thống sẽ kiểm tra: nếu là tin bot vừa gửi, nó sẽ <strong>lặng lẽ bỏ qua (drop silent)</strong>, loại bỏ hoàn toàn nguy cơ bot tự nói chuyện với chính mình.
       </p>
 
       <h3>Lớp 3: Bộ Lọc Cắt Xung Kích Flood Detector</h3>
       <p>
-        Nếu có một khách hàng cố tình nhắn liên tục hơn 5 tin trong vòng 3 giây, Flood Detector sẽ tự động kích hoạt chế độ "Mute tạm thời" trong 60 giây đối với riêng người gửi đó, ngăn chặn việc làm treo máy chủ hoặc kích động tài khoản gửi phản hồi dồn dập.
+        Nếu gặp khách hàng hoặc đối thủ cố tình spam hơn 5 tin nhắn trong vòng 3 giây, Flood Detector sẽ tự động "Mute tạm thời" người đó trong 60 giây để bảo vệ CPU máy tính và không kích động tài khoản Zalo gửi tin dồn dập.
       </p>
 
-      <h2>3. Ứng Dụng Kỹ Thuật Spintax Để Cá Nhân Hóa Nội Dung</h2>
+      <h2>4. Ứng Dụng Kỹ Thuật Spintax Cá Nhân Hóa</h2>
       <p>
-        Khi gửi tin nhắn chăm sóc khách hàng hàng loạt, tuyệt đối không dùng 1 mẫu văn bản cố định. Hãy sử dụng cú pháp Spintax được Zalo-Flow hỗ trợ sẵn:
+        Khi lên chiến dịch chăm sóc khách hàng định kỳ, bạn chỉ cần nhập cú pháp Spintax mẫu:
       </p>
-      <pre><code>{Dạ em chào|Chào|Hello} {anh|chị} {name}, {em gửi thông tin cập nhật|em xin gửi chi tiết đơn hàng} nhé!</code></pre>
+      <pre><code>{Dạ em chào|Chào|Xin chào} {anh|chị} {name}, {em gửi báo giá|em xin gửi thông tin ưu đãi} hôm nay ạ!</code></pre>
       <p>
-        Khi gửi, Zalo-Flow sẽ tự động hoán vị ngẫu nhiên:
+        Zalo-Flow sẽ tự động sinh ra hàng trăm biến thể khác nhau:
       </p>
       <ul>
-        <li><em>"Dạ em chào anh Tuấn, em gửi thông tin cập nhật nhé!"</em></li>
-        <li><em>"Chào chị Lan, em xin gửi chi tiết đơn hàng nhé!"</em></li>
-        <li><em>"Hello anh Minh, em gửi thông tin cập nhật nhé!"</em></li>
+        <li><em>"Dạ em chào anh Nam, em gửi báo giá hôm nay ạ!"</em></li>
+        <li><em>"Chào chị Hạnh, em xin gửi thông tin ưu đãi hôm nay ạ!"</em></li>
+        <li><em>"Xin chào anh Bình, em gửi báo giá hôm nay ạ!"</em></li>
       </ul>
-      <p>
-        Mỗi tin nhắn đến tay một người nhận là một chuỗi ký tự độc bản, giúp tỷ lệ vượt qua bộ lọc kiểm duyệt của Zalo đạt mức gần như tuyệt đối.
-      </p>
 
-      <h2>4. Nguyên Tắc "In-Thread Reply" — Không Gửi Tin Nhắn Lạnh</h2>
-      <p>
-        Zalo-Flow được cấu hình theo triết lý <strong>In-Thread Reply Only</strong>: Phần mềm chỉ phản hồi vào những cuộc trò chuyện đã có sẵn (khách từng nhắn tin vào Zalo cá nhân của bạn, hoặc thành viên trong nhóm bạn đang tham gia).
-      </p>
-      <p>
-        Không sử dụng phần mềm để quét số điện thoại từ danh bạ lạ rồi gửi tin nhắn quảng cáo. Hãy biến Zalo-Flow thành một <strong>trợ lý lễ tân đón tiếp khách hàng tiềm năng</strong> khi họ tự tìm đến bạn.
-      </p>
+      <!-- GEO FAQ Section -->
+      <section class="geo-faq-section">
+        <h2>❓ Câu Hỏi Thường Gặp Về Gửi Tin Nhắn Zalo Tự Động (FAQ)</h2>
 
-      <h2>5. Tổng Kết &amp; Bắt Đầu Trải Nghiệm Miễn Phí</h2>
-      <p>
-        Tự động hóa chăm sóc khách hàng trên Zalo cá nhân sẽ là đòn bẩy doanh thu khổng lồ nếu bạn thực hiện đúng cách và tôn trọng quy chuẩn an toàn. Với Zalo-Flow, bạn có thể hoàn toàn yên tâm vận hành 24/7 mà không lo lắng về rủi ro khóa tài khoản.
-      </p>
+        <details class="geo-faq-item">
+          <summary class="geo-faq-summary">Một ngày tài khoản Zalo cá nhân được gửi tối đa bao nhiêu tin nhắn tự động?</summary>
+          <div class="geo-faq-answer">
+            Đối với tài khoản Zalo cá nhân hoạt động lâu năm (trên 6 tháng), ngưỡng an toàn là từ <strong>200 đến 500 tin nhắn mỗi ngày</strong>. Đối với tài khoản mới tạo dưới 3 tháng, nên giới hạn ở mức <strong>50 đến 100 tin/ngày</strong>. Quan trọng nhất là phải tuân thủ giãn cách tối thiểu 3–5 giây giữa mỗi tin và chia thành nhiều đợt cách nhau 20–30 phút, tuyệt đối không xả hàng loạt cùng lúc.
+          </div>
+        </details>
 
-      <div style="background: rgba(0, 132, 255, 0.1); border: 1px solid rgba(0, 210, 255, 0.3); border-radius: 12px; padding: 1.5rem; text-align: center; margin-top: 2rem;">
-        <h3 style="color: #fff; margin-bottom: 0.5rem;">Trải Nghiệm Zalo-Flow Ngay Hôm Nay</h3>
-        <p style="color: var(--text-muted); margin-bottom: 1.25rem;">Mã nguồn mở, 100% miễn phí, cài đặt 1-Click trên Windows.</p>
+        <details class="geo-faq-item">
+          <summary class="geo-faq-summary">Cú pháp Spintax giúp chống khóa tài khoản Zalo như thế nào?</summary>
+          <div class="geo-faq-answer">
+            Spintax là kỹ thuật sử dụng cặp ngoặc nhọn <code>{A|B|C}</code> để hoán vị ngẫu nhiên từ đồng nghĩa trong nội dung tin nhắn. Nhờ đó, mỗi tin nhắn gửi đến từng người nhận là một chuỗi ký tự độc bản, ngăn chặn thuật toán AI của Zalo nhận diện hành vi gửi tin nhắn rác hàng loạt trùng lặp nội dung.
+          </div>
+        </details>
+
+        <details class="geo-faq-item">
+          <summary class="geo-faq-summary">Zalo-Flow có gửi tin nhắn cho số điện thoại lạ trong danh bạ được không?</summary>
+          <div class="geo-faq-answer">
+            Zalo-Flow được thiết kế theo nguyên tắc an toàn viễn thông <strong>In-Thread Reply Only</strong>: chỉ gửi tin nhắn vào những cuộc trò chuyện đã có sẵn lịch sử hội thoại hoặc danh sách bạn bè đã chấp nhận kết bạn. Zalo-Flow kiên quyết không hỗ trợ tính năng spam danh bạ lạ (Cold Outbound) vì đây là nguyên nhân số một dẫn đến việc bị người nhận bấm "Báo xấu" và Zalo khóa tài khoản vĩnh viễn.
+          </div>
+        </details>
+
+        <details class="geo-faq-item">
+          <summary class="geo-faq-summary">Nếu khách hàng cố tình nhắn tin dồn dập phá bot thì sao?</summary>
+          <div class="geo-faq-answer">
+            Zalo-Flow tích hợp sẵn tầng bảo vệ <strong>Flood Detector</strong>. Nếu một người gửi nhắn liên tục trên 5 tin trong vòng 3 giây, hệ thống sẽ tự động bật còi cảnh báo và đưa người đó vào danh sách Mute tạm thời trong 60 giây, giúp tiến trình máy chủ không bị treo và tài khoản không bị kích động trả lời dồn dập.
+          </div>
+        </details>
+      </section>
+
+      <!-- CTA Box -->
+      <div style="background: rgba(0, 132, 255, 0.1); border: 1px solid rgba(0, 210, 255, 0.3); border-radius: 12px; padding: 1.5rem; text-align: center; margin-top: 2.5rem;">
+        <h3 style="color: #fff; margin-bottom: 0.5rem;">Trải Nghiệm Zalo-Flow Miễn Phí Ngay Hôm Nay</h3>
+        <p style="color: var(--text-muted); margin-bottom: 1.25rem;">Phần mềm mã nguồn mở độc lập, bảo vệ chống khóa nick toàn diện, cài đặt 1-Click trên Windows.</p>
         <div style="display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
           <a href="https://github.com/aizaloapp/zalo-flow/releases/latest" target="_blank" rel="noopener" class="btn btn-primary">
-            🪟 Tải Về Cho Windows (.exe)
+            🪟 Tải Bản Cài Đặt Windows (.exe)
           </a>
           <a href="https://zalo.me/g/mcihan713" target="_blank" rel="noopener" class="btn btn-zalo">
             💬 Tham Gia Nhóm Zalo Hỗ Trợ
