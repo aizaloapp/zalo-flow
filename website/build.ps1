@@ -21,6 +21,11 @@ Copy-Item -Path (Join-Path $srcDir "blog\*") -Destination (Join-Path $distDir "b
 # Copy Assets
 Copy-Item -Path (Join-Path $srcDir "assets\*") -Destination (Join-Path $distDir "assets\") -Recurse -Force
 
+# Copy GEO / AI Crawler files
+if (Test-Path (Join-Path $srcDir "llms*.txt")) {
+    Copy-Item -Path (Join-Path $srcDir "llms*.txt") -Destination $distDir -Force
+}
+
 $distFiles = Get-ChildItem -Path $distDir -Recurse -File
 Write-Host "Build completed successfully! Total $($distFiles.Count) files in dist/" -ForegroundColor Green
 Write-Host "Ready for deployment: npx wrangler pages deploy website/dist --project-name aizalo-portal" -ForegroundColor Yellow
