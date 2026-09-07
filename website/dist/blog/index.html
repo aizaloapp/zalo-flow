@@ -33,12 +33,22 @@
         <span>Zalo-Flow</span>
       </a>
 
-      <ul class="nav-menu">
+      <ul class="nav-menu" id="navMenu">
         <li><a href="/#features" class="nav-link">Tính Năng</a></li>
         <li><a href="/#smartscreen" class="nav-link">Cài Đặt</a></li>
         <li><a href="/#faq" class="nav-link">Hỏi Đáp</a></li>
         <li><a href="/blog/" class="nav-link" style="color: var(--cyan);">Cẩm Nang (Blog)</a></li>
         <li><a href="/#community" class="nav-link">Cộng Đồng</a></li>
+        <li class="mobile-only-action">
+          <a href="https://zalo.me/g/mcihan713" target="_blank" rel="noopener" class="btn btn-zalo">
+            💬 Nhóm Zalo Hỗ Trợ
+          </a>
+        </li>
+        <li class="mobile-only-action">
+          <a href="https://github.com/aizaloapp/zalo-flow/releases/latest" target="_blank" rel="noopener" class="btn btn-primary">
+            🪟 Tải .exe v1.0.4
+          </a>
+        </li>
       </ul>
 
       <div class="nav-actions">
@@ -48,9 +58,15 @@
         <a href="https://github.com/aizaloapp/zalo-flow/releases/latest" target="_blank" rel="noopener" class="btn btn-primary">
           🪟 Tải .exe
         </a>
+        <button class="nav-toggle" id="navToggle" aria-label="Mở menu điều hướng" aria-expanded="false" onclick="toggleMenu()">
+          <span class="bar"></span>
+          <span class="bar"></span>
+          <span class="bar"></span>
+        </button>
       </div>
     </div>
   </header>
+  <div class="drawer-backdrop" id="navBackdrop" onclick="toggleMenu(false)"></div>
 
   <main class="container section">
     <div class="section-header">
@@ -144,7 +160,30 @@
         </div>
       </div>
     </div>
-  </footer>
+  <!-- Mobile Navigation Controller -->
+  <script>
+    function toggleMenu(force) {
+      const menu = document.getElementById('navMenu');
+      const toggle = document.getElementById('navToggle');
+      const backdrop = document.getElementById('navBackdrop');
+      if (!menu || !toggle || !backdrop) return;
+      const isOpen = (force !== undefined) ? force : !menu.classList.contains('active');
+      menu.classList.toggle('active', isOpen);
+      backdrop.classList.toggle('active', isOpen);
+      toggle.classList.toggle('active', isOpen);
+      toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      document.body.style.overflow = isOpen ? 'hidden' : '';
+    }
 
+    document.querySelectorAll('#navMenu a').forEach(function(link) {
+      link.addEventListener('click', function() {
+        toggleMenu(false);
+      });
+    });
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') toggleMenu(false);
+    });
+  </script>
 </body>
 </html>

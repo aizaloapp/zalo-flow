@@ -16,6 +16,11 @@
   --warning: #f59e0b;
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  /* Z-Index Hierarchy Layering */
+  --z-floating: 90;
+  --z-navbar: 100;
+  --z-backdrop: 200;
+  --z-drawer: 201;
 }
 
 *, *::before, *::after {
@@ -49,7 +54,7 @@ body {
 .navbar {
   position: sticky;
   top: 0;
-  z-index: 100;
+  z-index: var(--z-navbar);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   background: rgba(7, 10, 19, 0.82);
@@ -114,6 +119,74 @@ body {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+}
+
+/* Mobile Nav Toggle (Hamburger Button) */
+.nav-toggle {
+  display: none;
+  flex-direction: column;
+  justify-content: space-around;
+  width: 38px;
+  height: 38px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-subtle);
+  border-radius: 9px;
+  cursor: pointer;
+  padding: 8px 7px;
+  z-index: calc(var(--z-drawer) + 1);
+  transition: all 0.25s ease;
+}
+
+.nav-toggle:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: var(--border-accent);
+}
+
+.nav-toggle .bar {
+  width: 100%;
+  height: 2px;
+  background-color: #fff;
+  border-radius: 2px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: center;
+}
+
+.nav-toggle.active .bar:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+
+.nav-toggle.active .bar:nth-child(2) {
+  opacity: 0;
+  transform: scaleX(0);
+}
+
+.nav-toggle.active .bar:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}
+
+/* Mobile Drawer Backdrop */
+.drawer-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.68);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: var(--z-backdrop);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.drawer-backdrop.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.mobile-only-action {
+  display: none;
 }
 
 /* Buttons */
@@ -532,7 +605,7 @@ body {
   position: fixed;
   bottom: 1.5rem;
   right: 1.5rem;
-  z-index: 99;
+  z-index: var(--z-floating);
   display: flex;
   align-items: center;
   gap: 0.6rem;
@@ -883,13 +956,251 @@ body {
   line-height: 1.6;
 }
 
-/* Responsive */
+/* Table Scroll Hint (Mobile) */
+.table-scroll-hint {
+  display: none;
+}
+
+/* ==========================================================================
+   RESPONSIVE & MOBILE-FIRST OPTIMIZATIONS
+   ========================================================================== */
+
+/* Tablet & Mobile Navigation Drawer (Max-Width: 900px) */
 @media (max-width: 900px) {
-  .nav-menu {
-    display: none;
+  .nav-toggle {
+    display: flex;
   }
+
+  .nav-menu {
+    position: fixed;
+    top: 0;
+    right: -300px;
+    width: min(300px, 85vw);
+    height: 100vh;
+    height: 100dvh;
+    background: rgba(9, 14, 26, 0.98);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    flex-direction: column;
+    align-items: stretch;
+    padding: 5rem 1.5rem max(1.5rem, env(safe-area-inset-bottom));
+    gap: 0.6rem;
+    z-index: var(--z-drawer);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: -10px 0 35px rgba(0, 0, 0, 0.75);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    border-left: 1px solid var(--border-subtle);
+  }
+
+  .nav-menu.active {
+    transform: translateX(-300px);
+  }
+
+  .nav-link {
+    display: block;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text-main);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  .nav-link:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--cyan);
+  }
+
+  .mobile-only-action {
+    display: block;
+    margin-top: 0.5rem;
+  }
+
+  .mobile-only-action .btn {
+    width: 100%;
+    justify-content: center;
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+  }
+
   .footer-grid {
     grid-template-columns: 1fr;
     gap: 2rem;
+  }
+}
+
+/* Smartphone Portrait Viewport (Max-Width: 640px) */
+@media (max-width: 640px) {
+  /* 1. Header gọn gàng & cân đối */
+  .nav-container {
+    height: 3.6rem;
+  }
+
+  .brand {
+    font-size: 1.15rem;
+    gap: 0.5rem;
+  }
+
+  .brand-icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .brand-tag {
+    font-size: 0.65rem;
+    padding: 0.1rem 0.4rem;
+  }
+
+  .nav-actions {
+    gap: 0.5rem;
+  }
+
+  .nav-actions .btn {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.8rem;
+    border-radius: 8px;
+  }
+
+  .nav-actions .btn-zalo {
+    display: none; /* Ẩn bớt trên header mobile để chống đè logo, đã có trong Drawer và Hero */
+  }
+
+  /* 2. Hero Section & Typography chuẩn 2-3 dòng */
+  .hero {
+    padding: 2.5rem 0 2rem;
+  }
+
+  .hero-pill {
+    font-size: 0.75rem;
+    padding: 0.3rem 0.75rem;
+    line-height: 1.4;
+    white-space: normal;
+    max-width: 95%;
+    margin-bottom: 1.25rem;
+  }
+
+  .hero-title {
+    font-size: 1.75rem !important;
+    line-height: 1.25;
+    margin-bottom: 1rem;
+    letter-spacing: -0.01em;
+  }
+
+  .hero-desc {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    padding: 0 0.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  /* 3. CTA Buttons Full-Width dễ thao tác một tay */
+  .hero-cta-group {
+    flex-direction: column;
+    width: 100%;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+  }
+
+  .hero-cta-group .btn,
+  .hero-cta-group .cli-snippet {
+    width: 100%;
+    max-width: 340px;
+    justify-content: center;
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+  }
+
+  /* 4. Badges bar dạng Chip hiện đại */
+  .badges-bar {
+    gap: 0.5rem;
+    padding: 0.75rem 0;
+  }
+
+  .badges-bar .badge-item:nth-child(even) {
+    display: none; /* Ẩn dấu chấm • trên mobile */
+  }
+
+  .badge-item {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 0.35rem 0.65rem;
+    border-radius: 6px;
+    font-size: 0.78rem;
+  }
+
+  /* 5. Cảnh Báo SmartScreen & Định Nghĩa GEO */
+  .smartscreen-alert {
+    padding: 1rem 1.15rem;
+    margin: 1rem auto 2.5rem;
+    border-radius: 12px;
+  }
+
+  .smartscreen-header {
+    font-size: 0.92rem;
+  }
+
+  .smartscreen-content {
+    font-size: 0.85rem;
+  }
+
+  .geo-box {
+    padding: 1rem 1.15rem;
+    font-size: 0.92rem;
+    margin: 0 auto 2.5rem;
+    border-radius: 0 10px 10px 0;
+  }
+
+  /* 6. Sections & Cards (Zero Horizontal Scroll) */
+  .section {
+    padding: 2.75rem 0;
+  }
+
+  .section-header {
+    margin-bottom: 2rem;
+  }
+
+  .section-title {
+    font-size: 1.55rem;
+  }
+
+  .grid-3, .grid-2 {
+    grid-template-columns: 1fr !important;
+    gap: 1.25rem;
+  }
+
+  .card {
+    padding: 1.25rem;
+    border-radius: 14px;
+  }
+
+  /* 7. Bảng So Sánh */
+  .table-scroll-hint {
+    display: block;
+    font-size: 0.82rem;
+    color: var(--cyan);
+    text-align: center;
+    margin-bottom: 0.75rem;
+  }
+
+  .comp-table th, .comp-table td {
+    padding: 0.75rem 0.85rem;
+    font-size: 0.88rem;
+  }
+
+  /* 8. Floating Badge thu gọn & Safe Area */
+  .floating-badge {
+    bottom: max(1rem, env(safe-area-inset-bottom));
+    right: 1rem;
+    padding: 0.5rem 0.85rem;
+    font-size: 0.8rem;
+  }
+
+  /* 9. Footer thu gọn */
+  .footer {
+    padding: 2.5rem 0 1.5rem;
+    margin-top: 3rem;
   }
 }
