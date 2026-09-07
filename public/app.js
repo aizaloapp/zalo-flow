@@ -2606,50 +2606,68 @@ function handleStreamEvent(eventType, rawData) {
   }
 }
 
-let appEventSource = null;
+let realtimeWorker = null;
 
 function setupRealtimeStream() {
-  if (appEventSource) {
-    try { appEventSource.close(); } catch (_) {}
+  if (realtimeWorker) {
+    try { realtimeWorker.terminate(); } catch (_) {}
   }
 
   const sseUrl = '/api/events' + (state.adminToken ? `?token=${encodeURIComponent(state.adminToken)}` : '');
 
+  // Isolate SSE in a background Web Worker so Chromium main thread stays Idle (stops tab spinner)
   try {
-    appEventSource = new EventSource(sseUrl);
+    const workerScript = `
+      var es = null;
+      self.onmessage = function(e) {
+        if (e.data && e.data.action === 'connect') {
+          if (es) { try { es.close(); } catch (_) {} }
+          es = new EventSource(e.data.url);
+          es.onopen = function() {
+            self.postMessage({ type: 'open' });
+          };
+          es.onerror = function() {
+            self.postMessage({ type: 'error' });
+          };
+          es.onmessage = function(event) {
+            self.postMessage({ type: 'event', eventType: 'message', data: event.data });
+          };
+          var events = [
+            'new_message', 'message_reaction', 'message_status', 'message_recalled',
+            'sync_progress', 'sync_complete', 'zalo_profile', 'zalo_qr', 'memory_restart'
+          ];
+          events.forEach(function(evt) {
+            es.addEventListener(evt, function(event) {
+              self.postMessage({ type: 'event', eventType: evt, data: event.data });
+            });
+          });
+        }
+      };
+    `;
+    const blob = new Blob([workerScript], { type: 'application/javascript' });
+    realtimeWorker = new Worker(URL.createObjectURL(blob));
 
-    appEventSource.onopen = () => {
-      reconnectBannerEl.style.display = 'none';
+    realtimeWorker.onmessage = function(e) {
+      const msg = e.data;
+      if (!msg) return;
+      if (msg.type === 'open') {
+        reconnectBannerEl.style.display = 'none';
+      } else if (msg.type === 'error') {
+        reconnectBannerEl.style.display = 'block';
+      } else if (msg.type === 'event') {
+        handleStreamEvent(msg.eventType, msg.data);
+      }
     };
 
-    appEventSource.onmessage = (e) => {
-      if (e.data) handleStreamEvent('message', e.data);
-    };
-
-    const sseEvents = [
-      'new_message',
-      'message_reaction',
-      'message_status',
-      'message_recalled',
-      'sync_progress',
-      'sync_complete',
-      'zalo_profile',
-      'zalo_qr',
-      'memory_restart'
-    ];
-
-    sseEvents.forEach(evt => {
-      appEventSource.addEventListener(evt, (e) => {
-        if (e.data) handleStreamEvent(evt, e.data);
-      });
-    });
-
-    appEventSource.onerror = () => {
-      reconnectBannerEl.style.display = 'block';
-    };
+    realtimeWorker.postMessage({ action: 'connect', url: sseUrl });
   } catch (err) {
-    console.warn('[SSE] EventSource init failed:', err);
-    setTimeout(setupRealtimeStream, 3000);
+    console.warn('[SSE Worker] Fallback to direct EventSource:', err);
+    try {
+      const es = new EventSource(sseUrl);
+      es.onopen = () => { reconnectBannerEl.style.display = 'none'; };
+      es.onerror = () => { reconnectBannerEl.style.display = 'block'; };
+      es.onmessage = (e) => handleStreamEvent('message', e.data);
+    } catch (_) {}
   }
 }
 
