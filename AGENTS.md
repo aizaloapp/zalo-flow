@@ -43,6 +43,10 @@
 6. **Inbound File Resolution & Mobile Markdown Sanitization:**
    - Tự động nhận diện tin nhắn tệp (`chat.file`, `sharefile` hoặc phần mở rộng tài liệu) để gán `type: 'file'` kèm phân giải `mediaUrl` cho nút tải xuống.
    - Tin nhắn Bot AI gửi đi BẮT BUỘC đi qua `cleanForZalo(text)`: chuyển đổi `**tiêu đề**` thành biểu tượng trực quan (`🔹`, `•`), gỡ bỏ backticks thô để hiển thị đẹp mắt trên app di động. Bot luôn dispatch kèm `isBot: true` và lưu đúng 1 bản ghi vào CSDL. *(Gốc: Rule 21, 27, 34)*
+7. **Zalo Real Profile Identity & SQLite Fallback Contract:**
+   - Khi gọi `api.fetchAccountInfo()`, phản hồi có cấu trúc `{ profile: User }` (không phải `res.data`). 
+   - Hàm trích xuất thông tin tài khoản BẮT BUỘC ưu tiên theo thứ tự: `res?.profile?.displayName` ➔ `name` ➔ `zaloName` ➔ `userProfile.displayName`.
+   - **SQLite Identity Fallback:** Nếu API Zalo phản hồi chậm hoặc thiếu dữ liệu, BẮT BUỘC truy vấn ngược CSDL SQLite cục bộ (bảng `messages` theo UID) để lấy `senderName` và `avatar` thật của chính chủ, TUYỆT ĐỐI KHÔNG ghi đè tên tạm bợ `Zalo User (...)` lên giao diện người dùng.
 
 ---
 
@@ -58,6 +62,11 @@
 4. **Client Canvas Compression & Safe Temp Cleanup:**
    - Frontend tự động nén ảnh điện thoại lớn (15MB - 50MB) bằng HTML5 Canvas về chuẩn Zalo HD 2560px/90% (~1.5MB) trong < 0.2s trước khi upload để giữ RAM Server < 100MB.
    - Mọi endpoint Multer nhận file tài liệu tối đa 25MB (thư mục mẫu 100MB) và BẮT BUỘC dọn dẹp file tạm bằng `fs.unlinkSync` trong `finally` block. *(Gốc: Rule 11, 29, 30)*
+5. **Account Switching Whitelist Contract & Queue Cancellation:**
+   - Khi người dùng thực hiện chuyển đổi nick Zalo hoặc làm mới phiên (`cleanSwitchAccountData`):
+     - **Phạm vi dọn dẹp (Chỉ dữ liệu hội thoại):** Chỉ xóa các bảng `conversations`, `messages`, `conversation_tags` để tránh nhầm lẫn nội dung giữa các nick khác nhau.
+     - **Whitelist bảo tồn vĩnh viễn (Bảo vệ tài sản tri thức):** BẢO TOÀN 100% các bảng `ai_settings` (cấu hình Prompt/Key), `tags` (danh mục thẻ CRM), `quick_messages` (mẫu tin nhắn nhanh), `campaigns` (kịch bản chiến dịch).
+     - **Anti-Ban Queue Purge:** BẮT BUỘC hủy toàn bộ tin nhắn trạng thái `pending` trong `campaign_queue` và đặt `isEnabled = 0` cho các chiến dịch để ngăn chặn việc gửi nhầm tin nhắn chiến dịch cũ sang tập khách hàng của tài khoản mới.
 
 ---
 
@@ -102,6 +111,9 @@
 5. **AI Reasoning Headroom & Live Model Discovery:**
    - Không ghi cứng danh sách model. Duy trì **Live Model Scanner** (`POST /api/ai/scan-models`) kết nối trực tiếp API của hãng để lấy danh sách model thực tế. Cô lập API Key giữa các nhà cung cấp khác nhau và hỗ trợ cả hai định dạng Google Gemini API Key: chuẩn mới `AQ...` và chuẩn truyền thống `AIza...`.
    - Lịch sử hội thoại nạp cho AI luôn theo thứ tự thời gian tăng dần (`ASC` — không gọi `.reverse()`). Mô hình suy luận (Reasoning Models) cấu hình `max_tokens >= 2048` kèm fallback `message.reasoning_content`. *(Gốc: Rule 33, 35, 36)*
+6. **Dev-to-Installed-Desktop Synchronization Invariant:**
+   - Trên môi trường Windows mà ứng dụng Desktop đang chạy dưới dạng tiến trình nền từ thư mục cài đặt (`%LOCALAPPDATA%\Programs\ZaloFlow`), mọi chỉnh sửa mã nguồn tại thư mục phát triển (`d:\A-Du-An\Zalo-Flow`) BẮT BUỘC phải được đồng bộ (`Copy-Item -Force`) sang thư mục cài đặt trước khi khởi động lại (restart) daemon.
+   - Tránh triệt để tình trạng "mã nguồn đã sửa nhưng tiến trình đang chạy vẫn nạp mã nguồn cũ", gây hiểu lầm cho người dùng khi kiểm thử trực tiếp trên trình duyệt.
 
 ---
 
