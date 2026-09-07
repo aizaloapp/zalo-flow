@@ -29,6 +29,11 @@
   padding: 0;
 }
 
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
 html {
   scroll-behavior: smooth;
   font-family: var(--font-sans);
@@ -38,7 +43,6 @@ html {
 }
 
 body {
-  overflow-x: hidden;
   background: radial-gradient(circle at 50% 0%, #0f1d3a 0%, #070a13 55%, #05070d 100%);
   min-height: 100vh;
 }
@@ -479,6 +483,8 @@ body {
 /* Comparison Table */
 .table-wrapper {
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
   margin: 2rem 0;
   border-radius: 14px;
   border: 1px solid var(--border-subtle);
@@ -1050,6 +1056,8 @@ body {
 
 .geo-table-wrapper {
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
   margin: 1.75rem 0;
   border-radius: 12px;
   border: 1px solid var(--border-subtle);
@@ -1172,9 +1180,10 @@ body {
   }
 
   .nav-menu {
+    display: none;
     position: fixed;
     top: 0;
-    right: -300px;
+    right: 0;
     width: min(300px, 85vw);
     height: 100vh;
     height: 100dvh;
@@ -1186,7 +1195,6 @@ body {
     padding: 5rem 1.5rem max(1.5rem, env(safe-area-inset-bottom));
     gap: 0.6rem;
     z-index: var(--z-drawer);
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: -10px 0 35px rgba(0, 0, 0, 0.75);
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
@@ -1195,7 +1203,17 @@ body {
   }
 
   .nav-menu.active {
-    transform: translateX(-300px);
+    display: flex;
+    animation: drawerSlideIn 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+
+  @keyframes drawerSlideIn {
+    from {
+      transform: translateX(100%);
+    }
+    to {
+      transform: translateX(0);
+    }
   }
 
   .nav-link {
