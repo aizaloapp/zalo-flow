@@ -2606,59 +2606,50 @@ function handleStreamEvent(eventType, rawData) {
   }
 }
 
-async function setupRealtimeStream() {
-  if (streamAbortController) {
-    try { streamAbortController.abort(); } catch (_) {}
+let appEventSource = null;
+
+function setupRealtimeStream() {
+  if (appEventSource) {
+    try { appEventSource.close(); } catch (_) {}
   }
-  streamAbortController = new AbortController();
 
   const sseUrl = '/api/events' + (state.adminToken ? `?token=${encodeURIComponent(state.adminToken)}` : '');
 
   try {
-    const response = await fetch(sseUrl, {
-      signal: streamAbortController.signal,
-      headers: { 'Accept': 'text/event-stream' }
+    appEventSource = new EventSource(sseUrl);
+
+    appEventSource.onopen = () => {
+      reconnectBannerEl.style.display = 'none';
+    };
+
+    appEventSource.onmessage = (e) => {
+      if (e.data) handleStreamEvent('message', e.data);
+    };
+
+    const sseEvents = [
+      'new_message',
+      'message_reaction',
+      'message_status',
+      'message_recalled',
+      'sync_progress',
+      'sync_complete',
+      'zalo_profile',
+      'zalo_qr',
+      'memory_restart'
+    ];
+
+    sseEvents.forEach(evt => {
+      appEventSource.addEventListener(evt, (e) => {
+        if (e.data) handleStreamEvent(evt, e.data);
+      });
     });
 
-    if (!response.ok) throw new Error('HTTP ' + response.status);
-
-    reconnectBannerEl.style.display = 'none';
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
-
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-
-      const parts = buffer.split('\n\n');
-      buffer = parts.pop() || ''; // keep last incomplete chunk
-
-      for (const part of parts) {
-        if (!part.trim() || part.startsWith(':')) continue; // skip comments / pings
-        const lines = part.split('\n');
-        let eventType = 'message';
-        let eventData = '';
-
-        for (const line of lines) {
-          if (line.startsWith('event: ')) {
-            eventType = line.slice(7).trim();
-          } else if (line.startsWith('data: ')) {
-            eventData = line.slice(6);
-          }
-        }
-
-        if (eventData) {
-          handleStreamEvent(eventType, eventData);
-        }
-      }
-    }
-  } catch (err) {
-    if (err.name !== 'AbortError') {
+    appEventSource.onerror = () => {
       reconnectBannerEl.style.display = 'block';
-      setTimeout(setupRealtimeStream, 3000);
-    }
+    };
+  } catch (err) {
+    console.warn('[SSE] EventSource init failed:', err);
+    setTimeout(setupRealtimeStream, 3000);
   }
 }
 
