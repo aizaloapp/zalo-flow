@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
 import http from 'http';
+import { WebSocketServer } from 'ws';
 import path from 'path';
 import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
@@ -54,8 +55,9 @@ zaloClient.onMessage(async (ctx) => {
 });
 
 // -----------------------------------------------------------------------------
-// Realtime SSE Stream Engine
+// Realtime Stream Engine (WebSocket Primary + SSE Fallback)
 // -----------------------------------------------------------------------------
+const wsClients = new Set();
 const sseClients = new Set();
 let sseEventId = 0;
 
@@ -85,6 +87,19 @@ app.get('/api/events', requireAuth, (req, res) => {
 });
 
 export function broadcastSSE(eventType, data) {
+  // 1. Broadcast to active WebSocket clients (Zero HTTP pending queue, eliminates tab spinner)
+  const wsPayload = JSON.stringify({ event: eventType, data });
+  for (const client of wsClients) {
+    if (client.readyState === 1 /* OPEN */) {
+      try {
+        client.send(wsPayload);
+      } catch {
+        wsClients.delete(client);
+      }
+    }
+  }
+
+  // 2. Broadcast to SSE clients (fallback)
   sseEventId++;
   const payload = `id: ${sseEventId}\nevent: ${eventType}\ndata: ${JSON.stringify(data)}\n\n`;
   for (const client of sseClients) {
@@ -397,6 +412,17 @@ function probeHealth(port) {
 // Start Server with resilient port fallback & single-instance detection
 function startServer(port, host, attempt = 0, maxAttempts = 5) {
   const server = http.createServer(app);
+
+  // Initialize WebSocket Server attached to HTTP server on /ws path
+  const wss = new WebSocketServer({ server, path: '/ws' });
+  wss.on('connection', (ws) => {
+    wsClients.add(ws);
+    ws.on('close', () => wsClients.delete(ws));
+    ws.on('error', () => wsClients.delete(ws));
+    try {
+      ws.send(JSON.stringify({ event: 'connected', data: { timestamp: Date.now() } }));
+    } catch {}
+  });
 
   server.on('error', async (err) => {
     if (err.code === 'EADDRINUSE') {

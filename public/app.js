@@ -19,6 +19,8 @@ const PRESET_COLORS = [
   '#38bdf8', '#6366f1', '#a855f7', '#ec4899', '#94a3b8'
 ];
 
+const DEFAULT_AVATAR_PLACEHOLDER = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 68 68'%3E%3Crect width='68' height='68' fill='%231e293b'/%3E%3Ctext x='50%25' y='55%25' text-anchor='middle' dominant-baseline='middle' fill='%2394a3b8' font-size='26'%3E👤%3C/text%3E%3C/svg%3E";
+
 // Elements
 const convListEl = document.getElementById('conversation-list');
 const emptyStateEl = document.getElementById('chat-empty-state');
@@ -2606,68 +2608,113 @@ function handleStreamEvent(eventType, rawData) {
   }
 }
 
-let realtimeWorker = null;
+let appSocket = null;
+let appEventSource = null;
 
 function setupRealtimeStream() {
-  if (realtimeWorker) {
-    try { realtimeWorker.terminate(); } catch (_) {}
+  if (appSocket) {
+    try { appSocket.close(); } catch (_) {}
+    appSocket = null;
+  }
+  if (appEventSource) {
+    try { appEventSource.close(); } catch (_) {}
+    appEventSource = null;
   }
 
-  const sseUrl = '/api/events' + (state.adminToken ? `?token=${encodeURIComponent(state.adminToken)}` : '');
+  // First-class WebSocket Connection
+  // In Chromium, WebSocket (status 101) completely closes HTTP pending cycle, clearing the tab spinner!
+  const isSecure = location.protocol === 'https:';
+  const wsProtocol = isSecure ? 'wss:' : 'ws:';
+  const tokenParam = state.adminToken ? `?token=${encodeURIComponent(state.adminToken)}` : '';
+  const wsUrl = `${wsProtocol}//${location.host}/ws${tokenParam}`;
 
-  // Isolate SSE in a background Web Worker so Chromium main thread stays Idle (stops tab spinner)
+  let wsOpened = false;
+
   try {
-    const workerScript = `
-      var es = null;
-      self.onmessage = function(e) {
-        if (e.data && e.data.action === 'connect') {
-          if (es) { try { es.close(); } catch (_) {} }
-          es = new EventSource(e.data.url);
-          es.onopen = function() {
-            self.postMessage({ type: 'open' });
-          };
-          es.onerror = function() {
-            self.postMessage({ type: 'error' });
-          };
-          es.onmessage = function(event) {
-            self.postMessage({ type: 'event', eventType: 'message', data: event.data });
-          };
-          var events = [
-            'new_message', 'message_reaction', 'message_status', 'message_recalled',
-            'sync_progress', 'sync_complete', 'zalo_profile', 'zalo_qr', 'memory_restart'
-          ];
-          events.forEach(function(evt) {
-            es.addEventListener(evt, function(event) {
-              self.postMessage({ type: 'event', eventType: evt, data: event.data });
-            });
-          });
-        }
-      };
-    `;
-    const blob = new Blob([workerScript], { type: 'application/javascript' });
-    realtimeWorker = new Worker(URL.createObjectURL(blob));
+    appSocket = new WebSocket(wsUrl);
 
-    realtimeWorker.onmessage = function(e) {
-      const msg = e.data;
-      if (!msg) return;
-      if (msg.type === 'open') {
-        reconnectBannerEl.style.display = 'none';
-      } else if (msg.type === 'error') {
-        reconnectBannerEl.style.display = 'block';
-      } else if (msg.type === 'event') {
-        handleStreamEvent(msg.eventType, msg.data);
+    appSocket.onopen = () => {
+      wsOpened = true;
+      console.log('⚡ [WebSocket] Realtime stream connected.');
+      if (reconnectBannerEl) reconnectBannerEl.style.display = 'none';
+    };
+
+    appSocket.onmessage = (e) => {
+      if (!e.data) return;
+      try {
+        const payload = JSON.parse(e.data);
+        if (payload.event && payload.data !== undefined) {
+          handleStreamEvent(payload.event, JSON.stringify(payload.data));
+        }
+      } catch (err) {
+        console.warn('[WebSocket] Message parse error:', err);
       }
     };
 
-    realtimeWorker.postMessage({ action: 'connect', url: sseUrl });
+    appSocket.onerror = (err) => {
+      console.warn('[WebSocket] Connection error:', err);
+      if (!wsOpened && !appEventSource) {
+        // Handshake failed, fallback to SSE
+        fallbackToSSE();
+      }
+    };
+
+    appSocket.onclose = () => {
+      if (wsOpened) {
+        // Lost connection after successful handshake -> retry WS after 3s
+        if (reconnectBannerEl) reconnectBannerEl.style.display = 'block';
+        setTimeout(setupRealtimeStream, 3000);
+      } else if (!appEventSource) {
+        fallbackToSSE();
+      }
+    };
   } catch (err) {
-    console.warn('[SSE Worker] Fallback to direct EventSource:', err);
-    try {
-      const es = new EventSource(sseUrl);
-      es.onopen = () => { reconnectBannerEl.style.display = 'none'; };
-      es.onerror = () => { reconnectBannerEl.style.display = 'block'; };
-      es.onmessage = (e) => handleStreamEvent('message', e.data);
-    } catch (_) {}
+    console.warn('[WebSocket] Init failed, falling back to SSE:', err);
+    fallbackToSSE();
+  }
+}
+
+function fallbackToSSE() {
+  if (appEventSource) return;
+  console.log('📡 [SSE] Initiating fallback EventSource stream...');
+
+  const sseUrl = '/api/events' + (state.adminToken ? `?token=${encodeURIComponent(state.adminToken)}` : '');
+
+  try {
+    appEventSource = new EventSource(sseUrl);
+
+    appEventSource.onopen = () => {
+      if (reconnectBannerEl) reconnectBannerEl.style.display = 'none';
+    };
+
+    appEventSource.onmessage = (e) => {
+      if (e.data) handleStreamEvent('message', e.data);
+    };
+
+    const sseEvents = [
+      'new_message',
+      'message_reaction',
+      'message_status',
+      'message_recalled',
+      'sync_progress',
+      'sync_complete',
+      'zalo_profile',
+      'zalo_qr',
+      'memory_restart'
+    ];
+
+    sseEvents.forEach(evt => {
+      appEventSource.addEventListener(evt, (e) => {
+        if (e.data) handleStreamEvent(evt, e.data);
+      });
+    });
+
+    appEventSource.onerror = () => {
+      if (reconnectBannerEl) reconnectBannerEl.style.display = 'block';
+    };
+  } catch (err) {
+    console.warn('[SSE] Fallback EventSource error:', err);
+    setTimeout(setupRealtimeStream, 3000);
   }
 }
 
@@ -2740,7 +2787,7 @@ async function executePhoneLookup() {
     const noteEl = document.getElementById('lookup-res-note');
     const actBtn = document.getElementById('lookup-res-btn');
 
-    if (avatarEl) avatarEl.src = user.avatar || 'https://chat.zalo.me/assets/default-avatar.png';
+    if (avatarEl) avatarEl.src = user.avatar || DEFAULT_AVATAR_PLACEHOLDER;
     if (nameEl) nameEl.innerText = user.displayName;
     if (uidEl) uidEl.innerText = `UID: ${user.uid}`;
     
@@ -3990,7 +4037,7 @@ function renderZaloLoginModalState(profile) {
     const nameEl = document.getElementById('zalo-connected-name');
     const idEl = document.getElementById('zalo-connected-id');
 
-    if (avatarEl) avatarEl.src = profile.avatar || 'https://via.placeholder.com/68?text=Zalo';
+    if (avatarEl) avatarEl.src = profile.avatar || DEFAULT_AVATAR_PLACEHOLDER;
     if (nameEl) nameEl.innerText = profile.displayName || 'Tài Khoản Zalo';
     if (idEl) idEl.innerText = profile.userId ? `ID: ${profile.userId}` : '';
 
