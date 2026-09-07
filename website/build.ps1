@@ -38,6 +38,9 @@ if (Test-Path (Join-Path $srcDir "_headers")) {
 if (Test-Path (Join-Path $srcDir "_redirects")) {
     Copy-Item -Path (Join-Path $srcDir "_redirects") -Destination $distDir -Force
 }
+if (Test-Path (Join-Path $srcDir "_worker.js")) {
+    Copy-Item -Path (Join-Path $srcDir "_worker.js") -Destination $distDir -Force
+}
 if (Test-Path (Join-Path $srcDir "robots.txt")) {
     Copy-Item -Path (Join-Path $srcDir "robots.txt") -Destination $distDir -Force
 }
