@@ -518,7 +518,7 @@ async function saveQuickMessageFromModal() {
     cancelQuickMsgEdit();
     await loadQuickMessages();
     renderQuickMessagesManager();
-    renderKnowledgeQuickMsgList();
+    renderKnowledgeQnaSummary();
     renderQuickMsgPopoverList();
   } catch (err) {
     alert('Lỗi: ' + err.message);
@@ -625,7 +625,7 @@ async function removeSpecificMediaFromQuickMessage(id, index, event) {
 
     await loadQuickMessages();
     renderQuickMessagesManager();
-    renderKnowledgeQuickMsgList();
+    renderKnowledgeQnaSummary();
     renderQuickMsgPopoverList();
   } catch (err) {
     alert('Lỗi: ' + err.message);
@@ -641,7 +641,7 @@ async function deleteQuickMessage(id) {
     }
     await loadQuickMessages();
     renderQuickMessagesManager();
-    renderKnowledgeQuickMsgList();
+    renderKnowledgeQnaSummary();
     renderQuickMsgPopoverList();
   } catch (err) {
     alert(err.message);
