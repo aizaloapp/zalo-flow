@@ -1,6 +1,6 @@
 {
   "name": "zalo-flow",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Open-Source Education & Research Framework for Zalo Webhook, Adapter Pattern & AI Automation",
   "main": "src/index.js",
   "type": "module",

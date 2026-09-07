@@ -2,7 +2,7 @@
 ; Inno Setup 6.x
 
 #define MyAppName "Zalo-Flow"
-#define MyAppVersion "1.0.1"
+#define MyAppVersion "1.0.2"
 #define MyAppPublisher "Zalo-Flow Community"
 #define MyAppURL "https://github.com/aizaloapp/zalo-flow"
 #define MyAppExeName "ZaloFlow-Launcher.vbs"
