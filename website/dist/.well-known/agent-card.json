@@ -1,0 +1,42 @@
+{
+  "name": "Zalo-Flow Agent",
+  "description": "AI Agent Assistant for automated Zalo CRM customer support, omnichannel message handling, and remarketing campaigns.",
+  "version": "1.0.0",
+  "url": "https://aizalo.com",
+  "supportedInterfaces": [
+    {
+      "url": "https://aizalo.com/.well-known/mcp.json",
+      "protocolBinding": "mcp"
+    },
+    {
+      "url": "https://aizalo.com/openapi.json",
+      "protocolBinding": "rest"
+    }
+  ],
+  "skills": [
+    {
+      "id": "customer-support",
+      "name": "Customer Support",
+      "description": "Automated conversational replies using connected AI models via Zalo-Flow."
+    },
+    {
+      "id": "lead-qualification",
+      "name": "Lead Qualification",
+      "description": "Qualify prospects and capture customer phone and requirements."
+    },
+    {
+      "id": "remarketing-broadcast",
+      "name": "Remarketing Broadcast",
+      "description": "Customer segmentation, tagging, and scheduled broadcast messaging."
+    },
+    {
+      "id": "contact-tagging",
+      "name": "Contact Tagging",
+      "description": "CRM contact tagging and conversation categorization."
+    }
+  ],
+  "authentication": {
+    "type": "bearer",
+    "documentation": "https://aizalo.com/auth.md"
+  }
+}

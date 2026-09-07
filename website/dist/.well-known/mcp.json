@@ -1,0 +1,74 @@
+{
+  "name": "aizalo-mcp",
+  "description": "Zalo-Flow Model Context Protocol (MCP) Server for personal Zalo automation, AI agent messaging, and CRM tagging.",
+  "version": "1.0.0",
+  "homepage": "https://aizalo.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aizaloapp/zalo-flow"
+  },
+  "transport": {
+    "type": "stdio",
+    "command": "node",
+    "args": ["mcp-server/index.js"],
+    "notes": "Runs locally alongside Zalo-Flow Desktop Client"
+  },
+  "tools": [
+    {
+      "name": "zalo_send_message",
+      "description": "Send a text message or response to a Zalo conversation thread.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "threadId": { "type": "string", "description": "Target conversation thread ID" },
+          "message": { "type": "string", "description": "Text message content" }
+        },
+        "required": ["threadId", "message"]
+      }
+    },
+    {
+      "name": "zalo_lookup_phone",
+      "description": "Search and retrieve a Zalo user profile by Vietnamese phone number.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "phone": { "type": "string", "description": "Phone number (e.g. 0912345678)" }
+        },
+        "required": ["phone"]
+      }
+    },
+    {
+      "name": "zalo_add_reaction",
+      "description": "Add an emoji reaction to a Zalo message.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "threadId": { "type": "string" },
+          "msgId": { "type": "string" },
+          "reaction": { "type": "string", "enum": ["HEART", "LIKE", "HAHA", "WOW", "SAD", "ANGRY"] }
+        },
+        "required": ["threadId", "msgId", "reaction"]
+      }
+    },
+    {
+      "name": "campaign_send_broadcast",
+      "description": "Send remarketing broadcast campaign to contacts filtered by CRM tag.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "tagId": { "type": "string", "description": "CRM tag ID" },
+          "message": { "type": "string", "description": "Spintax template message" }
+        },
+        "required": ["tagId", "message"]
+      }
+    },
+    {
+      "name": "system_get_bot_status",
+      "description": "Get current connection status and health of the Zalo client.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    }
+  ]
+}

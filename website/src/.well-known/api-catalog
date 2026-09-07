@@ -1,0 +1,23 @@
+{
+  "linkset": [
+    {
+      "anchor": "https://aizalo.com/",
+      "service-desc": [
+        {
+          "href": "https://aizalo.com/openapi.json",
+          "type": "application/json"
+        },
+        {
+          "href": "https://aizalo.com/.well-known/mcp.json",
+          "type": "application/json"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://aizalo.com/auth.md",
+          "type": "text/markdown"
+        }
+      ]
+    }
+  ]
+}

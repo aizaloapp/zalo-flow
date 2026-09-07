@@ -1,0 +1,22 @@
+{
+  "skills": [
+    {
+      "id": "zalo-chat-automation",
+      "name": "Zalo Chat Automation",
+      "description": "Automated conversational replies using connected AI models (Gemini, DeepSeek, OpenAI) via Zalo-Flow.",
+      "documentation": "https://aizalo.com/blog/tich-hop-ai-gemini-deepseek-vao-zalo-ca-nhan.html"
+    },
+    {
+      "id": "zalo-crm-remarketing",
+      "name": "Zalo CRM Remarketing",
+      "description": "Customer segmentation, tagging, and scheduled broadcast messaging with Spintax templates.",
+      "documentation": "https://aizalo.com/blog/zalo-crm-la-gi-giai-phap-quan-ly-tin-nhan-cskh.html"
+    },
+    {
+      "id": "anti-ban-delivery",
+      "name": "Anti-Ban Safe Message Dispatch",
+      "description": "Multi-tier rate limiting, token bucket pacing, and self-echo shielding for Zalo messaging.",
+      "documentation": "https://aizalo.com/blog/cach-gui-tin-nhan-tu-dong-tren-zalo-khong-bi-khoa.html"
+    }
+  ]
+}
