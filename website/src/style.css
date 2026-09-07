@@ -18,9 +18,9 @@
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   /* Z-Index Hierarchy Layering */
   --z-floating: 90;
+  --z-backdrop: 95;
   --z-navbar: 100;
-  --z-backdrop: 200;
-  --z-drawer: 201;
+  --z-drawer: 105;
 }
 
 *, *::before, *::after {
