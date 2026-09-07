@@ -10,10 +10,13 @@ Write-Host "Starting build for Zalo-Flow Website (Cloudflare Pages)..." -Foregro
 # Ensure dist directories exist
 New-Item -ItemType Directory -Force -Path $distDir, (Join-Path $distDir "blog"), (Join-Path $distDir "assets") | Out-Null
 
-# Copy HTML & CSS
+# Copy HTML, CSS & JS
 Copy-Item -Path (Join-Path $srcDir "index.html") -Destination (Join-Path $distDir "index.html") -Force
 Copy-Item -Path (Join-Path $srcDir "404.html") -Destination (Join-Path $distDir "404.html") -Force
 Copy-Item -Path (Join-Path $srcDir "style.css") -Destination (Join-Path $distDir "style.css") -Force
+if (Test-Path (Join-Path $srcDir "*.js")) {
+    Copy-Item -Path (Join-Path $srcDir "*.js") -Destination $distDir -Force
+}
 
 # Copy Blog files
 Copy-Item -Path (Join-Path $srcDir "blog\*") -Destination (Join-Path $distDir "blog\") -Recurse -Force

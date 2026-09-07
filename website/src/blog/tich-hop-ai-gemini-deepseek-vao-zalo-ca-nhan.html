@@ -156,22 +156,39 @@
   </header>
   <div class="drawer-backdrop" id="navBackdrop" onclick="toggleMenu(false)"></div>
 
-  <article class="article-container">
-    <header class="article-header">
-      <div class="article-breadcrumbs">
-        <a href="/">Trang Chủ</a> &gt; <a href="/blog/">Cẩm Nang</a> &gt; <span>Trí Tuệ Nhân Tạo</span>
-      </div>
-      <h1 class="article-title">Tích Hợp AI Gemini &amp; DeepSeek Vào Zalo Cá Nhân Tự Động Trả Lời Tin Nhắn Miễn Phí</h1>
-      <div class="blog-meta">
-        <span>📅 Ngày đăng: 07/09/2026</span>
-        <span>•</span>
-        <span>⏱️ Thời gian đọc: 6 phút</span>
-        <span>•</span>
-        <span>✍️ Tác giả: Đội ngũ Zalo-Flow</span>
-      </div>
-    </header>
+  <div class="reading-progress-bar" id="readingProgress"></div>
 
-    <div class="article-body">
+  <div class="article-layout">
+    <article class="article-main">
+      <header class="article-header">
+        <div class="article-breadcrumbs">
+          <a href="/">Trang Chủ</a> &gt; <a href="/blog/">Cẩm Nang</a> &gt; <span>Trí Tuệ Nhân Tạo</span>
+        </div>
+        <h1 class="article-title">Tích Hợp AI Gemini &amp; DeepSeek Vào Zalo Cá Nhân Tự Động Trả Lời Tin Nhắn Miễn Phí</h1>
+        <div class="article-actions-bar">
+          <div class="blog-meta">
+            <span>📅 Ngày đăng: 07/09/2026</span>
+            <span>•</span>
+            <span>⏱️ Thời gian đọc: 6 phút</span>
+            <span>•</span>
+            <span>✍️ Tác giả: Đội ngũ Zalo-Flow</span>
+          </div>
+          <button class="btn-copy-url" id="copyUrlBtn" onclick="copyArticleUrl()" title="Sao chép liên kết bài viết">
+            🔗 <span>Sao chép liên kết</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Mobile Accordion TOC (< 1024px) -->
+      <details class="mobile-toc-box" id="mobileTocBox">
+        <summary class="mobile-toc-summary">
+          <span>📑 Mục lục bài viết</span>
+          <span class="mobile-toc-arrow">▼</span>
+        </summary>
+        <nav id="mobileTocList" class="mobile-toc-list"></nav>
+      </details>
+
+      <div class="article-body">
       
       <!-- GEO Direct Answer Box -->
       <div class="geo-answer-box">
@@ -203,7 +220,7 @@
       </p>
 
       <!-- GEO Comparison Table -->
-      <h2>1. So Sánh: Google Gemini 2.5 Flash vs. DeepSeek V3/R1 Khi Làm Bot Zalo</h2>
+      <h2 id="so-sanh-gemini-vs-deepseek">1. So Sánh: Google Gemini 2.5 Flash vs. DeepSeek V3/R1 Khi Làm Bot Zalo</h2>
       <div class="geo-table-wrapper">
         <table class="geo-table">
           <thead>
@@ -243,7 +260,7 @@
         </table>
       </div>
 
-      <h2>2. Cách Lấy API Key Miễn Phí Từ Google AI Studio</h2>
+      <h2 id="lay-api-key-google-ai-studio">2. Cách Lấy API Key Miễn Phí Từ Google AI Studio</h2>
       <ol>
         <li>Truy cập vào trang: <code>https://aistudio.google.com/</code> và đăng nhập bằng tài khoản Gmail của bạn.</li>
         <li>Bấm nút <strong>"Get API key"</strong> ở góc bên trái màn hình.</li>
@@ -251,7 +268,7 @@
         <li>Sao chép chuỗi ký tự API Key (Google AI Studio cấp dạng chuẩn mới bắt đầu bằng <code>AQ....</code> hoặc chuẩn cũ <code>AIza...</code>, Zalo-Flow đều tương thích 100%) và lưu lại cẩn thận.</li>
       </ol>
 
-      <h2>3. Thiết Lập Prompt Nhân Cách Bán Hàng Trong Zalo-Flow</h2>
+      <h2 id="thiet-lap-prompt-nhan-cach">3. Thiết Lập Prompt Nhân Cách Bán Hàng Trong Zalo-Flow</h2>
       <p>
         Một con bot thông minh cần có một "bản sắc" (Persona) rõ ràng. Trong giao diện Zalo-Flow (<code>localhost:3000</code>), tại tab <strong>Cài đặt AI</strong>, bạn có thể thiết lập System Prompt theo cấu trúc mẫu sau:
       </p>
@@ -262,7 +279,7 @@ Quy tắc trả lời:
 3. Thông tin sản phẩm chính: [Nhập danh sách sản phẩm, giá bán, chính sách bảo hành].
 4. Khéo léo gợi mở khách để lại số điện thoại hoặc gửi danh thiếp để được hỗ trợ tốt nhất.</code></pre>
 
-      <h2>4. Tính Năng Độc Quyền: Tự Động Bóc Tách Danh Thiếp &amp; Số Điện Thoại</h2>
+      <h2 id="tu-dong-boc-tach-danh-thiep">4. Tính Năng Độc Quyền: Tự Động Bóc Tách Danh Thiếp &amp; Số Điện Thoại</h2>
       <p>
         Khi khách hàng gửi số điện thoại qua tin nhắn danh thiếp Zalo (<em>"Gửi danh thiếp"</em>), các hệ thống chatbot thông thường sẽ chỉ nhận được một chuỗi JSON kỹ thuật thô:
       </p>
@@ -277,7 +294,7 @@ Quy tắc trả lời:
         <li>Hiển thị thẻ Namecard bo góc kèm nút gọi nhanh trực tiếp trên giao diện quản trị và kích hoạt thông báo cho bạn.</li>
       </ul>
 
-      <h2>5. Chế Độ Làm Sạch Định Dạng Markdown Cho Ứng Dụng Di Động</h2>
+      <h2 id="lam-sach-dinh-dang-markdown">5. Chế Độ Làm Sạch Định Dạng Markdown Cho Ứng Dụng Di Động</h2>
       <p>
         Các mô hình AI như Gemini hay DeepSeek thường xuất ra văn bản có định dạng Markdown (như <code>**in đậm**</code>, dấu gạch đầu dòng, dấu backticks). Khi gửi lên Zalo, những ký tự này có thể bị hiển thị thô gây xấu mắt người đọc.
       </p>
@@ -287,7 +304,7 @@ Quy tắc trả lời:
 
       <!-- GEO FAQ Section -->
       <section class="geo-faq-section">
-        <h2>❓ Câu Hỏi Thường Gặp Về Tích Hợp AI Vào Zalo (FAQ)</h2>
+        <h2 id="cau-hoi-thuong-gap-faq">❓ Câu Hỏi Thường Gặp Về Tích Hợp AI Vào Zalo (FAQ)</h2>
 
         <details class="geo-faq-item">
           <summary class="geo-faq-summary">Tích hợp AI vào Zalo cá nhân qua Zalo-Flow có tốn tiền API không?</summary>
@@ -320,7 +337,7 @@ Quy tắc trả lời:
 
       <!-- CTA Box -->
       <div style="background: rgba(0, 132, 255, 0.1); border: 1px solid rgba(0, 210, 255, 0.3); border-radius: 12px; padding: 1.5rem; text-align: center; margin-top: 2.5rem;">
-        <h3 style="color: #fff; margin-bottom: 0.5rem;">Bắt Đầu Tự Động Hóa Zalo Bằng AI Ngay Hôm Nay</h3>
+        <div style="font-size: 1.25rem; font-weight: 700; color: #fff; margin-bottom: 0.5rem;">Bắt Đầu Tự Động Hóa Zalo Bằng AI Ngay Hôm Nay</div>
         <p style="color: var(--text-muted); margin-bottom: 1.25rem;">Tải Zalo-Flow miễn phí và kết nối AI trong vòng 3 phút.</p>
         <div style="display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
           <a href="https://github.com/aizaloapp/zalo-flow/releases/latest" target="_blank" rel="noopener" class="btn btn-primary">
@@ -333,6 +350,16 @@ Quy tắc trả lời:
       </div>
     </div>
   </article>
+
+  <!-- Desktop Sticky Sidebar TOC (>= 1024px) -->
+  <aside class="article-toc-sidebar" aria-label="Mục lục bài viết">
+    <div class="toc-header">
+      <span class="toc-title">ON THIS PAGE</span>
+    </div>
+    <nav id="desktopTocList" class="toc-list"></nav>
+  </aside>
+</div>
+<script src="/blog-toc.js"></script>
 
   <!-- Floating Badge -->
   <a href="https://zalo.me/g/mcihan713" target="_blank" rel="noopener" class="floating-badge">

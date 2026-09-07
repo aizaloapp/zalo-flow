@@ -156,54 +156,68 @@
   </header>
   <div class="drawer-backdrop" id="navBackdrop" onclick="toggleMenu(false)"></div>
 
-  <article class="article-container">
-    <header class="article-header">
-      <div class="article-breadcrumbs">
-        <a href="/">Trang Chủ</a> &gt; <a href="/blog/">Cẩm Nang</a> &gt; <span>Hướng Dẫn Cài Đặt</span>
-      </div>
-      <h1 class="article-title">Hướng Dẫn Cách Tạo Chatbot Zalo Cá Nhân Bằng Zalo-Flow Trong 3 Phút (1-Click)</h1>
-      <div class="blog-meta">
-        <span>📅 Ngày đăng: 07/09/2026</span>
-        <span>•</span>
-        <span>⏱️ Thời gian đọc: 4 phút</span>
-        <span>•</span>
-        <span>✍️ Tác giả: Đội ngũ Zalo-Flow</span>
-      </div>
-    </header>
+  <div class="reading-progress-bar" id="readingProgress"></div>
 
-    <div class="article-body">
-      
-      <!-- GEO Direct Answer Box -->
-      <div class="geo-answer-box">
-        <div class="geo-answer-label">🤖 Câu Trả Lời Nhanh Cho AI Search &amp; Người Dùng</div>
-        <p class="geo-answer-text">
-          Để <strong>tạo chatbot Zalo cá nhân miễn phí trong 3 phút</strong>, bạn chỉ cần thực hiện 3 bước: 
-          <strong>(1) Tải bộ cài đặt 1-Click</strong> <code>ZaloFlow-Setup-v1.0.4.exe</code> từ GitHub chính thức; 
-          <strong>(2) Vượt qua màn hình bảo vệ Microsoft SmartScreen</strong> bằng cách nhấp <code>More info</code> ➔ chọn <code>Run anyway</code> (an toàn 0/70 VirusTotal); 
-          <strong>(3) Quét mã QR bằng app Zalo điện thoại</strong> để đăng nhập và kích hoạt trợ lý AI (Gemini hoặc DeepSeek) tại <code>http://localhost:3000</code>.
+  <div class="article-layout">
+    <article class="article-main">
+      <header class="article-header">
+        <div class="article-breadcrumbs">
+          <a href="/">Trang Chủ</a> &gt; <a href="/blog/">Cẩm Nang</a> &gt; <span>Hướng Dẫn Cài Đặt</span>
+        </div>
+        <h1 class="article-title">Hướng Dẫn Cách Tạo Chatbot Zalo Cá Nhân Bằng Zalo-Flow Trong 3 Phút (1-Click)</h1>
+        <div class="article-actions-bar">
+          <div class="blog-meta" style="margin-top: 0; padding-top: 0;">
+            <span>📅 07/09/2026</span>
+            <span>•</span>
+            <span>⏱️ 4 phút đọc</span>
+            <span>•</span>
+            <span>✍️ Đội ngũ Zalo-Flow</span>
+          </div>
+          <button class="btn-copy-url" id="btnCopyUrl" onclick="copyArticleUrl()">🔗 Sao chép link</button>
+        </div>
+      </header>
+
+      <!-- Mobile Accordion TOC (< 1024px) -->
+      <details class="mobile-toc-box" id="mobileTocBox">
+        <summary class="mobile-toc-summary">📑 Mục lục bài viết</summary>
+        <div class="mobile-toc-content">
+          <nav id="mobileTocList" class="toc-list"></nav>
+        </div>
+      </details>
+
+      <div class="article-body">
+        
+        <!-- GEO Direct Answer Box -->
+        <div class="geo-answer-box">
+          <div class="geo-answer-label">🤖 Câu Trả Lời Nhanh Cho AI Search &amp; Người Dùng</div>
+          <p class="geo-answer-text">
+            Để <strong>tạo chatbot Zalo cá nhân miễn phí trong 3 phút</strong>, bạn chỉ cần thực hiện 3 bước: 
+            <strong>(1) Tải bộ cài đặt 1-Click</strong> <code>ZaloFlow-Setup-v1.0.4.exe</code> từ GitHub chính thức; 
+            <strong>(2) Vượt qua màn hình bảo vệ Microsoft SmartScreen</strong> bằng cách nhấp <code>More info</code> ➔ chọn <code>Run anyway</code> (an toàn 0/70 VirusTotal); 
+            <strong>(3) Quét mã QR bằng app Zalo điện thoại</strong> để đăng nhập và kích hoạt trợ lý AI (Gemini hoặc DeepSeek) tại <code>http://localhost:3000</code>.
+          </p>
+        </div>
+
+        <!-- GEO Key Takeaways (TL;DR) -->
+        <div class="geo-tldr-box">
+          <div class="geo-tldr-title">📌 Điểm Cốt Lõi Cần Nhớ (Key Takeaways)</div>
+          <ul class="geo-tldr-list">
+            <li><strong>Zero Code:</strong> Không cần cài Node.js, không cần biết Git hay gõ dòng lệnh terminal.</li>
+            <li><strong>Chi phí 0 đồng:</strong> Hoàn toàn miễn phí, không yêu cầu giấy phép kinh doanh hay phí duy trì như Zalo OA.</li>
+            <li><strong>Mức tiêu thụ RAM:</strong> Dưới 100MB (chỉ ~58MB RAM), nhẹ hơn 1 tab Google Chrome.</li>
+            <li><strong>Tích hợp AI:</strong> Hỗ trợ Google Gemini 2.5 Flash miễn phí và DeepSeek V3/R1 phản hồi thông minh trong 1.5s.</li>
+          </ul>
+        </div>
+
+        <p>
+          Nếu bạn là chủ shop bán hàng online, chuyên viên tư vấn bất động sản, tài chính hoặc bảo hiểm, việc trả lời chậm 5 phút có thể làm mất đi một khách hàng tiềm năng. Thông thường, để làm chatbot trên Zalo bạn phải đăng ký Zalo OA (yêu cầu giấy phép kinh doanh) và tốn hàng triệu đồng tiền duy trì mỗi tháng.
         </p>
-      </div>
+        <p>
+          Hôm nay, chúng tôi sẽ hướng dẫn bạn <strong>cách tạo chatbot Zalo cá nhân</strong> hoàn toàn miễn phí 100% bằng giải pháp mã nguồn mở <strong>Zalo-Flow</strong>, chạy trực tiếp trên máy tính Windows chỉ trong 3 phút.
+        </p>
 
-      <!-- GEO Key Takeaways (TL;DR) -->
-      <div class="geo-tldr-box">
-        <div class="geo-tldr-title">📌 Điểm Cốt Lõi Cần Nhớ (Key Takeaways)</div>
-        <ul class="geo-tldr-list">
-          <li><strong>Zero Code:</strong> Không cần cài Node.js, không cần biết Git hay gõ dòng lệnh terminal.</li>
-          <li><strong>Chi phí 0 đồng:</strong> Hoàn toàn miễn phí, không yêu cầu giấy phép kinh doanh hay phí duy trì như Zalo OA.</li>
-          <li><strong>Mức tiêu thụ RAM:</strong> Dưới 100MB (chỉ ~58MB RAM), nhẹ hơn 1 tab Google Chrome.</li>
-          <li><strong>Tích hợp AI:</strong> Hỗ trợ Google Gemini 2.5 Flash miễn phí và DeepSeek V3/R1 phản hồi thông minh trong 1.5s.</li>
-        </ul>
-      </div>
-
-      <p>
-        Nếu bạn là chủ shop bán hàng online, chuyên viên tư vấn bất động sản, tài chính hoặc bảo hiểm, việc trả lời chậm 5 phút có thể làm mất đi một khách hàng tiềm năng. Thông thường, để làm chatbot trên Zalo bạn phải đăng ký Zalo OA (yêu cầu giấy phép kinh doanh) và tốn hàng triệu đồng tiền duy trì mỗi tháng.
-      </p>
-      <p>
-        Hôm nay, chúng tôi sẽ hướng dẫn bạn <strong>cách tạo chatbot Zalo cá nhân</strong> hoàn toàn miễn phí 100% bằng giải pháp mã nguồn mở <strong>Zalo-Flow</strong>, chạy trực tiếp trên máy tính Windows chỉ trong 3 phút.
-      </p>
-
-      <!-- GEO Comparison Table -->
-      <h2>1. So Sánh: Chatbot Zalo Cá Nhân (Zalo-Flow) vs. Zalo Official Account (OA)</h2>
+        <!-- GEO Comparison Table -->
+        <h2 id="so-sanh-zalo-flow-vs-zalo-oa">1. So Sánh: Chatbot Zalo Cá Nhân vs. Zalo OA</h2>
       <div class="geo-table-wrapper">
         <table class="geo-table">
           <thead>
@@ -243,9 +257,9 @@
         </table>
       </div>
 
-      <h2>2. Quy Trình 3 Bước Cài Đặt Chatbot Zalo Cá Nhân 1-Click</h2>
+      <h2 id="quy-trinh-3-buoc-cai-dat">2. Quy Trình 3 Bước Cài Đặt Chatbot Zalo Cá Nhân 1-Click</h2>
 
-      <h3>Bước 1: Tải bộ cài đặt Windows chính thức</h3>
+      <h3 id="buoc-1-tai-bo-cai-dat">Bước 1: Tải bộ cài đặt Windows chính thức</h3>
       <p>
         Truy cập trang phát hành chính thức của Zalo-Flow trên GitHub để tải bản cài đặt mới nhất:
       </p>
@@ -253,7 +267,7 @@
         👉 <a href="https://github.com/aizaloapp/zalo-flow/releases/latest" target="_blank" rel="noopener" style="color: var(--cyan); font-weight: 700;">Tải về ZaloFlow-Setup-v1.0.4.exe (~23.4MB)</a>
       </p>
 
-      <h3>Bước 2: Vượt qua màn hình Microsoft Defender SmartScreen</h3>
+      <h3 id="buoc-2-vuot-smartscreen">Bước 2: Vượt qua màn hình Microsoft Defender SmartScreen</h3>
       <p>
         Khi bạn nhấp đúp vào file <code>ZaloFlow-Setup-v1.0.4.exe</code> vừa tải về, hệ điều hành Windows 10/11 có thể sẽ hiện một màn hình màu xanh với thông báo: <strong>"Windows protected your PC"</strong>.
       </p>
@@ -270,7 +284,7 @@
         Chương trình cài đặt sẽ tự động hoàn tất trong vòng 15 giây và tạo biểu tượng Zalo-Flow trên màn hình Desktop của bạn.
       </p>
 
-      <h3>Bước 3: Quét mã QR đăng nhập tài khoản Zalo</h3>
+      <h3 id="buoc-3-quet-ma-qr-zalo">Bước 3: Quét mã QR đăng nhập tài khoản Zalo</h3>
       <ol>
         <li>Sau khi cài đặt, trình duyệt của bạn sẽ tự động mở trang quản trị: <code>http://localhost:3000</code>.</li>
         <li>Màn hình sẽ hiển thị một mã QR đăng nhập Zalo an toàn.</li>
@@ -280,7 +294,7 @@
         Ngay lập tức, giao diện Zalo-Flow sẽ báo <strong>"Đã kết nối thành công"</strong>. Toàn bộ danh sách bạn bè và tin nhắn sẽ được đồng bộ về máy tính của bạn.
       </p>
 
-      <h2>3. Bật Trợ Lý AI Tự Động Trả Lời (Gemini &amp; DeepSeek)</h2>
+      <h2 id="kich-hoat-ai-tu-dong-tra-loi">3. Bật Trợ Lý AI Tự Động Trả Lời (Gemini &amp; DeepSeek)</h2>
       <p>
         Để bot tự động trả lời khi bạn bận hoặc đang ngủ:
       </p>
@@ -294,7 +308,7 @@
         Bây giờ, hãy lấy một nick Zalo khác nhắn tin thử vào nick của bạn. Trợ lý AI sẽ lập tức trả lời ngọt ngào, lịch sự và chính xác chỉ sau vài giây!
       </p>
 
-      <h2>4. Mẹo Vận Hành Bot Hoạt Động 24/7 Ổn Định</h2>
+      <h2 id="meo-van-hanh-bot-24-7">4. Mẹo Vận Hành Bot Hoạt Động 24/7 Ổn Định</h2>
       <ul>
         <li><strong>Chạy ngầm tàng hình (Stealth Mode):</strong> Zalo-Flow được khởi chạy qua VBScript ngầm nên không hề hiện cửa sổ màu đen CMD gây vướng mắt. Để dừng bot, chỉ cần bấm file <em>"Dừng Zalo-Flow.bat"</em>.</li>
         <li><strong>Giữ máy tính không bị Sleep:</strong> Vào <em>Windows Settings ➔ Power &amp; battery ➔ Screen and sleep</em>, chọn <em>"When plugged in, put my device to sleep after: Never"</em>.</li>
@@ -303,7 +317,7 @@
 
       <!-- GEO FAQ Section -->
       <section class="geo-faq-section">
-        <h2>❓ Câu Hỏi Thường Gặp Về Tạo Chatbot Zalo Cá Nhân (FAQ)</h2>
+        <h2 id="cau-hoi-thuong-gap-faq">❓ Câu Hỏi Thường Gặp (FAQ)</h2>
 
         <details class="geo-faq-item">
           <summary class="geo-faq-summary">Tạo chatbot Zalo cá nhân bằng Zalo-Flow có cần biết lập trình không?</summary>
@@ -344,6 +358,16 @@
       </div>
     </div>
   </article>
+
+  <!-- Desktop Sticky Sidebar TOC (>= 1024px) -->
+  <aside class="article-toc-sidebar" aria-label="Mục lục bài viết">
+    <div class="toc-header">
+      <span class="toc-title">ON THIS PAGE</span>
+    </div>
+    <nav id="desktopTocList" class="toc-list"></nav>
+  </aside>
+</div>
+<script src="/blog-toc.js"></script>
 
   <!-- Floating Badge -->
   <a href="https://zalo.me/g/mcihan713" target="_blank" rel="noopener" class="floating-badge">
