@@ -45,21 +45,6 @@ body {
   padding: 0 1.25rem;
 }
 
-/* Top Legal Disclaimer Banner */
-.disclaimer-banner {
-  background: linear-gradient(90deg, rgba(245, 158, 11, 0.15) 0%, rgba(245, 158, 11, 0.08) 100%);
-  border-bottom: 1px solid rgba(245, 158, 11, 0.3);
-  padding: 0.6rem 1rem;
-  font-size: 0.82rem;
-  color: #fbbf24;
-  text-align: center;
-  line-height: 1.4;
-}
-
-.disclaimer-banner strong {
-  color: #fef3c7;
-}
-
 /* Navbar */
 .navbar {
   position: sticky;
