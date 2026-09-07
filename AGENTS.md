@@ -100,7 +100,7 @@
    - Triệt tiêu lỗi khóa tệp Windows (`EBUSY`): Tiến trình Express/Node.js không bao giờ tự chạy `git pull` đè lên chính mình. Luôn phân tách bằng tiến trình con tách rời (`bin/standalone-updater.mjs` với `detached: true`) sau khi đã checkpoint SQLite và xả sạch hàng đợi.
    - Kiểm tra phiên bản GitHub Releases duy trì header `If-None-Match` với `ETag` nhận mã `304 Not Modified` chống cạn quota 60 req/h. *(Gốc: Rule 37)*
 5. **AI Reasoning Headroom & Live Model Discovery:**
-   - Không ghi cứng danh sách model. Duy trì **Live Model Scanner** (`POST /api/ai/scan-models`) kết nối trực tiếp API của hãng để lấy danh sách model thực tế. Cô lập API Key giữa các nhà cung cấp khác nhau.
+   - Không ghi cứng danh sách model. Duy trì **Live Model Scanner** (`POST /api/ai/scan-models`) kết nối trực tiếp API của hãng để lấy danh sách model thực tế. Cô lập API Key giữa các nhà cung cấp khác nhau và hỗ trợ cả hai định dạng Google Gemini API Key: chuẩn mới `AQ...` và chuẩn truyền thống `AIza...`.
    - Lịch sử hội thoại nạp cho AI luôn theo thứ tự thời gian tăng dần (`ASC` — không gọi `.reverse()`). Mô hình suy luận (Reasoning Models) cấu hình `max_tokens >= 2048` kèm fallback `message.reasoning_content`. *(Gốc: Rule 33, 35, 36)*
 
 ---
@@ -137,4 +137,18 @@
    - **Nguyên tắc GEO (Generative Engine Optimization):**
      - BẮT BUỘC duy trì tệp `llms.txt` (tóm tắt cho AI Crawlers) và `llms-full.txt` (toàn văn kèm gắn `X-Robots-Tag: noindex`).
      - Đoạn văn bản định nghĩa ngắn 40-60 từ (Quotable Snippets) và bảng so sánh trên trang chủ phải luôn rõ ràng, cô đọng để các AI search engine (ChatGPT, Perplexity, Gemini, Claude) dễ dàng trích dẫn trực tiếp.
+
+4. **Chuẩn Kỹ Thuật Blog & Mục Lục Tương Tác (Blog Architecture & TOC Invariants):**
+   - **Hardcoded Semantic Headings ID (Anti-Client-Slug Invariant):**
+     - Tuyệt đối KHÔNG dùng Client-side JavaScript để tự sinh thuộc tính `id` cho các thẻ tiêu đề bài viết blog.
+     - Mọi thẻ `<h2>`, `<h3>` BẮT BUỘC phải được gán sẵn thuộc tính `id` chuẩn tiếng Việt không dấu ngắn gọn (`id="huong-dan-cai-dat"`) ngay trong mã nguồn HTML tĩnh.
+     - *Mục đích:* Bảo đảm khả năng Deep Linking tức thì từ URL có hash (`#anchor`) ngay khi người dùng mở trang (trước khi JS tải xong), đồng thời cho phép Googlebot thu thập chính xác các Anchor Sitelinks trên trang kết quả tìm kiếm.
+   - **Anti-Flicker Scrollspy Lock:**
+     - Khi xây dựng Scrollspy bằng `IntersectionObserver`, BẮT BUỘC phải trang bị cơ chế khóa bắt sự kiện (debounce/lock ~800ms) khi người dùng nhấp vào một liên kết mục lục.
+     - *Mục đích:* Triệt tiêu hiện tượng các mục trung gian bị sáng đèn chớp nhoáng (flickering) trong lúc màn hình đang cuộn mượt tới vị trí được chọn.
+   - **CTA Box Semantic Isolation:**
+     - Các khối kêu gọi hành động (CTA Box), hộp trợ giúp cộng đồng hoặc khảo sát ở cuối bài viết TUYỆT ĐỐI KHÔNG dùng thẻ tiêu đề `<h2>` hoặc `<h3>` mà phải dùng `<div class="cta-title">` hoặc inline style.
+     - *Mục đích:* Bảo toàn cây phả hệ ngữ nghĩa (Semantic Hierarchy) thuần khiết cho các công cụ tìm kiếm và ngăn chặn việc parser mục lục gom nhầm nút CTA vào danh sách đọc.
+   - **Build Script Asset Synchronization:**
+     - Khi bổ sung bất kỳ tệp script (`.js`) hoặc asset tĩnh mới nào trong `website/src/`, tệp `website/build.ps1` BẮT BUỘC phải có lệnh sao chép tường minh sang `website/dist/` trước khi chạy lệnh deploy Cloudflare Pages.
 
