@@ -1625,7 +1625,23 @@ async function selectConversation(threadId) {
     fetch(`/api/conversations/${threadId}/read`, { method: 'POST', headers: getHeaders() }).catch(() => {});
   }
 
+  // Unfriended Guard: Cảnh báo nếu là chat cá nhân mà nick hiện tại chưa kết bạn
+  const unfriendedBar = document.getElementById('unfriended-warning-bar');
+  if (unfriendedBar) {
+    if (!conv.isGroup && currentZaloProfile?.isLoggedIn && Array.isArray(currentZaloProfile.friendUids) && currentZaloProfile.friendUids.length > 0) {
+      const isFriend = currentZaloProfile.friendUids.includes(String(threadId));
+      unfriendedBar.style.display = isFriend ? 'none' : 'flex';
+    } else {
+      unfriendedBar.style.display = 'none';
+    }
+  }
+
   await loadMessages(threadId);
+}
+
+function dismissUnfriendedWarning() {
+  const unfriendedBar = document.getElementById('unfriended-warning-bar');
+  if (unfriendedBar) unfriendedBar.style.display = 'none';
 }
 
 function closeChatMobile() {
@@ -4014,10 +4030,23 @@ function updateZaloHeaderStatus(profile) {
   if (!profile) return;
   const nameEl = document.getElementById('zalo-account-name');
   const dotEl = document.getElementById('zalo-header-dot');
+  const avatarEl = document.getElementById('zalo-header-avatar');
+
+  if (avatarEl) {
+    if (profile.isLoggedIn && profile.avatar) {
+      avatarEl.src = profile.avatar;
+      avatarEl.style.display = 'inline-block';
+      avatarEl.onerror = () => { avatarEl.style.display = 'none'; };
+    } else {
+      avatarEl.style.display = 'none';
+      avatarEl.src = '';
+    }
+  }
+
   if (nameEl) {
     if (profile.isLoggedIn) {
       nameEl.innerText = profile.displayName || 'Đã Kết Nối (Online)';
-      nameEl.title = `Zalo User: ${profile.displayName} (${profile.userId || 'Online'})`;
+      nameEl.title = `Tài khoản: ${profile.displayName} (UID: ${profile.userId || 'Online'})`;
     } else {
       nameEl.innerText = 'Chưa Kết Nối (Offline)';
       nameEl.title = 'Bấm để quét mã QR kết nối Zalo';
@@ -4059,7 +4088,10 @@ function renderZaloLoginModalState(profile) {
     const nameEl = document.getElementById('zalo-connected-name');
     const idEl = document.getElementById('zalo-connected-id');
 
-    if (avatarEl) avatarEl.src = profile.avatar || DEFAULT_AVATAR_PLACEHOLDER;
+    if (avatarEl) {
+      avatarEl.src = profile.avatar || DEFAULT_AVATAR_PLACEHOLDER;
+      avatarEl.onerror = () => { avatarEl.src = DEFAULT_AVATAR_PLACEHOLDER; };
+    }
     if (nameEl) nameEl.innerText = profile.displayName || 'Tài Khoản Zalo';
     if (idEl) idEl.innerText = profile.userId ? `ID: ${profile.userId}` : '';
 
@@ -4107,7 +4139,47 @@ function onZaloQrReceived(data) {
   });
 }
 
-async function generateZaloLoginQr() {
+let currentSwitchAction = 'qr'; // 'qr' or 'logout'
+
+function promptAccountSwitch(action = 'qr') {
+  currentSwitchAction = action;
+  const titleEl = document.getElementById('clean-switch-title');
+  if (titleEl) {
+    titleEl.innerText = action === 'logout' ? '🚪 Tùy Chọn Đăng Xuất Zalo' : '🔄 Tùy Chọn Đổi Tài Khoản Zalo';
+  }
+  openModal('modal-clean-switch');
+}
+
+async function executeAccountSwitch(cleanData = false) {
+  closeModal('modal-clean-switch');
+  if (currentSwitchAction === 'logout') {
+    await doLogoutZalo(cleanData);
+  } else {
+    await doGenerateZaloLoginQr(cleanData);
+  }
+}
+
+async function doLogoutZalo(cleanData = false) {
+  try {
+    const res = await fetch('/api/zalo/logout', {
+      method: 'POST',
+      headers: { ...getHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cleanData })
+    });
+    const json = await res.json();
+    if (json.data) {
+      renderZaloLoginModalState(json.data);
+    }
+    if (cleanData) {
+      await loadConversations();
+    }
+    alert('Đã đăng xuất tài khoản Zalo thành công.');
+  } catch (e) {
+    alert('Lỗi đăng xuất: ' + e.message);
+  }
+}
+
+async function doGenerateZaloLoginQr(cleanData = false) {
   const btn = document.getElementById('btn-generate-qr');
   if (btn) {
     btn.disabled = true;
@@ -4127,11 +4199,15 @@ async function generateZaloLoginQr() {
   try {
     const res = await fetch('/api/zalo/qr/generate', {
       method: 'POST',
-      headers: getHeaders()
+      headers: { ...getHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cleanData })
     });
     const json = await res.json();
     if (json.data) {
       renderZaloLoginModalState(json.data);
+    }
+    if (cleanData) {
+      await loadConversations();
     }
   } catch (e) {
     alert('Lỗi tạo mã QR: ' + e.message);
@@ -4143,24 +4219,16 @@ async function generateZaloLoginQr() {
   }
 }
 
-async function confirmLogoutZalo() {
-  if (!confirm('Bạn có chắc chắn muốn đăng xuất tài khoản Zalo này không?\n(Hệ thống sẽ xóa phiên đăng nhập cũ và bạn có thể quét QR để đăng nhập tài khoản khác)')) {
-    return;
+function generateZaloLoginQr() {
+  if (currentZaloProfile && currentZaloProfile.isLoggedIn) {
+    promptAccountSwitch('qr');
+  } else {
+    doGenerateZaloLoginQr(false);
   }
+}
 
-  try {
-    const res = await fetch('/api/zalo/logout', {
-      method: 'POST',
-      headers: getHeaders()
-    });
-    const json = await res.json();
-    if (json.data) {
-      renderZaloLoginModalState(json.data);
-    }
-    alert('Đã đăng xuất tài khoản Zalo thành công.');
-  } catch (e) {
-    alert('Lỗi đăng xuất: ' + e.message);
-  }
+function confirmLogoutZalo() {
+  promptAccountSwitch('logout');
 }
 
 // -----------------------------------------------------------------------------

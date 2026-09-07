@@ -24,7 +24,7 @@
 6. **Mở Rộng Đội Ngũ:** Tích hợp 2 chiều với Chatwoot CRM khi cần nhiều nhân viên cùng trực 1 số Zalo.
 
 ## Hướng Dẫn Tải Về & Cài Đặt
-- Tải gói cài đặt Windows: `https://github.com/aizaloapp/zalo-flow/releases/latest` (file `ZaloFlow-Setup-v1.0.4.exe`).
+- Tải gói cài đặt Windows: `https://github.com/aizaloapp/zalo-flow/releases/latest` (file `ZaloFlow-Setup-v1.0.5.exe`).
 - Cài đặt qua dòng lệnh: `npx zalo-flow init`
 - Lưu ý Windows SmartScreen: Khi xuất hiện màn hình "Windows protected your PC", bấm "More info" -> "Run anyway" (phần mềm cộng đồng chưa mua chứng chỉ thương mại Microsoft, sạch 0/70 trên VirusTotal).
 

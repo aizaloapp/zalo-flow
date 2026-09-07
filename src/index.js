@@ -1,3 +1,4 @@
+import './dns-bootstrap.js';
 import 'dotenv/config';
 import express from 'express';
 import http from 'http';
@@ -237,7 +238,11 @@ app.post('/api/send-message', requireAuth, async (req, res) => {
     res.json({ status: 'success', result });
   } catch (err) {
     logger.error(`Failed to send message to ${recipientId}: ${err.message}`);
-    res.status(500).json({ error: err.message });
+    let friendlyError = err.message;
+    if (err.message && (err.message.includes('Tham số không hợp lệ') || err.message.includes('112') || err.message.includes('10001'))) {
+      friendlyError = 'Không thể gửi tin: Tài khoản Zalo hiện tại chưa kết bạn với người này hoặc người nhận chặn tin nhắn từ người lạ. Vui lòng kết bạn trên điện thoại trước.';
+    }
+    res.status(500).json({ error: friendlyError });
   }
 });
 
@@ -282,6 +287,7 @@ app.get('/api/zalo/profile', requireAuth, (req, res) => {
 
 // POST /api/zalo/qr/generate
 app.post('/api/zalo/qr/generate', requireAuth, async (req, res) => {
+  const cleanData = Boolean(req.body?.cleanData);
   try {
     const profile = await zaloClient.requestNewQrLogin((updatedProfile) => {
       broadcastSSE('zalo_profile', updatedProfile);
@@ -292,7 +298,7 @@ app.post('/api/zalo/qr/generate', requireAuth, async (req, res) => {
           scannedUser: updatedProfile.scannedUser
         });
       }
-    });
+    }, { cleanData });
     broadcastSSE('zalo_profile', profile);
     res.json({ success: true, data: profile });
   } catch (err) {
@@ -303,8 +309,9 @@ app.post('/api/zalo/qr/generate', requireAuth, async (req, res) => {
 
 // POST /api/zalo/logout
 app.post('/api/zalo/logout', requireAuth, async (req, res) => {
+  const cleanData = Boolean(req.body?.cleanData);
   try {
-    const profile = await zaloClient.logout();
+    const profile = await zaloClient.logout({ cleanData });
     broadcastSSE('zalo_profile', profile);
     res.json({ success: true, data: profile });
   } catch (err) {

@@ -30,7 +30,8 @@
     </div>
 
     <div class="header-status">
-      <div class="status-pill" id="zalo-status-pill" onclick="openZaloLoginModal()" style="cursor: pointer; transition: all 0.2s ease;" title="Bấm để xem thông tin / Đăng nhập / Đổi tài khoản Zalo">
+      <div class="status-pill" id="zalo-status-pill" onclick="openZaloLoginModal()" style="cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 8px;" title="Bấm để xem thông tin / Đăng nhập / Đổi tài khoản Zalo">
+        <img id="zalo-header-avatar" src="" alt="" style="width: 22px; height: 22px; border-radius: 50%; object-fit: cover; display: none; border: 1.5px solid #10b981;">
         <div class="dot" id="zalo-header-dot"></div>
         <span id="zalo-account-name">Đã Kết Nối (Online)</span>
       </div>
@@ -148,6 +149,15 @@
                 📥 Kéo Lịch Sử
               </button>
             </div>
+          </div>
+
+          <!-- Unfriended Warning Bar -->
+          <div id="unfriended-warning-bar" style="display: none; background: #fefce8; border-bottom: 1px solid #fef08a; padding: 8px 16px; font-size: 0.82rem; color: #854d0e; align-items: center; justify-content: space-between; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 1.1rem; line-height: 1;">⚠️</span>
+              <span><b>Lưu ý:</b> Người này chưa có trong danh bạ bạn bè của tài khoản Zalo hiện tại. Nếu chưa từng kết bạn hoặc chưa mở nhận tin người lạ, Zalo có thể từ chối gửi tin.</span>
+            </div>
+            <button onclick="dismissUnfriendedWarning()" style="background: none; border: none; font-size: 1.2rem; color: #a16207; cursor: pointer; line-height: 1; padding: 0 4px;" title="Đóng cảnh báo">&times;</button>
           </div>
 
           <!-- Message Stream -->
@@ -1475,6 +1485,51 @@
           </button>
         </div>
 
+      </div>
+  <!-- Modal: Xác Nhận Chuyển Tài Khoản / Đăng Xuất Thông Minh -->
+  <div class="modal-backdrop" id="modal-clean-switch" style="display: none;">
+    <div class="modal-box" style="max-width: 490px; border-radius: 16px;">
+      <div class="modal-header" style="padding: 18px 24px; border-bottom: 1px solid #e2e8f0;">
+        <div class="modal-title-wrap">
+          <h2 class="modal-title" id="clean-switch-title" style="font-size: 1.15rem; color: #0f172a;">🔄 Tùy Chọn Đổi Tài Khoản Zalo</h2>
+          <span class="modal-subtitle" style="font-size: 0.8rem; color: #64748b;">Lựa chọn cách xử lý dữ liệu để tránh nhầm lẫn giữa các tài khoản</span>
+        </div>
+        <button class="modal-close-btn" onclick="closeModal('modal-clean-switch')">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 22px 24px; display: flex; flex-direction: column; gap: 14px;">
+        <p style="font-size: 0.86rem; color: #475569; margin: 0; line-height: 1.5;">
+          Bạn đang chuẩn bị chuyển đổi hoặc đăng nhập tài khoản Zalo khác. Vui lòng chọn cách xử lý dữ liệu:
+        </p>
+
+        <!-- Option 1: Clean Data (Recommended) -->
+        <div onclick="executeAccountSwitch(true)" style="background: #f0fdf4; border: 2px solid #86efac; border-radius: 12px; padding: 14px 16px; cursor: pointer; transition: all 0.2s ease;" onmouseover="this.style.borderColor='#16a34a'; this.style.background='#dcfce7'" onmouseout="this.style.borderColor='#86efac'; this.style.background='#f0fdf4'">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+            <div style="font-weight: 800; color: #166534; font-size: 0.95rem; display: flex; align-items: center; gap: 6px;">
+              <span>✨ Làm Mới Dữ Liệu</span>
+              <span style="font-size: 0.72rem; background: #16a34a; color: #fff; padding: 2px 8px; border-radius: 10px; font-weight: 700;">Khuyên Dùng</span>
+            </div>
+            <span style="color: #166534; font-weight: bold; font-size: 1.1rem;">➔</span>
+          </div>
+          <div style="font-size: 0.8rem; color: #15803d; line-height: 1.45;">
+            Xóa danh bạ và tin nhắn tạm của nick cũ để hiển thị sạch sẽ đúng danh bạ nick mới (Bảo toàn 100% Cấu hình Bot AI, Thẻ tag và Chiến dịch).
+          </div>
+        </div>
+
+        <!-- Option 2: Keep Data -->
+        <div onclick="executeAccountSwitch(false)" style="background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 12px; padding: 14px 16px; cursor: pointer; transition: all 0.2s ease;" onmouseover="this.style.borderColor='#94a3b8'; this.style.background='#f1f5f9'" onmouseout="this.style.borderColor='#cbd5e1'; this.style.background='#f8fafc'">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+            <div style="font-weight: 700; color: #334155; font-size: 0.92rem;">
+              📦 Giữ Lại Toàn Bộ Lịch Sử
+            </div>
+            <span style="color: #64748b; font-weight: bold;">➔</span>
+          </div>
+          <div style="font-size: 0.8rem; color: #64748b; line-height: 1.45;">
+            Chỉ ngắt kết nối phiên, giữ nguyên lịch sử tin nhắn của tài khoản cũ trong máy tính để tra cứu.
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer" style="padding: 12px 24px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end;">
+        <button class="filter-btn" onclick="closeModal('modal-clean-switch')">Hủy bỏ</button>
       </div>
     </div>
   </div>

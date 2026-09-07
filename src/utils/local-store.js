@@ -1259,6 +1259,44 @@ export class LocalStore extends EventEmitter {
     this.db.prepare(`UPDATE conversations SET aiEnabled = ?, updatedAt = datetime('now') WHERE id = ?`).run(val, threadId);
     return this.getConversation(threadId);
   }
+
+  /**
+   * Dọn dẹp an toàn khi đổi tài khoản Zalo (Clean Switch Account)
+   * Whitelist bảo vệ tuyệt đối:
+   * - CHỈ XÓA: conversations, messages, conversation_tags
+   * - TUYỆT ĐỐI GIỮ NGUYÊN: ai_settings, tags, quick_messages, campaigns
+   * - HỦY: các bản ghi pending trong campaign_queue và tắt isEnabled của campaigns (Anti-ban)
+   */
+  cleanSwitchAccountData() {
+    try {
+      this.db.exec('BEGIN TRANSACTION;');
+      
+      // 1. Hủy queue chiến dịch cũ đang pending để chống spam tài khoản lạ (Anti-Ban Guard C2)
+      this.db.prepare("DELETE FROM campaign_queue WHERE status = 'pending'").run();
+      this.db.prepare("UPDATE campaigns SET isEnabled = 0").run();
+      
+      // 2. Xóa các bảng hội thoại cá nhân
+      this.db.prepare("DELETE FROM conversation_tags").run();
+      this.db.prepare("DELETE FROM messages").run();
+      this.db.prepare("DELETE FROM conversations").run();
+      
+      this.db.exec('COMMIT;');
+      
+      // 3. Checkpoint WAL để giải phóng file DB
+      try {
+        this.db.exec('PRAGMA wal_checkpoint(TRUNCATE);');
+      } catch {}
+
+      logger.info('[LocalStore] Clean switch account completed safely. AI settings, tags, campaigns are preserved.');
+      this.emit('data_cleaned');
+      return true;
+    } catch (err) {
+      try { this.db.exec('ROLLBACK;'); } catch {}
+      logger.error(`[LocalStore] Failed to clean switch account data: ${err.message}`);
+      throw err;
+    }
+  }
 }
 
 export const localStore = new LocalStore();
+

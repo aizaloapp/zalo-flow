@@ -26,6 +26,8 @@ export class ZaloClient {
     this.qrStatusText = '';
     this.scannedUser = null;
     this.onQrCallback = null;
+    this.qrFlowId = 0; // Flow generation token to prevent zombie QR loops
+    this.friendUids = new Set(); // In-memory cache of current account friends
     this._deliveredQueue = new Map(); // Map<threadId, Set<msgId>>
     this._deliveredFlushTimer = null;
   }
@@ -73,6 +75,7 @@ export class ZaloClient {
         this.currentQrCode = null;
         this.currentQrDataUrl = null;
         logger.info('✅ Session restored successfully!');
+        await this.syncAccountProfile();
         this._setupListener();
         this.syncInitialContacts();
         return;
@@ -82,9 +85,11 @@ export class ZaloClient {
     }
 
     logger.info('Starting QR Code login flow...');
+    const currentFlow = ++this.qrFlowId;
     try {
       this.api = await zalo.loginQR({}, async (event) => {
         if (event.type === LoginQRCallbackEventType.QRCodeGenerated) {
+          if (this.isLoggedIn || this.qrFlowId !== currentFlow) return;
           const qrCode = event.data.code;
           const qrImage = event.data.image;
           this.currentQrCode = qrCode;
@@ -107,11 +112,21 @@ export class ZaloClient {
           logger.info('👉 Scan the QR code above with your Zalo App on mobile.');
           logger.info(`👉 Or open your browser at: http://localhost:${process.env.PORT || 3000} to view the QR Code.`);
         } else if (event.type === LoginQRCallbackEventType.QRCodeScanned) {
+          if (this.isLoggedIn || this.qrFlowId !== currentFlow) return;
           logger.info(`📱 QR Code scanned by ${event.data.display_name}. Please confirm on mobile...`);
         } else if (event.type === LoginQRCallbackEventType.GotLoginInfo) {
           logger.info('🔑 Received login credentials. Saving encrypted session...');
           saveEncryptedSession(this.sessionName, event.data);
+          this.userProfile = {
+            userId: String(event.data?.uid || event.data?.userId || ''),
+            displayName: event.data?.display_name || event.data?.name || 'Zalo User',
+            avatar: event.data?.avatar || ''
+          };
         } else if (event.type === LoginQRCallbackEventType.QRCodeExpired) {
+          if (this.isLoggedIn || this.qrFlowId !== currentFlow) {
+            logger.info('[QR Guard] Session is online or newer flow active. Skipping expired QR retry.');
+            return;
+          }
           logger.warn('⌛ QR Code expired. Retrying...');
           if (event.actions && typeof event.actions.retry === 'function') {
             event.actions.retry();
@@ -123,6 +138,7 @@ export class ZaloClient {
       this.currentQrCode = null;
       this.currentQrDataUrl = null;
       logger.info('🎉 Zalo login successful!');
+      await this.syncAccountProfile();
       this._setupListener();
       this.syncInitialContacts();
     } catch (err) {
@@ -140,9 +156,11 @@ export class ZaloClient {
       if (typeof this.api.getAllFriends === 'function') {
         const friends = await this.api.getAllFriends();
         if (Array.isArray(friends)) {
+          this.friendUids.clear();
           for (const f of friends) {
             const id = String(f.userId || f.uid || f.id || '');
             if (!id) continue;
+            this.friendUids.add(id);
             localStore.upsertConversation({
               id,
               name: f.displayName || f.zaloName || f.name || id,
@@ -150,7 +168,7 @@ export class ZaloClient {
               isGroup: false
             });
           }
-          logger.info(`📇 Initial contact sync: Synced ${friends.length} friends into LocalStore.`);
+          logger.info(`📇 Initial contact sync: Synced ${friends.length} friends into LocalStore and in-memory cache.`);
         }
       }
 
@@ -201,6 +219,87 @@ export class ZaloClient {
       }
     } catch (err) {
       logger.warn(`⚠️ syncInitialContacts fallback: ${err.message}`);
+    }
+  }
+
+  /**
+   * Check if a specific UID is in current account's friend list (In-Memory)
+   * @param {string} uid
+   * @returns {boolean}
+   */
+  isFriend(uid) {
+    if (!uid) return false;
+    return this.friendUids.has(String(uid));
+  }
+
+  /**
+   * Sync connected account profile (Real name, avatar, own UID)
+   */
+  async syncAccountProfile() {
+    if (!this.api) return;
+    try {
+      let profileData = null;
+      if (typeof this.api.fetchAccountInfo === 'function') {
+        try {
+          const res = await this.api.fetchAccountInfo();
+          profileData = res?.profile || res?.data?.profile || res?.data || res;
+        } catch (e) {
+          logger.warn(`[ProfileSync] fetchAccountInfo error: ${e.message}`);
+        }
+      }
+
+      const ownUid = typeof this.api.getOwnId === 'function' ? String(this.api.getOwnId() || '') : '';
+      const ctx = typeof this.api.getContext === 'function' ? this.api.getContext() : null;
+
+      const finalUid = ownUid || String(ctx?.uid || ctx?.userId || profileData?.userId || this.userProfile?.userId || '');
+
+      // Check all possible sources for display name
+      let candidateName = 
+        profileData?.displayName ||
+        profileData?.name ||
+        profileData?.zaloName ||
+        this.userProfile?.displayName ||
+        ctx?.displayName ||
+        ctx?.name;
+
+      if (candidateName && candidateName.startsWith('Zalo User')) {
+        candidateName = '';
+      }
+
+      // Fallback: lookup in SQLite database for real name
+      if (!candidateName && finalUid) {
+        try {
+          const row = localStore.db.prepare("SELECT senderName FROM messages WHERE senderId = ? AND senderName != '' AND senderName NOT LIKE 'Zalo User%' LIMIT 1").get(finalUid);
+          if (row?.senderName) candidateName = row.senderName;
+        } catch {}
+      }
+
+      const finalName = candidateName || (finalUid ? `Zalo User (${finalUid.substring(0, 6)}...)` : 'Zalo User');
+
+      // Check all possible sources for avatar
+      let finalAvatar = 
+        profileData?.avatar ||
+        profileData?.avatarUrl ||
+        this.userProfile?.avatar ||
+        ctx?.avatar ||
+        ctx?.avatarUrl || '';
+
+      // Fallback: lookup in SQLite database for real avatar
+      if (!finalAvatar && finalUid) {
+        try {
+          const row = localStore.db.prepare("SELECT avatar FROM conversations WHERE (id = ? OR name = ?) AND avatar != '' LIMIT 1").get(finalUid, finalName);
+          if (row?.avatar) finalAvatar = row.avatar;
+        } catch {}
+      }
+
+      this.userProfile = {
+        userId: finalUid,
+        displayName: finalName,
+        avatar: finalAvatar
+      };
+      logger.info(`👤 Zalo Profile synced: ${this.userProfile.displayName} (UID: ${this.userProfile.userId})`);
+    } catch (err) {
+      logger.warn(`[ProfileSync] Failed: ${err.message}`);
     }
   }
 
@@ -922,15 +1021,29 @@ export class ZaloClient {
     if (this.api) {
       try {
         const ctx = typeof this.api.getContext === 'function' ? this.api.getContext() : null;
-        if (ctx?.uid || ctx?.userId) {
+        if (!uid && (ctx?.uid || ctx?.userId)) {
           uid = String(ctx.uid || ctx.userId);
         }
-        if (!displayName) {
-          displayName = ctx?.displayName || ctx?.name || (uid ? `Zalo User (${uid.substring(0, 6)}...)` : 'Zalo User');
+        if (!displayName || displayName.startsWith('Zalo User')) {
+          displayName = ctx?.displayName || ctx?.name || displayName;
         }
         if (!avatar) {
-          avatar = ctx?.avatar || ctx?.avatarUrl || '';
+          avatar = ctx?.avatar || ctx?.avatarUrl || avatar;
         }
+      } catch {}
+    }
+
+    // SQLite fallback if still missing real name or avatar
+    if ((!displayName || displayName.startsWith('Zalo User')) && uid) {
+      try {
+        const row = localStore.db.prepare("SELECT senderName FROM messages WHERE senderId = ? AND senderName != '' AND senderName NOT LIKE 'Zalo User%' LIMIT 1").get(uid);
+        if (row?.senderName) displayName = row.senderName;
+      } catch {}
+    }
+    if (!avatar && uid) {
+      try {
+        const row = localStore.db.prepare("SELECT avatar FROM conversations WHERE (id = ? OR name = ?) AND avatar != '' LIMIT 1").get(uid, displayName);
+        if (row?.avatar) avatar = row.avatar;
       } catch {}
     }
 
@@ -939,9 +1052,11 @@ export class ZaloClient {
       userId: uid,
       displayName: displayName || (this.isLoggedIn ? 'Tài Khoản Zalo' : 'Chưa Đăng Nhập'),
       avatar: avatar,
-      hasQrWaiting: Boolean(this.currentQrDataUrl),
-      qrDataUrl: this.currentQrDataUrl,
-      qrStatusText: this.qrStatusText || (this.currentQrDataUrl ? 'Mở app Zalo trên điện thoại quét mã bên dưới để đăng nhập:' : ''),
+      friendCount: this.friendUids ? this.friendUids.size : 0,
+      friendUids: this.friendUids ? Array.from(this.friendUids) : [],
+      hasQrWaiting: !this.isLoggedIn && Boolean(this.currentQrDataUrl),
+      qrDataUrl: this.isLoggedIn ? null : this.currentQrDataUrl,
+      qrStatusText: this.isLoggedIn ? '' : (this.qrStatusText || (this.currentQrDataUrl ? 'Mở app Zalo trên điện thoại quét mã bên dưới để đăng nhập:' : '')),
       scannedUser: this.scannedUser || null
     };
   }
@@ -949,8 +1064,9 @@ export class ZaloClient {
   /**
    * Request a fresh QR Code Login flow (for new login or account switching)
    * @param {Function} onQrUpdate - Callback when QR changes, is scanned, or succeeds
+   * @param {object} options - Options e.g. cleanData: boolean
    */
-  async requestNewQrLogin(onQrUpdate = null) {
+  async requestNewQrLogin(onQrUpdate = null, { cleanData = false } = {}) {
     this.onQrCallback = onQrUpdate;
     this.isLoggedIn = false;
     this.api = null;
@@ -958,6 +1074,18 @@ export class ZaloClient {
     this.currentQrDataUrl = null;
     this.qrStatusText = 'Đang khởi tạo mã QR...';
     this.scannedUser = null;
+    this.friendUids.clear();
+    this._deliveredQueue.clear();
+
+    if (cleanData) {
+      try {
+        localStore.cleanSwitchAccountData();
+      } catch (e) {
+        logger.warn(`Could not clean localstore data on QR request: ${e.message}`);
+      }
+    }
+
+    const currentFlow = ++this.qrFlowId;
 
     const imageMetadataGetter = (filePath) => {
       try {
@@ -979,6 +1107,7 @@ export class ZaloClient {
 
     zalo.loginQR({}, async (event) => {
       if (event.type === LoginQRCallbackEventType.QRCodeGenerated) {
+        if (this.isLoggedIn || this.qrFlowId !== currentFlow) return;
         const qrCode = event.data.code;
         const qrImage = event.data.image;
         this.currentQrCode = qrCode;
@@ -1002,6 +1131,7 @@ export class ZaloClient {
           this.onQrCallback(this.getAccountProfile());
         }
       } else if (event.type === LoginQRCallbackEventType.QRCodeScanned) {
+        if (this.isLoggedIn || this.qrFlowId !== currentFlow) return;
         this.scannedUser = event.data?.display_name || 'Người dùng';
         this.qrStatusText = `📱 Đã quét bởi ${this.scannedUser}. Vui lòng bấm 'Cho phép' trên điện thoại...`;
         if (typeof this.onQrCallback === 'function') {
@@ -1016,6 +1146,10 @@ export class ZaloClient {
           avatar: event.data?.avatar || ''
         };
       } else if (event.type === LoginQRCallbackEventType.QRCodeExpired) {
+        if (this.isLoggedIn || this.qrFlowId !== currentFlow) {
+          logger.info('[QR Guard] Session is online or newer flow active. Skipping expired QR retry.');
+          return;
+        }
         this.qrStatusText = '⌛ Mã QR đã hết hạn. Đang tự động tạo lại mã mới...';
         if (typeof this.onQrCallback === 'function') {
           this.onQrCallback(this.getAccountProfile());
@@ -1024,7 +1158,7 @@ export class ZaloClient {
           event.actions.retry();
         }
       }
-    }).then((api) => {
+    }).then(async (api) => {
       this.api = api;
       this.isLoggedIn = true;
       this.currentQrCode = null;
@@ -1032,6 +1166,7 @@ export class ZaloClient {
       this.qrStatusText = '';
       this.scannedUser = null;
       logger.info('🎉 Zalo login successful!');
+      await this.syncAccountProfile();
       this._setupListener();
       this.syncInitialContacts();
 
@@ -1051,8 +1186,9 @@ export class ZaloClient {
 
   /**
    * Logout from Zalo account and remove encrypted session file
+   * @param {object} options - Options e.g. cleanData: boolean
    */
-  async logout() {
+  async logout({ cleanData = false } = {}) {
     this.isLoggedIn = false;
     this.api = null;
     this.currentQrCode = null;
@@ -1060,6 +1196,16 @@ export class ZaloClient {
     this.userProfile = { userId: '', displayName: '', avatar: '' };
     this.qrStatusText = '';
     this.scannedUser = null;
+    this.friendUids.clear();
+    this._deliveredQueue.clear();
+
+    if (cleanData) {
+      try {
+        localStore.cleanSwitchAccountData();
+      } catch (e) {
+        logger.warn(`Could not clean localstore data on logout: ${e.message}`);
+      }
+    }
 
     const sessionFile = path.join(process.cwd(), 'sessions', `${this.sessionName}.enc`);
     if (fs.existsSync(sessionFile)) {

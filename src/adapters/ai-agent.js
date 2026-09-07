@@ -676,10 +676,12 @@ ${scope || `1. Tuyệt đối không bịa đặt số tài khoản ngân hàng,
       throw new Error(`API Key is required for AI Provider: ${provider}`);
     }
 
+    const effectiveTimeout = (provider === 'ollama' && timeoutMs === 35000) ? 90000 : timeoutMs;
+
     if (provider === 'gemini') {
-      return await this._callGeminiNative({ model, apiKey, systemPrompt, history, userMessage, timeoutMs });
+      return await this._callGeminiNative({ model, apiKey, systemPrompt, history, userMessage, timeoutMs: effectiveTimeout });
     } else {
-      return await this._callOpenAiCompatible({ provider, model, apiKey, baseUrl, systemPrompt, history, userMessage, timeoutMs });
+      return await this._callOpenAiCompatible({ provider, model, apiKey, baseUrl, systemPrompt, history, userMessage, timeoutMs: effectiveTimeout });
     }
   }
 

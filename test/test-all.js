@@ -907,13 +907,78 @@ try {
   process.env.HOST = originalEnvHost;
 }
 
+console.log('27. Testing DNS Bootstrap (IPv4-first Resolution)...');
+await import('../src/dns-bootstrap.js');
+import dns from 'node:dns';
+if (typeof dns.getDefaultResultOrder === 'function') {
+  assert.strictEqual(dns.getDefaultResultOrder(), 'ipv4first', 'DNS default result order must be ipv4first');
+}
+console.log('   ✅ DNS Bootstrap IPv4-first resolution passed!\n');
+
+console.log('28. Testing QR Flow Generation Token & Zombie QR Suppression...');
+const clientGuardTest = new ZaloClient();
+clientGuardTest.isLoggedIn = true;
+const profileOnline = clientGuardTest.getAccountProfile();
+assert.strictEqual(profileOnline.hasQrWaiting, false, 'Online account must not have hasQrWaiting = true');
+assert.strictEqual(profileOnline.qrDataUrl, null, 'Online account must have null qrDataUrl');
+console.log('   ✅ QR Flow Generation Token & Zombie QR Suppression passed!\n');
+
+console.log('29. Testing Profile Sync & In-Memory Friend Lookup (isFriend)...');
+clientGuardTest.friendUids.add('123456789');
+assert.strictEqual(clientGuardTest.isFriend('123456789'), true, 'Should detect friend UID');
+assert.strictEqual(clientGuardTest.isFriend('999999999'), false, 'Should detect non-friend UID');
+
+clientGuardTest.userProfile = {
+  userId: '634023969879761967',
+  displayName: 'Phan Lê Khoa',
+  avatar: 'https://example.com/avatar.jpg'
+};
+const p = clientGuardTest.getAccountProfile();
+assert.strictEqual(p.userId, '634023969879761967');
+assert.strictEqual(p.displayName, 'Phan Lê Khoa');
+assert.strictEqual(p.avatar, 'https://example.com/avatar.jpg');
+assert.strictEqual(p.friendCount, 1);
+console.log('   ✅ Profile Sync & In-Memory Friend Lookup passed!\n');
+
+console.log('30. Testing Whitelist Data Preservation in cleanSwitchAccountData()...');
+// Setup test data
+store.upsertConversation({ id: 'conv_clean_test', name: 'Test Conv' });
+store.addMessage({ id: 'msg_clean_test', threadId: 'conv_clean_test', senderId: 'u1', text: 'hello' });
+const testTag = store.upsertTag({ name: 'VIP Tag', color: '#10b981' });
+store.addConversationTag('conv_clean_test', testTag.id);
+const testQuickMsg = store.upsertQuickMessage({ shortcut: '/hi-clean', title: 'Chào mừng', content: 'Xin chào bạn' });
+const testCamp = store.createCampaign({ name: 'Campaign Clean Test', message: 'Test message', targetType: 'direct', isEnabled: 1 });
+store.initCampaignQueue(testCamp.id, [{ threadId: 'conv_clean_test', customerName: 'Test Conv' }]);
+
+// Execute cleanSwitchAccountData
+store.cleanSwitchAccountData();
+
+// Verify conversations, messages, conversation_tags are deleted
+assert.strictEqual(store.getConversation('conv_clean_test'), null, 'Conversation must be wiped');
+assert.strictEqual(store.getMessages('conv_clean_test').length, 0, 'Messages must be wiped');
+assert.strictEqual(store.getConversationTags('conv_clean_test').length, 0, 'Conversation tags must be wiped');
+
+// Verify Whitelist: ai_settings, tags, quick_messages, campaigns are preserved!
+const allTags = store.getTags();
+assert.ok(allTags.some(t => t.id === testTag.id), 'Tags must be strictly preserved!');
+const allQm = store.getQuickMessages();
+assert.ok(allQm.some(q => q.id === testQuickMsg.id), 'Quick Messages must be strictly preserved!');
+assert.ok(store.getCampaign(testCamp.id), 'Campaigns must be strictly preserved!');
+
+// Verify campaign_queue pending is cancelled and campaigns isEnabled is 0
+const refreshedCamp = store.getCampaign(testCamp.id);
+assert.strictEqual(refreshedCamp.isEnabled, 0, 'Campaign isEnabled must be reset to 0 to prevent accidental outbound');
+const queueRows = store.db.prepare("SELECT COUNT(*) as cnt FROM campaign_queue WHERE campaignId = ? AND status = 'pending'").get(testCamp.id);
+assert.strictEqual(queueRows.cnt, 0, 'Pending campaign queue must be completely cleared!');
+console.log('   ✅ Whitelist Data Preservation in cleanSwitchAccountData passed!\n');
+
 // Clean test db
 store.close();
 if (fs.existsSync(testDbFile)) {
   try { fs.unlinkSync(testDbFile); } catch {}
 }
 
-console.log('🎉 ALL 26 INTEGRITY, SECURITY, CRM, AIZALO REMARKETING, AI SUITE, BULK DEEP-SYNC, QR AUTH, MEMORY GUARD, ZALO SANITIZER & DESKTOP PACKAGED TESTS PASSED 100%!');
+console.log('🎉 ALL 30 INTEGRITY, SECURITY, CRM, AIZALO REMARKETING, AI SUITE, BULK DEEP-SYNC, QR AUTH, MEMORY GUARD, ZALO SANITIZER, DESKTOP PACKAGED & CLEAN SWITCH TESTS PASSED 100%!');
 
 
 
