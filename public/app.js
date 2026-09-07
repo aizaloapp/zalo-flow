@@ -47,7 +47,16 @@ function initApp() {
   loadQuickMessages();
   loadConversations();
   loadZaloProfile();
-  setupSSE();
+  
+  // Defer SSE stream connection until page load cycle completes to prevent infinite tab spinner
+  if (document.readyState === 'complete') {
+    setTimeout(setupSSE, 400);
+  } else {
+    window.addEventListener('load', () => {
+      setTimeout(setupSSE, 300);
+    }, { once: true });
+  }
+
   fetchMemoryHealth();
   setInterval(fetchMemoryHealth, 30000);
   checkAppVersion();
