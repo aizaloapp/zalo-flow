@@ -1,0 +1,92 @@
+# Zalo-Flow: Tài Liệu Toàn Văn & Tri Thức Kỹ Thuật (Full Documentation)
+
+> Bản tài liệu toàn văn dành cho các AI Agent (ChatGPT, Perplexity, Claude, Gemini). Được biên soạn và chuẩn hóa ngày 07/09/2026.
+
+---
+
+## 1. TỔNG QUAN HỆ THỐNG (SYSTEM OVERVIEW)
+- Tên sản phẩm: Zalo-Flow (AIzalo Community Edition)
+- Website chính thức: https://aizalo.com/
+- Repository GitHub: https://github.com/aizaloapp/zalo-flow
+- Kênh hỗ trợ cộng đồng: https://zalo.me/g/mcihan713
+- Phiên bản phát hành: v1.0.1
+- Giấy phép: MIT License with Commons Clause Condition v1.0 (Nghiêm cấm thương mại hóa hoặc bán gói SaaS).
+- Tuyên bố pháp lý: Dự án mã nguồn mở độc lập, KHÔNG liên kết, không được ủy quyền, tài trợ hay chứng thực bởi VNG Corporation hay Zalo.
+
+---
+
+## 2. KIẾN TRÚC KỸ THUẬT & THÔNG SỐ VẬN HÀNH
+- **Runtime:** Node.js >= 22.5.0 (ES Modules).
+- **Core Library:** `zca-js: 2.1.0` (thư viện giao thức mô phỏng Zalo Web API).
+- **Web Server:** Express.js port 3000.
+- **Cơ sở dữ liệu:** SQLite cục bộ (lưu tại `database.sqlite`), tự động checkpoint WAL khi tắt hoặc khởi động lại.
+- **Mã hóa:** AES-256-CBC với `SESSION_SECRET` lưu trong file `.env`.
+- **Phân phối Desktop:** Bộ cài đặt Windows 1-Click (`ZaloFlow-Setup-v1.0.1.exe` ~23.4MB) tích hợp Node.js 22.14 LTS portable, chạy ngầm hoàn toàn qua VBScript (Stealth Mode) và tự khởi động trình duyệt `http://localhost:3000`.
+- **Hạn mức tài nguyên:** Node.js giới hạn 350MB RAM (cảnh báo tại 263MB), Docker container giới hạn 512MB RAM.
+
+---
+
+## 3. CÁC CƠ CHẾ BẢO VỆ TÀI KHOẢN (ANTI-BAN MECHANISMS)
+1. **Token Bucket Rate Limiter:** Giãn cách tối thiểu 3 giây giữa các tin nhắn gửi đi, tối đa 20 tin/phút trên một tài khoản.
+2. **Self-Echo Shield:** Bộ đệm thời gian thực 30 giây lưu tin nhắn bot vừa phát đi để triệt tiêu hiện tượng bot tự trả lời chính mình khi nhận sự kiện Webhook dội lại.
+3. **Flood Detector:** Phát hiện người gửi nhắn dồn dập (> 5 tin trong 3 giây) và tự động mute tạm thời 60 giây.
+4. **Spintax Engine:** Biến đổi ngẫu nhiên cấu trúc câu `{Chào|Kính chào|Hello} {anh|chị}` để mỗi tin nhắn gửi đi là độc bản.
+5. **In-Thread Discipline:** Chỉ phản hồi vào các cuộc trò chuyện đã có sẵn, không gửi tin nhắn lạnh cho người lạ.
+
+---
+
+## 4. 18 CÂU HỎI THƯỜNG GẶP (FAQ KỸ THUẬT & VẬN HÀNH)
+
+### Q1: Zalo-Flow là gì và có tốn phí không?
+**Đáp:** Zalo-Flow là phần mềm mã nguồn mở hoàn toàn miễn phí 100%, biến tài khoản Zalo cá nhân thành trợ lý AI tự động trả lời và quản lý CSKH mà không cần tài khoản doanh nghiệp Zalo OA.
+
+### Q2: Sử dụng chatbot Zalo cá nhân có bị khóa nick không?
+**Đáp:** Zalo-Flow tích hợp cơ chế Anti-ban 3 lớp (Rate Limiter giãn cách 3s, Self-Echo Shield và Flood Detector) giúp tài khoản hoạt động tự nhiên như người dùng thật. Miễn là bạn chỉ phản hồi khách hàng tự tìm đến mình và không spam số lạ, tài khoản sẽ an toàn tuyệt đối.
+
+### Q3: Zalo-Flow có đọc trộm mật khẩu hay tin nhắn của tôi không?
+**Đáp:** Tuyệt đối không. Mã nguồn công khai 100% trên GitHub. Dữ liệu chạy cục bộ trên máy tính của bạn, token được mã hóa AES-256-CBC và lưu tại SQLite cục bộ, không truyền về máy chủ bên thứ ba.
+
+### Q4: Khi tắt máy tính hoặc máy vào chế độ Sleep thì bot có chạy không?
+**Đáp:** Không. Khi máy tính tắt hoặc Sleep, tiến trình Node.js tạm dừng. Bạn có thể bật chế độ "Never Sleep" hoặc thuê VPS Linux/Windows (70.000đ - 100.000đ/tháng) chạy Docker để bot chạy 24/7.
+
+### Q5: Zalo-Flow khác gì so với Zalo Official Account (OA)?
+**Đáp:** Zalo OA yêu cầu giấy phép kinh doanh, tính phí theo từng tin nhắn gửi đi. Zalo-Flow chạy trực tiếp trên Zalo cá nhân, tỷ lệ đọc tin nhắn đạt 95% và hoàn toàn miễn phí duy trì.
+
+### Q6: Làm sao để bot AI nhận diện số điện thoại khi khách gửi danh thiếp?
+**Đáp:** Zalo-Flow có bộ giải mã danh thiếp chuyên dụng (chat.contact): tự động lọc chuỗi JSON kỹ thuật, chuẩn hóa số điện thoại Việt Nam `0xxxxxxxxx` từ `+84` và lưu trữ sẵn sàng để gọi lại.
+
+### Q7: Zalo-Flow hỗ trợ những mô hình AI nào?
+**Đáp:** Google Gemini (Gemini 1.5 Flash, 2.5 Flash), DeepSeek (Chat, Reasoner), OpenAI (GPT-4o) và Ollama (mô hình cục bộ Offline).
+
+### Q8: Tôi không biết lập trình có dùng được không?
+**Đáp:** Có. Tải file `ZaloFlow-Setup-v1.0.1.exe`, cài đặt 1-click, mở trình duyệt quét mã QR Zalo bằng điện thoại là dùng được ngay.
+
+### Q9: Tôi có thể kết nối Zalo-Flow với Chatwoot CRM không?
+**Đáp:** Có. Zalo-Flow có sẵn Adapter đồng bộ 2 chiều với Chatwoot CRM dành cho các đội ngũ nhiều nhân viên tư vấn cùng trực 1 số Zalo.
+
+### Q10: Làm thế nào để cập nhật khi có phiên bản mới?
+**Đáp:** Bản cài đặt Windows có sẵn tiện ích Standalone Updater tự động tải và cập nhật phiên bản mới nhất từ GitHub Releases mà không làm mất dữ liệu tin nhắn cũ.
+
+### Q11: Phần mềm có gửi được hình ảnh và tài liệu không?
+**Đáp:** Có. Zalo-Flow hỗ trợ gửi hình ảnh (tự động nén Canvas giữ RAM < 100MB) và tài liệu PDF, Word, Excel lên đến 25MB.
+
+### Q12: Tại sao Windows hiện cảnh báo SmartScreen khi cài đặt?
+**Đáp:** Đây là cảnh báo mặc định của Microsoft Defender đối với phần mềm mã nguồn mở cộng đồng chưa mua chứng chỉ Code Signing (~$300/năm). Bạn chỉ cần bấm "More info" -> "Run anyway" để cài đặt. File sạch 0/70 trên VirusTotal.
+
+### Q13: Tôi có thể dùng nhiều tài khoản Zalo cùng lúc không?
+**Đáp:** Phiên bản Zalo-Flow Community hiện tại thiết kế chuẩn Single-Tenant (1 phiên làm việc/1 tài khoản). Để chạy nhiều tài khoản, bạn có thể nhân bản thư mục hoặc khởi chạy nhiều container Docker độc lập.
+
+### Q14: Dữ liệu tin nhắn được lưu trữ trong bao lâu?
+**Đáp:** Lưu trữ vĩnh viễn trên ổ cứng máy tính của bạn thông qua SQLite cho đến khi bạn chủ động bấm nút Xóa dữ liệu.
+
+### Q15: Zalo-Flow có hỗ trợ tin nhắn thoại (Voice Message) không?
+**Đáp:** Phiên bản v1.0.1 tiếp nhận tin nhắn thoại dưới dạng tệp âm thanh và có thể chuyển tiếp sang Chatwoot.
+
+### Q16: Làm sao để bot AI trả lời đúng thông tin sản phẩm của tôi?
+**Đáp:** Bạn vào tab Cài đặt AI trên giao diện web, điền System Prompt mô tả bảng giá, chính sách bảo hành và thông tin chi tiết sản phẩm. AI sẽ đọc prompt này để tư vấn chuẩn xác.
+
+### Q17: Có giới hạn số lượng tin nhắn gửi mỗi ngày không?
+**Đáp:** Zalo-Flow không giới hạn. Giới hạn duy nhất là chính sách tự nhiên của Zalo dành cho tài khoản cá nhân (khuyên dùng dưới 500 tin nhắn mỗi ngày để an toàn tuyệt đối).
+
+### Q18: Tham gia cộng đồng hỗ trợ ở đâu?
+**Đáp:** Bạn có thể tham gia nhóm Zalo hỗ trợ kỹ thuật chính thức tại: https://zalo.me/g/mcihan713 hoặc trao đổi trên GitHub Discussions.

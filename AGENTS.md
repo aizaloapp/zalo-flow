@@ -14,6 +14,7 @@
 | **Runtime** | Node.js >= 22.5.0 (ES Modules) | **Chạy môi trường Dev:** | `npm run dev` |
 | **Core Lib** | `zca-js: 2.1.0` (Khóa cứng version) | **Chạy Wizard cấu hình:** | `npm run init` |
 | **Web Server** | Express.js (Port 3000) | **Build bộ cài Windows (.exe):** | `powershell installer/build-local.ps1` |
+| **Portal Cộng Đồng** | Cloudflare Pages (`https://aizalo.com/`) | **Build Portal Tĩnh:** | `powershell website/build.ps1` |
 | **Mã hóa** | AES-256-CBC (`SESSION_SECRET`) | **Khởi chạy container Docker:** | `docker compose up -d` |
 
 ---
@@ -97,3 +98,25 @@
 5. **AI Reasoning Headroom & Live Model Discovery:**
    - Không ghi cứng danh sách model. Duy trì **Live Model Scanner** (`POST /api/ai/scan-models`) kết nối trực tiếp API của hãng để lấy danh sách model thực tế. Cô lập API Key giữa các nhà cung cấp khác nhau.
    - Lịch sử hội thoại nạp cho AI luôn theo thứ tự thời gian tăng dần (`ASC` — không gọi `.reverse()`). Mô hình suy luận (Reasoning Models) cấu hình `max_tokens >= 2048` kèm fallback `message.reasoning_content`. *(Gốc: Rule 33, 35, 36)*
+
+---
+
+## 🌐 7. Trụ Cột VI: Bản Đồ Hạ Tầng, Cổng Thông Tin Cộng Đồng & Zero-Downtime Cutover
+
+1. **Bản Đồ Hạ Tầng Phân Tách (Domain & Topology Separation):**
+   - **Cổng Thông Tin Cộng Đồng (`https://aizalo.com/`):**
+     - Nguồn mã nguồn: Thư mục `website/src/` -> Lệnh biên dịch: `powershell website/build.ps1` -> Xuất ra: `website/dist/`.
+     - Hạ tầng triển khai: Cloudflare Pages (Tên project: `aizalo-portal`).
+     - Thành phần: Landing Page cộng đồng, Blog kỹ thuật (`/blog/`), tài liệu AI Crawlers (`llms.txt`, `llms-full.txt` gắn `X-Robots-Tag: noindex`).
+   - **SaaS Platform (`https://app.aizalo.com/`):**
+     - Hạ tầng triển khai: Cloudflare Worker (`zalo-gatekeeper`) kết hợp Cloudflare D1/KV.
+     - Phạm vi cách ly: Tách biệt 100%, TUYỆT ĐỐI KHÔNG sửa đổi, xóa mã nguồn hay can thiệp tên miền này khi làm việc trên repo `Zalo-Flow`.
+   - **Phần Mềm Zalo-Flow Bản Cục Bộ (`localhost:3000`):**
+     - Core runtime: Node.js >= 22.5.0, CSDL SQLite cục bộ, gói cài đặt Windows Desktop 1-Click (`.exe`).
+
+2. **Zero-Downtime Worker-to-Pages Domain Cutover Invariant:**
+   - Khi chuyển giao hoặc điều chỉnh tên miền chính (`aizalo.com`) sang Cloudflare Pages mà vẫn duy trì dịch vụ SaaS (`app.aizalo.com`) trên Worker:
+     1. Tuyệt đối KHÔNG xóa Worker script hoặc can thiệp vào bản ghi của `app.aizalo.com`.
+     2. Chỉ gỡ bỏ bản ghi Custom Domain của `aizalo.com` khỏi Worker (`DELETE /workers/domains/{id}`).
+     3. Khai báo tên miền vào Cloudflare Pages (`POST /pages/projects/{project}/domains`) và thiết lập bản ghi CNAME trỏ về `<project>.pages.dev` kèm bật Cloudflare Proxy (🟧).
+     4. Mọi thông tin xác thực Cloudflare lấy từ Bitwarden Vault BẮT BUỘC phải khóa Vault ngay lập tức (`bw lock`) và xóa sạch biến môi trường phiên (`BW_SESSION`, `BW_PASSWORD`) khỏi bộ nhớ sau khi hoàn tất. *(Gốc: Rule 44)*

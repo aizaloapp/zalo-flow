@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="zf-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00C6FF"/>
+      <stop offset="100%" stop-color="#0072FF"/>
+    </linearGradient>
+    <linearGradient id="zf-spark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#A6E3E9"/>
+    </linearGradient>
+  </defs>
+  <!-- Background rounded squircle -->
+  <rect width="64" height="64" rx="18" fill="#0A0F1D"/>
+  <!-- Glowing border -->
+  <rect x="1" y="1" width="62" height="62" rx="17" stroke="url(#zf-grad)" stroke-width="2" stroke-opacity="0.6"/>
+  <!-- Speech bubble -->
+  <path d="M16 22C16 17.5817 19.5817 14 24 14H40C44.4183 14 48 17.5817 48 22V36C48 40.4183 44.4183 44 40 44H26L18 50V44H24C19.5817 44 16 40.4183 16 36V22Z" fill="url(#zf-grad)"/>
+  <!-- AI Sparkle / Lightning flow inside -->
+  <path d="M32 20L34.5 28.5L43 31L34.5 33.5L32 42L29.5 33.5L21 31L29.5 28.5L32 20Z" fill="url(#zf-spark)"/>
+</svg>

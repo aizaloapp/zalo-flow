@@ -1,0 +1,38 @@
+# Zalo-Flow (AIzalo Community Edition)
+
+> Nền tảng mã nguồn mở (giấy phép MIT + Commons Clause) kết nối Zalo cá nhân với Chatwoot CRM và các mô hình AI (Gemini, DeepSeek, OpenAI), hỗ trợ tự động hóa CSKH và quản lý hội thoại trên Windows và Docker.
+
+## Thông Tin Cốt Lõi (Fast Facts)
+- **Tên dự án:** Zalo-Flow
+- **Trang chủ:** https://aizalo.com/
+- **Kho mã nguồn:** https://github.com/aizaloapp/zalo-flow
+- **Cộng đồng Zalo hỗ trợ:** https://zalo.me/g/mcihan713
+- **Giấy phép:** MIT License with Commons Clause Condition v1.0 (Miễn phí 100% cho cá nhân, nghiên cứu, phi thương mại).
+- **Môi trường chạy:** Windows 10/11 (1-Click Installer .exe), Linux/macOS qua Docker.
+- **Tiêu thụ tài nguyên:** RAM < 100MB (Node.js trần 350MB, Docker 512MB).
+- **Mã hóa:** AES-256-CBC lưu trữ cục bộ trong SQLite.
+
+## Tính Năng Chính
+1. **Tạo Chatbot Zalo Cá Nhân Bằng AI:** Kết nối Google Gemini, DeepSeek, OpenAI tự động trả lời khách hàng 24/7.
+2. **Bóc Tách Danh Thiếp (chat.contact):** Tự động lọc sạch JSON kỹ thuật, trích xuất số điện thoại và chuyển đổi chuẩn Việt Nam `0xxxxxxxxx`.
+3. **Cơ Chế Anti-Ban 3 Lớp:**
+   - Token Bucket Rate Limiter: Giãn cách tối thiểu 3 giây/tin, tối đa 20 tin/phút.
+   - Self-Echo Shield: Bộ đệm 30s chống vòng lặp phản xạ bot tự nói chuyện với chính mình.
+   - Flood Detector: Tự động ngắt tạm thời 60s khi bị dội tin dồn dập.
+4. **Web Dashboard Quản Trị:** Giao diện Live Chat trực tiếp tại `localhost:3000`, phân loại khách hàng bằng thẻ tag màu sắc.
+5. **Chiến Dịch Remarketing & Spintax:** Gửi tin nhắn chăm sóc khách hàng định kỳ kèm hình ảnh/tài liệu và đảo ngẫu nhiên cú pháp.
+6. **Mở Rộng Đội Ngũ:** Tích hợp 2 chiều với Chatwoot CRM khi cần nhiều nhân viên cùng trực 1 số Zalo.
+
+## Hướng Dẫn Tải Về & Cài Đặt
+- Tải gói cài đặt Windows: `https://github.com/aizaloapp/zalo-flow/releases/latest` (file `ZaloFlow-Setup-v1.0.1.exe`).
+- Cài đặt qua dòng lệnh: `npx zalo-flow init`
+- Lưu ý Windows SmartScreen: Khi xuất hiện màn hình "Windows protected your PC", bấm "More info" -> "Run anyway" (phần mềm cộng đồng chưa mua chứng chỉ thương mại Microsoft, sạch 0/70 trên VirusTotal).
+
+## Cẩm Nang & Bài Viết Chuyên Sâu
+- Bí quyết chống khóa nick Zalo: https://aizalo.com/blog/cach-gui-tin-nhan-tu-dong-tren-zalo-khong-bi-khoa.html
+- Hướng dẫn cài đặt 3 phút: https://aizalo.com/blog/huong-dan-cach-tao-chatbot-zalo-ca-nhan.html
+- Tích hợp Gemini & DeepSeek: https://aizalo.com/blog/tich-hop-ai-gemini-deepseek-vao-zalo-ca-nhan.html
+- Giải pháp Zalo CRM 2026: https://aizalo.com/blog/zalo-crm-la-gi-giai-phap-quan-ly-tin-nhan-cskh.html
+
+## Tài Liệu Toàn Văn
+- Xem toàn văn chi tiết tại: https://aizalo.com/llms-full.txt

@@ -19,7 +19,13 @@
 [![Docker Ready](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](docker-compose.yml)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-[Features](#-key-features) • [Download Windows](#-1-click-windows-installer-for-everyone) • [Architecture](#-system-architecture) • [Quick Start](#-quick-start-in-3-minutes) • [Chatwoot Integration](#-chatwoot-crm-integration) • [Anti-Ban Guardrails](#-3-layer-anti-ban-defense)
+<p align="center">
+  <a href="https://aizalo.com"><img src="https://img.shields.io/badge/🌐_Official_Website-aizalo.com-0068FF?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Official Website"/></a>
+  <a href="https://zalo.me/g/mcihan713"><img src="https://img.shields.io/badge/💬_Community_Support-Zalo_Group-0088FF?style=for-the-badge&logo=zalo&logoColor=white" alt="Zalo Community"/></a>
+  <a href="https://aizalo.com/blog/"><img src="https://img.shields.io/badge/📚_Knowledge_Base-Blog_Tutorials-FF6B00?style=for-the-badge" alt="Blog Tutorials"/></a>
+</p>
+
+[🌐 Website](https://aizalo.com) • [📚 Guides](https://aizalo.com/blog/) • [💬 Zalo Community](https://zalo.me/g/mcihan713) • [Features](#-key-features) • [Download Windows](#-1-click-windows-installer-for-everyone) • [Architecture](#-system-architecture) • [Quick Start](#-quick-start-in-3-minutes) • [Anti-Ban](#-3-layer-anti-ban-defense)
 
 <br/>
 
@@ -27,9 +33,9 @@
 
 No Git, no Node.js installation, no command line terminals required:
 
-[![Download Windows Setup](https://img.shields.io/badge/Windows-Download%20Setup%20v1.0.0%20(.exe)-0068FF?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/aizaloapp/zalo-flow/releases/latest)
+[![Download Windows Setup](https://img.shields.io/badge/Windows-Download%20Setup%20v1.0.1%20(.exe)-0068FF?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/aizaloapp/zalo-flow/releases/latest)
 
-> 💡 **Download & Run:** Click the button above to download **`ZaloFlow-Setup-v1.0.0.exe`** (Only **23.3MB**). Run the installer in 30 seconds to get your Zalo-Flow desktop assistant ready!
+> 💡 **Download & Run:** Click the button above to download **`ZaloFlow-Setup-v1.0.1.exe`** (Only **23.3MB**). Run the installer in 30 seconds to get your Zalo-Flow desktop assistant ready!
 
 </div>
 
@@ -180,6 +186,18 @@ No Git, no Node.js installation, no command line terminals required:
 | **Layer 1: Rate Limiter** | Token Bucket Algorithm | Enforces $\ge$ 3s spacing between outbound messages, capped at 20 msgs/min to avoid heuristic spam triggers. Includes `drainAll()` queue resolution. |
 | **Layer 2: Self-Echo Shield** | 30-Second Hash Ring Buffer | Suppresses self-sent echo messages from WebSocket, preventing infinite loops. |
 | **Layer 3: Flood Detector** | Inbound Frequency Analyzer | Temporarily mutes incoming message bursts (> 5 msgs in 3s) for 60 seconds to protect system responsiveness. |
+
+---
+
+## 📚 Knowledge Base & Technical Guides (Official Guides)
+
+In-depth technical research and operational guides available at our community portal [aizalo.com/blog/](https://aizalo.com/blog/):
+
+- 🛡️ [How to Automate Zalo Messaging Safely Without Getting Banned (3-Layer Anti-Ban Shield)](https://aizalo.com/blog/cach-gui-tin-nhan-tu-dong-tren-zalo-khong-bi-khoa.html)
+- ⚡ [Quick Guide: Building a Personal Zalo Chatbot in 3 Minutes](https://aizalo.com/blog/huong-dan-cach-tao-chatbot-zalo-ca-nhan.html)
+- 🧠 [Connecting Gemini & DeepSeek AI with Personal Zalo (Auto Contact Card Sanitization)](https://aizalo.com/blog/tich-hop-ai-gemini-deepseek-vao-zalo-ca-nhan.html)
+- 💼 [What is Zalo CRM? The 2026 Omnichannel Customer Care Architecture](https://aizalo.com/blog/zalo-crm-la-gi-giai-phap-quan-ly-tin-nhan-cskh.html)
+- 🤖 [LLM Agent Discovery Manifest (`llms.txt`)](https://aizalo.com/llms.txt)
 
 ---
 

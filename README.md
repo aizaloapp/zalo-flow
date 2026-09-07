@@ -19,7 +19,13 @@
 [![Docker Ready](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](docker-compose.yml)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-[Tính Năng](#-tính-năng-nổi-bật) • [Tải Về Windows](#-tải-về-cài-đặt-1-click-cho-windows) • [Kiến Trúc Hệ Thống](#-kiến-trúc-hệ-thống) • [Cài Đặt Nhanh](#-cài-đặt-nhanh-trong-3-phút) • [Tích Hợp Chatwoot](#-hướng-dẫn-tích-hợp-chatwoot) • [Phòng Vệ Anti-Ban](#-hệ-thống-phòng-vệ-anti-ban-3-lớp)
+<p align="center">
+  <a href="https://aizalo.com"><img src="https://img.shields.io/badge/🌐_Website_Chính_Thức-aizalo.com-0068FF?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Official Website"/></a>
+  <a href="https://zalo.me/g/mcihan713"><img src="https://img.shields.io/badge/💬_Cộng_Đồng_Hỗ_Trợ-Nhóm_Zalo-0088FF?style=for-the-badge&logo=zalo&logoColor=white" alt="Zalo Community"/></a>
+  <a href="https://aizalo.com/blog/"><img src="https://img.shields.io/badge/📚_Cẩm_Nang-Bài_Viết_Hướng_Dẫn-FF6B00?style=for-the-badge" alt="Blog Tutorials"/></a>
+</p>
+
+[🌐 Website](https://aizalo.com) • [📚 Cẩm Nang Kỹ Thuật](https://aizalo.com/blog/) • [💬 Nhóm Zalo](https://zalo.me/g/mcihan713) • [Tính Năng](#-tính-năng-nổi-bật) • [Tải Về Windows](#-tải-về-cài-đặt-1-click-cho-windows) • [Kiến Trúc](#-kiến-trúc-hệ-thống) • [Cài Đặt Nhanh](#-cài-đặt-nhanh-trong-3-phút) • [Anti-Ban](#-hệ-thống-phòng-vệ-anti-ban-3-lớp)
 
 <br/>
 
@@ -27,9 +33,9 @@
 
 Không cần biết Git, không cần cài Node.js, không cần mở màn hình đen Terminal:
 
-[![Tải Bản Cài Đặt Windows](https://img.shields.io/badge/Windows-Download%20Setup%20v1.0.0%20(.exe)-0068FF?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/aizaloapp/zalo-flow/releases/latest)
+[![Tải Bản Cài Đặt Windows](https://img.shields.io/badge/Windows-Download%20Setup%20v1.0.1%20(.exe)-0068FF?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/aizaloapp/zalo-flow/releases/latest)
 
-> 💡 **Tải về chạy ngay:** Bấm nút ở trên để tải file **`ZaloFlow-Setup-v1.0.0.exe`** (Chỉ **23.3MB**). Cài đặt trong 30 giây là có ngay icon Zalo-Flow ngoài Desktop!
+> 💡 **Tải về chạy ngay:** Bấm nút ở trên để tải file **`ZaloFlow-Setup-v1.0.1.exe`** (Chỉ **23.3MB**). Cài đặt trong 30 giây là có ngay icon Zalo-Flow ngoài Desktop!
 
 </div>
 
@@ -154,6 +160,18 @@ docker compose up -d
 | **Self-Echo Shield** | Bộ đệm thời gian thực 30 giây ghi nhớ nội dung tin nhắn bot vừa phát đi. | Chống 100% hiện tượng bot tự nhận tin của chính mình và lặp lại vô tận. |
 | **Flood Detector** | Theo dõi lưu lượng tin nhắn đến theo từng người gửi. Nếu > 5 tin trong 3 giây $\rightarrow$ Mute tạm thời 60 giây. | Bảo vệ tiến trình bot không bị treo khi gặp tấn công spam tin nhắn. |
 | **Client Canvas Compression** | Tự động nén ảnh phía client (< 0.2s) về mức ~1MB - 2MB trước khi upload. | Giữ RAM máy chủ Node.js luôn < 100MB và tăng tốc độ gửi ảnh tức thì. |
+
+---
+
+## 📚 Cẩm Nang Hướng Dẫn & Tài Liệu Kỹ Thuật (Official Guides)
+
+Các bài viết nghiên cứu chuyên sâu được phát hành chính thức tại Cổng thông tin [aizalo.com/blog/](https://aizalo.com/blog/):
+
+- 🛡️ [Cách Gửi Tin Nhắn Tự Động Trên Zalo Không Bị Khóa (Bí Quyết Anti-Ban 3 Lớp)](https://aizalo.com/blog/cach-gui-tin-nhan-tu-dong-tren-zalo-khong-bi-khoa.html)
+- ⚡ [Hướng Dẫn Cách Tạo Chatbot Zalo Cá Nhân Miễn Phí Trong 3 Phút](https://aizalo.com/blog/huong-dan-cach-tao-chatbot-zalo-ca-nhan.html)
+- 🧠 [Tích Hợp AI Gemini & DeepSeek Vào Zalo Cá Nhân (Tự Động Bóc Tách Danh Thiếp)](https://aizalo.com/blog/tich-hop-ai-gemini-deepseek-vao-zalo-ca-nhan.html)
+- 💼 [Zalo CRM Là Gì? Giải Pháp Quản Lý Tin Nhắn Khách Hàng CSKH 2026](https://aizalo.com/blog/zalo-crm-la-gi-giai-phap-quan-ly-tin-nhan-cskh.html)
+- 🤖 [Tài Liệu Tóm Tắt Cho AI Crawlers & LLM Agents (`llms.txt`)](https://aizalo.com/llms.txt)
 
 ---
 

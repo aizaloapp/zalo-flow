@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  
+  <!-- Primary Meta Tags -->
+  <title>Zalo-Flow — Tạo Chat Bot Zalo Cá Nhân & Trả Lời Tin Nhắn Tự Động</title>
+  <meta name="title" content="Zalo-Flow — Tạo Chat Bot Zalo Cá Nhân & Trả Lời Tin Nhắn Tự Động">
+  <meta name="description" content="Phần mềm mã nguồn mở miễn phí tạo chatbot Zalo cá nhân trả lời tự động 24/7 bằng AI (Gemini, DeepSeek). Chạy trên Windows, bảo vệ chống khóa tài khoản với Anti-ban 3 lớp.">
+  <meta name="keywords" content="chat bot zalo, bot zalo, chatbot zalo cá nhân, zalo crm, cách tạo bot zalo, gửi tin nhắn tự động trên zalo, zalo flow, chatbot gemini zalo">
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+  <link rel="canonical" href="https://aizalo.com/">
+
+  <!-- Open Graph / Facebook / Zalo Share -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://aizalo.com/">
+  <meta property="og:site_name" content="AIzalo — Zalo-Flow">
+  <meta property="og:title" content="Zalo-Flow — Tạo Chat Bot Zalo Cá Nhân & Trả Lời Tin Nhắn Tự Động">
+  <meta property="og:description" content="Phần mềm mã nguồn mở miễn phí tạo chatbot Zalo cá nhân trả lời tự động 24/7 bằng AI (Gemini, DeepSeek). Chạy trên Windows, bảo vệ chống khóa tài khoản với Anti-ban 3 lớp.">
+  <meta property="og:image" content="https://aizalo.com/assets/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Zalo-Flow Chat Bot Zalo Cá Nhân & Tự Động Hóa CSKH">
+  <meta property="og:locale" content="vi_VN">
+
+  <!-- Twitter Meta Tags -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Zalo-Flow — Tạo Chat Bot Zalo Cá Nhân & Trả Lời Tin Nhắn Tự Động">
+  <meta name="twitter:description" content="Tạo chatbot Zalo cá nhân trả lời tự động 24/7 bằng AI (Gemini, DeepSeek). Tải bản Windows 1-Click hoặc chạy CLI.">
+  <meta name="twitter:image" content="https://aizalo.com/assets/og-image.png">
+
+  <!-- Favicon & PWA -->
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="icon" type="image/x-icon" href="/assets/favicon.ico">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <meta name="theme-color" content="#070a13">
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="/style.css">
+
+  <!-- Structured Data: SoftwareApplication & FAQPage & Organization -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "SoftwareApplication",
+        "name": "Zalo-Flow",
+        "applicationCategory": "BusinessApplication, CommunicationApplication",
+        "operatingSystem": "Windows 10, Windows 11, Linux, macOS (Docker)",
+        "softwareVersion": "1.0.1",
+        "fileSize": "23.4MB",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "VND"
+        },
+        "downloadUrl": "https://github.com/aizaloapp/zalo-flow/releases/latest",
+        "license": "https://github.com/aizaloapp/zalo-flow/blob/main/LICENSE"
+      },
+      {
+        "@type": "Organization",
+        "name": "Cộng Đồng Zalo-Flow",
+        "url": "https://aizalo.com",
+        "sameAs": [
+          "https://github.com/aizaloapp/zalo-flow",
+          "https://zalo.me/g/mcihan713"
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Zalo-Flow là gì và có tốn phí không?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Zalo-Flow là phần mềm mã nguồn mở (MIT + Commons Clause) hoàn toàn miễn phí, giúp biến tài khoản Zalo cá nhân thành trợ lý AI trả lời tin nhắn tự động 24/7 mà không cần tài khoản doanh nghiệp Zalo OA."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Sử dụng chatbot Zalo cá nhân có bị khóa nick không?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Zalo-Flow tích hợp cơ chế Anti-ban 3 lớp bất biến: Token Bucket Rate Limiter giãn cách tối thiểu 3 giây/tin (tối đa 20 tin/phút), Self-Echo Shield chống vòng lặp phản xạ, và Flood Detector tự ngắt khi bị dội tin, giúp tài khoản hoạt động tự nhiên như người dùng thật."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Zalo-Flow có đọc trộm mật khẩu hay tin nhắn của tôi không?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Tuyệt đối không. Zalo-Flow chạy cục bộ 100% trên máy tính của bạn. Dữ liệu phiên đăng nhập được mã hóa AES-256-CBC và lưu trong cơ sở dữ liệu SQLite tại máy tính cá nhân của bạn, không gửi về bất kỳ máy chủ bên thứ ba nào."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Khi tắt máy tính hoặc máy vào chế độ Sleep thì bot có chạy không?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Khi máy tính tắt hoặc Sleep, tiến trình Node.js sẽ tạm dừng. Để bot hoạt động 24/7, bạn có thể chỉnh chế độ máy tính thành Never Sleep, hoặc triển khai Zalo-Flow bằng Docker trên một VPS giá rẻ."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Zalo-Flow hỗ trợ những mô hình AI nào?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Hệ thống hỗ trợ đa nhà cung cấp AI hàng đầu hiện nay gồm Google Gemini (1.5 Flash, 2.5 Flash), DeepSeek (Chat, Reasoner), OpenAI (GPT-4o, GPT-4o-mini) và các mô hình cục bộ qua Ollama."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+
+  <!-- Top Legal Disclaimer Banner -->
+  <div class="disclaimer-banner">
+    ⚠️ <strong>Thông báo pháp lý:</strong> Zalo-Flow là dự án mã nguồn mở độc lập phục vụ mục đích nghiên cứu & học tập kiến trúc tự động hóa cá nhân. Dự án <strong>hoàn toàn không liên kết, không được ủy quyền, tài trợ hay chứng thực bởi VNG Corporation hay Zalo</strong>.
+  </div>
+
+  <!-- Navbar -->
+  <header class="navbar">
+    <div class="container nav-container">
+      <a href="/" class="brand">
+        <img src="/assets/favicon.svg" alt="Zalo-Flow Logo" class="brand-icon">
+        <span>Zalo-Flow</span>
+        <span class="brand-tag">v1.0.1</span>
+      </a>
+
+      <ul class="nav-menu">
+        <li><a href="#features" class="nav-link">Tính Năng</a></li>
+        <li><a href="#smartscreen" class="nav-link">Cài Đặt</a></li>
+        <li><a href="#comparison" class="nav-link">So Sánh</a></li>
+        <li><a href="#faq" class="nav-link">Hỏi Đáp</a></li>
+        <li><a href="/blog/" class="nav-link">Cẩm Nang (Blog)</a></li>
+        <li><a href="#community" class="nav-link">Cộng Đồng</a></li>
+      </ul>
+
+      <div class="nav-actions">
+        <a href="https://zalo.me/g/mcihan713" target="_blank" rel="noopener" class="btn btn-zalo">
+          💬 Nhóm Zalo
+        </a>
+        <a href="https://github.com/aizaloapp/zalo-flow/releases/latest" target="_blank" rel="noopener" class="btn btn-primary">
+          🪟 Tải .exe
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="container">
+        <div class="hero-pill">
+          ⚡ MÃ NGUỒN MỞ • 100% MIỄN PHÍ • CHẠY TRỰC TIẾP TRÊN MÁY TÍNH
+        </div>
+
+        <h1 class="hero-title">
+          Tạo <span class="gradient-text">Chat Bot Zalo Cá Nhân</span><br>
+          & Trả Lời Tin Nhắn Tự Động Bằng AI
+        </h1>
+
+        <p class="hero-desc">
+          Biến tài khoản Zalo cá nhân thành trợ lý thông minh hỗ trợ bán hàng và chăm sóc khách hàng 24/7. Tự động trả lời bằng <strong>Gemini / DeepSeek</strong>, bóc tách số điện thoại từ danh thiếp, gửi tin Remarketing cá nhân hóa với <strong>Anti-ban 3 lớp bảo vệ tài khoản</strong>.
+        </p>
+
+        <div class="hero-cta-group">
+          <a href="https://github.com/aizaloapp/zalo-flow/releases/latest" class="btn btn-primary btn-lg" target="_blank" rel="noopener">
+            🪟 Tải Cho Windows (.exe v1.0.1)
+          </a>
+          <a href="https://zalo.me/g/mcihan713" class="btn btn-zalo btn-lg" target="_blank" rel="noopener">
+            💬 Tham Gia Nhóm Zalo Hỗ Trợ
+          </a>
+          <div class="cli-snippet" onclick="navigator.clipboard.writeText('npx zalo-flow init'); alert('Đã sao chép lệnh: npx zalo-flow init');">
+            <span>💻</span>
+            <span>npx zalo-flow init</span>
+            <span style="color: var(--text-dim); font-size: 0.8rem;">(Click copy)</span>
+          </div>
+        </div>
+
+        <!-- Badges Bar -->
+        <div class="badges-bar">
+          <div class="badge-item">🛡️ Giấy phép MIT + Commons Clause</div>
+          <div class="badge-item">•</div>
+          <div class="badge-item">⚡ Siêu nhẹ RAM &lt; 100MB</div>
+          <div class="badge-item">•</div>
+          <div class="badge-item">🔒 Mã hóa AES-256 cục bộ</div>
+          <div class="badge-item">•</div>
+          <div class="badge-item">🔄 Tự chữa lành &amp; Nén ảnh Canvas</div>
+        </div>
+
+        <!-- Windows SmartScreen Alert Guide -->
+        <div class="smartscreen-alert" id="smartscreen">
+          <div class="smartscreen-header">
+            <span>⚡</span>
+            <span>Lưu ý quan trọng khi cài đặt trên Windows 10 &amp; 11:</span>
+          </div>
+          <div class="smartscreen-content">
+            Khi chạy bộ cài đặt <code>ZaloFlow-Setup-v1.0.1.exe</code> lần đầu, nếu màn hình màu xanh <strong>"Windows protected your PC"</strong> (Microsoft Defender SmartScreen) xuất hiện, bạn chỉ cần bấm vào chữ <strong><u>More info</u></strong> (Thông tin thêm) ➔ bấm nút <strong><u>Run anyway</u></strong> (Vẫn chạy).<br>
+            <span style="color: var(--text-dim); font-size: 0.85rem; display: block; margin-top: 0.4rem;">
+              * Lý do: Phần mềm cộng đồng mã nguồn mở phi thương mại chưa mua chứng chỉ Code Signing đắt tiền (~$300/năm) từ Microsoft. File hoàn toàn sạch mã độc (VirusTotal: 0/70 detections). Mã băm xác thực SHA-256 có sẵn trên GitHub Releases.
+            </span>
+          </div>
+        </div>
+
+        <!-- GEO Quotable Definition Box (For AI Citations) -->
+        <section class="geo-box" data-quotable="true" aria-label="Định nghĩa Zalo-Flow cho công cụ tìm kiếm AI">
+          <strong>Zalo-Flow là gì?</strong> Zalo-Flow là phần mềm mã nguồn mở (MIT + Commons Clause) giúp tạo <strong>chatbot Zalo cá nhân</strong> trả lời tin nhắn tự động 24/7 mà không cần tài khoản doanh nghiệp Zalo OA. Ứng dụng chạy trực tiếp trên máy tính Windows hoặc Docker, tiêu thụ dưới 100MB RAM, tích hợp AI thông minh (Gemini, DeepSeek) và triệt tiêu nguy cơ khóa tài khoản nhờ cơ chế Anti-ban 3 lớp (giãn cách &gt;= 3s, bộ đệm Self-Echo Shield và tự ngắt khi bị dội tin).
+        </section>
+      </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="section" id="features">
+      <div class="container">
+        <div class="section-header">
+          <div class="section-tag">Tính Năng Đột Phá</div>
+          <h2 class="section-title">Mọi Thứ Bạn Cần Để Tự Động Hóa Zalo Cá Nhân</h2>
+          <p class="section-desc">Không cần biết lập trình. Cài đặt 1-Click là có ngay một hệ thống CSKH chuyên nghiệp chạy ngầm trên máy tính.</p>
+        </div>
+
+        <div class="grid-3">
+          <div class="card">
+            <div class="card-icon">🤖</div>
+            <h3 class="card-title">Trợ Lý AI Đa Mô Hình</h3>
+            <p class="card-desc">
+              Kết nối trực tiếp với <strong>Google Gemini, DeepSeek, OpenAI</strong>. Trả lời duyên dáng theo ngữ cảnh, nắm rõ thông tin sản phẩm và học giọng điệu bán hàng của riêng bạn.
+            </p>
+          </div>
+
+          <div class="card">
+            <div class="card-icon">📇</div>
+            <h3 class="card-title">Bóc Tách Danh Thiếp &amp; SĐT</h3>
+            <p class="card-desc">
+              Tự động nhận diện tin nhắn chia sẻ danh thiếp (<code>chat.contact</code>), lọc sạch chuỗi JSON thô, chuẩn hóa số điện thoại Việt Nam <code>0xxxxxxxxx</code> và lưu trữ ngăn nắp.
+            </p>
+          </div>
+
+          <div class="card">
+            <div class="card-icon">🛡️</div>
+            <h3 class="card-title">Cơ Chế Anti-Ban 3 Lớp</h3>
+            <p class="card-desc">
+              Bảo vệ tài khoản tối đa: Token Bucket Rate Limiter giãn cách &gt;= 3s/tin (tối đa 20 tin/phút), Self-Echo Shield chống lặp phản xạ và Flood Detector tự ngắt khi bị spam.
+            </p>
+          </div>
+
+          <div class="card">
+            <div class="card-icon">💬</div>
+            <h3 class="card-title">Web Dashboard Trực Quan</h3>
+            <p class="card-desc">
+              Giao diện quản lý trực tiếp tại <code>localhost:3000</code>. Xem hội thoại, trò chuyện Live Chat với khách, quản lý danh sách bạn bè và gắn thẻ tag phân loại khách hàng.
+            </p>
+          </div>
+
+          <div class="card">
+            <div class="card-icon">📢</div>
+            <h3 class="card-title">Remarketing &amp; Spintax</h3>
+            <p class="card-desc">
+              Lập lịch gửi tin nhắn chăm sóc khách hàng định kỳ theo thẻ tag. Hỗ trợ cú pháp Spintax <code>{Chào anh|Em chào chị}</code> biến đổi câu từ ngẫu nhiên để chống trùng lặp.
+            </p>
+          </div>
+
+          <div class="card">
+            <div class="card-icon">🔄</div>
+            <h3 class="card-title">Tự Chữa Lành (Self-Healing)</h3>
+            <p class="card-desc">
+              Giám sát RAM thông minh (trần 350MB). Tự động xả hết hàng đợi tin nhắn và checkpoint cơ sở dữ liệu SQLite trước khi tự khởi động lại ngầm, không làm gián đoạn hội thoại.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Comparison Table -->
+    <section class="section" id="comparison">
+      <div class="container">
+        <div class="section-header">
+          <div class="section-tag">So Sánh Giải Pháp</div>
+          <h2 class="section-title">Tại Sao Zalo-Flow Là Lựa Chọn Tối Ưu?</h2>
+          <p class="section-desc">So sánh khách quan giữa việc dùng Zalo-Flow với Zalo OA chính thức và các phần mềm đóng phí thị trường.</p>
+        </div>
+
+        <div class="table-wrapper">
+          <table class="comp-table">
+            <thead>
+              <tr>
+                <th>Tiêu Chí So Sánh</th>
+                <th class="highlight-col">Zalo-Flow (Mã Nguồn Mở)</th>
+                <th>Zalo OA Doanh Nghiệp</th>
+                <th>Phần Mềm Đóng Phí Thị Trường</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Chi phí bản quyền</strong></td>
+                <td class="highlight-col"><strong>100% Miễn Phí</strong> (MIT + Commons)</td>
+                <td>Gói hàng tháng + phí tin nhắn</td>
+                <td>Thuê bao 300.000đ - 1.000.000đ/tháng</td>
+              </tr>
+              <tr>
+                <td><strong>Loại tài khoản</strong></td>
+                <td class="highlight-col"><strong>Zalo Cá Nhân</strong> (Bất kỳ ai cũng có)</td>
+                <td>Cần giấy phép ĐKKD công ty</td>
+                <td>Zalo Cá Nhân</td>
+              </tr>
+              <tr>
+                <td><strong>Quyền riêng tư dữ liệu</strong></td>
+                <td class="highlight-col"><strong>Lưu tại máy bạn</strong> (SQLite AES-256)</td>
+                <td>Lưu trên máy chủ Zalo</td>
+                <td>Lưu trên máy chủ bên thứ ba</td>
+              </tr>
+              <tr>
+                <td><strong>Tích hợp AI linh hoạt</strong></td>
+                <td class="highlight-col"><strong>Tự chọn</strong> Gemini, DeepSeek, OpenAI</td>
+                <td>Giới hạn theo gói dịch vụ</td>
+                <td>Cố định model, khó tùy biến</td>
+              </tr>
+              <tr>
+                <td><strong>Mở rộng đội ngũ</strong></td>
+                <td class="highlight-col"><strong>Kết nối Chatwoot CRM</strong> có sẵn</td>
+                <td>Phải mua thêm gói nhân viên</td>
+                <td>Giao diện đóng kín</td>
+              </tr>
+              <tr>
+                <td><strong>Mã nguồn minh bạch</strong></td>
+                <td class="highlight-col"><strong>Công khai 100% trên GitHub</strong></td>
+                <td>Đóng kín</td>
+                <td>Đóng kín</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p style="text-align: center; color: var(--text-dim); font-size: 0.85rem; margin-top: 0.5rem;">
+          * Bảng so sánh mang tính chất tham khảo kỹ thuật tại thời điểm tháng 09/2026. Mọi tên thương hiệu thuộc về chủ sở hữu hợp pháp tương ứng.
+        </p>
+      </div>
+    </section>
+
+    <!-- Quickstart Steps -->
+    <section class="section" id="install">
+      <div class="container">
+        <div class="section-header">
+          <div class="section-tag">Bắt Đầu Nhanh</div>
+          <h2 class="section-title">3 Bước Đơn Giản Để Vận Hành</h2>
+          <p class="section-desc">Không cần cấu hình phức tạp. Bất kỳ ai cũng có thể làm được chỉ trong 3 phút.</p>
+        </div>
+
+        <div class="grid-3">
+          <div class="card">
+            <div class="card-icon" style="background: rgba(0, 210, 255, 0.15); color: var(--cyan); font-weight: 800;">1</div>
+            <h3 class="card-title">Tải Về &amp; Cài Đặt</h3>
+            <p class="card-desc">
+              Tải tệp cài đặt <code>ZaloFlow-Setup-v1.0.1.exe</code> từ GitHub. Chạy bộ cài 1-click tích hợp sẵn môi trường cần thiết, không cần cài thêm Node.js hay gõ lệnh.
+            </p>
+          </div>
+
+          <div class="card">
+            <div class="card-icon" style="background: rgba(0, 132, 255, 0.15); color: var(--primary); font-weight: 800;">2</div>
+            <h3 class="card-title">Quét Mã QR Zalo</h3>
+            <p class="card-desc">
+              Trình duyệt tự động mở <code>http://localhost:3000</code>. Dùng ứng dụng Zalo trên điện thoại quét mã QR để đăng nhập an toàn với cơ chế mã hóa AES-256.
+            </p>
+          </div>
+
+          <div class="card">
+            <div class="card-icon" style="background: rgba(16, 185, 129, 0.15); color: var(--success); font-weight: 800;">3</div>
+            <h3 class="card-title">Kích Hoạt AI &amp; Sử Dụng</h3>
+            <p class="card-desc">
+              Dán API Key (Gemini hoặc DeepSeek miễn phí) vào mục Cài đặt AI. Trợ lý ảo sẽ lập tức sẵn sàng tự động trả lời khách hàng 24/7 theo kịch bản bạn muốn.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Latest Blog Posts -->
+    <section class="section">
+      <div class="container">
+        <div class="section-header">
+          <div class="section-tag">Cẩm Nang &amp; Hướng Dẫn</div>
+          <h2 class="section-title">Bài Viết Mới Nhất Từ Chuyên Gia</h2>
+          <p class="section-desc">Tổng hợp kinh nghiệm thực tế về tự động hóa Zalo, kỹ thuật Anti-ban và giải pháp Zalo CRM.</p>
+        </div>
+
+        <div class="grid-2">
+          <a href="/blog/cach-gui-tin-nhan-tu-dong-tren-zalo-khong-bi-khoa.html" class="card blog-card">
+            <span class="blog-tag">Bí Quyết Anti-Ban</span>
+            <h3 class="card-title">Cách Gửi Tin Nhắn Tự Động Trên Zalo Không Bị Khóa Tài Khoản (2026)</h3>
+            <p class="card-desc">
+              Khám phá nguyên lý hoạt động của thuật toán Token Bucket Rate Limiter, Self-Echo Shield và kỹ thuật Spintax giúp gửi tin nhắn an toàn như người dùng thật.
+            </p>
+            <div class="blog-meta">
+              <span>📅 07/09/2026</span>
+              <span>•</span>
+              <span>⏱️ 5 phút đọc</span>
+            </div>
+          </a>
+
+          <a href="/blog/huong-dan-cach-tao-chatbot-zalo-ca-nhan.html" class="card blog-card">
+            <span class="blog-tag">Hướng Dẫn Cài Đặt</span>
+            <h3 class="card-title">Hướng Dẫn Cách Tạo Chatbot Zalo Cá Nhân Bằng Zalo-Flow Trong 3 Phút</h3>
+            <p class="card-desc">
+              Từng bước cài đặt Zalo-Flow trên Windows 1-Click, xử lý cảnh báo Microsoft SmartScreen và quét mã QR đăng nhập tài khoản Zalo cá nhân.
+            </p>
+            <div class="blog-meta">
+              <span>📅 07/09/2026</span>
+              <span>•</span>
+              <span>⏱️ 4 phút đọc</span>
+            </div>
+          </a>
+
+          <a href="/blog/tich-hop-ai-gemini-deepseek-vao-zalo-ca-nhan.html" class="card blog-card">
+            <span class="blog-tag">Trí Tuệ Nhân Tạo</span>
+            <h3 class="card-title">Tích Hợp AI Gemini &amp; DeepSeek Vào Zalo Cá Nhân Tự Động Trả Lời Tin Nhắn</h3>
+            <p class="card-desc">
+              Cách lấy API Key miễn phí từ Google AI Studio, thiết lập Prompt tư vấn bán hàng và tính năng tự động bóc tách danh thiếp lấy số điện thoại khách hàng.
+            </p>
+            <div class="blog-meta">
+              <span>📅 07/09/2026</span>
+              <span>•</span>
+              <span>⏱️ 6 phút đọc</span>
+            </div>
+          </a>
+
+          <a href="/blog/zalo-crm-la-gi-giai-phap-quan-ly-tin-nhan-cskh.html" class="card blog-card">
+            <span class="blog-tag">Quản Trị CSKH</span>
+            <h3 class="card-title">Zalo CRM Là Gì? Giải Pháp Quản Lý Tin Nhắn &amp; Chăm Sóc Khách Hàng Zalo Đỉnh Cao</h3>
+            <p class="card-desc">
+              Tại sao xu hướng Zalo CRM bùng nổ trong năm 2026? Cách phân loại khách hàng bằng thẻ tag màu sắc và remarketing tự động mà không lo tốn phí.
+            </p>
+            <div class="blog-meta">
+              <span>📅 07/09/2026</span>
+              <span>•</span>
+              <span>⏱️ 5 phút đọc</span>
+            </div>
+          </a>
+        </div>
+
+        <div style="text-align: center; margin-top: 2.5rem;">
+          <a href="/blog/" class="btn btn-secondary">Xem Tất Cả Bài Viết Trong Cẩm Nang ➔</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ Hub -->
+    <section class="section" id="faq">
+      <div class="container">
+        <div class="section-header">
+          <div class="section-tag">Hỏi &amp; Đáp</div>
+          <h2 class="section-title">Câu Hỏi Thường Gặp (FAQ)</h2>
+          <p class="section-desc">Giải đáp chi tiết mọi thắc mắc của bạn về việc cài đặt, vận hành và an toàn tài khoản.</p>
+        </div>
+
+        <div class="faq-list">
+          <details class="faq-item" open>
+            <summary class="faq-summary">Zalo-Flow là gì và có tốn phí không?</summary>
+            <div class="faq-content">
+              Zalo-Flow là phần mềm mã nguồn mở (MIT + Commons Clause) <strong>hoàn toàn miễn phí 100%</strong>. Ứng dụng giúp biến tài khoản Zalo cá nhân thành trợ lý AI trả lời tin nhắn tự động 24/7 mà không cần đăng ký Zalo Official Account (OA) hay chịu chi phí thuê bao hàng tháng.
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-summary">Sử dụng chatbot Zalo cá nhân có bị khóa nick không?</summary>
+            <div class="faq-content">
+              Zalo-Flow tích hợp cơ chế <strong>Anti-ban 3 lớp</strong> bất biến: Token Bucket Rate Limiter giãn cách tối thiểu 3 giây/tin (tối đa 20 tin/phút), Self-Echo Shield (30s buffer) chống bot tự trả lời chính mình, và Flood Detector tự ngắt tạm thời 60s khi bị dội tin dồn dập. Tuy nhiên, bạn cần tuân thủ nguyên tắc: chỉ phản hồi người đã nhắn tin cho mình (In-thread reply), không gửi tin nhắn spam hàng loạt tới số lạ.
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-summary">Zalo-Flow có đọc trộm mật khẩu hay tin nhắn của tôi không?</summary>
+            <div class="faq-content">
+              Tuyệt đối không. Toàn bộ mã nguồn Zalo-Flow được công khai 100% trên GitHub để bất kỳ ai cũng có thể kiểm toán. Ứng dụng chạy cục bộ (Local) trên máy tính của bạn, token đăng nhập được mã hóa chuẩn quân sự AES-256-CBC và lưu trong cơ sở dữ liệu SQLite tại máy tính của bạn, hoàn toàn không gửi dữ liệu về bất kỳ máy chủ nào.
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-summary">Khi tắt máy tính hoặc máy vào chế độ Sleep thì bot có chạy không?</summary>
+            <div class="faq-content">
+              Vì Zalo-Flow chạy trực tiếp trên máy tính của bạn, nên khi tắt máy hoặc máy vào trạng thái Sleep thì tiến trình sẽ tạm ngừng. Để bot hoạt động 24/7, bạn có thể thiết lập máy tính sang chế độ <em>"Never Sleep"</em> (Không bao giờ ngủ khi cắm sạc) hoặc triển khai Zalo-Flow qua Docker trên một máy chủ ảo VPS giá rẻ.
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-summary">Zalo-Flow khác gì so với tài khoản Zalo Official Account (OA)?</summary>
+            <div class="faq-content">
+              Zalo OA đòi hỏi giấy phép đăng ký kinh doanh và tính phí theo từng tin nhắn gửi đi, đồng thời khách hàng thường có tâm lý e ngại nhắn tin cho trang công ty. Zalo-Flow hoạt động trực tiếp trên <strong>Zalo cá nhân</strong> bình thường, tạo cảm giác gần gũi, tỉ lệ mở tin nhắn đạt 95% và hoàn toàn không tốn phí duy trì.
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-summary">Làm sao để bot AI nhận diện số điện thoại khi khách gửi danh thiếp?</summary>
+            <div class="faq-content">
+              Zalo-Flow có sẵn bộ lọc thông minh bóc tách tin nhắn danh thiếp (<code>chat.contact</code>). Khi khách gửi danh thiếp, bot tự động lọc bỏ các chuỗi JSON kỹ thuật, trích xuất số điện thoại, tự động chuyển đổi định dạng quốc tế <code>+84</code> về chuẩn Việt Nam <code>0xxxxxxxxx</code> và lưu trữ sẵn sàng cho bạn gọi lại.
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-summary">Zalo-Flow hỗ trợ những mô hình AI nào?</summary>
+            <div class="faq-content">
+              Hệ thống hỗ trợ đa nhà cung cấp AI: Google Gemini (Gemini 1.5 Flash miễn phí cực nhanh), DeepSeek (DeepSeek-Chat, DeepSeek-Reasoner), OpenAI (GPT-4o, GPT-4o-mini) và các mô hình mã nguồn mở chạy Offline qua Ollama.
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-summary">Tôi không biết lập trình có sử dụng được không?</summary>
+            <div class="faq-content">
+              Hoàn toàn được! Bạn chỉ cần tải file <code>ZaloFlow-Setup-v1.0.1.exe</code>, bấm cài đặt như mọi phần mềm thông thường, mở giao diện web rồi dùng điện thoại quét mã QR Zalo là có thể bắt đầu sử dụng ngay.
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-summary">Tôi có thể kết nối Zalo-Flow với Chatwoot CRM không?</summary>
+            <div class="faq-content">
+              Có. Zalo-Flow tích hợp sẵn Adapter kết nối 2 chiều với <strong>Chatwoot CRM</strong>. Nếu doanh nghiệp của bạn có nhiều nhân viên tư vấn, bạn có thể kết nối vào Chatwoot để nhiều người cùng trực chung 1 số Zalo cá nhân rất thuận tiện.
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-summary">Làm thế nào để cập nhật khi có phiên bản mới?</summary>
+            <div class="faq-content">
+              Khi có phiên bản cập nhật mới trên GitHub Releases, Zalo-Flow sẽ hiển thị thông báo trên giao diện web. Bản cài đặt Windows có sẵn tiện ích Standalone Updater tách rời để tự động tải và cập nhật phiên bản mới mà không làm mất dữ liệu tin nhắn cũ của bạn.
+            </div>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- Community Section -->
+    <section class="section" id="community">
+      <div class="container">
+        <div class="card" style="background: linear-gradient(135deg, rgba(0, 132, 255, 0.12) 0%, rgba(15, 23, 42, 0.8) 100%); border-color: rgba(0, 210, 255, 0.3); text-align: center; padding: 3.5rem 1.5rem;">
+          <div class="hero-pill" style="margin-bottom: 1rem;">CỘNG ĐỒNG NGƯỜI DÙNG &amp; LẬP TRÌNH VIÊN</div>
+          <h2 class="section-title">Tham Gia Nhóm Zalo Hỗ Trợ &amp; Giao Lưu</h2>
+          <p class="section-desc" style="max-width: 650px; margin: 0 auto 2rem;">
+            Bạn cần hỗ trợ cài đặt, muốn chia sẻ kịch bản AI bán hàng hoặc đề xuất tính năng mới? Hãy tham gia ngay nhóm Zalo cộng đồng cùng hàng trăm thành viên!
+          </p>
+
+          <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem;">
+            <a href="https://zalo.me/g/mcihan713" target="_blank" rel="noopener" class="btn btn-zalo btn-lg">
+              💬 Vào Nhóm Zalo (zalo.me/g/mcihan713)
+            </a>
+            <a href="https://github.com/aizaloapp/zalo-flow" target="_blank" rel="noopener" class="btn btn-secondary btn-lg">
+              ⭐️ Star Repository Trên GitHub
+            </a>
+            <a href="https://github.com/aizaloapp/zalo-flow/issues" target="_blank" rel="noopener" class="btn btn-secondary btn-lg">
+              🐛 Báo Lỗi / Góp Ý Tính Năng
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Floating Zalo Group Badge -->
+  <a href="https://zalo.me/g/mcihan713" target="_blank" rel="noopener" class="floating-badge" aria-label="Tham gia nhóm Zalo cộng đồng">
+    <span>💬</span>
+    <span>Hỏi đáp trong Nhóm Zalo</span>
+  </a>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <a href="/" class="brand">
+            <img src="/assets/favicon.svg" alt="Zalo-Flow" class="brand-icon">
+            <span>Zalo-Flow</span>
+          </a>
+          <p class="footer-desc">
+            Nền tảng mã nguồn mở kết nối Zalo cá nhân với Chatwoot CRM, quản lý hội thoại Live Chat, chiến dịch Remarketing và tích hợp Trợ lý AI thông minh.
+          </p>
+          <p style="margin-top: 1rem; font-size: 0.8rem; color: var(--text-dim);">
+            Giấy phép phát hành: <a href="https://github.com/aizaloapp/zalo-flow/blob/main/LICENSE" target="_blank" rel="noopener" style="color: var(--cyan);">MIT License with Commons Clause Condition v1.0 (Phi thương mại)</a>.
+          </p>
+        </div>
+
+        <div>
+          <h4 class="footer-title">Tài Nguyên</h4>
+          <ul class="footer-links">
+            <li><a href="https://github.com/aizaloapp/zalo-flow/releases/latest" class="footer-link">Tải Bộ Cài Windows (.exe)</a></li>
+            <li><a href="/blog/" class="footer-link">Cẩm Nang &amp; Hướng Dẫn</a></li>
+            <li><a href="/llms.txt" class="footer-link">Tài Liệu Cho AI (llms.txt)</a></li>
+            <li><a href="/llms-full.txt" class="footer-link">Tài Liệu Toàn Văn (llms-full.txt)</a></li>
+            <li><a href="/sitemap.xml" class="footer-link">Sơ Đồ Trang (Sitemap)</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="footer-title">Cộng Đồng &amp; Pháp Lý</h4>
+          <ul class="footer-links">
+            <li><a href="https://zalo.me/g/mcihan713" target="_blank" rel="noopener" class="footer-link">Nhóm Zalo Hỗ Trợ</a></li>
+            <li><a href="https://github.com/aizaloapp/zalo-flow" target="_blank" rel="noopener" class="footer-link">GitHub Repository</a></li>
+            <li><a href="https://github.com/aizaloapp/zalo-flow/issues" target="_blank" rel="noopener" class="footer-link">Báo Cáo Lỗi (Issues)</a></li>
+            <li><a href="https://github.com/aizaloapp/zalo-flow/discussions" target="_blank" rel="noopener" class="footer-link">Thảo Luận (Discussions)</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div>
+          © 2026 AIzalo Community. Phần mềm phục vụ mục đích nghiên cứu kỹ thuật và tự động hóa cá nhân, phi thương mại. Nghiêm cấm mọi hành vi spam hoặc quấy rối.
+        </div>
+        <div>
+          Không liên kết với VNG Corporation. "Zalo" là nhãn hiệu thuộc sở hữu của VNG Corporation.
+        </div>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>
