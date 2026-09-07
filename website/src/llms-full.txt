@@ -9,7 +9,7 @@
 - Website chính thức: https://aizalo.com/
 - Repository GitHub: https://github.com/aizaloapp/zalo-flow
 - Kênh hỗ trợ cộng đồng: https://zalo.me/g/mcihan713
-- Phiên bản phát hành: v1.0.3
+- Phiên bản phát hành: v1.0.4
 - Giấy phép: MIT License with Commons Clause Condition v1.0 (Nghiêm cấm thương mại hóa hoặc bán gói SaaS).
 - Tuyên bố pháp lý: Dự án mã nguồn mở độc lập, KHÔNG liên kết, không được ủy quyền, tài trợ hay chứng thực bởi VNG Corporation hay Zalo.
 
@@ -21,7 +21,7 @@
 - **Web Server:** Express.js port 3000.
 - **Cơ sở dữ liệu:** SQLite cục bộ (lưu tại `database.sqlite`), tự động checkpoint WAL khi tắt hoặc khởi động lại.
 - **Mã hóa:** AES-256-CBC với `SESSION_SECRET` lưu trong file `.env`.
-- **Phân phối Desktop:** Bộ cài đặt Windows 1-Click (`ZaloFlow-Setup-v1.0.3.exe` ~23.4MB) tích hợp Node.js 22.14 LTS portable, chạy ngầm hoàn toàn qua VBScript (Stealth Mode) và tự khởi động trình duyệt `http://localhost:3000`.
+- **Phân phối Desktop:** Bộ cài đặt Windows 1-Click (`ZaloFlow-Setup-v1.0.4.exe` ~23.4MB) tích hợp Node.js 22.14 LTS portable, chạy ngầm hoàn toàn qua VBScript (Stealth Mode) và tự khởi động trình duyệt `http://localhost:3000`.
 - **Hạn mức tài nguyên:** Node.js giới hạn 350MB RAM (cảnh báo tại 263MB), Docker container giới hạn 512MB RAM.
 
 ---

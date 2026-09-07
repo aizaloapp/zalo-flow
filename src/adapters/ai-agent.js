@@ -41,6 +41,18 @@ export const CURATED_MODELS = {
   ]
 };
 
+export const GEMINI_KEY_PREFIXES = ['AIza', 'AQ.'];
+
+/**
+ * Kiểm tra xem chuỗi có phải là định dạng API Key hợp lệ của Google Gemini không
+ * (Hỗ trợ song song cả chuẩn cũ AIza... và chuẩn mới AQ....)
+ */
+export function isGeminiApiKey(key) {
+  if (!key || typeof key !== 'string') return false;
+  const clean = key.trim().replace(/^["']|["']$/g, '');
+  return GEMINI_KEY_PREFIXES.some(prefix => clean.startsWith(prefix));
+}
+
 export class AiAgentAdapter extends BaseAdapter {
   constructor(options = {}) {
     super('ai_agent');
@@ -679,6 +691,9 @@ ${scope || `1. Tuyệt đối không bịa đặt số tài khoản ngân hàng,
       const data = err.response.data;
       if (typeof data === 'object') {
         const message = data.error?.message || data.message || data.msg || (typeof data.error === 'string' ? data.error : JSON.stringify(data));
+        if (message?.includes('ACCESS_TOKEN_TYPE_UNSUPPORTED')) {
+          return `[Lỗi xác thực Google]: Hệ thống Google AI Studio đang phân giải khóa định danh mới (AQ.). Nếu gặp lỗi này, bạn vui lòng tạo lại key mới trên AI Studio (https://aistudio.google.com/app/apikey) hoặc kiểm tra quyền truy cập Google Cloud Project.`;
+        }
         if (err.response.status === 429) {
           return `[Lỗi 429 Hạn mức / Quota]: ${message}\n👉 Hướng dẫn: Tài khoản của bạn đã hết hạn mức hoặc chưa nạp số dư cho model này. Nếu dùng Z.AI, hãy chuyển sang model miễn phí "Z.AI GLM-4 Flash" trong danh sách Model!`;
         }
@@ -704,8 +719,8 @@ ${scope || `1. Tuyệt đối không bịa đặt số tài khoản ngân hàng,
     }
 
     const cleanKey = apiKey.trim().replace(/^["']|["']$/g, '');
-    if (!cleanKey.startsWith('AIzaSy')) {
-      throw new Error(`[Lỗi định dạng API Key]: API Key của Google Gemini bắt buộc phải bắt đầu bằng "AIzaSy" (gồm 39 ký tự). Bạn đang nhập key không khớp với Google Gemini (hoặc do trình duyệt tự động điền mật khẩu). Vui lòng lấy API Key miễn phí tại https://aistudio.google.com/app/apikey`);
+    if (!isGeminiApiKey(cleanKey)) {
+      throw new Error(`[Lỗi định dạng API Key]: API Key của Google Gemini bắt buộc phải bắt đầu bằng "AIza" hoặc "AQ." (lấy tại https://aistudio.google.com/app/apikey). Bạn đang nhập key không khớp với Google Gemini (hoặc do trình duyệt tự động điền mật khẩu).`);
     }
 
     // Auto-map deprecated Gemini model names to the Google-recommended model
@@ -713,7 +728,8 @@ ${scope || `1. Tuyệt đối không bịa đặt số tài khoản ngân hàng,
     if (cleanModel === 'gemini-2.0-flash') cleanModel = 'gemini-3.6-flash';
     if (cleanModel === 'gemini-2.0-flash-exp') cleanModel = 'gemini-3.6-flash';
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${cleanModel}:generateContent?key=${cleanKey}`;
+    // Google Gemini chuẩn mới: xác thực qua header x-goog-api-key, không kèm query string để tránh xung đột 400 Bad Request
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${cleanModel}:generateContent`;
 
     const contents = [];
     for (const msg of history) {
@@ -743,7 +759,10 @@ ${scope || `1. Tuyệt đối không bịa đặt số tài khoản ngân hàng,
     try {
       const res = await axios.post(url, body, {
         timeout: timeoutMs,
-        headers: { 'Content-Type': 'application/json' }
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': cleanKey
+        }
       });
 
       const candidate = res.data?.candidates?.[0];
@@ -766,8 +785,8 @@ ${scope || `1. Tuyệt đối không bịa đặt số tài khoản ngân hàng,
       if (!cleanKey) {
         throw new Error(`API Key is required for AI Provider: ${provider}`);
       }
-      if (cleanKey.startsWith('AIzaSy')) {
-        throw new Error(`[Lỗi nhầm lẫn API Key]: Bạn đang nhập API Key của Google Gemini (bắt đầu bằng AIzaSy) vào nhà cung cấp ${provider.toUpperCase()}. Mỗi nhà cung cấp yêu cầu API Key riêng biệt!`);
+      if (isGeminiApiKey(cleanKey)) {
+        throw new Error(`[Lỗi nhầm lẫn API Key]: Bạn đang nhập API Key của Google Gemini (bắt đầu bằng AIza hoặc AQ.) vào nhà cung cấp ${provider.toUpperCase()}. Mỗi nhà cung cấp yêu cầu API Key riêng biệt!`);
       }
     }
 
@@ -878,7 +897,8 @@ ${scope || `1. Tuyệt đối không bịa đặt số tài khoản ngân hàng,
 
     try {
       if (provider === 'gemini') {
-        const res = await axios.get(`https://generativelanguage.googleapis.com/v1beta/models?key=${cleanKey}`, {
+        const res = await axios.get('https://generativelanguage.googleapis.com/v1beta/models', {
+          headers: { 'x-goog-api-key': cleanKey },
           timeout: timeoutMs
         });
         const list = res.data?.models || [];

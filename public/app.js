@@ -3409,10 +3409,16 @@ function populateModelOptions(selectEl, provider, selectedModel) {
   `).join('');
 }
 
+function isGeminiKey(key) {
+  if (!key) return false;
+  const clean = String(key).trim().replace(/^["']|["']$/g, '');
+  return clean.startsWith('AIza') || clean.startsWith('AQ.');
+}
+
 function getProviderKeyHelp(provider) {
   switch (provider) {
     case 'gemini':
-      return '💡 <b>Google Gemini:</b> Miễn phí 100%, lấy key tại <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color: #38bdf8; text-decoration: underline;">Google AI Studio</a> (Key bắt đầu bằng <code>AIzaSy...</code>)';
+      return '💡 <b>Google Gemini:</b> Miễn phí 100%, lấy key tại <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color: #38bdf8; text-decoration: underline;">Google AI Studio</a> (Key bắt đầu bằng <code>AIza...</code> hoặc <code>AQ....</code>)';
     case 'zai':
       return '💡 <b>Z.AI GLM:</b> Lấy key tại <a href="https://open.bigmodel.cn/usercenter/apikeys" target="_blank" style="color: #38bdf8; text-decoration: underline;">BigModel.cn</a> hoặc <a href="https://z.ai" target="_blank" style="color: #38bdf8; text-decoration: underline;">Z.AI</a>';
     case 'deepseek':
@@ -3538,8 +3544,8 @@ async function testAiHubConnection(isFallback = false) {
   const primaryProvider = document.getElementById('ai-provider-select')?.value || 'gemini';
 
   // Pre-flight check 1: Google Gemini key validation
-  if (provider === 'gemini' && apiKey && !apiKey.startsWith('AIzaSy')) {
-    alert("⚠️ [Lỗi định dạng API Key Google Gemini]:\n\nAPI Key của Google Gemini bắt buộc phải bắt đầu bằng 'AIzaSy' (lấy miễn phí tại https://aistudio.google.com/app/apikey).\n\nKey bạn vừa nhập dường như thuộc nhà cung cấp khác (như Z.AI, OpenAI) hoặc do trình duyệt tự động điền mật khẩu đăng nhập. Vui lòng dán đúng API Key của Gemini!");
+  if (provider === 'gemini' && apiKey && !isGeminiKey(apiKey)) {
+    alert("⚠️ [Lỗi định dạng API Key Google Gemini]:\n\nAPI Key của Google Gemini bắt buộc phải bắt đầu bằng 'AIza' hoặc 'AQ.' (lấy miễn phí tại https://aistudio.google.com/app/apikey).\n\nKey bạn vừa nhập dường như thuộc nhà cung cấp khác (như Z.AI, OpenAI) hoặc do trình duyệt tự động điền mật khẩu đăng nhập. Vui lòng dán đúng API Key của Gemini!");
     return;
   }
 
@@ -3730,11 +3736,27 @@ async function saveKnowledgeSettings() {
     exemplarConversation: aiSettingsState.exemplarConversation
   };
 
-  const newKey = document.getElementById('ai-apikey-input')?.value.trim();
-  if (newKey) payload.apiKey = newKey;
+  const rawNewKey = document.getElementById('ai-apikey-input')?.value;
+  const newKey = (rawNewKey || '').trim().replace(/^["']|["']$/g, '');
+  if (newKey) {
+    if (payload.provider === 'gemini' && !isGeminiKey(newKey)) {
+      alert("⚠️ [Lỗi định dạng API Key Google Gemini]:\n\nAPI Key của Google Gemini bắt buộc phải bắt đầu bằng 'AIza' hoặc 'AQ.' (lấy tại https://aistudio.google.com/app/apikey).\n\nVui lòng kiểm tra lại để tránh dán nhầm mật khẩu hoặc key của nhà cung cấp khác!");
+      if (btn) btn.innerText = '💾 Lưu Cấu Hình AI Suite';
+      return;
+    }
+    payload.apiKey = newKey;
+  }
 
-  const newFallbackKey = document.getElementById('ai-fallback-apikey-input')?.value.trim();
-  if (newFallbackKey) payload.fallbackApiKey = newFallbackKey;
+  const rawNewFallbackKey = document.getElementById('ai-fallback-apikey-input')?.value;
+  const newFallbackKey = (rawNewFallbackKey || '').trim().replace(/^["']|["']$/g, '');
+  if (newFallbackKey) {
+    if (payload.fallbackProvider === 'gemini' && !isGeminiKey(newFallbackKey)) {
+      alert("⚠️ [Lỗi định dạng API Key Dự Phòng Google Gemini]:\n\nAPI Key của Google Gemini bắt buộc phải bắt đầu bằng 'AIza' hoặc 'AQ.' (lấy tại https://aistudio.google.com/app/apikey).\n\nVui lòng kiểm tra lại!");
+      if (btn) btn.innerText = '💾 Lưu Cấu Hình AI Suite';
+      return;
+    }
+    payload.fallbackApiKey = newFallbackKey;
+  }
 
   try {
     const res = await fetch('/api/ai/settings', {

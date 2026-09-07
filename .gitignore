@@ -60,3 +60,4 @@ Thumbs.db
 # Windows Installer Build Artifacts
 installer/tools/
 installer/output/
+*.exe
