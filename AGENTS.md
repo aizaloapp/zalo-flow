@@ -120,3 +120,17 @@
      2. Chỉ gỡ bỏ bản ghi Custom Domain của `aizalo.com` khỏi Worker (`DELETE /workers/domains/{id}`).
      3. Khai báo tên miền vào Cloudflare Pages (`POST /pages/projects/{project}/domains`) và thiết lập bản ghi CNAME trỏ về `<project>.pages.dev` kèm bật Cloudflare Proxy (🟧).
      4. Mọi thông tin xác thực Cloudflare lấy từ Bitwarden Vault BẮT BUỘC phải khóa Vault ngay lập tức (`bw lock`) và xóa sạch biến môi trường phiên (`BW_SESSION`, `BW_PASSWORD`) khỏi bộ nhớ sau khi hoàn tất. *(Gốc: Rule 44)*
+
+3. **Chiến Lược Từ Khóa SEO & GEO Thực Nghiệm (DataForSEO Invariants):**
+   - **Bộ từ khóa Trang chủ (`aizalo.com`):**
+     - Từ khóa cốt lõi (H1 & Title): `chat bot zalo` (480 – 880 vol/tháng, KD 8/100 cực thấp), `bot zalo` (320 – 390 vol/tháng), `chatbot zalo cá nhân` (110 – 140 vol/tháng, intent kích hoạt **Google AI Overview Rank 1**), `zalo crm` (170 – 390 vol/tháng, xu hướng tăng 10x).
+     - Quy chuẩn Meta: Thẻ Title, H1 và OG Image BẮT BUỘC chứa các từ khóa này để duy trì vị thế xếp hạng.
+   - **Cụm chủ đề Vệ tinh Blog (`/blog/`):**
+     - Bài 1 (`cach-gui-tin-nhan-tu-dong-tren-zalo-khong-bi-khoa.html`): `gửi tin nhắn tự động trên zalo`, `anti-ban zalo` (User intent: sợ khóa nick).
+     - Bài 2 (`huong-dan-cach-tao-chatbot-zalo-ca-nhan.html`): `cách tạo chatbot zalo cá nhân`, `tạo bot zalo` (User intent: cài đặt nhanh không cần code).
+     - Bài 3 (`tich-hop-ai-gemini-deepseek-vao-zalo-ca-nhan.html`): `tích hợp ai vào zalo`, `chatbot gemini zalo`, `deepseek zalo` (User intent: AI thông minh).
+     - Bài 4 (`zalo-crm-la-gi-giai-phap-quan-ly-tin-nhan-cskh.html`): `zalo crm`, `quản lý tin nhắn cskh zalo`, `chatwoot zalo` (User intent: bán hàng & đội ngũ).
+   - **Nguyên tắc GEO (Generative Engine Optimization):**
+     - BẮT BUỘC duy trì tệp `llms.txt` (tóm tắt cho AI Crawlers) và `llms-full.txt` (toàn văn kèm gắn `X-Robots-Tag: noindex`).
+     - Đoạn văn bản định nghĩa ngắn 40-60 từ (Quotable Snippets) và bảng so sánh trên trang chủ phải luôn rõ ràng, cô đọng để các AI search engine (ChatGPT, Perplexity, Gemini, Claude) dễ dàng trích dẫn trực tiếp.
+
