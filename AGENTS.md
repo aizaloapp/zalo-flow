@@ -140,7 +140,7 @@
 2. **Zero-Downtime Worker-to-Pages Domain Cutover Invariant:**
    - Khi chuyển giao hoặc điều chỉnh tên miền chính (`aizalo.com`) sang Cloudflare Pages mà vẫn duy trì dịch vụ SaaS (`app.aizalo.com`) trên Worker:
      1. Tuyệt đối KHÔNG xóa Worker script hoặc can thiệp vào bản ghi của `app.aizalo.com`.
-     2. Chỉ gỡ bỏ bản ghi Custom Domain của `aizalo.com` khỏi Worker (`DELETE /workers/domains/{id}`).
+     2. Chỉ gỡ bỏ bản ghi Custom Domain của `aizalo.com` khỏi Worker (`DELETE /workers/domains/{id}`) VÀ gỡ bỏ Worker Route `aizalo.com/*` khỏi Zone (`DELETE /zones/{id}/workers/routes/{id}`). Tuyệt đối không để tồn tại Worker Route cho `aizalo.com/*` vì Worker Routes luôn có độ ưu tiên ghi đè cao hơn Cloudflare Pages.
      3. Khai báo tên miền vào Cloudflare Pages (`POST /pages/projects/{project}/domains`) và thiết lập bản ghi CNAME trỏ về `<project>.pages.dev` kèm bật Cloudflare Proxy (🟧).
      4. Mọi thông tin xác thực Cloudflare lấy từ Bitwarden Vault BẮT BUỘC phải khóa Vault ngay lập tức (`bw lock`) và xóa sạch biến môi trường phiên (`BW_SESSION`, `BW_PASSWORD`) khỏi bộ nhớ sau khi hoàn tất. *(Gốc: Rule 44)*
 
