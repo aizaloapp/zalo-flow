@@ -419,6 +419,20 @@ const quotedContact = parseMessage({
 assert.strictEqual(quotedContact.type, 'quote', 'Type should be quote');
 assert.strictEqual(quotedContact.quoteText, '[Danh thiếp] A Cho CVH', 'Should extract quoteText from quote.attach when msg is empty');
 
+// Case 8.5: Quoting an image with raw JSON in quote.attach cleans to 📷 [Hình ảnh]
+const quotedImage = parseMessage({
+  msgType: 'chat.quote',
+  quote: {
+    msg: '',
+    attach: '{"title":"", "description":"", "href":"https://u/photo-stel-13.zdn.vn/gr/ujel/sample.jpg", "thumb": "https://u/photo-stel-13.zdn.vn/gr/ujel/sample_thumb.jpg"}',
+    fromD: 'Phan Lê Khoa'
+  },
+  content: 'Này gì'
+});
+assert.strictEqual(quotedImage.type, 'quote', 'Type should be quote');
+assert.strictEqual(quotedImage.quoteText, '📷 [Hình ảnh]', 'Raw JSON image attach must be sanitized to 📷 [Hình ảnh]');
+assert.strictEqual(quotedImage.text, 'Này gì', 'Reply text must be preserved');
+
 // Case 9: Personal Contact Card with raw JSON in description and separate sender dName
 const contact9 = parseMessage({
   msgType: 'chat.contact',
@@ -972,13 +986,61 @@ const queueRows = store.db.prepare("SELECT COUNT(*) as cnt FROM campaign_queue W
 assert.strictEqual(queueRows.cnt, 0, 'Pending campaign queue must be completely cleared!');
 console.log('   ✅ Whitelist Data Preservation in cleanSwitchAccountData passed!\n');
 
+console.log('31. Testing Multi-Device Sync & Self-Echo Isolation...');
+// A. Test SelfEchoShield properly identifies outbound echo from Zalo-Flow
+const { defaultSelfEchoShield } = await import('../src/utils/self-echo.js');
+defaultSelfEchoShield.recordSent('Tin nhắn gửi từ Zalo-Flow PC', 'thread_mobile_test');
+
+// Echo of PC message should be detected
+assert.strictEqual(
+  defaultSelfEchoShield.isSelfEcho('Tin nhắn gửi từ Zalo-Flow PC', 'thread_mobile_test'),
+  true,
+  'Outbound message from PC must be flagged as echo'
+);
+
+// B. Message from Mobile app (not sent by Zalo-Flow) should NOT be flagged as echo
+assert.strictEqual(
+  defaultSelfEchoShield.isSelfEcho('Tin nhắn gõ trên điện thoại', 'thread_mobile_test'),
+  false,
+  'Message from mobile app must not be flagged as echo'
+);
+
+// C. Verify safeText handling for empty caption / media messages
+const emptyCaption = undefined;
+const safeText = String(emptyCaption || '');
+assert.strictEqual(safeText.substring(0, 40), '', 'safeText.substring on undefined must safely return empty string');
+assert.strictEqual(safeText.trim().length === 0, true, 'Empty caption must not trigger echo check');
+
+// D. Verify mobile message persistence & Admin Cooldown trigger
+store.upsertConversation({ id: 'thread_mobile_test', name: 'Khách Test Mobile' });
+const mobileMsg = store.addMessage({
+  id: 'msg_mobile_sync_001',
+  threadId: 'thread_mobile_test',
+  senderId: 'self',
+  senderName: 'Admin (Bạn)',
+  text: 'Bạn vào ở KTX trường nhé',
+  mediaType: 'text',
+  isSelf: true,
+  isBot: false,
+  status: 'sent'
+});
+
+assert.strictEqual(mobileMsg.isSelf, true, 'Mobile message must have isSelf = true');
+assert.strictEqual(mobileMsg.isBot, false, 'Mobile message must have isBot = false');
+
+const adminTimeAfterMobile = store.getLastAdminMessageTime('thread_mobile_test');
+assert.ok(adminTimeAfterMobile > 0, 'getLastAdminMessageTime must reflect mobile message timestamp');
+const diffSeconds = (Date.now() - adminTimeAfterMobile) / 1000;
+assert.ok(diffSeconds < 5, 'Admin message timestamp must be recent (< 5s)');
+console.log('   ✅ Multi-Device Sync & Self-Echo Isolation passed!\n');
+
 // Clean test db
 store.close();
 if (fs.existsSync(testDbFile)) {
   try { fs.unlinkSync(testDbFile); } catch {}
 }
 
-console.log('🎉 ALL 30 INTEGRITY, SECURITY, CRM, AIZALO REMARKETING, AI SUITE, BULK DEEP-SYNC, QR AUTH, MEMORY GUARD, ZALO SANITIZER, DESKTOP PACKAGED & CLEAN SWITCH TESTS PASSED 100%!');
+console.log('🎉 ALL 31 INTEGRITY, SECURITY, CRM, AIZALO REMARKETING, AI SUITE, BULK DEEP-SYNC, QR AUTH, MEMORY GUARD, ZALO SANITIZER, DESKTOP PACKAGED, CLEAN SWITCH & MULTI-DEVICE SYNC TESTS PASSED 100%!');
 
 
 

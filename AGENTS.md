@@ -84,6 +84,13 @@
 4. **Quality Gates & Pre-flight AST Validation:**
    - Sau mỗi lần sửa `public/app.js`, BẮT BUỘC chạy kiểm tra cú pháp `node --check public/app.js` và `npm test` (đảm bảo 100% test suites pass).
    - Trước đợt bàn giao lớn, BẮT BUỘC chạy Ma Trận Kiểm Thử 9 Vòng trực tiếp trên trình duyệt, đảm bảo DevTools Console đạt **0 lỗi đỏ JavaScript**. *(Gốc: Rule 8, 15, 25)*
+5. **Dual-Theme Semantic Tokenization & Active Contrast Invariant:**
+   - **Zero Hardcoded Dark Colors:** Khi xây dựng giao diện hỗ trợ đa theme (Sáng/Tối), TUYỆT ĐỐI KHÔNG sử dụng các mã màu tối ghi cứng (`#0f172a`, `#1e293b`, `rgba(15, 23, 42, ...)`, `color: #f1f5f9;`) trong các thành phần dùng chung (Header, Chat Title, Input Wrap, Toolbar, Badges/Pills). Mọi màu nền, màu chữ và đường viền BẮT BUỘC phải thông qua CSS Variables ngữ nghĩa (`var(--bg-sidebar)`, `var(--text-main)`, `var(--border)`, `var(--bg-card)`).
+   - **Active State High-Contrast Guard:** Trên các phần tử có trạng thái được chọn (`.conv-card.active`), nền xanh nhạt (`#e0f2fe`) trong Giao diện Sáng BẮT BUỘC phải đi kèm màu chữ tương phản cao (`color: var(--primary); font-weight: 700;`), tuyệt đối không kế thừa màu chữ trắng gây chìm chữ và mất tương phản.
+   - **Anti-FOUC Pre-Render Script:** Mọi trang hỗ trợ đa theme BẮT BUỘC phải nhúng script đồng bộ đọc `localStorage` ngay đầu thẻ `<head>` (trước khi stylesheets render) bọc trong `try...catch` an toàn để triệt tiêu hiện tượng nhấp nháy giao diện khi tải trang.
+6. **Zalo Desktop Chat Typography & Bubble Ergonomics:**
+   - **Chuẩn Typography Zalo PC:** Nội dung tin nhắn chat chuẩn hóa cỡ chữ `0.88rem` (tương đương 14px), khoảng cách dòng `line-height: 1.45`, bo góc `12px` và padding `9px 13px`.
+   - **Tránh phình to khung chat:** Không đặt `font-size >= 0.95rem` cho văn bản chat thông thường vì sẽ gây cảm giác cồng kềnh, thô kệch và mất cân xứng so với trải nghiệm Zalo Desktop nguyên bản.
 
 ---
 

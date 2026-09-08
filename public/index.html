@@ -11,8 +11,16 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" media="print" onload="this.media='all'">
   <noscript>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap">
   </noscript>
+  <script>
+    try {
+      var t = localStorage.getItem('zaloflow_theme');
+      if (!t && window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) t = 'light';
+      document.documentElement.setAttribute('data-theme', t || 'dark');
+    } catch (e) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
+  </script>
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
@@ -49,6 +57,9 @@
       </button>
       <button class="filter-btn" id="sync-all-btn" onclick="syncAllHistoryWithProgress()" title="Đồng bộ toàn bộ danh bạ và tin nhắn lịch sử Zalo">
         🔄 Đồng Bộ Lịch Sử
+      </button>
+      <button class="filter-btn theme-toggle-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Chuyển đổi Giao diện Sáng / Tối (Chuẩn Zalo PC)">
+        <span id="theme-icon">☀️</span> <span id="theme-label">Giao diện Sáng</span>
       </button>
     </div>
   </header>

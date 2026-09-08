@@ -15,7 +15,7 @@
 [![CI Quality Gate](https://github.com/aizaloapp/zalo-flow/actions/workflows/ci.yml/badge.svg)](https://github.com/aizaloapp/zalo-flow/actions/workflows/ci.yml)
 [![Anti-Leak & Secret Scan](https://github.com/aizaloapp/zalo-flow/actions/workflows/secret-scan.yml/badge.svg)](https://github.com/aizaloapp/zalo-flow/actions/workflows/secret-scan.yml)
 [![Memory Footprint](https://img.shields.io/badge/RAM-%3C%20100MB-success.svg)](test/test-all.js)
-[![Tests Passing](https://img.shields.io/badge/Tests-26%2F26%20Passing-brightgreen.svg)](test/test-all.js)
+[![Tests Passing](https://img.shields.io/badge/Tests-31%2F31%20Passing-brightgreen.svg)](test/test-all.js)
 [![Docker Ready](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](docker-compose.yml)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
@@ -33,9 +33,9 @@
 
 Không cần biết Git, không cần cài Node.js, không cần mở màn hình đen Terminal:
 
-[![Tải Bản Cài Đặt Windows](https://img.shields.io/badge/Windows-Download%20Setup%20v1.0.4%20(.exe)-0068FF?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/aizaloapp/zalo-flow/releases/latest)
+[![Tải Bản Cài Đặt Windows](https://img.shields.io/badge/Windows-Download%20Setup%20v1.0.6%20(.exe)-0068FF?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/aizaloapp/zalo-flow/releases/latest)
 
-> 💡 **Tải về chạy ngay:** Bấm nút ở trên để tải file **`ZaloFlow-Setup-v1.0.4.exe`** (Chỉ **23.4MB**). Cài đặt trong 30 giây là có ngay icon Zalo-Flow ngoài Desktop!
+> 💡 **Tải về chạy ngay:** Bấm nút ở trên để tải file **`ZaloFlow-Setup-v1.0.6.exe`** (Chỉ **23.4MB**). Cài đặt trong 30 giây là có ngay icon Zalo-Flow ngoài Desktop!
 
 </div>
 
@@ -53,6 +53,9 @@ Không cần biết Git, không cần cài Node.js, không cần mở màn hình
 
 ## 🌟 Tính Năng Nổi Bật
 
+- 🎨 **Giao Diện Sáng & Tối (Light & Dark Mode) 1-Click:** Chuyển đổi linh hoạt giữa Dark Mode công nghệ và Light Mode dịu mắt chuẩn phong cách Zalo PC, tự động lưu cấu hình và triệt tiêu hoàn toàn hiện tượng chớp nháy (Anti-FOUC).
+- 💬 **Typography & Trải Nghiệm Chat Chuẩn Zalo PC:** Kích thước chữ 14px (`0.88rem`), khoảng cách dòng `line-height: 1.45`, bo góc `12px` và padding `9px 13px` tinh gọn, thân quen như ứng dụng Zalo Desktop nguyên bản.
+- 📲 **Đồng Bộ Tin Nhắn Điện Thoại (Multi-Device Outbound Sync):** Gửi tin nhắn, ảnh, file từ ứng dụng Zalo trên điện thoại tự động đồng bộ tức thì về Zalo-Flow mà không gây lặp phản xạ (Self-Echo Isolation).
 - 🧠 **Bộ Não Điều Khiển AI 5 Tabs (Local-First Architecture):**
   - **Tab 1: Nhân Cách (SOUL):** Tùy biến phong cách trợ lý, 3 Presets (Thân thiện, B2B, Support), học mẫu **Few-Shot Exemplar 1-Click** từ hội thoại thực tế.
   - **Tab 2: Trí Nhớ & Tri Thức (MEMORY):** Nhúng Second Brain Wiki Karpathy và tự động trích xuất cặp Hỏi - Đáp từ Tin Nhắn Nhanh (`quick_messages`).

@@ -39,8 +39,46 @@ const quickPopupEl = document.getElementById('quick-autocomplete-popup');
 const lightboxEl = document.getElementById('image-lightbox');
 const lightboxImgEl = document.getElementById('lightbox-img');
 
+// -----------------------------------------------------------------------------
+// Theme Management (Light / Dark Mode)
+// -----------------------------------------------------------------------------
+function initTheme() {
+  const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+  applyTheme(currentTheme, false);
+}
+
+function toggleTheme() {
+  const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+  const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+  applyTheme(newTheme, true);
+}
+
+function applyTheme(theme, save = true) {
+  document.documentElement.setAttribute('data-theme', theme);
+  if (save) {
+    try {
+      localStorage.setItem('zaloflow_theme', theme);
+    } catch (e) {}
+  }
+
+  const iconEl = document.getElementById('theme-icon');
+  const labelEl = document.getElementById('theme-label');
+  const btnEl = document.getElementById('theme-toggle-btn');
+
+  if (theme === 'light') {
+    if (iconEl) iconEl.innerText = '🌙';
+    if (labelEl) labelEl.innerText = 'Giao diện Tối';
+    if (btnEl) btnEl.title = 'Bấm để chuyển sang Giao diện Tối (Dark Mode)';
+  } else {
+    if (iconEl) iconEl.innerText = '☀️';
+    if (labelEl) labelEl.innerText = 'Giao diện Sáng';
+    if (btnEl) btnEl.title = 'Bấm để chuyển sang Giao diện Sáng (Chuẩn Zalo PC)';
+  }
+}
+
 // Initial Load
 function initApp() {
+  initTheme();
   if (state.adminToken) {
     localStorage.setItem('zalo_admin_token', state.adminToken);
   }
@@ -1759,10 +1797,46 @@ function isDocFileName(str) {
   return /\.(pdf|docx?|xlsx?|pptx?|zip|rar|7z|tar|gz|txt|csv|json|xml|mp3|mp4|apk)(\?.*)?$/i.test(str.trim());
 }
 
+function formatQuoteText(quoteStr) {
+  if (!quoteStr) return '';
+  const str = String(quoteStr).trim();
+  if (str.startsWith('{') || str.startsWith('[')) {
+    try {
+      const obj = JSON.parse(str);
+      if (obj && typeof obj === 'object') {
+        if (obj.href || obj.thumb || obj.type === 'photo' || (typeof obj.href === 'string' && obj.href.includes('zdn.vn'))) {
+          return '📷 [Hình ảnh]';
+        }
+        if (obj.catId || obj.sticker || obj.type === 'sticker') {
+          return '🎭 [Sticker]';
+        }
+        if (obj.fileSize || obj.fileName || obj.title) {
+          const name = obj.title || obj.fileName || '';
+          return name ? `📎 [Tệp tin] ${name}` : '📎 [Tệp tin]';
+        }
+        if (obj.phone || obj.type === 'contact') {
+          const name = obj.title || obj.name || '';
+          return name ? `📇 [Danh thiếp] ${name}` : '📇 [Danh thiếp]';
+        }
+        if (obj.video || obj.type === 'video') {
+          return '🎬 [Video]';
+        }
+      }
+    } catch {}
+    if (str.includes('zdn.vn') || str.includes('photo')) {
+      return '📷 [Hình ảnh]';
+    }
+  }
+  return str;
+}
+
 function appendMessageElement(msg, autoScroll = true) {
   const isOutbound = Boolean(msg.isSelf || msg.isBot);
   const timeFormatted = formatTime(msg.timestamp);
-  
+
+  // Ground-Truth isGroup resolution: check activeThread or thread in conversations
+  const isGroup = Boolean(state.activeThread?.isGroup ?? state.conversations?.find(c => String(c.id) === String(msg.threadId))?.isGroup);
+
   let senderLabel = msg.senderName || 'Khách hàng';
   if (msg.isBot) senderLabel = 'Bot AI';
   else if (msg.isSelf) senderLabel = 'Admin (Bạn)';
@@ -1772,12 +1846,32 @@ function appendMessageElement(msg, autoScroll = true) {
   bubbleWrap.id = `msg-${msg.id}`;
 
   const isRecalled = Boolean(msg.isRecalled === 1 || msg.isRecalled === true);
+  const isSticker = Boolean(msg.mediaType === 'sticker' && msg.mediaUrl);
+
+  // Group Chat sender display (only for incoming messages in group chats)
+  const groupSenderHtml = (isGroup && !isOutbound)
+    ? `<div class="bubble-group-sender">${escapeHtml(msg.senderName || 'Thành viên')}</div>`
+    : '';
+
+  // Status tick for outbound messages
+  const statusTickHtml = (msg.isSelf && !isRecalled)
+    ? `<span class="msg-status-tick ${msg.status === 'delivered' ? 'delivered' : 'sent'}" id="status-tick-${msg.id}" title="${msg.status === 'delivered' ? 'Đã nhận' : 'Đã gửi'}">${msg.status === 'delivered' ? '✓✓' : '✓'}</span>`
+    : '';
+
+  const botBadgeHtml = msg.isBot ? '<span class="bot-micro-badge">⚡ AI</span>' : '';
+
+  // Inline timestamp for text & quote
+  const timeInlineHtml = `<span class="bubble-time-guard" aria-hidden="true"></span><span class="bubble-time-inline">${botBadgeHtml}<span>${timeFormatted}</span>${statusTickHtml}</span>`;
+
+  // Footer timestamp for cards and media
+  const timeFooterHtml = `<div class="bubble-time-footer">${botBadgeHtml}<span>${timeFormatted}</span>${statusTickHtml}</div>`;
+
   let contentHtml = '';
 
   if (isRecalled) {
-    contentHtml = '<div>[Tin nhắn đã được thu hồi]</div>';
+    contentHtml = `<div>[Tin nhắn đã được thu hồi]</div>${timeFooterHtml}`;
   } else if (msg.mediaType === 'call') {
-    contentHtml = '<div class="call-bubble"><span>📞</span><span>Cuộc gọi thoại (Zalo Call)</span></div>';
+    contentHtml = `<div class="call-bubble"><span>📞</span><span>Cuộc gọi thoại (Zalo Call)</span></div>${timeFooterHtml}`;
   } else if (msg.mediaType === 'contact') {
     const phoneMatch = (msg.text || '').match(/SĐT:\s*([0-9\s.-]+)/i);
     const phone = phoneMatch ? phoneMatch[1].replace(/[\s.-]/g, '') : '';
@@ -1833,7 +1927,7 @@ function appendMessageElement(msg, autoScroll = true) {
             <button onclick="navigator.clipboard.writeText('${escapeHtml(phone)}'); this.innerText='✅ Đã chép'; setTimeout(()=>{this.innerText='📋 Sao chép'}, 2000);" style="flex:1; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.15); color:#e2e8f0; font-size:0.75rem; font-weight:500; padding:5px 8px; border-radius:6px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:4px;">📋 Sao chép</button>
           </div>
         ` : ''}
-      </div>
+      </div>${timeFooterHtml}
     `;
   } else if (msg.mediaType === 'image') {
     const authParam = state.adminToken ? `?token=${encodeURIComponent(state.adminToken)}` : '';
@@ -1841,7 +1935,7 @@ function appendMessageElement(msg, autoScroll = true) {
     if (imgUrl) {
       contentHtml = `
         <img src="${escapeHtml(imgUrl)}" class="media-img" loading="lazy" decoding="async" referrerpolicy="no-referrer" onclick="openImagePreview('${escapeHtml(imgUrl)}')" onerror="this.outerHTML='<div class=\\'media-file-chip\\'><span>🖼️</span><span>[Ảnh Zalo]</span></div>'" />
-        ${(msg.text && msg.text !== '[Đính kèm]' && msg.text !== '[Hình ảnh]') ? `<div class="media-caption">${escapeHtml(msg.text)}</div>` : ''}
+        ${(msg.text && msg.text !== '[Đính kèm]' && msg.text !== '[Hình ảnh]') ? `<div class="media-caption">${escapeHtml(msg.text)}</div>` : ''}${timeFooterHtml}
       `;
     } else {
       contentHtml = `
@@ -1851,7 +1945,7 @@ function appendMessageElement(msg, autoScroll = true) {
             <span style="font-weight:600; font-size:0.85rem;">${escapeHtml(msg.text && msg.text !== '[Đính kèm]' ? msg.text : 'Hình ảnh đính kèm')}</span>
             <span style="font-size:0.7rem; color:var(--text-muted);">Đã gửi qua Zalo</span>
           </div>
-        </div>
+        </div>${timeFooterHtml}
       `;
     }
   } else if (msg.mediaType === 'file' || isDocFileName(msg.text)) {
@@ -1873,20 +1967,20 @@ function appendMessageElement(msg, autoScroll = true) {
           <span style="font-weight:600; font-size:0.85rem; word-break:break-all; color:#f1f5f9;">${escapeHtml(msg.text && msg.text !== '[Đính kèm]' ? msg.text : 'Tập tin đính kèm')}</span>
           ${fileUrl ? `<a href="${escapeHtml(fileUrl)}" target="_blank" download="${escapeHtml(msg.text || 'tai_lieu')}" style="color:#38bdf8; font-size:0.75rem; text-decoration:none; margin-top:3px; font-weight:600; display:inline-flex; align-items:center; gap:4px;">⬇️ Tải xuống tệp</a>` : '<span style="font-size:0.7rem; color:var(--text-muted);">Tài liệu Zalo (Đã lưu trên máy/Zalo)</span>'}
         </div>
-      </div>
+      </div>${timeFooterHtml}
     `;
-  } else if (msg.mediaType === 'sticker' && msg.mediaUrl) {
-    contentHtml = `<img src="${escapeHtml(msg.mediaUrl)}" class="sticker-img" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.outerHTML='<div>[Sticker]</div>'" />`;
+  } else if (isSticker) {
+    contentHtml = `<img src="${escapeHtml(msg.mediaUrl)}" class="sticker-img" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.outerHTML='<div>[Sticker]</div>'" />${timeFooterHtml}`;
   } else if (msg.quoteText) {
     contentHtml = `
       <div class="quote-block">
         <span class="quote-sender">${escapeHtml(msg.quoteSender || 'Người gửi')}</span>
-        <span class="quote-text">${escapeHtml(msg.quoteText || '')}</span>
+        <span class="quote-text">${escapeHtml(formatQuoteText(msg.quoteText || ''))}</span>
       </div>
-      <div>${formatChatBubbleText(msg.text)}</div>
+      <div>${formatChatBubbleText(msg.text)}${timeInlineHtml}</div>
     `;
   } else {
-    contentHtml = `<div>${formatChatBubbleText(msg.text)}</div>`;
+    contentHtml = `<div>${formatChatBubbleText(msg.text)}${timeInlineHtml}</div>`;
   }
 
   const rawTextForAttr = encodeURIComponent(msg.text || '');
@@ -1921,24 +2015,8 @@ function appendMessageElement(msg, autoScroll = true) {
     ? `<div class="message-reaction-badge" title="Cảm xúc">${escapeHtml(msg.reactions)}</div>` 
     : '';
 
-  const statusTickHtml = (msg.isSelf && !isRecalled)
-    ? `<span class="msg-status-tick ${msg.status === 'delivered' ? 'delivered' : 'sent'}" id="status-tick-${msg.id}" title="${msg.status === 'delivered' ? 'Đã nhận' : 'Đã gửi'}">${msg.status === 'delivered' ? '✓✓' : '✓'}</span>`
-    : '';
-
-  bubbleWrap.innerHTML = `
-    ${hoverActionsHtml}
-    <div class="bubble-meta">
-      <span>${escapeHtml(senderLabel)}</span>
-      ${msg.isBot ? `<span style="color:#38bdf8; font-weight:700; background:rgba(56,189,248,0.15); padding:1px 6px; border-radius:6px; font-size:0.68rem;">⚡ AI Bot</span>` : ''}
-      <span>•</span>
-      <span>${timeFormatted}</span>
-      ${statusTickHtml}
-    </div>
-    <div class="bubble-content ${isRecalled ? 'recalled' : ''}">
-      ${contentHtml}
-      ${reactionBadgeHtml}
-    </div>
-  `;
+  // Zero-whitespace template string to strictly protect pre-wrap immunity (Rule 42)
+  bubbleWrap.innerHTML = `${hoverActionsHtml}${groupSenderHtml}<div class="bubble-content ${isRecalled ? 'recalled' : ''} ${isSticker ? 'sticker-bubble' : ''}">${contentHtml}${reactionBadgeHtml}</div>`;
 
   messagesStreamEl.appendChild(bubbleWrap);
   if (autoScroll) scrollToBottom();

@@ -22,6 +22,80 @@ export function normalizeVnPhone(phoneStr) {
   return match[0].replace(/[\s.-]/g, '').replace(/^\+?84/, '0');
 }
 
+/**
+ * Làm sạch nội dung trích dẫn (Quote Text)
+ * Loại bỏ chuỗi JSON thô khi trích dẫn hình ảnh, file, sticker hoặc danh thiếp
+ */
+export function cleanQuoteText(msgText, attachRaw) {
+  const cleanMsg = String(msgText || '').trim();
+  if (cleanMsg) return cleanMsg;
+
+  if (!attachRaw) return '[Đính kèm]';
+
+  let attachObj = null;
+  if (typeof attachRaw === 'object') {
+    attachObj = attachRaw;
+  } else if (typeof attachRaw === 'string') {
+    const trimmed = attachRaw.trim();
+    if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+      try {
+        attachObj = JSON.parse(trimmed);
+      } catch {}
+    }
+  }
+
+  if (attachObj && typeof attachObj === 'object') {
+    // 1. Trích dẫn Hình ảnh (Photo / Image)
+    if (
+      attachObj.href ||
+      attachObj.thumb ||
+      attachObj.hdUrl ||
+      attachObj.url ||
+      attachObj.type === 'photo' ||
+      attachObj.action === 'photo' ||
+      (typeof attachObj.href === 'string' && (attachObj.href.includes('zdn.vn') || attachObj.href.includes('photo')))
+    ) {
+      return '📷 [Hình ảnh]';
+    }
+
+    // 2. Trích dẫn Sticker
+    if (attachObj.catId || attachObj.sticker || attachObj.type === 'sticker') {
+      return '🎭 [Sticker]';
+    }
+
+    // 3. Trích dẫn Tệp tin (File / Document)
+    if (attachObj.fileSize || attachObj.checksum || attachObj.fileName || attachObj.title) {
+      const name = attachObj.title || attachObj.fileName || attachObj.name || '';
+      return name ? `📎 [Tệp tin] ${name}` : '📎 [Tệp tin]';
+    }
+
+    // 4. Trích dẫn Danh thiếp (Contact Card)
+    if (attachObj.phone || attachObj.contactUid || attachObj.type === 'contact' || attachObj.type === 'card') {
+      const name = attachObj.title || attachObj.name || '';
+      return name ? `📇 [Danh thiếp] ${name}` : '📇 [Danh thiếp]';
+    }
+
+    // 5. Trích dẫn Video
+    if (attachObj.video || attachObj.type === 'video' || attachObj.duration) {
+      return '🎬 [Video]';
+    }
+
+    if (attachObj.title && typeof attachObj.title === 'string' && attachObj.title.trim()) {
+      return attachObj.title.trim();
+    }
+    if (attachObj.description && typeof attachObj.description === 'string' && attachObj.description.trim()) {
+      return attachObj.description.trim();
+    }
+    return '📎 [Đính kèm]';
+  }
+
+  const attachStr = String(attachRaw).trim();
+  if (attachStr.startsWith('{') && attachStr.includes('zdn.vn')) {
+    return '📷 [Hình ảnh]';
+  }
+  return attachStr || '[Đính kèm]';
+}
+
 export function parseMessage(rawMsg) {
   if (!rawMsg) {
     return { type: 'text', text: '' };
@@ -52,10 +126,10 @@ export function parseMessage(rawMsg) {
       };
     }
 
-    // 1. Quote Message Detection
+    // 1. Quote Message Detection (Làm sạch chuỗi JSON thô trong attach)
     const quote = data.quote || rawMsg.quote;
     if (quote && (quote.msg || quote.attach)) {
-      const qText = String(quote.msg || quote.attach || '[Đính kèm]').trim();
+      const qText = cleanQuoteText(quote.msg, quote.attach);
       return {
         type: 'quote',
         text: text || String(content?.msg || content?.title || ''),

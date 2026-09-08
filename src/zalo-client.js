@@ -64,7 +64,8 @@ export class ZaloClient {
     };
 
     const zalo = new Zalo({
-      imageMetadataGetter
+      imageMetadataGetter,
+      selfListen: true
     });
 
     if (savedSession) {
@@ -450,30 +451,74 @@ export class ZaloClient {
     // 1. Real-time Incoming Messages
     this.api.listener.on('message', async (message) => {
       try {
-        // Skip messages sent by the bot itself
-        if (message.isSelf) return;
-
         const senderId = String(message.data?.uidFrom || message.uidFrom || message.senderId || '');
-        const threadId = String(message.threadId || message.data?.idTo || senderId);
+        const threadId = String(message.threadId || (message.isSelf ? message.data?.idTo : message.data?.idTo) || senderId);
         const isGroup = Boolean(message.data?.idTo && message.data.idTo.startsWith('g_'));
         
         // Parse with Rich Media Parser
         const parsed = parseMessage(message);
         const text = parsed.text;
+        const safeText = String(text || '');
 
-        if (!text && !parsed.mediaUrl) return;
+        if (!safeText && !parsed.mediaUrl) return;
 
-        // Anti-ban: Flood Shield
+        // Xử lý gói tin đồng bộ từ chính tài khoản (Self Message / Multi-Device Sync từ điện thoại hoặc PC)
+        if (message.isSelf) {
+          // 1. Nếu tin nhắn do chính Zalo-Flow vừa gửi đi qua Web Dashboard/Bot (có trong SelfEchoShield)
+          // Chỉ kiểm tra Shield khi có text để tránh false-positive với ảnh/tệp không caption
+          if (safeText.trim()) {
+            const isEcho = defaultSelfEchoShield.isSelfEcho(safeText, threadId);
+            if (isEcho) {
+              logger.debug(`[Self-Echo] Ignored echo of Zalo-Flow outbound message to ${threadId}`);
+              return;
+            }
+          }
+
+          // 2. Kiểm tra trùng lặp theo msgId trong SQLite
+          const incomingMsgId = String(message.msgId || message.data?.msgId || '');
+          if (incomingMsgId && localStore.getMessage(incomingMsgId)) {
+            return;
+          }
+
+          // 3. Đích thị là tin nhắn Admin vừa gõ gửi từ Zalo Mobile App hoặc Zalo PC ngoài:
+          logger.info(`📱 [Multi-Device Sync] Synced message from mobile/external device to ${threadId} [${parsed.type}]: "${safeText.substring(0, 40)}"`);
+
+          const senderName = this.userProfile?.displayName || 'Admin (Bạn)';
+          const msgCliId = String(message.cliMsgId || message.data?.cliMsgId || message.data?.ts || message.ts || Date.now());
+
+          localStore.addMessage({
+            id: incomingMsgId || crypto.randomUUID(),
+            threadId,
+            senderId: 'self',
+            senderName,
+            text: safeText,
+            mediaType: parsed.type,
+            mediaUrl: parsed.mediaUrl || '',
+            quoteText: parsed.quoteText || '',
+            quoteSender: parsed.quoteSender || '',
+            isGroup,
+            isSelf: true,
+            isBot: false,
+            status: 'sent',
+            timestamp: new Date().toISOString(),
+            cliMsgId: msgCliId
+          });
+
+          // Không dispatch vào inboundHandlers (tránh bot tự trả lời tin nhắn của Admin)
+          return;
+        }
+
+        // Anti-ban: Flood Shield (chỉ áp dụng cho tin nhắn từ khách hàng)
         if (defaultFloodDetector.isFlooding(senderId)) {
           return;
         }
 
         // Anti-ban: Self-Echo Check
-        if (text && defaultSelfEchoShield.isSelfEcho(text, senderId)) {
+        if (safeText && defaultSelfEchoShield.isSelfEcho(safeText, senderId)) {
           return;
         }
 
-        logger.info(`📨 [Inbound] ${isGroup ? 'Group' : 'Direct'} from ${senderId} [${parsed.type}]: "${text.substring(0, 50)}"`);
+        logger.info(`📨 [Inbound] ${isGroup ? 'Group' : 'Direct'} from ${senderId} [${parsed.type}]: "${safeText.substring(0, 50)}"`);
 
         // Record to LocalStore (Emits realtime SSE)
         const senderName = message.data?.dName || message.data?.displayName || senderId;
@@ -483,7 +528,7 @@ export class ZaloClient {
           threadId,
           senderId,
           senderName,
-          text,
+          text: safeText,
           mediaType: parsed.type,
           mediaUrl: parsed.mediaUrl || '',
           quoteText: parsed.quoteText || '',
@@ -1103,7 +1148,10 @@ export class ZaloClient {
       }
     };
 
-    const zalo = new Zalo({ imageMetadataGetter });
+    const zalo = new Zalo({
+      imageMetadataGetter,
+      selfListen: true
+    });
 
     zalo.loginQR({}, async (event) => {
       if (event.type === LoginQRCallbackEventType.QRCodeGenerated) {
