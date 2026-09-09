@@ -977,9 +977,15 @@ body {
 }
 
 .media-caption {
-  margin-top: 4px;
-  font-size: 0.84rem;
+  margin-top: 6px;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: inherit;
+  word-break: break-word;
+  white-space: pre-wrap;
+  padding: 2px 4px 4px 4px;
 }
+
 
 /* Chat Input Bar & Autocomplete Popup */
 .chat-input-bar-wrap {

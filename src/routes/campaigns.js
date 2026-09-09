@@ -400,12 +400,7 @@ async function runCampaignDispatcher(campaignId) {
     try {
       logger.info(`📢 [Campaign] Dispatching to ${item.customerName} (${item.threadId}): "${(personalizedMessage || '[Đính kèm]').substring(0, 40)}..."`);
       
-      // 2. Send Text Message (if text message provided)
-      if (personalizedMessage) {
-        await zaloClient.sendMessage(item.threadId, personalizedMessage, isGroup);
-      }
-
-      // 3. Send Multi-Attachments (if attachments provided) - Guardrail #20 & Multi-Dir Fallback
+      // 2. Resolve Multi-Attachments & Multi-Directory Storage Fallback (Guardrail #20)
       let rawItems = [];
       try {
         rawItems = Array.isArray(campaign.mediaUrls) ? campaign.mediaUrls : JSON.parse(campaign.mediaUrls || '[]');
@@ -430,8 +425,8 @@ async function runCampaignDispatcher(campaignId) {
         }
       }
 
+      const localFilePaths = [];
       if (mediaItems.length > 0) {
-        const localFilePaths = [];
         for (const m of mediaItems) {
           const urlStr = typeof m === 'string' ? m : (m.mediaUrl || '');
           const fn = path.basename(urlStr);
@@ -467,6 +462,42 @@ async function runCampaignDispatcher(campaignId) {
           } else {
             logger.warn(`⚠️ [Campaign Attachment] File not found on disk: "${fn}" (Checked campaigns, quick-msg, chat-media)`);
           }
+        }
+      }
+
+      // 3. Smart Dispatch Protocol (Single-Image Caption Integration & Fallback Guard)
+      const imageItems = localFilePaths.filter(f => f.mediaType === 'image');
+      const docItems = localFilePaths.filter(f => f.mediaType !== 'image');
+
+      // Điều kiện gộp Caption: đúng 1 bức ảnh VÀ có nội dung text VÀ text <= 1000 ký tự
+      const canMergeCaption = imageItems.length === 1 && Boolean(personalizedMessage && personalizedMessage.trim()) && personalizedMessage.length <= 1000;
+
+      if (canMergeCaption) {
+        // [Luồng Gộp Caption Dính Liền]: Gửi đúng 1 ảnh mang caption dính liền
+        const singleImage = imageItems[0];
+        await zaloClient.uploadAttachment(item.threadId, [singleImage.path], isGroup, {
+          caption: personalizedMessage,
+          items: [singleImage],
+          mediaUrl: singleImage.mediaUrl,
+          mediaType: 'image',
+          originalName: singleImage.originalName || '[Hình ảnh]'
+        });
+        logger.info(`📸 [Campaign] Dispatched 1 image with merged caption to ${item.customerName}`);
+
+        // Nếu có thêm tài liệu (PDF, docx), gửi gom toàn bộ docItems trong 1 request riêng biệt
+        if (docItems.length > 0) {
+          const docDiskPaths = docItems.map(f => f.path);
+          await zaloClient.uploadAttachment(item.threadId, docDiskPaths, isGroup, {
+            items: docItems,
+            mediaUrl: docItems[0].mediaUrl,
+            mediaType: 'file',
+            originalName: docItems.length === 1 ? docItems[0].originalName : `${docItems.length} tài liệu đính kèm`
+          });
+        }
+      } else {
+        // [Luồng Phân Tách An Toàn]: Nhiều ảnh (album), text siêu dài > 1000 ký tự, hoặc chỉ có file tài liệu
+        if (personalizedMessage) {
+          await zaloClient.sendMessage(item.threadId, personalizedMessage, isGroup);
         }
 
         if (localFilePaths.length > 0) {

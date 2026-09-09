@@ -1080,7 +1080,16 @@ function renderCampAttachmentChips() {
       </div>
     `;
   }).join('');
+
+  const captionHint = document.getElementById('camp-caption-merge-hint');
+  if (captionHint) {
+    const imgCount = campaignsState.editingAttachments.filter(att => 
+      att.mediaType === 'image' || /\.(png|jpg|jpeg|webp|gif|bmp)$/i.test(att.mediaUrl || '')
+    ).length;
+    captionHint.style.display = imgCount === 1 ? 'flex' : 'none';
+  }
 }
+
 
 function removeCampAttachment(index) {
   campaignsState.editingAttachments.splice(index, 1);

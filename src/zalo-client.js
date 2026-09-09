@@ -1043,11 +1043,14 @@ export class ZaloClient {
       logger.info(`💾 [Attachment Storage] Recording ${items.length} individual attachment message(s) to localStore...`);
 
       const baseTime = Date.now();
+      const hasCaption = Boolean(meta.caption && typeof meta.caption === 'string' && meta.caption.trim());
       for (let i = 0; i < items.length; i++) {
         const item = items[i];
         const itemMediaType = item.mediaType || 'image';
         const itemMediaUrl = item.mediaUrl || '';
-        const itemText = item.originalName || (itemMediaType === 'image' ? '[Hình ảnh]' : '[Tập tin]');
+        const itemText = (i === 0 && hasCaption)
+          ? meta.caption.trim()
+          : (item.originalName || (itemMediaType === 'image' ? '[Hình ảnh]' : '[Tập tin]'));
         const subMsgId = i === 0 ? attachMsgId : `${attachMsgId}_${i}`;
         const subCliMsgId = attachCliMsgId ? (i === 0 ? attachCliMsgId : `${attachCliMsgId}_${i}`) : '';
 
