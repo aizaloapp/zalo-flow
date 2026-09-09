@@ -75,10 +75,10 @@
 6. **Campaign Test Dispatch Isolation & Anti-Ban Cold Outbound Shield:**
    - Khi gửi thử nghiệm 1 tin nhắn chiến dịch (`POST /api/campaigns/test-send`), BẮT BUỘC kiểm tra sự tồn tại của hội thoại trong CSDL bằng `localStore.getConversation(threadId)`. Nếu chưa từng nhắn tin, lập tức từ chối `400 Bad Request` chống khóa nick.
    - **Zero-Contamination Boundary (Delta = 0):** Lệnh gửi thử nghiệm TUYỆT ĐỐI KHÔNG chèn bản ghi vào `campaign_queue`, KHÔNG ghi vào `campaign_logs`, và KHÔNG làm thay đổi bất kỳ chỉ số nào của chiến dịch thật.
-7. **Anti-Downgrade Group Invariant & Dual-Layer Healing:**
-   - **Khóa cờ bất biến (Anti-Downgrade):** Một khi hội thoại đã là Nhóm (`isGroup = 1`), TUYỆT ĐỐI CẤM hạ cấp về Cá nhân (`isGroup = 0`) trong cả hàm `upsertConversation` và câu lệnh SQL `ON CONFLICT(id) DO UPDATE SET isGroup = CASE WHEN conversations.isGroup = 1 THEN 1 ELSE excluded.isGroup END`.
-   - **Nhận diện nhóm đa tầng an toàn:** Listener bắt buộc kiểm tra `message.type === ThreadType.Group || message.type === 1 || message.constructor?.name === 'GroupMessage' || this.groupUids?.has(threadId) || localStore.getConversation(threadId)?.isGroup`. Tuyệt đối không dùng `startsWith('g_')`.
-   - **Tự chữa lành CSDL:** Khởi động tự động khôi phục `isGroup = 1` cho các hội thoại có từ 2 `senderId` khác nhau gửi tin.
+7. **Ground-Truth Group Reconciliation & Anti-Downgrade Contract:**
+   - **Ground-Truth tuyệt đối từ Zalo API:** Trạng thái nhóm BẮT BUỘC lấy từ `this.api.getAllGroups()` (`this.groupUids`) làm chân lý. Tuyệt đối KHÔNG dùng giải pháp phỏng đoán (heuristic) đếm số lượng `senderId` trong SQLite để gán nhóm, tránh nhận nhầm chat 1-1 thành nhóm khi đồng bộ tin nhắn đa thiết bị của chính chủ.
+   - **Tự chữa lành Ground-Truth:** Sau khi đăng nhập và tải xong `getAllGroups()`, hệ thống tự động đối soát: Mọi hội thoại đang mang `isGroup = 1` nhưng KHÔNG nằm trong `this.groupUids` BẮT BUỘC được đưa về `isGroup = 0` qua `localStore.setConversationGroupState(id, false)`.
+   - **Khóa cờ bất biến (Anti-Downgrade):** Trong luồng `upsertConversation` realtime, tiếp tục duy trì khóa `ON CONFLICT(id) DO UPDATE SET isGroup = CASE WHEN conversations.isGroup = 1 THEN 1 ELSE excluded.isGroup END` để chống rớt cờ nhóm khi nhận gói tin thiếu metadata.
 
 ---
 
@@ -136,3 +136,7 @@
 7. **Installed Daemon Working Directory Isolation (`Cwd` Invariant):**
    - Khi khởi chạy hoặc gọi lệnh tương tác với tiến trình nền ZaloFlow Desktop từ thư mục cài đặt (`%LOCALAPPDATA%\Programs\ZaloFlow`), tham số thư mục làm việc (`Cwd`) **BẮT BUỘC** phải trỏ đúng vào thư mục cài đặt đó (`Join-Path $env:LOCALAPPDATA 'Programs\ZaloFlow'`).
    - **Nguyên nhân cốt lõi:** Ngăn ngừa hiện tượng `dotenv` nạp nhầm file `.env` của thư mục phát triển (`d:\A-Du-An\Zalo-Flow`), gây sai lệch khóa mã hóa `SESSION_SECRET` và làm tê liệt khả năng giải mã API Key/Session trong CSDL SQLite cục bộ của ứng dụng Desktop.
+8. **Multimodal AI Vision & Override Directive De-biasing Protocol:**
+   - **Khử Định Kiến Bằng Chỉ Thị Đè (Override Directive):** Khi khách hàng gửi kèm hình ảnh (`images.length > 0`), TUYỆT ĐỐI KHÔNG lọc bỏ tin nhắn cũ trong mảng `history` để bảo toàn nghiêm ngặt quy tắc luân phiên lượt thoại (`user` ➔ `model`), triệt tiêu lỗi `HTTP 400 Bad Request`. Thay vào đó, chèn chỉ thị đè trực tiếp vào tin nhắn hiện tại: ép LLM bỏ qua mọi câu trả lời từ chối đọc ảnh trước đây trong lịch sử và quan sát trực tiếp dữ liệu hình ảnh đính kèm.
+   - **Anti-Hallucination Guard:** System Prompt cho Vision BẮT BUỘC có chỉ dẫn trung thực: Nếu ảnh mờ, lóa sáng hoặc mất góc, bot lịch sự nhờ khách chụp lại cận cảnh, tuyệt đối không đoán mò số tiền, số điện thoại hay thông tin pháp lý.
+   - **Bảo Vệ Bộ Nhớ Stream:** Hàm tải ảnh `_downloadAndEncodeImage` BẮT BUỘC cấu hình cả hai tham số Axios: `maxContentLength` VÀ `maxBodyLength: 4MB` để ngắt kết nối ngay lập tức nếu gặp luồng truyền tải `Transfer-Encoding: chunked` vượt hạn mức, bảo đảm an toàn RAM < 100MB.
