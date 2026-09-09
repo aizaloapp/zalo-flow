@@ -335,6 +335,8 @@ export class LocalStore extends EventEmitter {
           threadId     TEXT NOT NULL,
           customerName TEXT DEFAULT '',
           message      TEXT NOT NULL,
+          mediaUrl     TEXT DEFAULT '',
+          mediaName    TEXT DEFAULT '',
           scheduledAt  INTEGER NOT NULL,
           status       TEXT DEFAULT 'pending',
           error        TEXT DEFAULT '',
@@ -345,6 +347,10 @@ export class LocalStore extends EventEmitter {
         CREATE INDEX IF NOT EXISTS idx_sched_thread ON scheduled_messages(threadId, status);
         CREATE INDEX IF NOT EXISTS idx_sched_due ON scheduled_messages(status, scheduledAt);
       `);
+
+      const schedCols = this.db.prepare("PRAGMA table_info('scheduled_messages');").all().map(c => c.name);
+      if (!schedCols.includes('mediaUrl'))  this.db.exec("ALTER TABLE scheduled_messages ADD COLUMN mediaUrl TEXT DEFAULT '';");
+      if (!schedCols.includes('mediaName')) this.db.exec("ALTER TABLE scheduled_messages ADD COLUMN mediaName TEXT DEFAULT '';");
 
     } catch (err) {
       logger.warn(`Migration notice: ${err.message}`);
@@ -899,17 +905,26 @@ export class LocalStore extends EventEmitter {
     return stmt.get(id) || null;
   }
 
-  createScheduledMessage({ id, threadId, customerName = '', message, scheduledAt }) {
-    if (!threadId || !message || !scheduledAt) {
-      throw new Error('threadId, message và scheduledAt là bắt buộc');
+  createScheduledMessage({ id, threadId, customerName = '', message = '', mediaUrl = '', mediaName = '', scheduledAt }) {
+    if (!threadId || (!message && !mediaUrl) || !scheduledAt) {
+      throw new Error('threadId, scheduledAt và ít nhất nội dung hoặc hình ảnh là bắt buộc');
     }
     const finalId = id || crypto.randomUUID();
     const now = Date.now();
     const stmt = this.db.prepare(`
-      INSERT INTO scheduled_messages (id, threadId, customerName, message, scheduledAt, status, createdAt)
-      VALUES (?, ?, ?, ?, ?, 'pending', ?)
+      INSERT INTO scheduled_messages (id, threadId, customerName, message, mediaUrl, mediaName, scheduledAt, status, createdAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?)
     `);
-    stmt.run(finalId, threadId, (customerName || '').trim(), message.trim(), Number(scheduledAt), now);
+    stmt.run(
+      finalId,
+      threadId,
+      (customerName || '').trim(),
+      (message || '').trim(),
+      (mediaUrl || '').trim(),
+      (mediaName || '').trim(),
+      Number(scheduledAt),
+      now
+    );
     const created = this.getScheduledMessageById(finalId);
     this.emit('scheduledMessageUpdated', created);
     return created;
@@ -925,6 +940,14 @@ export class LocalStore extends EventEmitter {
     if (updates.message !== undefined) {
       fields.push('message = ?');
       values.push(updates.message.trim());
+    }
+    if (updates.mediaUrl !== undefined) {
+      fields.push('mediaUrl = ?');
+      values.push((updates.mediaUrl || '').trim());
+    }
+    if (updates.mediaName !== undefined) {
+      fields.push('mediaName = ?');
+      values.push((updates.mediaName || '').trim());
     }
     if (updates.scheduledAt !== undefined) {
       fields.push('scheduledAt = ?');

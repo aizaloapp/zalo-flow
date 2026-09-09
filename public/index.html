@@ -443,7 +443,32 @@
             <span>Nội Dung Tin Nhắn Hẹn Giờ</span>
             <span style="font-size: 0.74rem; color: #38bdf8;">Hỗ trợ {name}, Spintax {A|B}</span>
           </label>
-          <textarea class="form-textarea" id="sched-content" rows="4" placeholder="Ví dụ: Chào anh {name}, 9h sáng nay mình gặp ở quán cafe Highlands như đã hẹn nha anh!"></textarea>
+          <textarea class="form-textarea" id="sched-content" rows="3" placeholder="Ví dụ: Chào anh {name}, 9h sáng nay mình gặp ở quán cafe Highlands như đã hẹn nha anh!"></textarea>
+        </div>
+
+        <!-- Đính Kèm Hình Ảnh Cho Lịch Hẹn (Quán cafe, vị trí, bảng giá...) -->
+        <div class="form-group" style="margin-top: 8px;">
+          <label class="form-label" style="display: flex; justify-content: space-between; align-items: center;">
+            <span>🖼️ Hình Ảnh Đính Kèm (Ảnh quán cafe, bản đồ, mặt bằng...)</span>
+            <span id="sched-image-hint" style="font-size: 0.72rem; color: var(--text-muted);">Tự nạp từ tin nhanh hoặc tải mới</span>
+          </label>
+          <input type="file" id="sched-image-file-input" accept="image/*" style="display: none;" onchange="handleScheduleImageUpload(this)">
+          <input type="hidden" id="sched-media-url">
+          <input type="hidden" id="sched-media-name">
+
+          <!-- Khung xem trước ảnh đã đính kèm -->
+          <div id="sched-image-preview-wrap" style="display: none; align-items: center; gap: 10px; background: var(--bg-sidebar); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 6px;">
+            <img id="sched-image-preview-img" src="" alt="preview" style="width: 52px; height: 52px; border-radius: 6px; object-fit: cover; border: 1px solid var(--border);">
+            <div style="flex: 1; min-width: 0;">
+              <div id="sched-image-preview-name" style="font-size: 0.8rem; font-weight: 600; color: var(--text-main); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">-</div>
+              <div style="font-size: 0.72rem; color: #10b981;">📸 Sẽ gửi gộp cùng lời nhắn làm chú thích ảnh</div>
+            </div>
+            <button type="button" class="filter-btn" onclick="clearScheduleImage()" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3); padding: 4px 8px; font-size: 0.74rem;" title="Gỡ bỏ ảnh này">✕ Gỡ</button>
+          </div>
+
+          <button type="button" class="filter-btn" id="btn-sched-pick-image" onclick="document.getElementById('sched-image-file-input').click()" style="padding: 6px 12px; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 6px;">
+            <span>📁</span><span>Thêm / Chọn Hình Ảnh</span>
+          </button>
         </div>
       </div>
       <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">

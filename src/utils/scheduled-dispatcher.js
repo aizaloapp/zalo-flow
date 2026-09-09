@@ -1,10 +1,33 @@
-﻿import { localStore } from '../utils/local-store.js';
+﻿import fs from 'fs';
+import path from 'path';
+import { localStore } from '../utils/local-store.js';
 import { zaloClient } from '../zalo-client.js';
 import { logger } from '../utils/logger.js';
 import { resolveSpintax } from '../utils/spintax.js';
 
 // Offline past-due threshold: 15 minutes
 const MAX_PAST_DUE_MS = 15 * 60 * 1000;
+
+function resolveLocalFilePath(mediaUrl) {
+  if (!mediaUrl) return null;
+  const fn = path.basename(mediaUrl);
+  if (!fn) return null;
+
+  const candidateDirs = [
+    path.resolve('data/uploads/scheduled'),
+    path.resolve('data/uploads/quick-msg'),
+    path.resolve('data/uploads/campaigns'),
+    path.resolve('data/uploads/chat-media')
+  ];
+
+  for (const dir of candidateDirs) {
+    const candidate = path.join(dir, fn);
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+  }
+  return null;
+}
 
 export class ScheduledDispatcher {
   constructor() {
@@ -38,7 +61,7 @@ export class ScheduledDispatcher {
   }
 
   /**
-   * Xử lý 1 chu kỳ kiểm tra và gửi tin đến hạn (Atomic Claim + Anti-Ban RateLimiter)
+   * Xử lý 1 chu kỳ kiểm tra và gửi tin đến hạn (Atomic Claim + Media Caption Integration)
    */
   async tick(customNowMs = null) {
     if (this.isTicking) return;
@@ -76,10 +99,10 @@ export class ScheduledDispatcher {
         this.inFlightIds.add(item.id);
 
         // 5. Xử lý Spintax và biến cá nhân hóa {name}
-        const resolvedText = resolveSpintax(item.message, {
+        const resolvedText = item.message ? resolveSpintax(item.message, {
           name: item.customerName || 'bạn',
           threadId: item.threadId
-        });
+        }) : '';
 
         // 6. Gửi bất đồng bộ qua RateLimiter của zaloClient
         (async () => {
@@ -91,11 +114,39 @@ export class ScheduledDispatcher {
               return;
             }
 
-            // Gửi tin nhắn qua RateLimiter (giãn cách >= 3s, SelfEchoShield 30s)
-            await zaloClient.sendMessage(item.threadId, resolvedText, false, {
-              isBot: false,
-              senderName: 'Admin (Lịch hẹn)'
-            });
+            const diskPath = resolveLocalFilePath(item.mediaUrl);
+            const isImage = diskPath && ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp'].includes(path.extname(diskPath).toLowerCase());
+
+            // Smart Dispatch Protocol: Single-Image Caption Integration (Trụ Cột II Điều 8)
+            if (diskPath && isImage && resolvedText.length <= 1000) {
+              await zaloClient.uploadAttachment(item.threadId, [diskPath], false, {
+                caption: resolvedText,
+                mediaUrl: item.mediaUrl,
+                mediaType: 'image',
+                originalName: item.mediaName || path.basename(diskPath)
+              });
+              logger.info(`📸 [Scheduled Dispatcher] Dispatched scheduled image with merged caption to ${item.threadId}`);
+            } else if (diskPath) {
+              if (resolvedText) {
+                await zaloClient.sendMessage(item.threadId, resolvedText, false, {
+                  isBot: false,
+                  senderName: 'Admin (Lịch hẹn)'
+                });
+              }
+              await zaloClient.uploadAttachment(item.threadId, [diskPath], false, {
+                mediaUrl: item.mediaUrl,
+                mediaType: isImage ? 'image' : 'file',
+                originalName: item.mediaName || path.basename(diskPath)
+              });
+              logger.info(`📎 [Scheduled Dispatcher] Dispatched scheduled text + separate attachment to ${item.threadId}`);
+            } else {
+              // Gửi tin nhắn text thuần qua RateLimiter
+              await zaloClient.sendMessage(item.threadId, resolvedText, false, {
+                isBot: false,
+                senderName: 'Admin (Lịch hẹn)'
+              });
+              logger.info(`💬 [Scheduled Dispatcher] Dispatched scheduled text to ${item.threadId}`);
+            }
 
             localStore.updateScheduledMessage(item.id, {
               status: 'sent',

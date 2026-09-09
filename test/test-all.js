@@ -1448,23 +1448,35 @@ store.upsertConversation({
   isGroup: false
 });
 
-// 1. Tạo lịch hẹn hợp lệ
+// 1. Tạo lịch hẹn hợp lệ kèm đính kèm ảnh
 const schedTimeFuture = Date.now() + 3600000; // 1 giờ sau
 const createdSched = store.createScheduledMessage({
   threadId: schedThreadId,
   customerName: 'Anh Khoa BĐS',
   message: 'Chào anh {name}, 9h sáng nay mình gặp ở cafe nhé!',
-  scheduledAt: schedTimeFuture
+  scheduledAt: schedTimeFuture,
+  mediaUrl: '/api/scheduled-messages/media/cafe-highlands.jpg',
+  mediaName: 'cafe-highlands.jpg'
 });
 
 assert.ok(createdSched.id, 'Must create scheduled message with valid ID');
 assert.strictEqual(createdSched.status, 'pending', 'Initial status must be pending');
 assert.strictEqual(createdSched.scheduledAt, schedTimeFuture, 'Must store exact epoch timestamp');
+assert.strictEqual(createdSched.mediaUrl, '/api/scheduled-messages/media/cafe-highlands.jpg', 'Must persist mediaUrl');
+assert.strictEqual(createdSched.mediaName, 'cafe-highlands.jpg', 'Must persist mediaName');
 
-// 2. Kiểm tra getActiveScheduledMessage
+// 2. Kiểm tra getActiveScheduledMessage & update mediaUrl
 const activeSched = store.getActiveScheduledMessage(schedThreadId);
 assert.ok(activeSched, 'Must retrieve active scheduled message');
 assert.strictEqual(activeSched.id, createdSched.id);
+assert.strictEqual(activeSched.mediaUrl, '/api/scheduled-messages/media/cafe-highlands.jpg');
+
+const updatedSchedWithNewImg = store.updateScheduledMessage(createdSched.id, {
+  mediaUrl: '/api/scheduled-messages/media/cafe-the-coffee-house.jpg',
+  mediaName: 'cafe-the-coffee-house.jpg'
+});
+assert.strictEqual(updatedSchedWithNewImg.mediaUrl, '/api/scheduled-messages/media/cafe-the-coffee-house.jpg', 'Must update mediaUrl');
+assert.strictEqual(updatedSchedWithNewImg.mediaName, 'cafe-the-coffee-house.jpg', 'Must update mediaName');
 
 // 3. Inbound Reply Guard: Khách nhắn tin đến -> tự động chuyển paused_by_reply
 const pausedSched = store.pauseScheduledMessageByReply(schedThreadId);

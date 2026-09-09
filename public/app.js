@@ -5680,7 +5680,8 @@ function renderScheduledMsgPinBar(schedule) {
   if (timeEl) timeEl.innerText = formattedTime;
   if (snippetEl) {
     const cleanSnippet = (schedule.message || '').replace(/\n/g, ' ').trim();
-    snippetEl.innerText = cleanSnippet ? `"${cleanSnippet.substring(0, 35)}${cleanSnippet.length > 35 ? '...' : ''}"` : '';
+    const mediaBadge = schedule.mediaUrl ? '🖼️ ' : '';
+    snippetEl.innerText = `${mediaBadge}${cleanSnippet ? `"${cleanSnippet.substring(0, 32)}${cleanSnippet.length > 32 ? '...' : ''}"` : (schedule.mediaUrl ? '[Hình ảnh]' : '')}`;
   }
 
   if (schedule.status === 'paused_by_reply') {
@@ -5700,6 +5701,75 @@ function renderScheduledMsgPinBar(schedule) {
   }
 
   pinBar.style.display = 'flex';
+}
+
+function showScheduleImagePreview(mediaUrl, mediaName = '') {
+  const wrap = document.getElementById('sched-image-preview-wrap');
+  const img = document.getElementById('sched-image-preview-img');
+  const nameEl = document.getElementById('sched-image-preview-name');
+  const urlInput = document.getElementById('sched-media-url');
+  const nameInput = document.getElementById('sched-media-name');
+  const pickBtn = document.getElementById('btn-sched-pick-image');
+
+  if (!wrap || !img || !urlInput) return;
+
+  urlInput.value = mediaUrl || '';
+  if (nameInput) nameInput.value = mediaName || (mediaUrl ? mediaUrl.split('/').pop() : '');
+
+  if (mediaUrl) {
+    img.src = mediaUrl;
+    if (nameEl) nameEl.innerText = mediaName || mediaUrl.split('/').pop();
+    wrap.style.display = 'flex';
+    if (pickBtn) pickBtn.innerHTML = '<span>🔄</span><span>Đổi Hình Ảnh</span>';
+  } else {
+    wrap.style.display = 'none';
+    img.src = '';
+    if (nameEl) nameEl.innerText = '-';
+    if (pickBtn) pickBtn.innerHTML = '<span>📁</span><span>Thêm / Chọn Hình Ảnh</span>';
+  }
+}
+
+function clearScheduleImage() {
+  showScheduleImagePreview('', '');
+  const fileInput = document.getElementById('sched-image-file-input');
+  if (fileInput) fileInput.value = '';
+}
+
+async function handleScheduleImageUpload(input) {
+  const file = input?.files?.[0];
+  if (!file) return;
+
+  if (!file.type.startsWith('image/')) {
+    showToast('Vui lòng chọn tệp hình ảnh hợp lệ!', 'warning');
+    input.value = '';
+    return;
+  }
+
+  if (file.size > 25 * 1024 * 1024) {
+    showToast('Ảnh quá lớn (tối đa 25MB)!', 'warning');
+    input.value = '';
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('image', file);
+
+  try {
+    showToast('Đang tải ảnh lên...', 'info');
+    const res = await fetch('/api/scheduled-messages/upload', {
+      method: 'POST',
+      body: formData
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Lỗi tải ảnh lên');
+
+    showScheduleImagePreview(json.mediaUrl, json.mediaName || file.name);
+    showToast('Đã đính kèm ảnh thành công! 📸', 'success');
+  } catch (err) {
+    showToast(err.message, 'error');
+  } finally {
+    input.value = '';
+  }
 }
 
 function openScheduleMsgModal(editData = null) {
@@ -5748,6 +5818,13 @@ function openScheduleMsgModal(editData = null) {
     if (btnDelete) btnDelete.style.display = '';
     if (btnSave) btnSave.innerHTML = '<span>💾 Lưu Thay Đổi</span>';
 
+    // Nạp ảnh nếu có
+    if (target.mediaUrl) {
+      showScheduleImagePreview(target.mediaUrl, target.mediaName);
+    } else {
+      clearScheduleImage();
+    }
+
     const d = new Date(target.scheduledAt);
     const yyyy = d.getFullYear();
     const mm = String(d.getMonth() + 1).padStart(2, '0');
@@ -5763,6 +5840,8 @@ function openScheduleMsgModal(editData = null) {
     if (idInput) idInput.value = '';
     if (btnDelete) btnDelete.style.display = 'none';
     if (btnSave) btnSave.innerHTML = '<span>⏰ Lên Lịch Gửi</span>';
+
+    clearScheduleImage();
 
     // Kế thừa nội dung từ #chat-input nếu có
     const chatInput = document.getElementById('chat-input');
@@ -5855,8 +5934,30 @@ function handleSelectQuickMsgForSchedule(qmId) {
 
   const contentInput = document.getElementById('sched-content');
   if (contentInput) {
-    contentInput.value = qm.content;
+    contentInput.value = qm.content || '';
     showToast(`Đã nạp mẫu: ${qm.title}`, 'info');
+  }
+
+  // Tự động nạp ảnh đính kèm từ Tin nhắn nhanh nếu có
+  let mUrl = qm.mediaUrl || '';
+  let mName = qm.mediaName || '';
+  if (mUrl && (mUrl.startsWith('[') || mUrl.startsWith('{'))) {
+    try {
+      const parsed = JSON.parse(mUrl);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        mUrl = parsed[0]?.mediaUrl || parsed[0]?.url || (typeof parsed[0] === 'string' ? parsed[0] : '');
+        mName = parsed[0]?.mediaName || parsed[0]?.name || '';
+      } else if (parsed && typeof parsed === 'object') {
+        mUrl = parsed.mediaUrl || parsed.url || '';
+        mName = parsed.mediaName || parsed.name || '';
+      }
+    } catch (_) {}
+  }
+
+  if (mUrl) {
+    showScheduleImagePreview(mUrl, mName || 'Ảnh từ tin nhắn nhanh');
+  } else {
+    clearScheduleImage();
   }
 }
 
@@ -5866,19 +5967,23 @@ async function saveScheduledMessage() {
   const contentInput = document.getElementById('sched-content');
   const dateInput = document.getElementById('sched-date-input');
   const timeInput = document.getElementById('sched-time-input');
+  const mediaUrlInput = document.getElementById('sched-media-url');
+  const mediaNameInput = document.getElementById('sched-media-name');
 
   const threadId = threadInput?.value || state.activeThreadId;
   const message = (contentInput?.value || '').trim();
   const dateVal = dateInput?.value;
   const timeVal = timeInput?.value;
   const schedId = idInput?.value;
+  const mediaUrl = (mediaUrlInput?.value || '').trim();
+  const mediaName = (mediaNameInput?.value || '').trim();
 
   if (!threadId) {
     showToast('Chưa chọn cuộc trò chuyện!', 'error');
     return;
   }
-  if (!message) {
-    showToast('Nội dung tin nhắn không được để trống!', 'warning');
+  if (!message && !mediaUrl) {
+    showToast('Vui lòng nhập nội dung tin nhắn hoặc đính kèm ảnh!', 'warning');
     contentInput?.focus();
     return;
   }
@@ -5903,14 +6008,14 @@ async function saveScheduledMessage() {
       res = await fetch(`/api/scheduled-messages/${schedId}`, {
         method: 'PUT',
         headers: getHeaders(),
-        body: JSON.stringify({ message, scheduledAt: targetMs })
+        body: JSON.stringify({ message, scheduledAt: targetMs, mediaUrl, mediaName })
       });
     } else {
       // Create
       res = await fetch(`/api/conversations/${threadId}/scheduled-message`, {
         method: 'POST',
         headers: getHeaders(),
-        body: JSON.stringify({ message, scheduledAt: targetMs, customerName })
+        body: JSON.stringify({ message, scheduledAt: targetMs, customerName, mediaUrl, mediaName })
       });
     }
 

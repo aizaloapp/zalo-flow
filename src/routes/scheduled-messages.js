@@ -1,10 +1,69 @@
 ﻿import { Router } from 'express';
+import multer from 'multer';
+import fs from 'fs';
+import path from 'path';
+import crypto from 'crypto';
 import { requireAuth } from '../middleware/auth.js';
 import { localStore } from '../utils/local-store.js';
 import { scheduledDispatcher } from '../utils/scheduled-dispatcher.js';
 import { logger } from '../utils/logger.js';
 
 const router = Router();
+
+// Ensure upload directory exists for scheduled media
+const scheduledUploadDir = path.resolve('data/uploads/scheduled');
+if (!fs.existsSync(scheduledUploadDir)) {
+  fs.mkdirSync(scheduledUploadDir, { recursive: true });
+}
+
+// Multer Storage Configuration (25MB limit)
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, scheduledUploadDir),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    const safeName = `sched_${crypto.randomUUID().substring(0, 8)}_${Date.now()}${ext}`;
+    cb(null, safeName);
+  }
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 25 * 1024 * 1024 }
+});
+
+// =============================================================================
+// 0. Static Media Serving & Upload for Scheduled Messages
+// =============================================================================
+router.get('/scheduled-messages/media/:filename', requireAuth, (req, res) => {
+  const filename = path.basename(req.params.filename);
+  const filePath = path.resolve(scheduledUploadDir, filename);
+  if (fs.existsSync(filePath)) {
+    res.sendFile(filePath);
+  } else {
+    res.status(404).send('Not Found');
+  }
+});
+
+router.post('/scheduled-messages/upload', requireAuth, upload.single('file'), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'Không tìm thấy tệp tải lên' });
+    }
+    const mediaUrl = `/api/scheduled-messages/media/${req.file.filename}`;
+    res.json({
+      status: 'success',
+      data: {
+        mediaUrl,
+        mediaName: req.file.originalname,
+        filename: req.file.filename,
+        size: req.file.size
+      }
+    });
+  } catch (err) {
+    logger.error(`[Scheduled Msg Upload Error] ${err.message}`);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // =============================================================================
 // 1. GET /conversations/:threadId/scheduled-message - Lấy lịch hẹn của hội thoại
@@ -26,7 +85,7 @@ router.get('/conversations/:threadId/scheduled-message', requireAuth, (req, res)
 router.post('/conversations/:threadId/scheduled-message', requireAuth, (req, res) => {
   try {
     const { threadId } = req.params;
-    const { message, scheduledAt, customerName } = req.body;
+    const { message, scheduledAt, customerName, mediaUrl = '', mediaName = '' } = req.body;
 
     // Guard 1: Chặn nhóm chat
     const conv = localStore.getConversation(threadId);
@@ -42,9 +101,10 @@ router.post('/conversations/:threadId/scheduled-message', requireAuth, (req, res
       });
     }
 
-    // Guard 3: Validate message
-    if (!message || !message.trim()) {
-      return res.status(400).json({ error: 'Nội dung tin nhắn hẹn giờ không được để trống' });
+    // Guard 3: Validate message / mediaUrl
+    const trimmedMsg = (message || '').trim();
+    if (!trimmedMsg && !mediaUrl) {
+      return res.status(400).json({ error: 'Nội dung tin nhắn hoặc hình ảnh đính kèm là bắt buộc' });
     }
 
     // Guard 4: Validate scheduledAt (Epoch ms)
@@ -59,7 +119,9 @@ router.post('/conversations/:threadId/scheduled-message', requireAuth, (req, res
     const created = localStore.createScheduledMessage({
       threadId,
       customerName: (customerName || conv?.name || '').trim(),
-      message: message.trim(),
+      message: trimmedMsg,
+      mediaUrl: (mediaUrl || '').trim(),
+      mediaName: (mediaName || '').trim(),
       scheduledAt: schedMs
     });
 
@@ -77,7 +139,7 @@ router.post('/conversations/:threadId/scheduled-message', requireAuth, (req, res
 router.put('/scheduled-messages/:id', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
-    const { message, scheduledAt, action } = req.body;
+    const { message, scheduledAt, action, mediaUrl, mediaName } = req.body;
 
     const existing = localStore.getScheduledMessageById(id);
     if (!existing) {
@@ -105,8 +167,13 @@ router.put('/scheduled-messages/:id', requireAuth, async (req, res) => {
     // Normal Update: Sửa nội dung hoặc dời giờ hẹn
     const updates = {};
     if (message !== undefined) {
-      if (!message.trim()) return res.status(400).json({ error: 'Nội dung tin nhắn không được để trống' });
-      updates.message = message.trim();
+      updates.message = (message || '').trim();
+    }
+    if (mediaUrl !== undefined) {
+      updates.mediaUrl = (mediaUrl || '').trim();
+    }
+    if (mediaName !== undefined) {
+      updates.mediaName = (mediaName || '').trim();
     }
     if (scheduledAt !== undefined) {
       const schedMs = Number(scheduledAt);
@@ -114,7 +181,6 @@ router.put('/scheduled-messages/:id', requireAuth, async (req, res) => {
         return res.status(400).json({ error: 'Thời gian dời hẹn phải ở tương lai' });
       }
       updates.scheduledAt = schedMs;
-      // Nếu đang ở trạng thái missed, dời giờ sẽ reset về pending
       if (existing.status === 'missed') {
         updates.status = 'pending';
         updates.error = '';
