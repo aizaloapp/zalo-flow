@@ -20,6 +20,8 @@ import chatActionRoutes from './routes/chat-actions.js';
 import aiSettingsRoutes from './routes/ai-settings.js';
 import backupRoutes from './routes/backup.js';
 import { updaterRouter } from './routes/updater.js';
+import scheduledMsgRoutes from './routes/scheduled-messages.js';
+import { scheduledDispatcher } from './utils/scheduled-dispatcher.js';
 
 // Import Adapters & Utilities
 import { chatwootInboundAdapter } from './adapters/chatwoot-inbound.js';
@@ -53,6 +55,11 @@ zaloClient.onMessage(async (ctx) => {
 
   // 3. AI Auto-Reply Engine
   await aiAgentAdapter.handleInbound(ctx);
+
+  // 4. Inbound Reply Guard for Scheduled Messages
+  if (!ctx.isSelf && ctx.threadId) {
+    localStore.pauseScheduledMessageByReply(ctx.threadId);
+  }
 });
 
 // -----------------------------------------------------------------------------
@@ -133,6 +140,10 @@ localStore.on('conversationUpdated', (conv) => {
   broadcastSSE('conversation_updated', conv);
 });
 
+localStore.on('scheduledMessageUpdated', (data) => {
+  broadcastSSE('scheduled_msg_updated', data);
+});
+
 // -----------------------------------------------------------------------------
 // Mount Modular REST Route Handlers
 // -----------------------------------------------------------------------------
@@ -140,6 +151,7 @@ app.use('/api', tagRoutes);
 app.use('/api', quickMsgRoutes);
 app.use('/api', campaignRoutes);
 app.use('/api', chatActionRoutes);
+app.use('/api', scheduledMsgRoutes);
 app.use('/api', aiSettingsRoutes);
 app.use('/api', backupRoutes);
 app.use('/api', updaterRouter);
@@ -474,6 +486,7 @@ function startServer(port, host, attempt = 0, maxAttempts = 5) {
       server,
       sseBroadcast: (event, data) => broadcastSSE(event, data)
     });
+    scheduledDispatcher.start();
 
     // In Packaged Desktop Mode: Auto-open system default browser
     if (isPackaged) {
@@ -491,6 +504,7 @@ function startServer(port, host, attempt = 0, maxAttempts = 5) {
   process.on('SIGTERM', () => {
     logger.info('Received SIGTERM signal. Executing graceful shutdown...');
     try {
+      scheduledDispatcher.stop();
       server.close();
       localStore.close();
     } catch {}
@@ -500,6 +514,7 @@ function startServer(port, host, attempt = 0, maxAttempts = 5) {
   process.on('SIGINT', () => {
     logger.info('Received SIGINT (Ctrl+C). Executing graceful shutdown...');
     try {
+      scheduledDispatcher.stop();
       server.close();
       localStore.close();
     } catch {}

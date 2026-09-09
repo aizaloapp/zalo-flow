@@ -2846,3 +2846,180 @@ body {
   color: #94a3b8;
 }
 
+/* =============================================================================
+   SCHEDULED MESSAGES (1-1 IN-THREAD DIRECT SCHEDULING & STICKY PIN BAR)
+   ============================================================================= */
+
+.scheduled-msg-pin-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 16px;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  font-size: 0.82rem;
+  color: var(--text-main);
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.scheduled-msg-pin-bar.status-paused {
+  background: rgba(245, 158, 11, 0.1);
+  border-bottom-color: rgba(245, 158, 11, 0.35);
+  color: #f59e0b;
+}
+
+.scheduled-msg-pin-bar.status-missed {
+  background: rgba(239, 68, 68, 0.1);
+  border-bottom-color: rgba(239, 68, 68, 0.35);
+  color: #ef4444;
+}
+
+.pin-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.pin-icon {
+  font-size: 1.1rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.pin-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.pin-title {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.pin-time {
+  font-weight: 700;
+  color: var(--primary);
+  white-space: nowrap;
+  background: rgba(56, 189, 248, 0.12);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.scheduled-msg-pin-bar.status-paused .pin-time {
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.15);
+}
+
+.scheduled-msg-pin-bar.status-missed .pin-time {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.15);
+}
+
+.pin-snippet {
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 320px;
+}
+
+.pin-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.pin-btn {
+  border: 1px solid var(--border);
+  background: var(--bg-sidebar);
+  color: var(--text-main);
+  padding: 3px 9px;
+  border-radius: 6px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pin-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.pin-btn-resume {
+  background: rgba(245, 158, 11, 0.18);
+  border-color: rgba(245, 158, 11, 0.4);
+  color: #f59e0b;
+  font-weight: 700;
+}
+
+.pin-btn-resume:hover {
+  background: rgba(245, 158, 11, 0.28);
+  color: #fbbf24;
+}
+
+.pin-btn-sendnow {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.35);
+  color: #10b981;
+  font-weight: 700;
+}
+
+.pin-btn-sendnow:hover {
+  background: rgba(16, 185, 129, 0.25);
+  color: #34d399;
+}
+
+.pin-btn-cancel {
+  color: var(--text-muted);
+}
+
+.pin-btn-cancel:hover {
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.08);
+}
+
+/* Modal Schedule Message Preset Pills */
+.sched-preset-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.sched-preset-btn {
+  background: var(--bg-sidebar);
+  border: 1px solid var(--border);
+  color: var(--text-main);
+  padding: 4px 10px;
+  border-radius: 14px;
+  font-size: 0.76rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.sched-preset-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: rgba(56, 189, 248, 0.08);
+}
+
+.sched-datetime-preview {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  background: var(--bg-sidebar);
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px dashed var(--border);
+}
+
+

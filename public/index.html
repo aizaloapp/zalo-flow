@@ -184,6 +184,24 @@
             <button onclick="dismissUnfriendedWarning()" style="background: none; border: none; font-size: 1.2rem; color: #a16207; cursor: pointer; line-height: 1; padding: 0 4px;" title="Đóng cảnh báo">&times;</button>
           </div>
 
+          <!-- Scheduled Message Sticky Pin Bar -->
+          <div id="scheduled-msg-pin-bar" class="scheduled-msg-pin-bar" style="display: none;">
+            <div class="pin-bar-left">
+              <span class="pin-icon" id="pin-sched-icon">⏰</span>
+              <div class="pin-info">
+                <span class="pin-title" id="pin-sched-title">Hẹn gửi:</span>
+                <span class="pin-time" id="pin-sched-time">--:--</span>
+                <span class="pin-snippet" id="pin-sched-snippet">"..."</span>
+              </div>
+            </div>
+            <div class="pin-bar-actions" id="pin-sched-actions">
+              <button type="button" class="pin-btn pin-btn-resume" id="btn-pin-resume" style="display: none;" onclick="resumeActiveSchedule()" title="Tiếp tục gửi lịch hẹn">Tiếp tục</button>
+              <button type="button" class="pin-btn pin-btn-sendnow" id="btn-pin-sendnow" style="display: none;" onclick="sendNowActiveSchedule()" title="Gửi tin nhắn này ngay bây giờ">Gửi ngay</button>
+              <button type="button" class="pin-btn pin-btn-edit" id="btn-pin-edit" onclick="editActiveSchedule()" title="Sửa nội dung hoặc dời giờ">Sửa</button>
+              <button type="button" class="pin-btn pin-btn-cancel" id="btn-pin-cancel" onclick="cancelActiveSchedule()" title="Hủy lịch hẹn">Hủy</button>
+            </div>
+          </div>
+
           <!-- Message Stream -->
           <div class="messages-stream" id="messages-stream">
             <!-- Dynamic message bubbles rendered here -->
@@ -205,9 +223,10 @@
 
             <div class="quick-autocomplete-popup" id="quick-autocomplete-popup"></div>
 
-            <!-- Toolbar Actions: Quick Msg, Image, Doc -->
+            <!-- Toolbar Actions: Quick Msg, Schedule, Image, Doc -->
             <div class="chat-toolbar">
               <button class="toolbar-btn" id="btn-quick-msg-toggle" onclick="toggleQuickMsgPopover(event)" title="Tin nhắn nhanh (hoặc gõ / vào ô chat)">⚡</button>
+              <button class="toolbar-btn" id="btn-schedule-msg-toggle" onclick="openScheduleMsgModal()" title="Hẹn giờ gửi tin nhắn trực tiếp">⏰</button>
               <button class="toolbar-btn" onclick="document.getElementById('chat-image-input').click()" title="Gửi hình ảnh (hoặc Dán ảnh Ctrl + V)">🖼️</button>
               <button class="toolbar-btn" onclick="document.getElementById('chat-file-input').click()" title="Đính kèm tài liệu / tệp tin">📎</button>
               <input type="file" id="chat-image-input" accept="image/*" multiple style="display: none;" onchange="handleFileInputChange(event, 'image')">
@@ -365,6 +384,76 @@
       </div>
       <div class="modal-footer">
         <button class="filter-btn" onclick="closeModal('modal-quick-msg')">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ⏰ MODAL 2.5: HẸN GIỜ GỬI TIN NHẮN (SCHEDULED MESSAGE) -->
+  <div class="modal-overlay" id="modal-schedule-msg">
+    <div class="modal-dialog" style="max-width: 520px;">
+      <div class="modal-header">
+        <h2 class="modal-title" id="sched-modal-title">⏰ Hẹn Giờ Gửi Tin Nhắn</h2>
+        <button class="modal-close-btn" onclick="closeModal('modal-schedule-msg')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="sched-id">
+        <input type="hidden" id="sched-thread-id">
+
+        <!-- Chọn Mẫu Từ Tin Nhắn Nhanh (Flat Select - Anti-Modal Hell) -->
+        <div class="form-group">
+          <label class="form-label" style="display: flex; justify-content: space-between; align-items: center;">
+            <span>⚡ Chọn Mẫu Từ "Tin Nhắn Nhanh"</span>
+            <span style="font-size: 0.72rem; color: var(--text-muted);">Tùy chọn nạp nhanh</span>
+          </label>
+          <select class="form-input" id="sched-quick-msg-select" onchange="handleSelectQuickMsgForSchedule(this.value)">
+            <option value="">-- Chọn mẫu câu sẵn có (hoặc tự soạn bên dưới) --</option>
+          </select>
+        </div>
+
+        <!-- Mốc Chọn Nhanh Thời Gian (Preset Pills) -->
+        <div class="form-group">
+          <label class="form-label">Chọn Nhanh Thời Gian</label>
+          <div class="sched-preset-row">
+            <button type="button" class="sched-preset-btn" onclick="applySchedulePreset(15)">+15 phút</button>
+            <button type="button" class="sched-preset-btn" onclick="applySchedulePreset(60)">+1 giờ</button>
+            <button type="button" class="sched-preset-btn" onclick="applySchedulePreset('tomorrow_morning')">08:00 Sáng mai</button>
+            <button type="button" class="sched-preset-btn" onclick="applySchedulePreset('tomorrow_afternoon')">14:00 Chiều mai</button>
+          </div>
+        </div>
+
+        <!-- Bộ Chọn Ngày & Giờ Tùy Chỉnh -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div class="form-group">
+            <label class="form-label">Ngày Gửi</label>
+            <input type="date" class="form-input" id="sched-date-input" onchange="updateSchedulePreview()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Giờ Gửi</label>
+            <input type="time" class="form-input" id="sched-time-input" onchange="updateSchedulePreview()">
+          </div>
+        </div>
+
+        <div class="sched-datetime-preview" id="sched-datetime-preview">
+          📅 Dự kiến gửi: <b id="sched-preview-text">Chưa chọn thời gian</b>
+        </div>
+
+        <!-- Khung Soạn Thảo Nội Dung -->
+        <div class="form-group" style="margin-top: 10px;">
+          <label class="form-label" style="display: flex; justify-content: space-between; align-items: center;">
+            <span>Nội Dung Tin Nhắn Hẹn Giờ</span>
+            <span style="font-size: 0.74rem; color: #38bdf8;">Hỗ trợ {name}, Spintax {A|B}</span>
+          </label>
+          <textarea class="form-textarea" id="sched-content" rows="4" placeholder="Ví dụ: Chào anh {name}, 9h sáng nay mình gặp ở quán cafe Highlands như đã hẹn nha anh!"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
+        <button type="button" class="filter-btn" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3); display: none;" id="btn-sched-delete-in-modal" onclick="deleteScheduleFromModal()">🗑️ Hủy Lịch</button>
+        <div style="display: flex; gap: 8px; margin-left: auto;">
+          <button type="button" class="filter-btn" onclick="closeModal('modal-schedule-msg')">Đóng</button>
+          <button type="button" class="send-btn" id="btn-sched-save" onclick="saveScheduledMessage()">
+            <span>⏰ Lên Lịch Gửi</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>

@@ -2016,6 +2016,15 @@ async function selectConversation(threadId) {
     lazyResolveStranger(threadId);
   }
 
+  // Group vs 1-1 Chat Scheduling Guard
+  const schedToggleBtn = document.getElementById('btn-schedule-msg-toggle');
+  if (schedToggleBtn) {
+    schedToggleBtn.style.display = conv.isGroup ? 'none' : '';
+  }
+
+  // Tải thông tin lịch hẹn đang hoạt động (nếu có)
+  loadActiveScheduledMessage(threadId);
+
   await loadMessages(threadId);
 }
 
@@ -3080,6 +3089,12 @@ function handleStreamEvent(eventType, rawData) {
           }
         }
       }
+    } else if (eventType === 'scheduled_msg_updated') {
+      const sched = data;
+      if (sched && state.activeThreadId && String(sched.threadId) === String(state.activeThreadId)) {
+        state.activeSchedule = sched;
+        renderScheduledMsgPinBar(sched);
+      }
     } else if (eventType === 'sync_progress') {
       updateSyncProgressUI(data);
     } else if (eventType === 'sync_complete') {
@@ -3195,7 +3210,9 @@ function fallbackToSSE() {
       'sync_complete',
       'zalo_profile',
       'zalo_qr',
-      'memory_restart'
+      'memory_restart',
+      'conversation_updated',
+      'scheduled_msg_updated'
     ];
 
     sseEvents.forEach(evt => {
@@ -5601,6 +5618,390 @@ async function lazyResolveStranger(threadId) {
     console.warn('[LazyResolve] Request error:', err.message);
   } finally {
     resolvingStrangerUids.delete(String(threadId));
+  }
+}
+
+// =============================================================================
+// SCHEDULED MESSAGES LOGIC (1-1 IN-THREAD DIRECT SCHEDULING)
+// =============================================================================
+
+async function loadActiveScheduledMessage(threadId) {
+  state.activeSchedule = null;
+  const pinBar = document.getElementById('scheduled-msg-pin-bar');
+  if (!threadId) {
+    if (pinBar) pinBar.style.display = 'none';
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/conversations/${threadId}/scheduled-message`, { headers: getHeaders() });
+    if (!res.ok) {
+      if (pinBar) pinBar.style.display = 'none';
+      return;
+    }
+    const json = await res.json();
+    state.activeSchedule = json.data || null;
+    renderScheduledMsgPinBar(state.activeSchedule);
+  } catch (err) {
+    console.warn('[Scheduled Message] Failed to load active schedule:', err);
+    if (pinBar) pinBar.style.display = 'none';
+  }
+}
+
+function renderScheduledMsgPinBar(schedule) {
+  const pinBar = document.getElementById('scheduled-msg-pin-bar');
+  if (!pinBar) return;
+
+  if (!schedule || ['sent', 'cancelled'].includes(schedule.status)) {
+    pinBar.style.display = 'none';
+    return;
+  }
+
+  const iconEl = document.getElementById('pin-sched-icon');
+  const titleEl = document.getElementById('pin-sched-title');
+  const timeEl = document.getElementById('pin-sched-time');
+  const snippetEl = document.getElementById('pin-sched-snippet');
+  const btnResume = document.getElementById('btn-pin-resume');
+  const btnSendNow = document.getElementById('btn-pin-sendnow');
+  const btnEdit = document.getElementById('btn-pin-edit');
+  const btnCancel = document.getElementById('btn-pin-cancel');
+
+  pinBar.classList.remove('status-paused', 'status-missed');
+  if (btnResume) btnResume.style.display = 'none';
+  if (btnSendNow) btnSendNow.style.display = 'none';
+  if (btnEdit) btnEdit.style.display = '';
+  if (btnCancel) btnCancel.style.display = '';
+
+  const dateObj = new Date(schedule.scheduledAt);
+  const timeStr = dateObj.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+  const dateStr = dateObj.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+  const formattedTime = `${timeStr} (${dateStr})`;
+
+  if (timeEl) timeEl.innerText = formattedTime;
+  if (snippetEl) {
+    const cleanSnippet = (schedule.message || '').replace(/\n/g, ' ').trim();
+    snippetEl.innerText = cleanSnippet ? `"${cleanSnippet.substring(0, 35)}${cleanSnippet.length > 35 ? '...' : ''}"` : '';
+  }
+
+  if (schedule.status === 'paused_by_reply') {
+    pinBar.classList.add('status-paused');
+    if (iconEl) iconEl.innerText = '⚠️';
+    if (titleEl) titleEl.innerText = 'Khách vừa nhắn mới (Tạm dừng):';
+    if (btnResume) btnResume.style.display = '';
+  } else if (schedule.status === 'missed') {
+    pinBar.classList.add('status-missed');
+    if (iconEl) iconEl.innerText = '⚠️';
+    if (titleEl) titleEl.innerText = 'Bỏ lỡ do máy tắt:';
+    if (btnSendNow) btnSendNow.style.display = '';
+  } else {
+    // pending or processing
+    if (iconEl) iconEl.innerText = '⏰';
+    if (titleEl) titleEl.innerText = 'Hẹn gửi:';
+  }
+
+  pinBar.style.display = 'flex';
+}
+
+function openScheduleMsgModal(editData = null) {
+  if (!state.activeThreadId) {
+    showToast('Vui lòng chọn một cuộc trò chuyện để hẹn giờ!', 'warning');
+    return;
+  }
+
+  const conv = state.conversations.find(c => c.id === state.activeThreadId);
+  if (conv && conv.isGroup) {
+    showToast('Tính năng hẹn giờ hiện chỉ hỗ trợ cuộc trò chuyện cá nhân 1-1!', 'warning');
+    return;
+  }
+
+  const target = editData || state.activeSchedule;
+  const modalTitle = document.getElementById('sched-modal-title');
+  const idInput = document.getElementById('sched-id');
+  const threadInput = document.getElementById('sched-thread-id');
+  const contentInput = document.getElementById('sched-content');
+  const dateInput = document.getElementById('sched-date-input');
+  const timeInput = document.getElementById('sched-time-input');
+  const selectQm = document.getElementById('sched-quick-msg-select');
+  const btnDelete = document.getElementById('btn-sched-delete-in-modal');
+  const btnSave = document.getElementById('btn-sched-save');
+
+  // Populate Quick Messages select
+  if (selectQm) {
+    selectQm.innerHTML = '<option value="">-- Chọn mẫu câu sẵn có (hoặc tự soạn bên dưới) --</option>';
+    if (Array.isArray(state.quickMessages)) {
+      state.quickMessages.forEach(qm => {
+        const opt = document.createElement('option');
+        opt.value = qm.id;
+        opt.textContent = `${qm.shortcut} — ${qm.title}`;
+        selectQm.appendChild(opt);
+      });
+    }
+  }
+
+  if (threadInput) threadInput.value = state.activeThreadId;
+
+  if (target && target.id && ['pending', 'processing', 'paused_by_reply', 'missed'].includes(target.status)) {
+    // Mode EDIT
+    if (modalTitle) modalTitle.innerText = `⏰ Chỉnh Sửa Lịch Hẹn (${conv?.name || 'Khách hàng'})`;
+    if (idInput) idInput.value = target.id;
+    if (contentInput) contentInput.value = target.message || '';
+    if (btnDelete) btnDelete.style.display = '';
+    if (btnSave) btnSave.innerHTML = '<span>💾 Lưu Thay Đổi</span>';
+
+    const d = new Date(target.scheduledAt);
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const hh = String(d.getHours()).padStart(2, '0');
+    const min = String(d.getMinutes()).padStart(2, '0');
+
+    if (dateInput) dateInput.value = `${yyyy}-${mm}-${dd}`;
+    if (timeInput) timeInput.value = `${hh}:${min}`;
+  } else {
+    // Mode CREATE
+    if (modalTitle) modalTitle.innerText = `⏰ Hẹn Giờ Gửi Tin Nhắn (${conv?.name || 'Khách hàng'})`;
+    if (idInput) idInput.value = '';
+    if (btnDelete) btnDelete.style.display = 'none';
+    if (btnSave) btnSave.innerHTML = '<span>⏰ Lên Lịch Gửi</span>';
+
+    // Kế thừa nội dung từ #chat-input nếu có
+    const chatInput = document.getElementById('chat-input');
+    const currentTyped = (chatInput?.value || '').trim();
+    if (contentInput) {
+      contentInput.value = currentTyped;
+    }
+
+    // Default time: +1 hour
+    applySchedulePreset(60);
+  }
+
+  updateSchedulePreview();
+  openModal('modal-schedule-msg');
+}
+
+function applySchedulePreset(preset) {
+  const dateInput = document.getElementById('sched-date-input');
+  const timeInput = document.getElementById('sched-time-input');
+  if (!dateInput || !timeInput) return;
+
+  const targetDate = new Date();
+
+  if (typeof preset === 'number') {
+    targetDate.setMinutes(targetDate.getMinutes() + preset);
+  } else if (preset === 'tomorrow_morning') {
+    targetDate.setDate(targetDate.getDate() + 1);
+    targetDate.setHours(8, 0, 0, 0);
+  } else if (preset === 'tomorrow_afternoon') {
+    targetDate.setDate(targetDate.getDate() + 1);
+    targetDate.setHours(14, 0, 0, 0);
+  }
+
+  const yyyy = targetDate.getFullYear();
+  const mm = String(targetDate.getMonth() + 1).padStart(2, '0');
+  const dd = String(targetDate.getDate()).padStart(2, '0');
+  const hh = String(targetDate.getHours()).padStart(2, '0');
+  const min = String(targetDate.getMinutes()).padStart(2, '0');
+
+  dateInput.value = `${yyyy}-${mm}-${dd}`;
+  timeInput.value = `${hh}:${min}`;
+  updateSchedulePreview();
+}
+
+function updateSchedulePreview() {
+  const previewText = document.getElementById('sched-preview-text');
+  const dateInput = document.getElementById('sched-date-input');
+  const timeInput = document.getElementById('sched-time-input');
+  if (!previewText) return;
+
+  if (!dateInput?.value || !timeInput?.value) {
+    previewText.innerText = 'Vui lòng chọn ngày và giờ gửi';
+    previewText.style.color = 'var(--text-muted)';
+    return;
+  }
+
+  const selectedMs = new Date(`${dateInput.value}T${timeInput.value}`).getTime();
+  if (isNaN(selectedMs)) {
+    previewText.innerText = 'Thời gian không hợp lệ';
+    previewText.style.color = '#ef4444';
+    return;
+  }
+
+  const nowMs = Date.now();
+  if (selectedMs <= nowMs) {
+    previewText.innerText = 'Thời gian đã qua trong quá khứ! Vui lòng chọn mốc tương lai.';
+    previewText.style.color = '#ef4444';
+    return;
+  }
+
+  const d = new Date(selectedMs);
+  const diffMinutes = Math.round((selectedMs - nowMs) / 60000);
+  let relStr = '';
+  if (diffMinutes < 60) {
+    relStr = `(khoảng ${diffMinutes} phút nữa)`;
+  } else if (diffMinutes < 1440) {
+    relStr = `(khoảng ${Math.round(diffMinutes / 60)} giờ nữa)`;
+  } else {
+    relStr = `(sau ${Math.round(diffMinutes / 1440)} ngày)`;
+  }
+
+  previewText.innerText = `${d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} ngày ${d.toLocaleDateString('vi-VN')} ${relStr}`;
+  previewText.style.color = '#38bdf8';
+}
+
+function handleSelectQuickMsgForSchedule(qmId) {
+  if (!qmId) return;
+  const qm = (state.quickMessages || []).find(q => q.id === qmId);
+  if (!qm) return;
+
+  const contentInput = document.getElementById('sched-content');
+  if (contentInput) {
+    contentInput.value = qm.content;
+    showToast(`Đã nạp mẫu: ${qm.title}`, 'info');
+  }
+}
+
+async function saveScheduledMessage() {
+  const idInput = document.getElementById('sched-id');
+  const threadInput = document.getElementById('sched-thread-id');
+  const contentInput = document.getElementById('sched-content');
+  const dateInput = document.getElementById('sched-date-input');
+  const timeInput = document.getElementById('sched-time-input');
+
+  const threadId = threadInput?.value || state.activeThreadId;
+  const message = (contentInput?.value || '').trim();
+  const dateVal = dateInput?.value;
+  const timeVal = timeInput?.value;
+  const schedId = idInput?.value;
+
+  if (!threadId) {
+    showToast('Chưa chọn cuộc trò chuyện!', 'error');
+    return;
+  }
+  if (!message) {
+    showToast('Nội dung tin nhắn không được để trống!', 'warning');
+    contentInput?.focus();
+    return;
+  }
+  if (!dateVal || !timeVal) {
+    showToast('Vui lòng chọn ngày và giờ hẹn gửi!', 'warning');
+    return;
+  }
+
+  const targetMs = new Date(`${dateVal}T${timeVal}`).getTime();
+  if (isNaN(targetMs) || targetMs <= Date.now()) {
+    showToast('Thời gian hẹn phải ở tương lai!', 'warning');
+    return;
+  }
+
+  const conv = state.conversations.find(c => c.id === threadId);
+  const customerName = conv?.name || '';
+
+  try {
+    let res;
+    if (schedId) {
+      // Update
+      res = await fetch(`/api/scheduled-messages/${schedId}`, {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify({ message, scheduledAt: targetMs })
+      });
+    } else {
+      // Create
+      res = await fetch(`/api/conversations/${threadId}/scheduled-message`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ message, scheduledAt: targetMs, customerName })
+      });
+    }
+
+    const json = await res.json();
+    if (!res.ok) {
+      throw new Error(json.error || 'Lỗi khi lưu lịch hẹn');
+    }
+
+    state.activeSchedule = json.data;
+    renderScheduledMsgPinBar(json.data);
+
+    // Xóa trắng ô chat nếu người dùng đã gõ trước đó
+    const chatInput = document.getElementById('chat-input');
+    if (chatInput && !schedId) {
+      chatInput.value = '';
+    }
+
+    closeModal('modal-schedule-msg');
+    showToast(schedId ? 'Đã cập nhật lịch hẹn thành công!' : 'Đã lên lịch gửi tin nhắn thành công! ⏰', 'success');
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+async function cancelActiveSchedule() {
+  if (!state.activeSchedule?.id) return;
+  if (!confirm('Bạn có chắc muốn hủy lịch hẹn gửi tin nhắn này không?')) return;
+
+  try {
+    const res = await fetch(`/api/scheduled-messages/${state.activeSchedule.id}`, {
+      method: 'DELETE',
+      headers: getHeaders()
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Lỗi khi hủy lịch hẹn');
+
+    state.activeSchedule = null;
+    renderScheduledMsgPinBar(null);
+    showToast('Đã hủy lịch hẹn gửi tin!', 'info');
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+function editActiveSchedule() {
+  if (!state.activeSchedule) return;
+  openScheduleMsgModal(state.activeSchedule);
+}
+
+function deleteScheduleFromModal() {
+  closeModal('modal-schedule-msg');
+  cancelActiveSchedule();
+}
+
+async function resumeActiveSchedule() {
+  if (!state.activeSchedule?.id) return;
+  try {
+    const res = await fetch(`/api/scheduled-messages/${state.activeSchedule.id}`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify({ action: 'resume' })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Lỗi khi kích hoạt lại');
+
+    state.activeSchedule = json.data;
+    renderScheduledMsgPinBar(json.data);
+    showToast('Đã tiếp tục lịch hẹn gửi tin!', 'success');
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+async function sendNowActiveSchedule() {
+  if (!state.activeSchedule?.id) return;
+  if (!confirm('Bạn có muốn gửi tin nhắn này đến khách ngay bây giờ không?')) return;
+
+  try {
+    const res = await fetch(`/api/scheduled-messages/${state.activeSchedule.id}`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify({ action: 'send_now' })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Lỗi khi gửi ngay');
+
+    state.activeSchedule = json.data;
+    renderScheduledMsgPinBar(json.data);
+    showToast('Đã kích hoạt gửi tin ngay!', 'success');
+  } catch (err) {
+    showToast(err.message, 'error');
   }
 }
 

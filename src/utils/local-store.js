@@ -328,6 +328,23 @@ export class LocalStore extends EventEmitter {
       if (!aiCols.includes('apiKeyEncrypted'))      this.db.exec("ALTER TABLE ai_settings ADD COLUMN apiKeyEncrypted TEXT DEFAULT '';");
       if (!aiCols.includes('fallbackApiKeyEncrypted')) this.db.exec("ALTER TABLE ai_settings ADD COLUMN fallbackApiKeyEncrypted TEXT DEFAULT '';");
 
+      // Scheduled Messages (1-1 Direct In-Thread Scheduling) Table & Indexes
+      this.db.exec(`
+        CREATE TABLE IF NOT EXISTS scheduled_messages (
+          id           TEXT PRIMARY KEY,
+          threadId     TEXT NOT NULL,
+          customerName TEXT DEFAULT '',
+          message      TEXT NOT NULL,
+          scheduledAt  INTEGER NOT NULL,
+          status       TEXT DEFAULT 'pending',
+          error        TEXT DEFAULT '',
+          sentAt       INTEGER DEFAULT NULL,
+          createdAt    INTEGER DEFAULT (strftime('%s', 'now') * 1000),
+          FOREIGN KEY (threadId) REFERENCES conversations(id) ON DELETE CASCADE
+        );
+        CREATE INDEX IF NOT EXISTS idx_sched_thread ON scheduled_messages(threadId, status);
+        CREATE INDEX IF NOT EXISTS idx_sched_due ON scheduled_messages(status, scheduledAt);
+      `);
 
     } catch (err) {
       logger.warn(`Migration notice: ${err.message}`);
@@ -863,7 +880,138 @@ export class LocalStore extends EventEmitter {
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // Scheduled Messages (1-1 Direct In-Thread Scheduling)
+  // ---------------------------------------------------------------------------
+  getActiveScheduledMessage(threadId) {
+    if (!threadId) return null;
+    const stmt = this.db.prepare(`
+      SELECT * FROM scheduled_messages
+      WHERE threadId = ? AND status IN ('pending', 'processing', 'paused_by_reply', 'missed')
+      ORDER BY scheduledAt ASC LIMIT 1
+    `);
+    return stmt.get(threadId) || null;
+  }
 
+  getScheduledMessageById(id) {
+    if (!id) return null;
+    const stmt = this.db.prepare('SELECT * FROM scheduled_messages WHERE id = ?');
+    return stmt.get(id) || null;
+  }
+
+  createScheduledMessage({ id, threadId, customerName = '', message, scheduledAt }) {
+    if (!threadId || !message || !scheduledAt) {
+      throw new Error('threadId, message và scheduledAt là bắt buộc');
+    }
+    const finalId = id || crypto.randomUUID();
+    const now = Date.now();
+    const stmt = this.db.prepare(`
+      INSERT INTO scheduled_messages (id, threadId, customerName, message, scheduledAt, status, createdAt)
+      VALUES (?, ?, ?, ?, ?, 'pending', ?)
+    `);
+    stmt.run(finalId, threadId, (customerName || '').trim(), message.trim(), Number(scheduledAt), now);
+    const created = this.getScheduledMessageById(finalId);
+    this.emit('scheduledMessageUpdated', created);
+    return created;
+  }
+
+  updateScheduledMessage(id, updates = {}) {
+    const existing = this.getScheduledMessageById(id);
+    if (!existing) return null;
+
+    const fields = [];
+    const values = [];
+
+    if (updates.message !== undefined) {
+      fields.push('message = ?');
+      values.push(updates.message.trim());
+    }
+    if (updates.scheduledAt !== undefined) {
+      fields.push('scheduledAt = ?');
+      values.push(Number(updates.scheduledAt));
+    }
+    if (updates.status !== undefined) {
+      fields.push('status = ?');
+      values.push(updates.status);
+    }
+    if (updates.error !== undefined) {
+      fields.push('error = ?');
+      values.push(updates.error);
+    }
+    if (updates.sentAt !== undefined) {
+      fields.push('sentAt = ?');
+      values.push(Number(updates.sentAt));
+    }
+
+    if (fields.length === 0) return existing;
+
+    values.push(id);
+    const sql = `UPDATE scheduled_messages SET ${fields.join(', ')} WHERE id = ?`;
+    this.db.prepare(sql).run(...values);
+
+    const updated = this.getScheduledMessageById(id);
+    this.emit('scheduledMessageUpdated', updated);
+    return updated;
+  }
+
+  cancelScheduledMessage(id) {
+    return this.updateScheduledMessage(id, { status: 'cancelled' });
+  }
+
+  pauseScheduledMessageByReply(threadId) {
+    const active = this.getActiveScheduledMessage(threadId);
+    if (active && active.status === 'pending') {
+      const updated = this.updateScheduledMessage(active.id, { status: 'paused_by_reply' });
+      logger.info(`⏸️ [Scheduled Message] Auto-paused schedule ${active.id} for thread ${threadId} due to inbound customer reply`);
+      return updated;
+    }
+    return null;
+  }
+
+  resumeScheduledMessage(id) {
+    const existing = this.getScheduledMessageById(id);
+    if (existing && existing.status === 'paused_by_reply') {
+      return this.updateScheduledMessage(id, { status: 'pending' });
+    }
+    return existing;
+  }
+
+  claimDueScheduledMessages(nowMs, limit = 10) {
+    try {
+      this.db.exec('BEGIN TRANSACTION;');
+      const stmtSelect = this.db.prepare(`
+        SELECT * FROM scheduled_messages
+        WHERE status = 'pending' AND scheduledAt <= ?
+        ORDER BY scheduledAt ASC
+        LIMIT ?
+      `);
+      const dueItems = stmtSelect.all(nowMs, limit);
+      if (dueItems.length === 0) {
+        this.db.exec('COMMIT;');
+        return [];
+      }
+
+      const stmtUpdate = this.db.prepare(`
+        UPDATE scheduled_messages
+        SET status = 'processing'
+        WHERE id = ? AND status = 'pending'
+      `);
+
+      const claimed = [];
+      for (const item of dueItems) {
+        const res = stmtUpdate.run(item.id);
+        if (res.changes > 0) {
+          claimed.push({ ...item, status: 'processing' });
+        }
+      }
+      this.db.exec('COMMIT;');
+      return claimed;
+    } catch (err) {
+      try { this.db.exec('ROLLBACK;'); } catch {}
+      logger.error(`[LocalStore] claimDueScheduledMessages error: ${err.message}`);
+      return [];
+    }
+  }
 
   // ---------------------------------------------------------------------------
   // Campaigns & Persistent Queue
@@ -1336,6 +1484,9 @@ export class LocalStore extends EventEmitter {
       // 1. Hủy queue chiến dịch cũ đang pending để chống spam tài khoản lạ (Anti-Ban Guard C2)
       this.db.prepare("DELETE FROM campaign_queue WHERE status = 'pending'").run();
       this.db.prepare("UPDATE campaigns SET isEnabled = 0").run();
+      
+      // Hủy lịch hẹn 1-1 đang chờ để tránh gửi nhầm khách từ tài khoản mới
+      this.db.prepare("DELETE FROM scheduled_messages WHERE status IN ('pending', 'processing', 'paused_by_reply')").run();
       
       // 2. Xóa các bảng hội thoại cá nhân
       this.db.prepare("DELETE FROM conversation_tags").run();

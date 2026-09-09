@@ -1439,13 +1439,92 @@ assert.strictEqual(protectConv.avatar, 'https://avatar.zalo.me/test2.jpg', 'Avat
 
 console.log('   ✅ Stranger Auto-Identity Resolution & Name Protection passed!\n');
 
+console.log('39. Testing Scheduled Messages (1-1 Direct Scheduling, Dispatcher & Guards)...');
+const schedThreadId = 'user_sched_test_1';
+store.upsertConversation({
+  id: schedThreadId,
+  name: 'Anh Khoa BĐS',
+  avatar: '',
+  isGroup: false
+});
+
+// 1. Tạo lịch hẹn hợp lệ
+const schedTimeFuture = Date.now() + 3600000; // 1 giờ sau
+const createdSched = store.createScheduledMessage({
+  threadId: schedThreadId,
+  customerName: 'Anh Khoa BĐS',
+  message: 'Chào anh {name}, 9h sáng nay mình gặp ở cafe nhé!',
+  scheduledAt: schedTimeFuture
+});
+
+assert.ok(createdSched.id, 'Must create scheduled message with valid ID');
+assert.strictEqual(createdSched.status, 'pending', 'Initial status must be pending');
+assert.strictEqual(createdSched.scheduledAt, schedTimeFuture, 'Must store exact epoch timestamp');
+
+// 2. Kiểm tra getActiveScheduledMessage
+const activeSched = store.getActiveScheduledMessage(schedThreadId);
+assert.ok(activeSched, 'Must retrieve active scheduled message');
+assert.strictEqual(activeSched.id, createdSched.id);
+
+// 3. Inbound Reply Guard: Khách nhắn tin đến -> tự động chuyển paused_by_reply
+const pausedSched = store.pauseScheduledMessageByReply(schedThreadId);
+assert.ok(pausedSched, 'Must pause active schedule when customer replies');
+assert.strictEqual(pausedSched.status, 'paused_by_reply', 'Status must transition to paused_by_reply');
+
+// 4. Resume lịch hẹn
+const resumedSched = store.resumeScheduledMessage(createdSched.id);
+assert.strictEqual(resumedSched.status, 'pending', 'Must resume status to pending');
+
+// 5. Test Atomic Claim & Past-Due Guard
+const pastDueThreadId = 'user_sched_test_past_due';
+store.upsertConversation({ id: pastDueThreadId, name: 'Khách Quá Hạn', isGroup: false });
+
+const pastDueSched = store.createScheduledMessage({
+  threadId: pastDueThreadId,
+  customerName: 'Khách Quá Hạn',
+  message: 'Tin quá hạn',
+  scheduledAt: Date.now() - (20 * 60 * 1000) // 20 phút trước
+});
+
+const claimedDue = store.claimDueScheduledMessages(Date.now(), 10);
+assert.ok(claimedDue.length >= 1, 'Must claim due items');
+const foundClaimed = claimedDue.find(item => item.id === pastDueSched.id);
+assert.ok(foundClaimed, 'Past due item must be claimed atomically');
+assert.strictEqual(foundClaimed.status, 'processing', 'Claimed item must be marked processing');
+
+// 6. Test Cancel
+const cancelTestThreadId = 'user_sched_test_cancel';
+store.upsertConversation({ id: cancelTestThreadId, name: 'Khách Hủy', isGroup: false });
+const cancelTestSched = store.createScheduledMessage({
+  threadId: cancelTestThreadId,
+  customerName: 'Khách Hủy',
+  message: 'Tin muốn hủy',
+  scheduledAt: Date.now() + 60000
+});
+const cancelledSched = store.cancelScheduledMessage(cancelTestSched.id);
+assert.strictEqual(cancelledSched.status, 'cancelled', 'Must cancel scheduled message');
+assert.strictEqual(store.getActiveScheduledMessage(cancelTestThreadId), null, 'Cancelled schedule must not be returned by getActiveScheduledMessage');
+
+// 7. Test cleanSwitchAccountData cleans pending schedules
+store.createScheduledMessage({
+  threadId: schedThreadId,
+  customerName: 'Anh Khoa',
+  message: 'Tin pending trước khi switch account',
+  scheduledAt: Date.now() + 120000
+});
+store.cleanSwitchAccountData();
+const schedAfterClean = store.getActiveScheduledMessage(schedThreadId);
+assert.strictEqual(schedAfterClean, null, 'Pending schedules must be cleaned on account switch');
+
+console.log('   ✅ Scheduled Messages & Lifecycle Guards passed!\n');
+
 // Clean test db
 store.close();
 if (fs.existsSync(testDbFile)) {
   try { fs.unlinkSync(testDbFile); } catch {}
 }
 
-console.log('🎉 ALL 38 INTEGRITY, SECURITY, CRM, AIZALO REMARKETING, AI SUITE, BULK DEEP-SYNC, QR AUTH, MEMORY GUARD, ZALO SANITIZER, DESKTOP PACKAGED, CLEAN SWITCH, MULTI-DEVICE SYNC, GROUP MENTION, QUICK-MSG, CAMPAIGN TEST DISPATCH, GROUP RECONCILIATION, AUTO-FALLBACK OPENROUTER, MULTIMODAL VISION & STRANGER IDENTITY TESTS PASSED 100%!');
+console.log('🎉 ALL 39 INTEGRITY, SECURITY, CRM, AIZALO REMARKETING, AI SUITE, BULK DEEP-SYNC, QR AUTH, MEMORY GUARD, ZALO SANITIZER, DESKTOP PACKAGED, CLEAN SWITCH, MULTI-DEVICE SYNC, GROUP MENTION, QUICK-MSG, CAMPAIGN TEST DISPATCH, GROUP RECONCILIATION, AUTO-FALLBACK OPENROUTER, MULTIMODAL VISION, STRANGER IDENTITY & SCHEDULED MESSAGES TESTS PASSED 100%!');
 
 
 
