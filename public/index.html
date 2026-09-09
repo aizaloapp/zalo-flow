@@ -1083,9 +1083,14 @@
 
               <div style="display: flex; flex-direction: column; gap: 8px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 8px;">
                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #f8fafc; font-size: 0.78rem;">
-                  <input type="checkbox" id="ai-allow-groups" style="accent-color: #38bdf8; width: 15px; height: 15px;">
-                  <span>👥 Cho phép Bot AI trả lời trong Nhóm Chat (Cảnh báo: Tắt mặc định để tránh spam nhóm)</span>
+                  <input type="checkbox" id="ai-allow-groups" onchange="toggleAiGroupAliasesUI()" style="accent-color: #38bdf8; width: 15px; height: 15px;">
+                  <span>👥 Cho phép Bot AI trả lời trong Nhóm Chat (Chỉ khi được Tag @tên hoặc gọi đích danh)</span>
                 </label>
+
+                <div id="ai-bot-aliases-wrap" style="display: none; padding-left: 24px; margin-top: -2px;">
+                  <label class="form-label" style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 2px;">Biệt danh / Tên gọi khác của Bot (phân cách bằng dấu phẩy):</label>
+                  <input type="text" class="form-input" id="ai-bot-aliases" placeholder="Ví dụ: amon, trợ lý, em tấm" style="font-size: 0.78rem; padding: 4px 8px;">
+                </div>
 
                 <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                   <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #f8fafc; font-size: 0.78rem;">

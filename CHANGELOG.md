@@ -6,6 +6,42 @@ Mọi thay đổi đáng chú ý của dự án **Zalo-Flow** sẽ được ghi 
 
 ---
 
+## [1.0.7] - 2026-09-09
+
+### Added
+- **Phòng Thủ Nhóm Chat & Nhận Diện Mention 3 Cấp Độ (`src/utils/mention-detector.js`):**
+  - Cấp 1 (Zalo Tag Protocol): Nhận diện tag chuẩn Zalo (`mentions.uid === botUid`), tự động bỏ qua các loại tag nhắc cả nhóm `@all` (`['0', '-1', 'all']`).
+  - Cấp 2 (Ký hiệu `@` gõ tay): Nhận diện tiền tố `@` đứng liền trước tên (`@Khoa`, `@bot`, `@trợ lý`, `@amon`).
+  - Cấp 3 (Vocative Xưng Hô Tiếng Việt): Nhận diện cụm xưng hô neo ở đầu câu (`Khoa ơi`, `Anh Khoa ơi`, `Bot ơi`, `Nhờ bot hỗ trợ...`).
+  - Miễn nhiễm hoàn toàn với các từ khóa nằm giữa câu gây false-positive (`khoa vi phẫu`, `chuyên khoa`, `khoa học`, `ổ khóa`, `robot`, `bột giặt`).
+  - Bóc tách danh tính bot động thông minh loại bỏ icon emoji, thẻ ngoặc `[VIP]`, `(Dev)` và bọc bảo vệ `escapeRegex` chống ReDoS.
+  - Quoted Message Immunity: Chỉ quét text của tin nhắn hiện tại, loại trừ nội dung trích dẫn `quoteText`.
+- **Tối Ưu Điều Phối AI & Token Shield (`src/adapters/ai-agent.js`):**
+  - Fast-path 0ms/0 token/0 RAM: Bỏ qua lập tức mọi tin nhắn nhóm không gọi tên bot.
+  - Per-User Group Cooldown: Giới hạn mỗi thành viên gọi bot tối đa 1 lần trong 10 giây để bảo vệ ví tiền API.
+  - Sender-Isolated Debounce Buffer: Phân tách bộ đệm theo `${threadId}:${senderId}` triệt tiêu lỗi Starvation và gộp nhầm câu hỏi giữa các thành viên.
+  - Auto-Quote Inbound Question: Tự động Quote lại tin nhắn của thành viên khi trả lời trong nhóm.
+- **Chuẩn Hóa Zalo Client (`src/zalo-client.js`):**
+  - Truyền tường minh `senderName` từ `onMessage` sang adapter.
+  - Nâng cấp `sendMessage` hỗ trợ tham số `quote` đồng thời bảo toàn thuộc tính `isBot: true` và `quoteText` trong SQLite.
+- **Cơ Sở Dữ Liệu & UI:**
+  - Bổ sung cột `botAliases` vào bảng `ai_settings` trong SQLite qua `PRAGMA table_info` reconciliation.
+  - Cập nhật giao diện Cài Đặt AI trên Dashboard với checkbox nhóm chat và ô nhập Biệt danh Bot tùy chọn.
+- **Kiểm Thử:**
+  - Bổ sung `test/test-mention-detector.js` (10/10 suites) và Test 32 trong `test/test-all.js` (32/32 tests pass 100%).
+
+## [1.0.6] - 2026-09-08
+
+### Added
+- **Hệ Thống Giao Diện Sáng & Tối (Light & Dark Mode) 1-Click:**
+  - Chuẩn hóa 17 CSS Variables semantic tokens, triệt tiêu toàn bộ màu tối ghi cứng.
+  - Nhúng script Anti-FOUC đặt tại thẻ `<head>` loại bỏ hiện tượng nhấp nháy giao diện khi tải trang.
+  - Bảo vệ độ tương phản cao (High-Contrast Guard) cho các phần tử active (`.conv-card.active`).
+- **Typography & Ergonomics Chuẩn Zalo Desktop:**
+  - Kích thước chữ bong bóng chat 14px (`0.88rem`), khoảng cách dòng `1.45`, bo góc `12px` và padding `9px 13px`.
+- **Multi-Device Outbound Sync:**
+  - Đồng bộ tức thì tin nhắn, ảnh, file gửi từ ứng dụng di động Zalo về Zalo-Flow Web Dashboard kèm Self-Echo Shield chặn lặp phản xạ.
+
 ## [1.0.0] - 2026-09-01
 
 ### Added

@@ -3097,6 +3097,7 @@ let aiSettingsState = {
   scopePrompt: '',
   exemplarConversation: '',
   allowGroups: 0,
+  botAliases: '',
   autoTagNewLead: 0,
   defaultLeadTagId: '',
   targetMode: 'all',
@@ -3105,6 +3106,13 @@ let aiSettingsState = {
   adminCooldownMinutes: 15,
   debounceSeconds: 3
 };
+
+function toggleAiGroupAliasesUI() {
+  const check = document.getElementById('ai-allow-groups');
+  const wrap = document.getElementById('ai-bot-aliases-wrap');
+  if (wrap) wrap.style.display = check?.checked ? 'block' : 'none';
+}
+window.toggleAiGroupAliasesUI = toggleAiGroupAliasesUI;
 
 let simChatHistory = [];
 let pendingExemplarDialogue = [];
@@ -3220,7 +3228,13 @@ function renderAiSettingsUI() {
   if (debounceSec) debounceSec.value = aiSettingsState.debounceSeconds ?? 3;
 
   const allowGroupsCheck = document.getElementById('ai-allow-groups');
-  if (allowGroupsCheck) allowGroupsCheck.checked = Boolean(aiSettingsState.allowGroups);
+  if (allowGroupsCheck) {
+    allowGroupsCheck.checked = Boolean(aiSettingsState.allowGroups);
+    toggleAiGroupAliasesUI();
+  }
+
+  const botAliasesInput = document.getElementById('ai-bot-aliases');
+  if (botAliasesInput) botAliasesInput.value = aiSettingsState.botAliases || '';
 
   const autoTagCheck = document.getElementById('ai-auto-tag-lead');
   if (autoTagCheck) autoTagCheck.checked = Boolean(aiSettingsState.autoTagNewLead);
@@ -3822,6 +3836,7 @@ async function saveKnowledgeSettings() {
     adminCooldownMinutes: Number(document.getElementById('ai-admin-cooldown')?.value || 15),
     debounceSeconds: Number(document.getElementById('ai-debounce-sec')?.value || 3),
     allowGroups: document.getElementById('ai-allow-groups')?.checked ? 1 : 0,
+    botAliases: document.getElementById('ai-bot-aliases')?.value.trim() || '',
     autoTagNewLead: document.getElementById('ai-auto-tag-lead')?.checked ? 1 : 0,
     defaultLeadTagId: document.getElementById('ai-default-lead-tag-select')?.value || '',
     targetMode: document.querySelector('input[name="ai-target-mode"]:checked')?.value || 'all',

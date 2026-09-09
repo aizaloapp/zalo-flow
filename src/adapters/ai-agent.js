@@ -3,6 +3,7 @@ import { BaseAdapter } from './base-adapter.js';
 import { localStore } from '../utils/local-store.js';
 import { logger } from '../utils/logger.js';
 import { decryptSecret } from '../utils/ai-crypto.js';
+import { detectMention } from '../utils/mention-detector.js';
 
 export const CURATED_MODELS = {
   gemini: [
@@ -58,8 +59,10 @@ export class AiAgentAdapter extends BaseAdapter {
     super('ai_agent');
     this.localStore = options.localStore || localStore;
     this.sessionSecret = options.sessionSecret || process.env.SESSION_SECRET;
-    this._inboundBuffers = new Map(); // Map<threadId, string[]>
-    this._debounceTimers = new Map(); // Map<threadId, NodeJS.Timeout>
+    this._inboundBuffers = new Map(); // Map<bufferKey, string[]>
+    this._debounceTimers = new Map(); // Map<bufferKey, NodeJS.Timeout>
+    this._groupMentionCooldowns = new Map(); // Map<senderCooldownKey, number>
+    this._triggerMessages = new Map(); // Map<bufferKey, Object>
   }
 
   isConfigured() {
@@ -99,9 +102,37 @@ export class AiAgentAdapter extends BaseAdapter {
       return;
     }
 
-    // 2. Check Group permission (Strict Guardrail)
-    if (ctx.isGroup && !settings.allowGroups) {
-      return;
+    // 2. Check Group permission (Strict Guardrail & Mention Detection)
+    let groupMentionResult = null;
+    if (ctx.isGroup) {
+      if (!settings.allowGroups) {
+        return;
+      }
+
+      // Group Mention Detection (Zalo Tag Protocol, @ Symbol, Vocative Context)
+      groupMentionResult = detectMention({
+        message: ctx.message,
+        text: ctx.text,
+        botProfile: ctx.client?.userProfile,
+        customAliases: settings.botAliases
+      });
+
+      if (!groupMentionResult.isMentioned) {
+        logger.debug(`[AI Group Filter] Message in group ${ctx.threadId} not mentioning bot. Skipping.`);
+        return;
+      }
+
+      // Anti-Spam Token Shield: Per-User Group Cooldown (10s)
+      const userCooldownKey = `${ctx.threadId}:${ctx.senderId}`;
+      const lastMentionTime = this._groupMentionCooldowns.get(userCooldownKey) || 0;
+      const now = Date.now();
+      if (now - lastMentionTime < 10000) {
+        logger.warn(`⏳ [AI Group Cooldown] Member ${ctx.senderName || ctx.senderId} in group ${ctx.threadId} called bot too fast (<10s). Skipping AI reply.`);
+        return;
+      }
+      this._groupMentionCooldowns.set(userCooldownKey, now);
+
+      logger.info(`🔥 [AI Mention] Bot called in group ${ctx.threadId} by ${ctx.senderName || ctx.senderId} (Reason: ${groupMentionResult.reason})`);
     }
 
     // 3. Target Scope Filtering (Blacklist / Whitelist)
@@ -158,41 +189,56 @@ export class AiAgentAdapter extends BaseAdapter {
 
     // 6. Inbound Debounce Buffer (Aggregates rapid multi-line user messages)
     const debounceSec = Math.max(1, Number(settings.debounceSeconds ?? 3));
-    const threadId = ctx.threadId;
+    const bufferKey = ctx.isGroup ? `${ctx.threadId}:${ctx.senderId}` : ctx.threadId;
+    const textToBuffer = (ctx.isGroup && groupMentionResult?.cleanText) ? groupMentionResult.cleanText : ctx.text;
 
-    if (!this._inboundBuffers.has(threadId)) {
-      this._inboundBuffers.set(threadId, []);
+    if (!this._inboundBuffers.has(bufferKey)) {
+      this._inboundBuffers.set(bufferKey, []);
     }
-    this._inboundBuffers.get(threadId).push(ctx.text);
+    this._inboundBuffers.get(bufferKey).push(textToBuffer);
 
-    if (this._debounceTimers.has(threadId)) {
-      clearTimeout(this._debounceTimers.get(threadId));
+    // Lưu trigger message để Quote lại câu hỏi trong Nhóm Chat
+    if (ctx.isGroup) {
+      this._triggerMessages.set(bufferKey, {
+        msgId: String(ctx.message?.msgId || ctx.message?.data?.msgId || ''),
+        cliMsgId: String(ctx.message?.cliMsgId || ctx.message?.data?.cliMsgId || ''),
+        text: ctx.text,
+        senderId: ctx.senderId,
+        senderName: ctx.senderName || ''
+      });
+    }
+
+    if (this._debounceTimers.has(bufferKey)) {
+      clearTimeout(this._debounceTimers.get(bufferKey));
     }
 
     const timer = setTimeout(async () => {
-      this._debounceTimers.delete(threadId);
-      const buffer = this._inboundBuffers.get(threadId) || [];
-      this._inboundBuffers.delete(threadId);
+      this._debounceTimers.delete(bufferKey);
+      const buffer = this._inboundBuffers.get(bufferKey) || [];
+      this._inboundBuffers.delete(bufferKey);
+      const triggerMsg = this._triggerMessages.get(bufferKey) || null;
+      this._triggerMessages.delete(bufferKey);
 
       if (buffer.length === 0) return;
       const aggregatedText = buffer.join('\n');
 
       await this._processAutoReply({
-        threadId,
+        threadId: ctx.threadId,
         incomingText: aggregatedText,
         isGroup: ctx.isGroup,
         client: ctx.client,
-        senderName: ctx.senderName || ''
+        senderName: ctx.senderName || '',
+        triggerMsg
       });
     }, debounceSec * 1000);
 
-    this._debounceTimers.set(threadId, timer);
+    this._debounceTimers.set(bufferKey, timer);
   }
 
   /**
    * Process and dispatch AI auto-reply
    */
-  async _processAutoReply({ threadId, incomingText, isGroup, client, senderName = '' }) {
+  async _processAutoReply({ threadId, incomingText, isGroup, client, senderName = '', triggerMsg = null }) {
     try {
       const settings = this.localStore.getAiSettings();
       if (!settings || !settings.isEnabled) return;
@@ -204,7 +250,7 @@ export class AiAgentAdapter extends BaseAdapter {
       const tagNames = tags.map(t => t.name).join(', ');
 
       const customerContext = {
-        name: senderName || conv?.name || customer?.name || '',
+        name: senderName || (isGroup ? '' : conv?.name) || customer?.name || '',
         phone: conv?.phone || customer?.phone || '',
         tags: tagNames,
         notes: conv?.notes || customer?.notes || '',
@@ -220,17 +266,33 @@ export class AiAgentAdapter extends BaseAdapter {
       const rawHistory = this.localStore.getMessages(threadId, { limit: 10 }) || [];
       const history = rawHistory.filter(m => m.text !== incomingText);
 
+      // Format incoming text for LLM: in groups, prefix member name so AI understands who asked
+      const incomingTextForLLM = (isGroup && senderName) ? `[Thành viên: ${senderName}]: ${incomingText}` : incomingText;
+
       logger.info(`🧠 [AI Engine] Generating reply for ${threadId} (Context: ${history.length} msgs, Customer: "${customerContext.name || 'Khách'}") via ${settings.provider}:${settings.model}...`);
 
-      const replyText = await this.callModelWithFallback(systemPrompt, history, incomingText, settings, { senderName: customerContext.name });
+      const replyText = await this.callModelWithFallback(systemPrompt, history, incomingTextForLLM, settings, { senderName: customerContext.name });
 
       if (replyText && replyText.trim()) {
         const cleanedReply = this.cleanForZalo(replyText);
         if (client && typeof client.sendMessage === 'function') {
-          await client.sendMessage(threadId, cleanedReply, isGroup, {
+          const sendOptions = {
             isBot: true,
             senderName: 'Bot AI (Tự động)'
-          });
+          };
+
+          // Quote original message in group so other members understand who the bot is talking to
+          if (isGroup && triggerMsg && (triggerMsg.msgId || triggerMsg.cliMsgId)) {
+            sendOptions.quote = {
+              msgId: triggerMsg.msgId,
+              cliMsgId: triggerMsg.cliMsgId,
+              content: triggerMsg.text,
+              uidFrom: triggerMsg.senderId,
+              senderName: triggerMsg.senderName
+            };
+          }
+
+          await client.sendMessage(threadId, cleanedReply, isGroup, sendOptions);
           logger.info(`✅ [AI Auto-Reply] Sent to ${threadId}: "${cleanedReply.substring(0, 45)}..."`);
         }
       }

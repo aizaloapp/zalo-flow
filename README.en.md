@@ -15,7 +15,7 @@
 [![CI Quality Gate](https://github.com/aizaloapp/zalo-flow/actions/workflows/ci.yml/badge.svg)](https://github.com/aizaloapp/zalo-flow/actions/workflows/ci.yml)
 [![Anti-Leak & Secret Scan](https://github.com/aizaloapp/zalo-flow/actions/workflows/secret-scan.yml/badge.svg)](https://github.com/aizaloapp/zalo-flow/actions/workflows/secret-scan.yml)
 [![Memory Footprint](https://img.shields.io/badge/RAM-%3C%20100MB-success.svg)](test/test-all.js)
-[![Tests Passing](https://img.shields.io/badge/Tests-31%2F31%20Passing-brightgreen.svg)](test/test-all.js)
+[![Tests Passing](https://img.shields.io/badge/Tests-32%2F32%20Passing-brightgreen.svg)](test/test-all.js)
 [![Docker Ready](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](docker-compose.yml)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
@@ -33,9 +33,9 @@
 
 No Git, no Node.js installation, no command line terminals required:
 
-[![Download Windows Setup](https://img.shields.io/badge/Windows-Download%20Setup%20v1.0.6%20(.exe)-0068FF?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/aizaloapp/zalo-flow/releases/latest)
+[![Download Windows Setup](https://img.shields.io/badge/Windows-Download%20Setup%20v1.0.7%20(.exe)-0068FF?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/aizaloapp/zalo-flow/releases/latest)
 
-> 💡 **Download & Run:** Click the button above to download **`ZaloFlow-Setup-v1.0.6.exe`** (Only **23.4MB**). Run the installer in 30 seconds to get your Zalo-Flow desktop assistant ready!
+> 💡 **Download & Run:** Click the button above to download **`ZaloFlow-Setup-v1.0.7.exe`** (Only **24.2MB**). Run the installer in 30 seconds to get your Zalo-Flow desktop assistant ready!
 
 </div>
 
@@ -53,6 +53,7 @@ No Git, no Node.js installation, no command line terminals required:
 
 ## 🌟 Key Features
 
+- 👥 **Group Mention & Dynamic Identity Protection (New in v1.0.7):** 100% group message noise isolation (Fast-path 0ms, 0 tokens). Supports Zalo protocol tag, `@name` typing, and anchored vocative callouts (`Bot ơi`, `[Name] ơi`). Auto-quotes member questions, isolates multi-member debounce queues, and shields API budgets with per-user cooldown limits (10s).
 - 🎨 **1-Click Light & Dark Mode:** Seamless toggle between sleek Dark Mode and native Zalo PC Light Mode with zero flash-of-unstyled-content (Anti-FOUC) and persistent preference caching.
 - 💬 **Native Zalo PC Typography & Bubble Ergonomics:** Refined 14px (`0.88rem`) font sizing, `1.45` line-height, `12px` border radius, and ergonomic `9px 13px` bubble padding mirroring official Zalo Desktop UX.
 - 📲 **Multi-Device Outbound Sync:** Messages, images, and files sent from mobile Zalo app seamlessly sync into Zalo-Flow in realtime with Self-Echo loop suppression.

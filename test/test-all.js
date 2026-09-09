@@ -1034,13 +1034,75 @@ const diffSeconds = (Date.now() - adminTimeAfterMobile) / 1000;
 assert.ok(diffSeconds < 5, 'Admin message timestamp must be recent (< 5s)');
 console.log('   ✅ Multi-Device Sync & Self-Echo Isolation passed!\n');
 
+console.log('32. Testing Group Mention & Dynamic Identity Protection (Anti-Ban & Token Shield)...');
+const { detectMention, extractBotAliases, escapeRegex } = await import('../src/utils/mention-detector.js');
+
+// A. Test Bot Aliases Extraction & Blacklist Pronoun Protection
+const testAliases = extractBotAliases('Phan Lê Khoa', 'amon, em tấm');
+assert.ok(testAliases.includes('Phan Lê Khoa'), 'Aliases must include full name');
+assert.ok(testAliases.includes('Khoa'), 'Aliases must include first name');
+assert.ok(testAliases.includes('amon'), 'Aliases must include custom alias');
+assert.ok(testAliases.includes('em tấm'), 'Aliases must include custom alias');
+
+// B. Negative Cases (MUST NOT TRIGGER)
+const falsePositives = [
+  'Có ai quen Bs bên khoa vi phẫu tạo hình không?',
+  'Khám chuyên khoa tai mũi họng ở đâu tốt?',
+  'Học ngành khoa học máy tính',
+  'Cửa bị kẹt, đi mua ổ khóa mới',
+  'Con robot này thông minh ghê',
+  'Hết bột giặt rồi anh ơi'
+];
+for (const text of falsePositives) {
+  const check = detectMention({
+    text,
+    botProfile: { userId: 'bot_uid_123', displayName: 'Phan Lê Khoa' }
+  });
+  assert.strictEqual(check.isMentioned, false, `False-positive triggered on: "${text}"`);
+}
+
+// C. Positive Cases (MUST TRIGGER)
+const posAt = detectMention({
+  text: '@Khoa tư vấn dịch vụ này với',
+  botProfile: { userId: 'bot_uid_123', displayName: 'Phan Lê Khoa' }
+});
+assert.strictEqual(posAt.isMentioned, true, '@ Mention must trigger');
+assert.strictEqual(posAt.reason, 'at_symbol');
+assert.strictEqual(posAt.cleanText, 'tư vấn dịch vụ này với');
+
+const posVocative = detectMention({
+  text: 'Anh Khoa ơi cho em hỏi giá',
+  botProfile: { userId: 'bot_uid_123', displayName: 'Phan Lê Khoa' }
+});
+assert.strictEqual(posVocative.isMentioned, true, 'Vocative must trigger');
+assert.strictEqual(posVocative.reason, 'vocative');
+
+const posTag = detectMention({
+  message: { data: { mentions: [{ uid: 'bot_uid_123', pos: 0, len: 5 }] } },
+  text: 'Chào bạn',
+  botProfile: { userId: 'bot_uid_123', displayName: 'Phan Lê Khoa' }
+});
+assert.strictEqual(posTag.isMentioned, true, 'Zalo tag protocol must trigger');
+assert.strictEqual(posTag.reason, 'tag');
+
+// D. Test Database Persistence of botAliases in LocalStore
+store.saveAiSettings({
+  allowGroups: 1,
+  botAliases: 'amon, trợ lý, khoa'
+});
+const savedAi = store.getAiSettings();
+assert.strictEqual(savedAi.allowGroups, 1, 'allowGroups must be persisted as 1');
+assert.strictEqual(savedAi.botAliases, 'amon, trợ lý, khoa', 'botAliases must be persisted');
+
+console.log('   ✅ Group Mention & Dynamic Identity Protection passed!\n');
+
 // Clean test db
 store.close();
 if (fs.existsSync(testDbFile)) {
   try { fs.unlinkSync(testDbFile); } catch {}
 }
 
-console.log('🎉 ALL 31 INTEGRITY, SECURITY, CRM, AIZALO REMARKETING, AI SUITE, BULK DEEP-SYNC, QR AUTH, MEMORY GUARD, ZALO SANITIZER, DESKTOP PACKAGED, CLEAN SWITCH & MULTI-DEVICE SYNC TESTS PASSED 100%!');
+console.log('🎉 ALL 32 INTEGRITY, SECURITY, CRM, AIZALO REMARKETING, AI SUITE, BULK DEEP-SYNC, QR AUTH, MEMORY GUARD, ZALO SANITIZER, DESKTOP PACKAGED, CLEAN SWITCH, MULTI-DEVICE SYNC & GROUP MENTION TESTS PASSED 100%!');
 
 
 

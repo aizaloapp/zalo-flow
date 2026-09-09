@@ -547,6 +547,7 @@ export class ZaloClient {
               message,
               text,
               senderId,
+              senderName,
               threadId,
               isGroup,
               client: this
@@ -686,13 +687,13 @@ export class ZaloClient {
   }
 
   /**
-   * Send a text message to a Zalo user or group with Rate Limiting and Self-Echo Shield
+   * Send a text message to a Zalo user or group with Rate Limiting, Quote and Self-Echo Shield
    * @param {string} threadId - User ID or Group ID
    * @param {string} text - Message content
    * @param {boolean} isGroup - Whether threadId is a group
-   * @param {Object} options - { isBot, senderName }
+   * @param {Object} options - { isBot, senderName, quote }
    */
-  async sendMessage(threadId, text, isGroup = false, { isBot = false, senderName = 'Admin (Bạn)' } = {}) {
+  async sendMessage(threadId, text, isGroup = false, { isBot = false, senderName = 'Admin (Bạn)', quote = null } = {}) {
     if (!this.api || !this.isLoggedIn) {
       throw new Error('Zalo Client is not logged in.');
     }
@@ -706,7 +707,52 @@ export class ZaloClient {
       logger.info(`${senderTag} Sending to ${threadId}: "${String(text).substring(0, 40)}..."`);
       
       const threadType = isGroup ? ThreadType.Group : ThreadType.User;
-      const res = await this.api.sendMessage(text, threadId, threadType);
+
+      let messagePayload = text;
+      let quoteText = '';
+      let quoteSender = '';
+
+      if (quote && (quote.msgId || quote.cliMsgId || quote.content || quote.text)) {
+        let origMsg = null;
+        if (quote.msgId) {
+          origMsg = localStore.getMessage(quote.msgId);
+        }
+        const uidFrom = quote.uidFrom || origMsg?.senderId || threadId;
+        const msgId = quote.msgId || origMsg?.id || '0';
+        const cliMsgId = quote.cliMsgId || origMsg?.cliMsgId || msgId;
+        const ts = quote.ts || (origMsg?.timestamp ? new Date(origMsg.timestamp).getTime() : Date.now());
+        quoteText = quote.content || quote.text || origMsg?.text || '';
+        quoteSender = quote.senderName || origMsg?.senderName || uidFrom;
+        const msgType = quote.msgType || (origMsg?.mediaType === 'image' ? 'chat.photo' : 'chat.message');
+
+        const formattedQuote = {
+          content: String(quoteText),
+          msgType: msgType,
+          propertyExt: quote.propertyExt || {},
+          uidFrom: String(uidFrom),
+          msgId: String(msgId),
+          cliMsgId: String(cliMsgId),
+          ts: Number(ts),
+          ttl: 0
+        };
+
+        messagePayload = {
+          msg: text,
+          quote: formattedQuote
+        };
+      }
+
+      let res;
+      try {
+        res = await this.api.sendMessage(messagePayload, threadId, threadType);
+      } catch (err) {
+        if (typeof messagePayload === 'object' && messagePayload.quote) {
+          logger.warn(`Quote send fallback to plain text: ${err.message}`);
+          res = await this.api.sendMessage(text, threadId, threadType);
+        } else {
+          throw err;
+        }
+      }
 
       let outMsgId = crypto.randomUUID();
       let outCliMsgId = '';
@@ -725,6 +771,8 @@ export class ZaloClient {
         senderName: isBot ? 'Bot AI (Tự động)' : senderName,
         text,
         mediaType: 'text',
+        quoteText: quoteText || '',
+        quoteSender: quoteSender || '',
         isGroup,
         isSelf: true,
         isBot: Boolean(isBot),

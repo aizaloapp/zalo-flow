@@ -91,6 +91,7 @@ export class LocalStore extends EventEmitter {
         scopePrompt             TEXT DEFAULT '',
         exemplarConversation    TEXT DEFAULT '',
         allowGroups             INTEGER DEFAULT 0,
+        botAliases              TEXT DEFAULT '',
         autoTagNewLead          INTEGER DEFAULT 0,
         defaultLeadTagId        TEXT DEFAULT '',
         targetMode              TEXT DEFAULT 'all',
@@ -308,6 +309,7 @@ export class LocalStore extends EventEmitter {
           scopePrompt             TEXT DEFAULT '',
           exemplarConversation    TEXT DEFAULT '',
           allowGroups             INTEGER DEFAULT 0,
+          botAliases              TEXT DEFAULT '',
           autoTagNewLead          INTEGER DEFAULT 0,
           defaultLeadTagId        TEXT DEFAULT '',
           targetMode              TEXT DEFAULT 'all',
@@ -321,6 +323,7 @@ export class LocalStore extends EventEmitter {
       this.db.prepare("INSERT OR IGNORE INTO ai_settings (id) VALUES ('default');").run();
       const aiCols = this.db.prepare("PRAGMA table_info('ai_settings');").all().map(c => c.name);
       if (!aiCols.includes('allowGroups'))          this.db.exec("ALTER TABLE ai_settings ADD COLUMN allowGroups INTEGER DEFAULT 0;");
+      if (!aiCols.includes('botAliases'))           this.db.exec("ALTER TABLE ai_settings ADD COLUMN botAliases TEXT DEFAULT '';");
       if (!aiCols.includes('debounceSeconds'))      this.db.exec("ALTER TABLE ai_settings ADD COLUMN debounceSeconds INTEGER DEFAULT 3;");
       if (!aiCols.includes('apiKeyEncrypted'))      this.db.exec("ALTER TABLE ai_settings ADD COLUMN apiKeyEncrypted TEXT DEFAULT '';");
       if (!aiCols.includes('fallbackApiKeyEncrypted')) this.db.exec("ALTER TABLE ai_settings ADD COLUMN fallbackApiKeyEncrypted TEXT DEFAULT '';");
@@ -1153,6 +1156,7 @@ export class LocalStore extends EventEmitter {
       scopePrompt: '',
       exemplarConversation: '',
       allowGroups: 0,
+      botAliases: '',
       autoTagNewLead: 0,
       defaultLeadTagId: '',
       targetMode: 'all',
@@ -1172,13 +1176,13 @@ export class LocalStore extends EventEmitter {
         id, isEnabled, provider, model, baseUrl, apiKeyEncrypted, timeoutMs,
         fallbackEnabled, fallbackProvider, fallbackModel, fallbackBaseUrl, fallbackApiKeyEncrypted, fallbackTimeoutMs,
         soulPrompt, memoryPrompt, fewShotPrompt, scopePrompt, exemplarConversation,
-        allowGroups, autoTagNewLead, defaultLeadTagId, targetMode, excludedTagIds, allowedTagIds,
+        allowGroups, botAliases, autoTagNewLead, defaultLeadTagId, targetMode, excludedTagIds, allowedTagIds,
         adminCooldownMinutes, debounceSeconds, updatedAt
       ) VALUES (
         ?, ?, ?, ?, ?, ?, ?,
         ?, ?, ?, ?, ?, ?,
         ?, ?, ?, ?, ?,
-        ?, ?, ?, ?, ?, ?,
+        ?, ?, ?, ?, ?, ?, ?,
         ?, ?, datetime('now')
       )
       ON CONFLICT(id) DO UPDATE SET
@@ -1200,6 +1204,7 @@ export class LocalStore extends EventEmitter {
         scopePrompt = excluded.scopePrompt,
         exemplarConversation = excluded.exemplarConversation,
         allowGroups = excluded.allowGroups,
+        botAliases = excluded.botAliases,
         autoTagNewLead = excluded.autoTagNewLead,
         defaultLeadTagId = excluded.defaultLeadTagId,
         targetMode = excluded.targetMode,
@@ -1230,6 +1235,7 @@ export class LocalStore extends EventEmitter {
       updated.scopePrompt || '',
       typeof updated.exemplarConversation === 'object' ? JSON.stringify(updated.exemplarConversation) : (updated.exemplarConversation || ''),
       updated.allowGroups ? 1 : 0,
+      updated.botAliases || '',
       updated.autoTagNewLead ? 1 : 0,
       updated.defaultLeadTagId || '',
       updated.targetMode || 'all',
