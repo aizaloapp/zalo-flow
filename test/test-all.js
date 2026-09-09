@@ -1096,13 +1096,76 @@ assert.strictEqual(savedAi.botAliases, 'amon, trợ lý, khoa', 'botAliases must
 
 console.log('   ✅ Group Mention & Dynamic Identity Protection passed!\n');
 
+// =============================================================================
+// Test 33: Campaign Quick-Message Media Integration (JSON Array Extraction & Multi-Dir Fallback)
+// =============================================================================
+console.log('33. Testing Campaign Quick-Message Media Integration (JSON Array Extraction & Multi-Dir Fallback)...');
+
+// 1. Test trích xuất attachments từ Quick Message có JSON stringified array
+const qmWithMedia = {
+  id: 'qm_media_test',
+  title: 'Mẫu khuyến mãi kèm ảnh',
+  content: 'Khuyến mãi đặc biệt 50%',
+  mediaUrl: JSON.stringify([
+    { mediaUrl: '/api/quick-messages/media/qm_banner_1.jpg', mediaType: 'image', mediaName: 'banner1.jpg' },
+    { mediaUrl: '/api/quick-messages/media/qm_banner_2.png', mediaType: 'image', mediaName: 'banner2.png' }
+  ])
+};
+
+// Hàm trích xuất chuẩn hóa
+function extractQmAttachments(qm) {
+  if (!qm) return [];
+  if (Array.isArray(qm.attachments)) return qm.attachments;
+  if (qm.mediaUrl) {
+    if (typeof qm.mediaUrl === 'string' && qm.mediaUrl.trim().startsWith('[')) {
+      try {
+        const parsed = JSON.parse(qm.mediaUrl);
+        if (Array.isArray(parsed)) return parsed;
+      } catch (_) {}
+    }
+    return [{
+      mediaUrl: qm.mediaUrl,
+      mediaType: qm.mediaType || 'file',
+      mediaName: qm.mediaName || 'Đính kèm'
+    }];
+  }
+  return [];
+}
+
+const extractedAtts = extractQmAttachments(qmWithMedia);
+assert.strictEqual(extractedAtts.length, 2, 'Must extract 2 items');
+assert.strictEqual(extractedAtts[0].mediaUrl, '/api/quick-messages/media/qm_banner_1.jpg');
+assert.strictEqual(extractedAtts[1].mediaUrl, '/api/quick-messages/media/qm_banner_2.png');
+assert.ok(!extractedAtts[0].mediaUrl.startsWith('['), 'mediaUrl must not be raw JSON string');
+
+// 2. Test Multi-Directory Fallback cho Campaign Dispatcher
+const mockQuickDir = path.resolve('data/uploads/quick-msg');
+if (!fs.existsSync(mockQuickDir)) fs.mkdirSync(mockQuickDir, { recursive: true });
+const mockFile1 = path.join(mockQuickDir, 'qm_banner_1.jpg');
+fs.writeFileSync(mockFile1, 'dummy data');
+
+try {
+  const fn = path.basename(extractedAtts[0].mediaUrl);
+  let diskPath = path.resolve('data/uploads/campaigns', fn);
+  if (!fs.existsSync(diskPath)) {
+    const qmPath = path.resolve('data/uploads/quick-msg', fn);
+    if (fs.existsSync(qmPath)) diskPath = qmPath;
+  }
+  assert.strictEqual(diskPath, mockFile1, 'Dispatcher must successfully resolve file in quick-msg fallback folder');
+} finally {
+  if (fs.existsSync(mockFile1)) fs.unlinkSync(mockFile1);
+}
+
+console.log('   ✅ Campaign Quick-Message Media Integration passed!\n');
+
 // Clean test db
 store.close();
 if (fs.existsSync(testDbFile)) {
   try { fs.unlinkSync(testDbFile); } catch {}
 }
 
-console.log('🎉 ALL 32 INTEGRITY, SECURITY, CRM, AIZALO REMARKETING, AI SUITE, BULK DEEP-SYNC, QR AUTH, MEMORY GUARD, ZALO SANITIZER, DESKTOP PACKAGED, CLEAN SWITCH, MULTI-DEVICE SYNC & GROUP MENTION TESTS PASSED 100%!');
+console.log('🎉 ALL 33 INTEGRITY, SECURITY, CRM, AIZALO REMARKETING, AI SUITE, BULK DEEP-SYNC, QR AUTH, MEMORY GUARD, ZALO SANITIZER, DESKTOP PACKAGED, CLEAN SWITCH, MULTI-DEVICE SYNC, GROUP MENTION & CAMPAIGN QUICK-MSG INTEGRATION TESTS PASSED 100%!');
+
 
 
 

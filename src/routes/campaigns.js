@@ -405,20 +405,67 @@ async function runCampaignDispatcher(campaignId) {
         await zaloClient.sendMessage(item.threadId, personalizedMessage, isGroup);
       }
 
-      // 3. Send Multi-Attachments (if attachments provided) - Guardrail #20
-      const mediaItems = Array.isArray(campaign.mediaUrls) ? campaign.mediaUrls : JSON.parse(campaign.mediaUrls || '[]');
+      // 3. Send Multi-Attachments (if attachments provided) - Guardrail #20 & Multi-Dir Fallback
+      let rawItems = [];
+      try {
+        rawItems = Array.isArray(campaign.mediaUrls) ? campaign.mediaUrls : JSON.parse(campaign.mediaUrls || '[]');
+      } catch (_) {
+        rawItems = [];
+      }
+
+      // Flatten nested JSON if legacy items contained stringified arrays
+      const mediaItems = [];
+      for (const item of rawItems) {
+        const itemStr = typeof item === 'string' ? item.trim() : (typeof item?.mediaUrl === 'string' ? item.mediaUrl.trim() : '');
+        if (itemStr.startsWith('[')) {
+          try {
+            const parsed = JSON.parse(itemStr);
+            if (Array.isArray(parsed)) mediaItems.push(...parsed);
+            else mediaItems.push(item);
+          } catch (_) {
+            mediaItems.push(item);
+          }
+        } else {
+          mediaItems.push(item);
+        }
+      }
+
       if (mediaItems.length > 0) {
         const localFilePaths = [];
         for (const m of mediaItems) {
-          const fn = path.basename(m.mediaUrl || m);
-          const p = path.resolve('data/uploads/campaigns', fn);
-          if (fs.existsSync(p)) {
+          const urlStr = typeof m === 'string' ? m : (m.mediaUrl || '');
+          const fn = path.basename(urlStr);
+          if (!fn) continue;
+
+          // Multi-Directory Storage Fallback (campaigns -> quick-msg -> chat-media)
+          let targetPath = path.resolve('data/uploads/campaigns', fn);
+          let resolvedApiUrl = `/api/campaigns/media/${fn}`;
+
+          if (!fs.existsSync(targetPath)) {
+            const qmPath = path.resolve('data/uploads/quick-msg', fn);
+            if (fs.existsSync(qmPath)) {
+              targetPath = qmPath;
+              resolvedApiUrl = `/api/quick-messages/media/${fn}`;
+            } else {
+              const chatPath = path.resolve('data/uploads/chat-media', fn);
+              if (fs.existsSync(chatPath)) {
+                targetPath = chatPath;
+                resolvedApiUrl = `/api/chat-media/${fn}`;
+              }
+            }
+          }
+
+          if (fs.existsSync(targetPath)) {
+            const ext = path.extname(fn).toLowerCase();
+            const isImage = ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp'].includes(ext);
             localFilePaths.push({
-              path: p,
-              mediaUrl: `/api/campaigns/media/${fn}`,
-              mediaType: m.mediaType || (['.png', '.jpg', '.jpeg', '.webp', '.gif'].includes(path.extname(fn).toLowerCase()) ? 'image' : 'file'),
-              originalName: m.mediaName || fn
+              path: targetPath,
+              mediaUrl: (typeof m === 'object' && m.mediaUrl && !m.mediaUrl.startsWith('[')) ? m.mediaUrl : resolvedApiUrl,
+              mediaType: (typeof m === 'object' && m.mediaType) ? m.mediaType : (isImage ? 'image' : 'file'),
+              originalName: (typeof m === 'object' && m.mediaName) ? m.mediaName : fn
             });
+          } else {
+            logger.warn(`⚠️ [Campaign Attachment] File not found on disk: "${fn}" (Checked campaigns, quick-msg, chat-media)`);
           }
         }
 

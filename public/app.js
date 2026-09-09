@@ -964,18 +964,27 @@ function applyCampQuickMsgTemplate(qmId) {
     msgInput.focus();
   }
 
-  if (qm.mediaUrl) {
-    const exists = campaignsState.editingAttachments.some(a => a.mediaUrl === qm.mediaUrl);
-    if (!exists && campaignsState.editingAttachments.length < 5) {
-      campaignsState.editingAttachments.push({
-        mediaUrl: qm.mediaUrl,
-        mediaType: qm.mediaType || 'image',
-        mediaName: qm.mediaName || qm.title || 'Đính kèm mẫu'
-      });
+  const atts = getQuickMessageAttachments(qm);
+  if (atts && atts.length > 0) {
+    let added = 0;
+    for (const att of atts) {
+      if (campaignsState.editingAttachments.length >= 5) break;
+      const exists = campaignsState.editingAttachments.some(a => a.mediaUrl === att.mediaUrl);
+      if (!exists && att.mediaUrl) {
+        campaignsState.editingAttachments.push({
+          mediaUrl: att.mediaUrl,
+          mediaType: att.mediaType || 'image',
+          mediaName: att.mediaName || qm.title || 'Đính kèm mẫu'
+        });
+        added++;
+      }
+    }
+    if (added > 0) {
       renderCampAttachmentChips();
     }
   }
 }
+
 
 async function handleCampMediaUpload(event) {
   const files = Array.from(event.target.files || []);
