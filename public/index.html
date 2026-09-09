@@ -585,9 +585,10 @@
               💬 Nội Dung Tin Nhắn Tự Động:
             </label>
             <div style="display: flex; gap: 6px;">
-              <button type="button" class="filter-btn" style="padding: 2px 8px; font-size: 0.72rem;" onclick="insertCampSpintaxVar('{name}')">+ Tên {name}</button>
+              <button type="button" class="filter-btn" style="padding: 2px 8px; font-size: 0.72rem;" onmousedown="event.preventDefault()" onclick="insertCampSpintaxVar('{name}')">+ Tên {name}</button>
               <button type="button" class="filter-btn" style="padding: 2px 8px; font-size: 0.72rem;" onclick="insertCampSpintaxTemplate()">+ Mẫu Spintax</button>
             </div>
+
           </div>
 
           <!-- CHỌN TỪ TIN NHẮN MẪU (TÙY CHỌN) -->

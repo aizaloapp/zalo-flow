@@ -867,11 +867,26 @@ let campaignsState = {
 
 function insertCampSpintaxVar(varName) {
   const textarea = document.getElementById('camp-edit-message');
-  if (textarea) {
-    textarea.value += varName;
-    textarea.focus();
+  if (!textarea) return;
+
+  const start = textarea.selectionStart ?? textarea.value.length;
+  const end = textarea.selectionEnd ?? textarea.value.length;
+  const original = textarea.value || '';
+
+  // Chèn biến vào đúng vị trí con trỏ chuột hoặc thay thế vùng đang bôi đen
+  textarea.value = original.substring(0, start) + varName + original.substring(end);
+
+  // Đặt lại con trỏ chuột ngay sau chuỗi vừa chèn
+  const newPos = start + varName.length;
+  textarea.focus();
+  if (typeof textarea.setSelectionRange === 'function') {
+    textarea.setSelectionRange(newPos, newPos);
   }
+
+  // Bắn sự kiện input để đồng bộ trạng thái
+  textarea.dispatchEvent(new Event('input', { bubbles: true }));
 }
+
 
 function insertCampSpintaxTemplate() {
   const textarea = document.getElementById('camp-edit-message');

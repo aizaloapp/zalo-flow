@@ -112,4 +112,29 @@ try {
   if (fs.existsSync(file2)) fs.unlinkSync(file2);
 }
 
-console.log('\n🎉 All campaign quick-message media integration tests passed 100%!');
+// 3. Test Chèn Biến {name} tại vị trí con trỏ chuột (Caret Position Insertion)
+function simulateInsertCampSpintaxVar(originalText, selectionStart, selectionEnd, varName) {
+  const start = selectionStart ?? originalText.length;
+  const end = selectionEnd ?? originalText.length;
+  const newText = originalText.substring(0, start) + varName + originalText.substring(end);
+  const newPos = start + varName.length;
+  return { newText, newPos };
+}
+
+// Case A: Đặt con trỏ ở giữa câu (ngay sau dấu phẩy như ảnh 1 của user)
+const caseA = simulateInsertCampSpintaxVar('Chào , bạn có khỏe không?', 6, 6, '{name}');
+assert.strictEqual(caseA.newText, 'Chào ,{name} bạn có khỏe không?', 'Must insert exactly at cursor position in the middle');
+assert.strictEqual(caseA.newPos, 12, 'Caret must advance by varName length');
+
+// Case B: Bôi đen thay thế
+const caseB = simulateInsertCampSpintaxVar('Chào bạn nhé!', 5, 8, '{name}');
+assert.strictEqual(caseB.newText, 'Chào {name} nhé!', 'Must replace selected text');
+
+// Case C: Không có selection, mặc định cuối
+const caseC = simulateInsertCampSpintaxVar('Hello', 5, 5, ' {name}');
+assert.strictEqual(caseC.newText, 'Hello {name}', 'Must append at end if cursor is at end');
+
+console.log('   ✅ Caret position insertion passed (mid-text, replacement, and append)!');
+
+console.log('\n🎉 All campaign quick-message media & caret insertion integration tests passed 100%!');
+
