@@ -44,22 +44,20 @@
         <div class="dot" id="zalo-header-dot"></div>
         <span id="zalo-account-name">Đã Kết Nối (Online)</span>
       </div>
-      <div class="status-pill ram-pill" id="ram-status-pill" title="Mức tiêu thụ RAM thực tế / Ngưỡng an toàn (150MB)">
+      <div class="status-pill ram-pill" id="ram-status-pill" style="display: none;" title="Mức tiêu thụ RAM thực tế / Ngưỡng an toàn (150MB)">
         <div class="dot" id="ram-header-dot" style="background: #34d399; box-shadow: 0 0 8px #34d399;"></div>
         <span id="ram-usage-text">RAM: ~58MB</span>
       </div>
-      <div class="status-pill version-pill" id="version-status-pill" onclick="openAppUpdateModal()" style="cursor: pointer; transition: all 0.2s ease;" title="Phiên bản Zalo-Flow. Bấm để kiểm tra & cập nhật">
+      <div class="status-pill version-pill" id="version-status-pill" onclick="openAppUpdateModal()" style="cursor: pointer; transition: all 0.2s ease; display: none;" title="Phiên bản Zalo-Flow. Bấm để kiểm tra & cập nhật">
         <span class="version-tag" id="version-text">v1.0.0</span>
         <span class="update-indicator" id="update-indicator" style="display: none;">⬆️ Bản Mới</span>
       </div>
-      <button class="filter-btn" id="phone-lookup-btn" onclick="openPhoneLookupModal()" title="Tra cứu Profile Zalo qua Số Điện Thoại">
-        🔍 Tra SĐT
-      </button>
       <button class="filter-btn" id="sync-all-btn" onclick="syncAllHistoryWithProgress()" title="Đồng bộ toàn bộ danh bạ và tin nhắn lịch sử Zalo">
         🔄 Đồng Bộ Lịch Sử
       </button>
-      <button class="filter-btn theme-toggle-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Chuyển đổi Giao diện Sáng / Tối (Chuẩn Zalo PC)">
-        <span id="theme-icon">☀️</span> <span id="theme-label">Giao diện Sáng</span>
+      <button class="theme-circle-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Chuyển đổi Giao diện Sáng / Tối">
+        <span id="theme-icon">☀️</span>
+        <span id="theme-label" style="display: none;">Giao diện Sáng</span>
       </button>
     </div>
   </header>
@@ -95,9 +93,14 @@
       <!-- Left Sidebar: Conversations -->
       <aside class="sidebar-pane">
         <div class="sidebar-search-box">
-          <div class="search-input-wrap">
-            <span class="search-icon">🔍</span>
-            <input type="text" class="search-input" id="search-input" placeholder="Tìm theo tên hoặc ID..." oninput="handleSearch(this.value)">
+          <div class="search-row-container" style="display: flex; gap: 6px; align-items: center;">
+            <div class="search-input-wrap" style="flex: 1;">
+              <span class="search-icon">🔍</span>
+              <input type="text" class="search-input" id="search-input" placeholder="Tìm theo tên hoặc ID..." oninput="handleSearch(this.value)">
+            </div>
+            <button class="filter-btn" id="phone-lookup-btn" onclick="openPhoneLookupModal()" title="Tra cứu Profile Zalo qua Số Điện Thoại" style="padding: 7px 10px; font-size: 0.8rem; white-space: nowrap; flex-shrink: 0;">
+              Tra SĐT
+            </button>
           </div>
 
           <div class="filter-segmented-bar">
@@ -148,18 +151,27 @@
               <button class="filter-btn btn-toggle-ai" id="btn-toggle-ai" onclick="toggleActiveThreadAi()" title="Bật/Tắt Bot AI tự động trả lời cho cuộc trò chuyện này">
                 ⚡ Bot AI: BẬT
               </button>
-              <button class="filter-btn" id="btn-header-exemplar" onclick="promptSetCurrentChatAsExemplar()" title="Lấy đoạn hội thoại này làm mẫu cho AI (Few-Shot)">
-                ⭐ Đặt làm mẫu
-              </button>
-              <button class="filter-btn" onclick="openTagAssignModal()" title="Gắn thẻ phân loại cho khách này">
-                🏷️ Phân loại
-              </button>
               <button class="filter-btn" id="btn-toggle-crm" onclick="toggleCustomerInfoPanel()" title="Mở thông tin và ghi chú CRM khách hàng" style="border-color: rgba(56, 189, 248, 0.4); color: #38bdf8; background: rgba(56, 189, 248, 0.1);">
                 📑 Thông tin
               </button>
-              <button class="filter-btn" id="thread-sync-btn" onclick="syncCurrentThread()" title="Kéo thêm lịch sử từ Zalo">
-                📥 Kéo Lịch Sử
-              </button>
+
+              <!-- Dropdown Menu ⋯ (Tác vụ khác) -->
+              <div class="chat-more-wrapper">
+                <button class="filter-btn chat-more-btn" id="chat-more-btn" onclick="toggleChatMoreMenu(event)" title="Tác vụ khác">
+                  ⋯
+                </button>
+                <div class="chat-more-dropdown" id="chat-more-dropdown">
+                  <button class="dropdown-item" onclick="openTagAssignModal(); closeChatMoreMenu();">
+                    🏷️ Gắn thẻ phân loại
+                  </button>
+                  <button class="dropdown-item" id="btn-header-exemplar" onclick="promptSetCurrentChatAsExemplar(); closeChatMoreMenu();">
+                    ⭐ Đặt làm mẫu AI
+                  </button>
+                  <button class="dropdown-item" id="thread-sync-btn" onclick="syncCurrentThread(); closeChatMoreMenu();">
+                    📥 Kéo thêm lịch sử
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 

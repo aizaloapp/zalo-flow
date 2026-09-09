@@ -1399,13 +1399,53 @@ assert.ok(autoReplyCalledWith.incomingText.includes('Khách hàng vừa gửi 1 
 
 console.log('   ✅ Multimodal AI Vision Pipeline & Image Recognition passed!\n');
 
+console.log('38. Testing Stranger Auto-Identity Resolution & Name Protection...');
+const strangerId = '7005543839233789338';
+store.upsertConversation({
+  id: strangerId,
+  name: strangerId,
+  avatar: '',
+  isGroup: false
+});
+
+store.addMessage({
+  id: 'msg_stranger_1',
+  threadId: strangerId,
+  senderId: strangerId,
+  senderName: strangerId,
+  text: 'Chào shop, em cần tư vấn ạ'
+});
+
+// Update identity
+const updatedConv = store.updateConversationIdentity(strangerId, {
+  name: 'Nguyễn Văn A',
+  avatar: 'https://avatar.zalo.me/test.jpg'
+});
+
+assert.strictEqual(updatedConv.name, 'Nguyễn Văn A', 'Must update UID to real display name');
+assert.strictEqual(updatedConv.avatar, 'https://avatar.zalo.me/test.jpg', 'Must update avatar');
+
+const msgs = store.getMessages(strangerId);
+const updatedMsg = msgs.find(m => m.id === 'msg_stranger_1');
+assert.strictEqual(updatedMsg.senderName, 'Nguyễn Văn A', 'Must update message senderName to real name');
+
+// Identity protection: If name is already real name, don't overwrite if not requested
+const protectConv = store.updateConversationIdentity(strangerId, {
+  name: 'Tên Khác',
+  avatar: 'https://avatar.zalo.me/test2.jpg'
+});
+assert.strictEqual(protectConv.name, 'Nguyễn Văn A', 'Must protect custom/real name from accidental overwrite');
+assert.strictEqual(protectConv.avatar, 'https://avatar.zalo.me/test2.jpg', 'Avatar can still be updated');
+
+console.log('   ✅ Stranger Auto-Identity Resolution & Name Protection passed!\n');
+
 // Clean test db
 store.close();
 if (fs.existsSync(testDbFile)) {
   try { fs.unlinkSync(testDbFile); } catch {}
 }
 
-console.log('🎉 ALL 37 INTEGRITY, SECURITY, CRM, AIZALO REMARKETING, AI SUITE, BULK DEEP-SYNC, QR AUTH, MEMORY GUARD, ZALO SANITIZER, DESKTOP PACKAGED, CLEAN SWITCH, MULTI-DEVICE SYNC, GROUP MENTION, QUICK-MSG, CAMPAIGN TEST DISPATCH, GROUP RECONCILIATION, AUTO-FALLBACK OPENROUTER & MULTIMODAL VISION PIPELINE TESTS PASSED 100%!');
+console.log('🎉 ALL 38 INTEGRITY, SECURITY, CRM, AIZALO REMARKETING, AI SUITE, BULK DEEP-SYNC, QR AUTH, MEMORY GUARD, ZALO SANITIZER, DESKTOP PACKAGED, CLEAN SWITCH, MULTI-DEVICE SYNC, GROUP MENTION, QUICK-MSG, CAMPAIGN TEST DISPATCH, GROUP RECONCILIATION, AUTO-FALLBACK OPENROUTER, MULTIMODAL VISION & STRANGER IDENTITY TESTS PASSED 100%!');
 
 
 

@@ -405,6 +405,39 @@ export class LocalStore extends EventEmitter {
     this.db.prepare("UPDATE conversations SET isGroup = ?, updatedAt = datetime('now') WHERE id = ?").run(val, String(threadId));
   }
 
+  updateConversationIdentity(id, { name = '', avatar = '' } = {}) {
+    if (!id) return null;
+    const existing = this.getConversation(id);
+    if (!existing) return null;
+
+    // Chỉ cập nhật name nếu tên hiện tại là UID số thuần túy hoặc đang trống
+    const isCurrentNameUid = !existing.name || /^\d{10,25}$/.test(existing.name.trim());
+    const newName = (isCurrentNameUid && name && name.trim()) ? name.trim() : existing.name;
+    const newAvatar = (avatar && avatar.trim()) ? avatar.trim() : existing.avatar;
+
+    if (newName !== existing.name || newAvatar !== existing.avatar) {
+      this.db.prepare(`
+        UPDATE conversations 
+        SET name = ?, avatar = ?, updatedAt = datetime('now')
+        WHERE id = ?
+      `).run(newName, newAvatar, id);
+
+      // Cập nhật luôn senderName trong bảng messages nếu senderName đang là UID số
+      if (newName !== existing.name) {
+        this.db.prepare(`
+          UPDATE messages 
+          SET senderName = ? 
+          WHERE threadId = ? AND (senderName = ? OR senderName = '' OR senderName IS NULL)
+        `).run(newName, id, id);
+      }
+
+      const updated = this.getConversation(id);
+      this.emit('conversationUpdated', updated);
+      return updated;
+    }
+    return existing;
+  }
+
   reconcileGroupsWithGroundTruth(validGroupIds = new Set()) {
     if (!validGroupIds || validGroupIds.size === 0) return 0;
     const currentGroups = this.db.prepare('SELECT id FROM conversations WHERE isGroup = 1').all();

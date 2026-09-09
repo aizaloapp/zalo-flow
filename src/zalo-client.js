@@ -31,6 +31,10 @@ export class ZaloClient {
     this.groupUids = new Set(); // In-memory cache of current account groups
     this._deliveredQueue = new Map(); // Map<threadId, Set<msgId>>
     this._deliveredFlushTimer = null;
+    this.strangerProfileCache = new Map(); // Bounded LRU cache for stranger profiles
+    this.maxStrangerCacheSize = 500;
+    this.strangerCacheTtlMs = 24 * 60 * 60 * 1000; // 24 hours
+    this.pendingStrangerResolves = new Map(); // Anti-race lock for pending requests
   }
 
   /**
@@ -922,6 +926,83 @@ export class ZaloClient {
         canMessage: isFriend === true
       };
     });
+  }
+
+  /**
+   * Lazy-resolve stranger identity with bounded LRU cache & rate-limiting
+   * @param {string} rawUid - User ID
+   * @returns {Promise<{ uid: string, displayName: string, avatar: string }|null>}
+   */
+  async resolveStrangerProfile(rawUid) {
+    const uid = String(rawUid || '').trim();
+    if (!uid || !/^\d{10,25}$/.test(uid)) return null;
+    if (!this.api || !this.isLoggedIn) return null;
+
+    // 1. Check bounded LRU cache
+    const cached = this.strangerProfileCache.get(uid);
+    if (cached) {
+      if (Date.now() - cached.timestamp < this.strangerCacheTtlMs) {
+        if (cached.error) return null;
+        return cached.profile;
+      }
+      this.strangerProfileCache.delete(uid);
+    }
+
+    // 2. Return pending promise if already resolving this UID (Anti-race condition)
+    if (this.pendingStrangerResolves.has(uid)) {
+      return this.pendingStrangerResolves.get(uid);
+    }
+
+    const resolvePromise = (async () => {
+      try {
+        if (typeof this.api.getUserInfo !== 'function') return null;
+
+        // Schedule via defaultRateLimiter to satisfy Anti-Ban 3s guardrail
+        const res = await defaultRateLimiter.schedule(async () => {
+          return await this.api.getUserInfo(uid);
+        });
+
+        const p = res?.changed_profiles?.[uid];
+        const displayName = p?.displayName || p?.zaloName || '';
+        const avatar = p?.avatar || '';
+
+        if (displayName) {
+          // Bounded LRU cache eviction
+          if (this.strangerProfileCache.size >= this.maxStrangerCacheSize) {
+            const firstKey = this.strangerProfileCache.keys().next().value;
+            this.strangerProfileCache.delete(firstKey);
+          }
+          const profile = { uid, displayName, avatar };
+          this.strangerProfileCache.set(uid, { timestamp: Date.now(), profile });
+
+          // Update SQLite Database
+          localStore.updateConversationIdentity(uid, { name: displayName, avatar });
+          logger.info(`✨ [LazyResolve] Identified stranger ${uid} ➔ "${displayName}"`);
+          return profile;
+        } else {
+          // Cache error/null with TTL to prevent hammering Zalo API
+          if (this.strangerProfileCache.size >= this.maxStrangerCacheSize) {
+            const firstKey = this.strangerProfileCache.keys().next().value;
+            this.strangerProfileCache.delete(firstKey);
+          }
+          this.strangerProfileCache.set(uid, { timestamp: Date.now(), error: true });
+          return null;
+        }
+      } catch (err) {
+        logger.warn(`[LazyResolve] Could not resolve profile for ${uid}: ${err.message}`);
+        if (this.strangerProfileCache.size >= this.maxStrangerCacheSize) {
+          const firstKey = this.strangerProfileCache.keys().next().value;
+          this.strangerProfileCache.delete(firstKey);
+        }
+        this.strangerProfileCache.set(uid, { timestamp: Date.now(), error: true });
+        return null;
+      } finally {
+        this.pendingStrangerResolves.delete(uid);
+      }
+    })();
+
+    this.pendingStrangerResolves.set(uid, resolvePromise);
+    return resolvePromise;
   }
 
   /**

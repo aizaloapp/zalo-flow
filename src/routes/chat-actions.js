@@ -308,4 +308,34 @@ router.post('/phone-lookup', requireAuth, async (req, res) => {
   }
 });
 
+// =============================================================================
+// 8. POST /conversations/:threadId/resolve-stranger - Lazy Resolve Profile
+// =============================================================================
+router.post('/conversations/:threadId/resolve-stranger', requireAuth, async (req, res) => {
+  const { threadId } = req.params;
+  if (!threadId) {
+    return res.status(400).json({ error: 'Thiếu threadId!' });
+  }
+
+  try {
+    const result = await zaloClient.resolveStrangerProfile(threadId);
+    if (!result) {
+      return res.json({
+        status: 'unresolved',
+        message: 'Không thể tìm thấy thông tin hoặc người dùng chặn tìm kiếm.',
+        data: null
+      });
+    }
+
+    res.json({
+      status: 'success',
+      message: 'Đã nhận diện danh tính khách hàng thành công!',
+      data: result
+    });
+  } catch (err) {
+    logger.warn(`[Resolve Stranger Error] ${err.message}`);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;

@@ -129,6 +129,10 @@ localStore.on('messageRecalled', (data) => {
   broadcastSSE('message_recalled', data);
 });
 
+localStore.on('conversationUpdated', (conv) => {
+  broadcastSSE('conversation_updated', conv);
+});
+
 // -----------------------------------------------------------------------------
 // Mount Modular REST Route Handlers
 // -----------------------------------------------------------------------------

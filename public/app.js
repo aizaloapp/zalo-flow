@@ -2010,6 +2010,12 @@ async function selectConversation(threadId) {
     }
   }
 
+  // Lazy Stranger Identity Resolution: Nếu là chat 1-1 và tên đang là dãy số UID thuần túy
+  const isUidName = !conv.name || /^\d{10,25}$/.test(String(conv.name).trim());
+  if (!conv.isGroup && isUidName) {
+    lazyResolveStranger(threadId);
+  }
+
   await loadMessages(threadId);
 }
 
@@ -3055,6 +3061,24 @@ function handleStreamEvent(eventType, rawData) {
     } else if (eventType === 'message_recalled') {
       if (data.msgId) {
         updateMessageRecalledDOM(data.msgId);
+      }
+    } else if (eventType === 'conversation_updated') {
+      const convData = data;
+      if (convData && convData.id) {
+        const found = state.conversations.find(c => String(c.id) === String(convData.id));
+        if (found) {
+          if (convData.name) found.name = convData.name;
+          if (convData.avatar) found.avatar = convData.avatar;
+          renderConversations();
+        }
+        if (String(state.activeThreadId) === String(convData.id)) {
+          const chatNameEl = document.getElementById('active-chat-name');
+          const chatAvatarEl = document.getElementById('active-chat-avatar');
+          if (chatNameEl && convData.name) chatNameEl.innerText = convData.name;
+          if (chatAvatarEl && convData.avatar) {
+            chatAvatarEl.outerHTML = `<img class="conv-avatar" id="active-chat-avatar" src="${convData.avatar}" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.outerHTML='<div class=\\'conv-avatar\\' id=\\'active-chat-avatar\\'>${(convData.name || convData.id).substring(0, 2).toUpperCase()}</div>'">`;
+          }
+        }
       }
     } else if (eventType === 'sync_progress') {
       updateSyncProgressUI(data);
@@ -5503,5 +5527,80 @@ function pollServerHealthAfterUpdate() {
       }
     }
   }, 2000);
+}
+
+// -----------------------------------------------------------------------------
+// Chat More Menu (⋯) Dropdown Controller
+// -----------------------------------------------------------------------------
+function toggleChatMoreMenu(e) {
+  if (e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+  const dropdown = document.getElementById('chat-more-dropdown');
+  if (!dropdown) return;
+  dropdown.classList.toggle('show');
+}
+
+function closeChatMoreMenu() {
+  const dropdown = document.getElementById('chat-more-dropdown');
+  if (dropdown) dropdown.classList.remove('show');
+}
+
+// Close more menu when clicking outside wrapper
+document.addEventListener('click', (e) => {
+  const wrapper = document.querySelector('.chat-more-wrapper');
+  const dropdown = document.getElementById('chat-more-dropdown');
+  if (dropdown && dropdown.classList.contains('show')) {
+    if (!wrapper || !wrapper.contains(e.target)) {
+      dropdown.classList.remove('show');
+    }
+  }
+});
+
+// -----------------------------------------------------------------------------
+// Lazy Stranger Identity Resolution
+// -----------------------------------------------------------------------------
+const resolvingStrangerUids = new Set();
+
+async function lazyResolveStranger(threadId) {
+  if (!threadId || resolvingStrangerUids.has(String(threadId))) return;
+  resolvingStrangerUids.add(String(threadId));
+
+  try {
+    const res = await fetch(`/api/conversations/${threadId}/resolve-stranger`, {
+      method: 'POST',
+      headers: getHeaders()
+    });
+    if (!res.ok) return;
+    const json = await res.json();
+
+    if (json.status === 'success' && json.data) {
+      const { displayName, avatar } = json.data;
+      if (displayName) {
+        // Update local conversation state
+        const conv = state.conversations.find(c => String(c.id) === String(threadId));
+        if (conv) {
+          conv.name = displayName;
+          if (avatar) conv.avatar = avatar;
+          renderConversations();
+        }
+
+        // Update active chat header if currently opening
+        if (String(state.activeThreadId) === String(threadId)) {
+          const chatNameEl = document.getElementById('active-chat-name');
+          const chatAvatarEl = document.getElementById('active-chat-avatar');
+          if (chatNameEl) chatNameEl.innerText = displayName;
+          if (chatAvatarEl && avatar) {
+            chatAvatarEl.outerHTML = `<img class="conv-avatar" id="active-chat-avatar" src="${avatar}" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.outerHTML='<div class=\\'conv-avatar\\' id=\\'active-chat-avatar\\'>${displayName.substring(0, 2).toUpperCase()}</div>'">`;
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('[LazyResolve] Request error:', err.message);
+  } finally {
+    resolvingStrangerUids.delete(String(threadId));
+  }
 }
 
