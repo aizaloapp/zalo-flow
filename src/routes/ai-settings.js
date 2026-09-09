@@ -1,7 +1,7 @@
 import express from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import { localStore } from '../utils/local-store.js';
-import { aiAgentAdapter, CURATED_MODELS } from '../adapters/ai-agent.js';
+import { aiAgentAdapter, CURATED_MODELS, isKeyCompatible } from '../adapters/ai-agent.js';
 import { encryptSecret, decryptSecret, maskApiKey } from '../utils/ai-crypto.js';
 import { logger } from '../utils/logger.js';
 
@@ -88,41 +88,105 @@ router.post('/ai/settings', requireAuth, (req, res) => {
   }
 });
 
+// Helper an toàn: Phân giải API Key hiệu lực, khử key rác không tương thích và kế thừa key chính khi cùng provider
+function resolveEffectiveKey({ provider, apiKey, isFallback, primaryProvider, primaryApiKey, settings }) {
+  const targetProvider = provider || (isFallback ? settings.fallbackProvider : settings.provider) || 'gemini';
+  const effectivePrimary = primaryProvider || settings.provider || 'gemini';
+  const isSameProvider = targetProvider === effectivePrimary;
+
+  let cleanInputKey = (apiKey || '').trim().replace(/^["']|["']$/g, '');
+  if (cleanInputKey && isKeyCompatible(cleanInputKey, targetProvider)) {
+    return { key: cleanInputKey, targetProvider };
+  }
+
+  if (isFallback) {
+    // 1. Kiểm tra key dự phòng riêng đã lưu trong DB (Bảo vệ người dùng dùng 2 tài khoản riêng)
+    if (settings.fallbackApiKeyEncrypted) {
+      const savedFallbackKey = decryptSecret(settings.fallbackApiKeyEncrypted);
+      if (savedFallbackKey && isKeyCompatible(savedFallbackKey, targetProvider)) {
+        return { key: savedFallbackKey, targetProvider };
+      }
+    }
+    // 2. Kiểm tra biến môi trường dự phòng
+    if (process.env.AI_FALLBACK_API_KEY && isKeyCompatible(process.env.AI_FALLBACK_API_KEY, targetProvider)) {
+      return { key: process.env.AI_FALLBACK_API_KEY, targetProvider };
+    }
+    // 3. Nếu cùng nhà cung cấp (hoặc Form UI đang chọn cùng provider): Kế thừa key chính
+    if (isSameProvider) {
+      const cleanPrimaryKey = (primaryApiKey || '').trim().replace(/^["']|["']$/g, '');
+      if (cleanPrimaryKey && isKeyCompatible(cleanPrimaryKey, targetProvider)) {
+        return { key: cleanPrimaryKey, targetProvider };
+      }
+      if (settings.apiKeyEncrypted) {
+        const savedPrimaryKey = decryptSecret(settings.apiKeyEncrypted);
+        if (savedPrimaryKey && isKeyCompatible(savedPrimaryKey, targetProvider)) {
+          return { key: savedPrimaryKey, targetProvider };
+        }
+      }
+      if (process.env.AI_API_KEY && isKeyCompatible(process.env.AI_API_KEY, targetProvider)) {
+        return { key: process.env.AI_API_KEY, targetProvider };
+      }
+    }
+    return { key: '', targetProvider };
+  } else {
+    // Primary Key resolution
+    if (cleanInputKey && isKeyCompatible(cleanInputKey, targetProvider)) {
+      return { key: cleanInputKey, targetProvider };
+    }
+    if (settings.apiKeyEncrypted) {
+      const savedPrimaryKey = decryptSecret(settings.apiKeyEncrypted);
+      if (savedPrimaryKey && isKeyCompatible(savedPrimaryKey, targetProvider)) {
+        return { key: savedPrimaryKey, targetProvider };
+      }
+    }
+    if (process.env.AI_API_KEY && isKeyCompatible(process.env.AI_API_KEY, targetProvider)) {
+      return { key: process.env.AI_API_KEY, targetProvider };
+    }
+    return { key: '', targetProvider };
+  }
+}
+
+// Helper an toàn: Phân giải Base URL tránh trường hợp default URL của provider cũ (như DeepSeek) bị áp vào provider mới (như OpenRouter)
+function resolveEffectiveBaseUrl(customUrl, provider) {
+  const trimmed = (customUrl || '').trim();
+  if (!trimmed) return '';
+  const standardUrls = {
+    deepseek: 'api.deepseek.com',
+    zai: 'api.z.ai',
+    groq: 'api.groq.com',
+    openrouter: 'openrouter.ai',
+    ollama: 'localhost:11434'
+  };
+  for (const [p, domain] of Object.entries(standardUrls)) {
+    if (trimmed.includes(domain) && provider !== p) {
+      // URL thuộc về provider khác -> Bỏ qua để adapter tự dùng default URL của target provider!
+      return '';
+    }
+  }
+  return trimmed;
+}
+
 // -----------------------------------------------------------------------------
 // POST /api/ai/test-connection — Live Ping / Latency Test
 // -----------------------------------------------------------------------------
 router.post('/ai/test-connection', requireAuth, async (req, res) => {
   try {
-    const { provider, model, apiKey, baseUrl, isFallback } = req.body || {};
+    const { provider, model, apiKey, baseUrl, isFallback, primaryProvider, primaryApiKey } = req.body || {};
     const settings = localStore.getAiSettings();
-
-    const targetProvider = provider || (isFallback ? settings.fallbackProvider : settings.provider) || 'gemini';
-    const isSameProvider = targetProvider === (settings.provider || 'gemini');
-
-    let resolvedKey = apiKey?.trim();
-    if (!resolvedKey) {
-      if (isFallback) {
-        if (settings.fallbackApiKeyEncrypted) {
-          resolvedKey = decryptSecret(settings.fallbackApiKeyEncrypted);
-        } else if (process.env.AI_FALLBACK_API_KEY) {
-          resolvedKey = process.env.AI_FALLBACK_API_KEY;
-        } else if (isSameProvider) {
-          resolvedKey = settings.apiKeyEncrypted ? decryptSecret(settings.apiKeyEncrypted) : (process.env.AI_API_KEY || '');
-        }
-      } else {
-        resolvedKey = settings.apiKeyEncrypted ? decryptSecret(settings.apiKeyEncrypted) : (process.env.AI_API_KEY || '');
-      }
-    }
-
-    if (resolvedKey) {
-      resolvedKey = resolvedKey.replace(/^["']|["']$/g, '').trim();
-    }
+    const { key: resolvedKey, targetProvider } = resolveEffectiveKey({
+      provider,
+      apiKey,
+      isFallback,
+      primaryProvider,
+      primaryApiKey,
+      settings
+    });
 
     if (targetProvider !== 'ollama' && !resolvedKey) {
       return res.status(400).json({
         status: 'error',
         error: isFallback 
-          ? `Nhà cung cấp dự phòng (${targetProvider.toUpperCase()}) khác nhà cung cấp chính (${(settings.provider || '').toUpperCase()}) nên không thể dùng chung key. Vui lòng nhập API Key riêng cho ${targetProvider.toUpperCase()} vào ô bên dưới!`
+          ? `Nhà cung cấp dự phòng (${targetProvider.toUpperCase()}) chưa có API Key hợp lệ tương thích. Vui lòng nhập API Key cho ${targetProvider.toUpperCase()} vào ô bên dưới!`
           : `Chưa có API Key cho ${targetProvider.toUpperCase()}. Vui lòng nhập API Key trước khi kiểm tra!`
       });
     }
@@ -130,11 +194,14 @@ router.post('/ai/test-connection', requireAuth, async (req, res) => {
     const defaultModel = targetProvider === 'gemini' ? 'gemini-2.0-flash' : (targetProvider === 'zai' ? 'glm-5.3-flash' : 'deepseek-chat');
     const targetModel = model || (isFallback ? settings.fallbackModel : settings.model) || defaultModel;
 
+    const rawBaseUrl = baseUrl || (isFallback ? settings.fallbackBaseUrl : settings.baseUrl);
+    const resolvedBaseUrl = resolveEffectiveBaseUrl(rawBaseUrl, targetProvider);
+
     const testResult = await aiAgentAdapter.testConnection({
       provider: targetProvider,
       model: targetModel,
       apiKey: resolvedKey,
-      baseUrl: baseUrl || (isFallback ? settings.fallbackBaseUrl : settings.baseUrl)
+      baseUrl: resolvedBaseUrl
     });
 
     res.json(testResult);
@@ -149,35 +216,24 @@ router.post('/ai/test-connection', requireAuth, async (req, res) => {
 // -----------------------------------------------------------------------------
 router.post('/ai/scan-models', requireAuth, async (req, res) => {
   try {
-    const { provider = 'gemini', apiKey, baseUrl, isFallback } = req.body || {};
+    const { provider = 'gemini', apiKey, baseUrl, isFallback, primaryProvider, primaryApiKey } = req.body || {};
     const settings = localStore.getAiSettings();
+    const { key: resolvedKey, targetProvider } = resolveEffectiveKey({
+      provider,
+      apiKey,
+      isFallback,
+      primaryProvider,
+      primaryApiKey,
+      settings
+    });
 
-    const targetProvider = provider || (isFallback ? settings.fallbackProvider : settings.provider) || 'gemini';
-    const isSameProvider = targetProvider === (settings.provider || 'gemini');
-
-    let resolvedKey = apiKey?.trim();
-    if (!resolvedKey) {
-      if (isFallback) {
-        if (settings.fallbackApiKeyEncrypted) {
-          resolvedKey = decryptSecret(settings.fallbackApiKeyEncrypted);
-        } else if (process.env.AI_FALLBACK_API_KEY) {
-          resolvedKey = process.env.AI_FALLBACK_API_KEY;
-        } else if (isSameProvider) {
-          resolvedKey = settings.apiKeyEncrypted ? decryptSecret(settings.apiKeyEncrypted) : (process.env.AI_API_KEY || '');
-        }
-      } else {
-        resolvedKey = settings.apiKeyEncrypted ? decryptSecret(settings.apiKeyEncrypted) : (process.env.AI_API_KEY || '');
-      }
-    }
-
-    if (resolvedKey) {
-      resolvedKey = resolvedKey.replace(/^["']|["']$/g, '').trim();
-    }
+    const rawBaseUrl = baseUrl || (isFallback ? settings.fallbackBaseUrl : settings.baseUrl);
+    const resolvedBaseUrl = resolveEffectiveBaseUrl(rawBaseUrl, targetProvider);
 
     const scanResult = await aiAgentAdapter.fetchLiveModels({
       provider: targetProvider,
       apiKey: resolvedKey,
-      baseUrl: baseUrl || (isFallback ? settings.fallbackBaseUrl : settings.baseUrl)
+      baseUrl: resolvedBaseUrl
     });
 
     res.json({

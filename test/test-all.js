@@ -1196,13 +1196,106 @@ try {
   zaloClient.sendMessage = origSend;
 }
 
+// -----------------------------------------------------------------------------
+// Test 35: Group Auto-Reconciliation & Anti-Downgrade Invariant
+// -----------------------------------------------------------------------------
+console.log('35. Testing Group Auto-Reconciliation & Anti-Downgrade Invariant...');
+const testStoreGroup = new LocalStore('data/test_group_reconcile.db');
+try {
+  // 1. Insert a misclassified conversation with isGroup = 0 but 2 different senders
+  testStoreGroup.upsertConversation({ id: 'group_test_999', name: 'Nhóm Test', isGroup: false });
+  testStoreGroup.addMessage({ id: 'm1', threadId: 'group_test_999', senderId: 'user_a', senderName: 'Alice', text: 'Chào mọi người' });
+  testStoreGroup.addMessage({ id: 'm2', threadId: 'group_test_999', senderId: 'user_b', senderName: 'Bob', text: 'Chào Alice' });
+
+  // Re-run migration healing query
+  testStoreGroup.db.exec(`
+    UPDATE conversations 
+    SET isGroup = 1 
+    WHERE id IN (
+      SELECT threadId 
+      FROM messages 
+      WHERE senderId != '' AND senderId != 'self'
+      GROUP BY threadId 
+      HAVING COUNT(DISTINCT senderId) > 1
+    );
+  `);
+  const convAfter = testStoreGroup.getConversation('group_test_999');
+  assert.strictEqual(convAfter.isGroup, true, 'Group with multiple senders must be healed to isGroup = 1');
+
+  // 2. Verify Anti-Downgrade Invariant: upserting with isGroup = false must NOT downgrade an existing group
+  testStoreGroup.upsertConversation({ id: 'group_test_999', name: 'Nhóm Test Updated', isGroup: false });
+  const convDowngradeAttempt = testStoreGroup.getConversation('group_test_999');
+  assert.strictEqual(convDowngradeAttempt.isGroup, true, 'Anti-downgrade invariant must prevent isGroup from being set to false');
+
+  console.log('   ✅ Group Auto-Reconciliation & Anti-Downgrade Invariant passed!\n');
+} finally {
+  testStoreGroup.close();
+  if (fs.existsSync('data/test_group_reconcile.db')) {
+    try { fs.unlinkSync('data/test_group_reconcile.db'); } catch {}
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Test 36: OpenRouter Auto-Fallback & Multi-Tier Key Compatibility
+// -----------------------------------------------------------------------------
+console.log('36. Testing OpenRouter Auto-Fallback & Multi-Tier Key Compatibility...');
+const { isKeyCompatible } = await import('../src/adapters/ai-agent.js');
+
+// 1. Kiểm tra isKeyCompatible
+assert.strictEqual(isKeyCompatible('AIzaSy123456789', 'gemini'), true, 'Gemini key must be compatible with gemini');
+assert.strictEqual(isKeyCompatible('AQ.987654321', 'gemini'), true, 'AQ. Gemini key must be compatible with gemini');
+assert.strictEqual(isKeyCompatible('AIzaSy123456789', 'openrouter'), false, 'Gemini key MUST NOT be compatible with openrouter');
+assert.strictEqual(isKeyCompatible('AIzaSy123456789', 'deepseek'), false, 'Gemini key MUST NOT be compatible with deepseek');
+assert.strictEqual(isKeyCompatible('sk-or-v1-abcdef', 'openrouter'), true, 'OpenRouter key must be compatible with openrouter');
+assert.strictEqual(isKeyCompatible('sk-or-v1-abcdef', 'gemini'), false, 'OpenRouter key MUST NOT be compatible with gemini');
+assert.strictEqual(isKeyCompatible('', 'ollama'), true, 'Ollama does not require key');
+
+// 2. Kiểm tra Runtime Fallback Key Resolution trong AiAgentAdapter
+const testAiAdapter = new AiAgentAdapter({ localStore: store, sessionSecret: testPassphrase });
+
+// Kịch bản A: CSDL còn lưu key rác Gemini cũ trong fallbackApiKeyEncrypted, nhưng cả 2 bên cùng OpenRouter
+store.saveAiSettings({
+  isEnabled: 1,
+  provider: 'openrouter',
+  model: 'google/gemini-2.5-flash',
+  apiKeyEncrypted: encryptSecret('sk-or-v1-primary-secret', testPassphrase),
+  fallbackEnabled: 1,
+  fallbackProvider: 'openrouter',
+  fallbackModel: 'deepseek/deepseek-chat',
+  fallbackApiKeyEncrypted: encryptSecret('AIzaSy-stale-gemini-key', testPassphrase) // Key rác
+});
+
+let capturedFallbackKey = '';
+testAiAdapter.callProvider = async (params) => {
+  if (params.model === 'google/gemini-2.5-flash') {
+    throw new Error('HTTP 429 Quota Exceeded on Primary Model');
+  }
+  capturedFallbackKey = params.apiKey;
+  return 'Fallback reply success';
+};
+
+const replyA = await testAiAdapter.callModelWithFallback('system', [], 'user ping', store.getAiSettings());
+assert.strictEqual(replyA, 'Fallback reply success', 'Should successfully fallback');
+assert.strictEqual(capturedFallbackKey, 'sk-or-v1-primary-secret', 'Fallback must discard stale Gemini key and inherit valid primary key');
+
+// Kịch bản B: Người dùng có 2 tài khoản OpenRouter riêng biệt (Key A và Key B)
+store.saveAiSettings({
+  fallbackApiKeyEncrypted: encryptSecret('sk-or-v1-account-two-secret', testPassphrase)
+});
+capturedFallbackKey = '';
+const replyB = await testAiAdapter.callModelWithFallback('system', [], 'user ping', store.getAiSettings());
+assert.strictEqual(replyB, 'Fallback reply success');
+assert.strictEqual(capturedFallbackKey, 'sk-or-v1-account-two-secret', 'Fallback must preserve custom fallback key when compatible');
+
+console.log('   ✅ OpenRouter Auto-Fallback & Multi-Tier Key Compatibility passed!\n');
+
 // Clean test db
 store.close();
 if (fs.existsSync(testDbFile)) {
   try { fs.unlinkSync(testDbFile); } catch {}
 }
 
-console.log('🎉 ALL 34 INTEGRITY, SECURITY, CRM, AIZALO REMARKETING, AI SUITE, BULK DEEP-SYNC, QR AUTH, MEMORY GUARD, ZALO SANITIZER, DESKTOP PACKAGED, CLEAN SWITCH, MULTI-DEVICE SYNC, GROUP MENTION, QUICK-MSG & CAMPAIGN TEST DISPATCH TESTS PASSED 100%!');
+console.log('🎉 ALL 36 INTEGRITY, SECURITY, CRM, AIZALO REMARKETING, AI SUITE, BULK DEEP-SYNC, QR AUTH, MEMORY GUARD, ZALO SANITIZER, DESKTOP PACKAGED, CLEAN SWITCH, MULTI-DEVICE SYNC, GROUP MENTION, QUICK-MSG, CAMPAIGN TEST DISPATCH, GROUP RECONCILIATION & AUTO-FALLBACK OPENROUTER TESTS PASSED 100%!');
 
 
 

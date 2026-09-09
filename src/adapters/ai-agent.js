@@ -54,6 +54,24 @@ export function isGeminiApiKey(key) {
   return GEMINI_KEY_PREFIXES.some(prefix => clean.startsWith(prefix));
 }
 
+/**
+ * Kiểm tra tính tương thích giữa API Key và nhà cung cấp
+ * - Gemini: Bắt buộc bắt đầu bằng AIza hoặc AQ.
+ * - Các nhà cung cấp khác (OpenRouter, DeepSeek, ZAI, Groq, OpenAI): TUYỆT ĐỐI KHÔNG chấp nhận key Gemini
+ * - Ollama: Không cần key (luôn hợp lệ)
+ */
+export function isKeyCompatible(key, provider) {
+  if (provider === 'ollama') return true;
+  if (!key || typeof key !== 'string') return false;
+  const clean = key.trim().replace(/^["']|["']$/g, '');
+  if (!clean) return false;
+  const isGemini = isGeminiApiKey(clean);
+  if (provider === 'gemini') return isGemini;
+  // Provider khác nhưng lại dùng key Gemini -> Không tương thích!
+  if (isGemini) return false;
+  return true;
+}
+
 export class AiAgentAdapter extends BaseAdapter {
   constructor(options = {}) {
     super('ai_agent');
@@ -704,12 +722,18 @@ ${scope || `1. Tuyệt đối không bịa đặt số tài khoản ngân hàng,
         const fallbackProvider = settings.fallbackProvider || 'deepseek';
         const fallbackModel = settings.fallbackModel || 'deepseek-chat';
         const isSameProvider = fallbackProvider === primaryProvider;
-        const fallbackKey = this._resolveApiKey(settings.fallbackApiKeyEncrypted, 'AI_FALLBACK_API_KEY') || (isSameProvider ? primaryKey : '');
-        const fallbackBaseUrl = settings.fallbackBaseUrl || '';
+        const rawFallbackKey = this._resolveApiKey(settings.fallbackApiKeyEncrypted, 'AI_FALLBACK_API_KEY');
+        const fallbackKey = (rawFallbackKey && isKeyCompatible(rawFallbackKey, fallbackProvider))
+          ? rawFallbackKey
+          : (isSameProvider && isKeyCompatible(primaryKey, fallbackProvider) ? primaryKey : '');
+        const rawFallbackBaseUrl = (settings.fallbackBaseUrl || '').trim();
+        const fallbackBaseUrl = (rawFallbackBaseUrl.includes('deepseek.com') && fallbackProvider !== 'deepseek')
+          ? ''
+          : rawFallbackBaseUrl;
         const fallbackTimeout = Math.max(Number(settings.fallbackTimeoutMs || 30000), 30000);
 
         if (!fallbackKey && fallbackProvider !== 'ollama') {
-          logger.warn(`⚠️ [AI Auto-Fallback] Bỏ qua Fallback: Nhà cung cấp dự phòng (${fallbackProvider}) khác nhà cung cấp chính (${primaryProvider}) và chưa được cài đặt API Key riêng.`);
+          logger.warn(`⚠️ [AI Auto-Fallback] Bỏ qua Fallback: Nhà cung cấp dự phòng (${fallbackProvider}) chưa có API Key hợp lệ tương thích.`);
           throw primaryErr;
         }
 

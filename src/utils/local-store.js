@@ -327,6 +327,26 @@ export class LocalStore extends EventEmitter {
       if (!aiCols.includes('debounceSeconds'))      this.db.exec("ALTER TABLE ai_settings ADD COLUMN debounceSeconds INTEGER DEFAULT 3;");
       if (!aiCols.includes('apiKeyEncrypted'))      this.db.exec("ALTER TABLE ai_settings ADD COLUMN apiKeyEncrypted TEXT DEFAULT '';");
       if (!aiCols.includes('fallbackApiKeyEncrypted')) this.db.exec("ALTER TABLE ai_settings ADD COLUMN fallbackApiKeyEncrypted TEXT DEFAULT '';");
+
+      // Auto-Reconciliation: Heals groups misclassified as isGroup = 0 when they have multiple distinct senders
+      try {
+        const healResult = this.db.prepare(`
+          UPDATE conversations 
+          SET isGroup = 1 
+          WHERE id IN (
+            SELECT threadId 
+            FROM messages 
+            WHERE senderId != '' AND senderId != 'self'
+            GROUP BY threadId 
+            HAVING COUNT(DISTINCT senderId) > 1
+          ) AND isGroup = 0;
+        `).run();
+        if (healResult.changes > 0) {
+          logger.info(`👥 [Group Healing] Restored isGroup=1 for ${healResult.changes} conversations with multiple senders.`);
+        }
+      } catch (e) {
+        logger.warn(`Group reconciliation note: ${e.message}`);
+      }
     } catch (err) {
       logger.warn(`Migration notice: ${err.message}`);
     }
@@ -364,7 +384,7 @@ export class LocalStore extends EventEmitter {
     const existing = this.getConversation(conv.id);
     const name = conv.name !== undefined ? conv.name : (existing?.name || conv.id);
     const avatar = conv.avatar !== undefined ? conv.avatar : (existing?.avatar || '');
-    const isGroup = conv.isGroup ? 1 : 0;
+    const isGroup = (existing?.isGroup || conv.isGroup) ? 1 : 0;
     
     // Protect lastTime & lastMessage from being overwritten backwards by older historical messages
     let lastMessage = conv.lastMessage !== undefined ? String(conv.lastMessage) : (existing?.lastMessage || '');
@@ -387,7 +407,7 @@ export class LocalStore extends EventEmitter {
       ON CONFLICT(id) DO UPDATE SET
         name = excluded.name,
         avatar = CASE WHEN excluded.avatar != '' THEN excluded.avatar ELSE conversations.avatar END,
-        isGroup = excluded.isGroup,
+        isGroup = CASE WHEN conversations.isGroup = 1 THEN 1 ELSE excluded.isGroup END,
         lastMessage = CASE WHEN excluded.lastMessage != '' THEN excluded.lastMessage ELSE conversations.lastMessage END,
         lastTime = excluded.lastTime,
         unreadCount = excluded.unreadCount,
@@ -495,7 +515,7 @@ export class LocalStore extends EventEmitter {
     this.upsertConversation({
       id: threadId,
       name: existing?.name || senderName || threadId,
-      isGroup: msg.isGroup !== undefined ? msg.isGroup : (existing?.isGroup || false),
+      isGroup: Boolean(existing?.isGroup || msg.isGroup),
       lastMessage: text || (mediaType === 'image' ? '[Hình ảnh]' : (mediaType === 'sticker' ? '[Sticker]' : (mediaType === 'contact' ? '[Danh thiếp]' : '[Tin nhắn]'))),
       lastTime: timestamp,
       unreadCount: newUnread

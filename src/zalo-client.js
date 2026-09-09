@@ -28,6 +28,7 @@ export class ZaloClient {
     this.onQrCallback = null;
     this.qrFlowId = 0; // Flow generation token to prevent zombie QR loops
     this.friendUids = new Set(); // In-memory cache of current account friends
+    this.groupUids = new Set(); // In-memory cache of current account groups
     this._deliveredQueue = new Map(); // Map<threadId, Set<msgId>>
     this._deliveredFlushTimer = null;
   }
@@ -178,7 +179,9 @@ export class ZaloClient {
         const groupsRes = await this.api.getAllGroups();
         const groupMap = groupsRes?.gridVerMap || groupsRes || {};
         const groupIds = Object.keys(groupMap);
+        this.groupUids.clear();
         for (const gid of groupIds) {
+          this.groupUids.add(String(gid));
           let groupName = `Nhóm ${gid.substring(0, 8)}`;
           let groupAvatar = '';
 
@@ -453,7 +456,13 @@ export class ZaloClient {
       try {
         const senderId = String(message.data?.uidFrom || message.uidFrom || message.senderId || '');
         const threadId = String(message.threadId || (message.isSelf ? message.data?.idTo : message.data?.idTo) || senderId);
-        const isGroup = Boolean(message.data?.idTo && message.data.idTo.startsWith('g_'));
+        const isGroup = Boolean(
+          message.type === ThreadType.Group || 
+          message.type === 1 || 
+          message.constructor?.name === 'GroupMessage' ||
+          (this.groupUids && this.groupUids.has(threadId)) ||
+          localStore.getConversation(threadId)?.isGroup
+        );
         
         // Parse with Rich Media Parser
         const parsed = parseMessage(message);

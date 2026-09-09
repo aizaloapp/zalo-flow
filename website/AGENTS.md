@@ -1,0 +1,67 @@
+﻿# 🌐 WEBSITE & PORTAL AGENTS.MD — QUY CHUẨN CỔNG THÔNG TIN CỘNG ĐỒNG AIZALO.COM
+
+> **Sứ mệnh:** Cổng thông tin mã nguồn mở, Landing Page cộng đồng, Blog kỹ thuật và tài liệu AI Crawlers cho Zalo-Flow.  
+> **Địa chỉ chính thức:** `https://aizalo.com/` (Cloudflare Pages: `aizalo-portal`).  
+> **Mã nguồn:** Thư mục `website/src/` -> Lệnh biên dịch: `powershell website/build.ps1` -> Thư mục triển khai: `website/dist/`.
+
+---
+
+## 🏛️ 1. Bản Đồ Hạ Tầng Phân Tách (Domain & Topology Separation)
+
+1. **Cổng Thông Tin Cộng Đồng (`https://aizalo.com/`):**
+   - **Nguồn:** `website/src/` -> Build: `powershell website/build.ps1` -> Dist: `website/dist/`.
+   - **Hạ tầng:** Cloudflare Pages (Project: `aizalo-portal`).
+   - **Thành phần:** Landing page, Blog cẩm nang (`/blog/`), tài liệu AI Crawlers (`llms.txt`, `llms-full.txt` gắn `X-Robots-Tag: noindex`).
+2. **SaaS Platform (`https://app.aizalo.com/`):**
+   - **Hạ tầng:** Cloudflare Worker (`zalo-gatekeeper`) kết hợp Cloudflare D1/KV.
+   - **Ranh giới cách ly 100%:** TUYỆT ĐỐI KHÔNG sửa đổi, xóa mã nguồn, can thiệp D1 schema hay cấu hình của `app.aizalo.com` khi làm việc trên repo này.
+3. **Phần Mềm Zalo-Flow Cục Bộ (`localhost:3000`):**
+   - Node.js >= 22.5.0, SQLite cục bộ, bộ cài Windows 1-Click (`.exe`).
+
+---
+
+## ⚡ 2. Zero-Downtime Worker-to-Pages Domain Cutover Invariant
+
+Khi chuyển giao hoặc cấu hình tên miền chính (`aizalo.com`) sang Cloudflare Pages mà vẫn duy trì dịch vụ SaaS (`app.aizalo.com`) trên Worker:
+1. Tuyệt đối KHÔNG xóa Worker script hoặc can thiệp vào bản ghi của `app.aizalo.com`.
+2. **Quy tắc phân cấp định tuyến (Worker Routes Precedence):**  
+   Worker Routes luôn có độ ưu tiên ghi đè cao hơn Cloudflare Pages. BẮT BUỘC phải gỡ bỏ bản ghi Custom Domain khỏi Worker (`DELETE /workers/domains/{id}`) VÀ xóa sạch Worker Route `aizalo.com/*` trên Zone (`DELETE /zones/{id}/workers/routes/{id}`). Tuyệt đối không để tồn tại Worker Route cho `aizalo.com/*` trên Zone. Chỉ duy trì duy nhất Route `app.aizalo.com/*`.
+3. Khai báo tên miền vào Cloudflare Pages (`POST /pages/projects/{project}/domains`) và thiết lập bản ghi CNAME trỏ về `<project>.pages.dev` kèm bật Cloudflare Proxy (🟧).
+4. Mọi thông tin xác thực Cloudflare lấy từ Bitwarden Vault BẮT BUỘC phải khóa Vault ngay lập tức (`bw lock`) và xóa sạch biến môi trường phiên (`BW_SESSION`, `BW_PASSWORD`) khỏi bộ nhớ sau khi hoàn tất. *(Gốc: Rule 44)*
+
+---
+
+## 🔍 3. Chiến Lược Từ Khóa SEO & GEO Thực Nghiệm (DataForSEO Invariants)
+
+1. **Bộ từ khóa Trang chủ (`aizalo.com`):**
+   - **Từ khóa cốt lõi (H1 & Title):**  
+     `chat bot zalo` (480 – 880 vol/tháng, KD 8/100 cực thấp),  
+     `bot zalo` (320 – 390 vol/tháng),  
+     `chatbot zalo cá nhân` (110 – 140 vol/tháng, intent kích hoạt **Google AI Overview Rank 1**),  
+     `zalo crm` (170 – 390 vol/tháng, xu hướng tăng 10x).
+   - **Quy chuẩn Meta:** Thẻ Title, H1 và OG Image BẮT BUỘC chứa các từ khóa này để duy trì vị thế xếp hạng.
+2. **Cụm chủ đề Vệ tinh Blog (`/blog/`):**
+   - Bài 1 (`cach-gui-tin-nhan-tu-dong-tren-zalo-khong-bi-khoa.html`): `gửi tin nhắn tự động trên zalo`, `anti-ban zalo` (User intent: sợ khóa nick).
+   - Bài 2 (`huong-dan-cach-tao-chatbot-zalo-ca-nhan.html`): `cách tạo chatbot zalo cá nhân`, `tạo bot zalo` (User intent: cài đặt nhanh không cần code).
+   - Bài 3 (`tich-hop-ai-gemini-deepseek-vao-zalo-ca-nhan.html`): `tích hợp ai vào zalo`, `chatbot gemini zalo`, `deepseek zalo` (User intent: AI thông minh).
+   - Bài 4 (`zalo-crm-la-gi-giai-phap-quan-ly-tin-nhan-cskh.html`): `zalo crm`, `quản lý tin nhắn cskh zalo`, `chatwoot zalo` (User intent: bán hàng & đội ngũ).
+3. **Nguyên tắc GEO (Generative Engine Optimization):**
+   - BẮT BUỘC duy trì tệp `llms.txt` (tóm tắt cho AI Crawlers) và `llms-full.txt` (toàn văn kèm gắn `X-Robots-Tag: noindex`).
+   - Đoạn văn bản định nghĩa ngắn 40-60 từ (Quotable Snippets) và bảng so sánh trên trang chủ phải luôn rõ ràng, cô đọng để các AI search engine (ChatGPT, Perplexity, Gemini, Claude) dễ dàng trích dẫn trực tiếp.
+
+---
+
+## 🎨 4. Chuẩn Kỹ Thuật Blog & Mục Lục Tương Tác (TOC Invariants)
+
+1. **Hardcoded Semantic Headings ID (Anti-Client-Slug Invariant):**
+   - Tuyệt đối KHÔNG dùng Client-side JavaScript để tự sinh thuộc tính `id` cho các thẻ tiêu đề bài viết blog.
+   - Mọi thẻ `<h2>`, `<h3>` BẮT BUỘC phải được gán sẵn thuộc tính `id` chuẩn tiếng Việt không dấu ngắn gọn (`id="huong-dan-cai-dat"`) ngay trong mã nguồn HTML tĩnh.
+   - *Mục đích:* Bảo đảm khả năng Deep Linking tức thì từ URL có hash (`#anchor`) ngay khi mở trang, đồng thời giúp Googlebot thu thập chính xác Anchor Sitelinks.
+2. **Anti-Flicker Scrollspy Lock:**
+   - Khi xây dựng Scrollspy bằng `IntersectionObserver`, BẮT BUỘC phải trang bị cơ chế khóa bắt sự kiện (debounce/lock ~800ms) khi người dùng nhấp vào một liên kết mục lục.
+   - *Mục đích:* Triệt tiêu hiện tượng các mục trung gian bị sáng đèn chớp nhoáng (flickering) trong lúc màn hình đang cuộn mượt tới vị trí được chọn.
+3. **CTA Box Semantic Isolation:**
+   - Các khối kêu gọi hành động (CTA Box), hộp trợ giúp cộng đồng hoặc khảo sát ở cuối bài viết TUYỆT ĐỐI KHÔNG dùng thẻ tiêu đề `<h2>` hoặc `<h3>` mà phải dùng `<div class="cta-title">` hoặc inline style.
+   - *Mục đích:* Bảo toàn cây phả hệ ngữ nghĩa (Semantic Hierarchy) thuần khiết cho các công cụ tìm kiếm và ngăn chặn việc parser mục lục gom nhầm nút CTA vào danh sách đọc.
+4. **Build Script Asset Synchronization:**
+   - Khi bổ sung bất kỳ tệp script (`.js`) hoặc asset tĩnh mới nào trong `website/src/`, tệp `website/build.ps1` BẮT BUỘC phải có lệnh sao chép tường minh sang `website/dist/` trước khi chạy lệnh deploy Cloudflare Pages.

@@ -2001,7 +2001,8 @@ async function selectConversation(threadId) {
   // Unfriended Guard: Cảnh báo nếu là chat cá nhân mà nick hiện tại chưa kết bạn
   const unfriendedBar = document.getElementById('unfriended-warning-bar');
   if (unfriendedBar) {
-    if (!conv.isGroup && currentZaloProfile?.isLoggedIn && Array.isArray(currentZaloProfile.friendUids) && currentZaloProfile.friendUids.length > 0) {
+    const isGroupResolved = Boolean(conv.isGroup || state.conversations?.find(c => String(c.id) === String(threadId))?.isGroup);
+    if (!isGroupResolved && currentZaloProfile?.isLoggedIn && Array.isArray(currentZaloProfile.friendUids) && currentZaloProfile.friendUids.length > 0) {
       const isFriend = currentZaloProfile.friendUids.includes(String(threadId));
       unfriendedBar.style.display = isFriend ? 'none' : 'flex';
     } else {
@@ -2165,6 +2166,27 @@ function formatQuoteText(quoteStr) {
   return str;
 }
 
+function getSenderColorIndex(senderId, senderName) {
+  const str = String(senderId || senderName || '0');
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash) % 10;
+}
+
+function getSenderInitials(name) {
+  if (!name || typeof name !== 'string') return '👤';
+  const clean = name.trim().replace(/[^\p{L}\p{N}\s]/gu, '').trim();
+  if (!clean) return (name.trim().charAt(0) || '👤').toUpperCase();
+  const words = clean.split(/\s+/);
+  if (words.length === 1) {
+    return words[0].substring(0, 2).toUpperCase();
+  }
+  return (words[0].charAt(0) + words[words.length - 1].charAt(0)).toUpperCase();
+}
+
 function appendMessageElement(msg, autoScroll = true) {
   const isOutbound = Boolean(msg.isSelf || msg.isBot);
   const timeFormatted = formatTime(msg.timestamp);
@@ -2182,11 +2204,6 @@ function appendMessageElement(msg, autoScroll = true) {
 
   const isRecalled = Boolean(msg.isRecalled === 1 || msg.isRecalled === true);
   const isSticker = Boolean(msg.mediaType === 'sticker' && msg.mediaUrl);
-
-  // Group Chat sender display (only for incoming messages in group chats)
-  const groupSenderHtml = (isGroup && !isOutbound)
-    ? `<div class="bubble-group-sender">${escapeHtml(msg.senderName || 'Thành viên')}</div>`
-    : '';
 
   // Status tick for outbound messages
   const statusTickHtml = (msg.isSelf && !isRecalled)
@@ -2350,8 +2367,33 @@ function appendMessageElement(msg, autoScroll = true) {
     ? `<div class="message-reaction-badge" title="Cảm xúc">${escapeHtml(msg.reactions)}</div>` 
     : '';
 
-  // Zero-whitespace template string to strictly protect pre-wrap immunity (Rule 42)
-  bubbleWrap.innerHTML = `${hoverActionsHtml}${groupSenderHtml}<div class="bubble-content ${isRecalled ? 'recalled' : ''} ${isSticker ? 'sticker-bubble' : ''}">${contentHtml}${reactionBadgeHtml}</div>`;
+  // Group Inbound Layout (Avatar + Colored Member Name + Bubble)
+  const isGroupInbound = Boolean(isGroup && !isOutbound);
+  if (isGroupInbound) {
+    bubbleWrap.classList.add('is-group-msg');
+    const senderName = msg.senderName || 'Thành viên';
+    const colorIdx = getSenderColorIndex(msg.senderId, senderName);
+    const initials = getSenderInitials(senderName);
+    const avatarUrl = msg.senderAvatar || (state.conversations?.find(c => String(c.id) === String(msg.senderId))?.avatar) || '';
+
+    const groupAvatarHtml = `
+      <div class="group-sender-avatar-wrap" title="${escapeHtml(senderName)}">
+        ${avatarUrl ? `<img src="${escapeHtml(avatarUrl)}" class="group-sender-avatar" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';" />` : ''}
+        <div class="group-sender-avatar-initials" data-sender-color="${colorIdx}" style="${avatarUrl ? 'display:none;' : 'display:flex;'}">${escapeHtml(initials)}</div>
+      </div>
+    `;
+
+    const groupSenderNameHtml = `
+      <div class="bubble-group-sender" data-sender-color="${colorIdx}" onclick="startQuoteMessage('${msg.id}', decodeURIComponent('${senderForAttr}'), decodeURIComponent('${rawTextForAttr}'))" title="Bấm để trả lời trích dẫn ${escapeHtml(senderName)}">
+        <span>${escapeHtml(senderName)}</span>
+      </div>
+    `;
+
+    bubbleWrap.innerHTML = `${hoverActionsHtml}<div class="group-msg-row">${groupAvatarHtml}<div class="group-msg-col">${groupSenderNameHtml}<div class="bubble-content ${isRecalled ? 'recalled' : ''} ${isSticker ? 'sticker-bubble' : ''}">${contentHtml}${reactionBadgeHtml}</div></div></div>`;
+  } else {
+    // Zero-whitespace template string to strictly protect pre-wrap immunity (Rule 42)
+    bubbleWrap.innerHTML = `${hoverActionsHtml}<div class="bubble-content ${isRecalled ? 'recalled' : ''} ${isSticker ? 'sticker-bubble' : ''}">${contentHtml}${reactionBadgeHtml}</div>`;
+  }
 
   messagesStreamEl.appendChild(bubbleWrap);
   if (autoScroll) scrollToBottom();
@@ -3847,15 +3889,35 @@ async function showSecondBrainWikiPreview() {
 function populateModelOptions(selectEl, provider, selectedModel) {
   if (!selectEl) return;
   const list = CURATED_MODELS_CLIENT[provider] || CURATED_MODELS_CLIENT.gemini;
-  selectEl.innerHTML = list.map(m => `
-    <option value="${m.id}" ${m.id === selectedModel ? 'selected' : ''}>${escapeHtml(m.name)}</option>
-  `).join('');
+  let hasSelected = false;
+  let html = list.map(m => {
+    const isSel = (m.id === selectedModel);
+    if (isSel) hasSelected = true;
+    return `<option value="${m.id}" ${isSel ? 'selected' : ''}>${escapeHtml(m.name)}</option>`;
+  }).join('');
+
+  // Dynamic Select Amnesia Guard: Nếu model đã lưu/chọn không nằm trong danh mục tĩnh (như model quét từ OpenRouter), bổ sung option
+  if (selectedModel && !hasSelected) {
+    html = `<option value="${selectedModel}" selected>${escapeHtml(selectedModel)} (Đã cấu hình / Live)</option>` + html;
+  }
+  selectEl.innerHTML = html;
 }
 
 function isGeminiKey(key) {
   if (!key) return false;
   const clean = String(key).trim().replace(/^["']|["']$/g, '');
   return clean.startsWith('AIza') || clean.startsWith('AQ.');
+}
+
+function isKeyCompatible(key, provider) {
+  if (provider === 'ollama') return true;
+  if (!key) return false;
+  const clean = String(key).trim().replace(/^["']|["']$/g, '');
+  if (!clean) return false;
+  const isGemini = isGeminiKey(clean);
+  if (provider === 'gemini') return isGemini;
+  if (isGemini) return false;
+  return true;
 }
 
 function getProviderKeyHelp(provider) {
@@ -3910,8 +3972,9 @@ function handleProviderTypeChange(provider) {
   const fallbackKeyLabel = document.getElementById('ai-fallback-key-status-label');
   if (fallbackKeyLabel) {
     const isSame = fallbackProvider === provider;
-    if (aiSettingsState.hasFallbackApiKey) {
-      fallbackKeyLabel.innerText = `Đã lưu key: ${aiSettingsState.maskedFallbackApiKey}`;
+    const hasKeyForThisFallback = Boolean(aiSettingsState.hasFallbackApiKey && aiSettingsState.fallbackProvider === fallbackProvider);
+    if (hasKeyForThisFallback) {
+      fallbackKeyLabel.innerText = `Đã lưu key riêng: ${aiSettingsState.maskedFallbackApiKey}`;
       fallbackKeyLabel.style.color = '#34d399';
     } else if (isSame) {
       fallbackKeyLabel.innerText = '(Cùng nhà cung cấp: dùng chung key)';
@@ -3931,8 +3994,9 @@ function handleFallbackProviderChange(provider) {
   const fallbackKeyLabel = document.getElementById('ai-fallback-key-status-label');
   if (fallbackKeyLabel) {
     const isSame = provider === primaryProvider;
-    if (aiSettingsState.hasFallbackApiKey) {
-      fallbackKeyLabel.innerText = `Đã lưu key: ${aiSettingsState.maskedFallbackApiKey}`;
+    const hasKeyForThisFallback = Boolean(aiSettingsState.hasFallbackApiKey && aiSettingsState.fallbackProvider === provider);
+    if (hasKeyForThisFallback) {
+      fallbackKeyLabel.innerText = `Đã lưu key riêng: ${aiSettingsState.maskedFallbackApiKey}`;
       fallbackKeyLabel.style.color = '#34d399';
     } else if (isSame) {
       fallbackKeyLabel.innerText = '(Cùng nhà cung cấp: dùng chung key)';
@@ -3976,15 +4040,24 @@ async function testAiHubConnection(isFallback = false) {
   const model = isFallback 
     ? document.getElementById('ai-fallback-model-select')?.value 
     : document.getElementById('ai-model-select')?.value;
+
+  const primaryProvider = document.getElementById('ai-provider-select')?.value || 'gemini';
+  const primaryRawKey = document.getElementById('ai-apikey-input')?.value || '';
+  const primaryApiKey = primaryRawKey.trim().replace(/^["']|["']$/g, '');
+
   const rawApiKey = isFallback 
     ? document.getElementById('ai-fallback-apikey-input')?.value 
     : document.getElementById('ai-apikey-input')?.value;
-  const apiKey = (rawApiKey || '').trim().replace(/^["']|["']$/g, '');
+  let apiKey = (rawApiKey || '').trim().replace(/^["']|["']$/g, '');
+
+  // Kế thừa key chính nếu fallback cùng provider và chưa nhập key riêng
+  if (isFallback && !apiKey && provider === primaryProvider && primaryApiKey) {
+    apiKey = primaryApiKey;
+  }
+
   const baseUrl = isFallback 
     ? '' 
     : document.getElementById('ai-baseurl-input')?.value;
-
-  const primaryProvider = document.getElementById('ai-provider-select')?.value || 'gemini';
 
   // Pre-flight check 1: Google Gemini key validation
   if (provider === 'gemini' && apiKey && !isGeminiKey(apiKey)) {
@@ -3995,8 +4068,8 @@ async function testAiHubConnection(isFallback = false) {
   // Pre-flight check 2: Fallback key requirement when provider differs
   if (isFallback && provider !== 'ollama') {
     const isDifferentProvider = provider !== primaryProvider;
-    const hasExistingFallbackKey = Boolean(aiSettingsState.hasFallbackApiKey);
-    if (isDifferentProvider && !apiKey && !hasExistingFallbackKey) {
+    const hasKeyForThisFallback = Boolean(aiSettingsState.hasFallbackApiKey && aiSettingsState.fallbackProvider === provider);
+    if (isDifferentProvider && !apiKey && !hasKeyForThisFallback) {
       alert(`⚠️ [Chưa có API Key dự phòng]:\n\nNhà cung cấp dự phòng (${provider.toUpperCase()}) khác với nhà cung cấp chính (${primaryProvider.toUpperCase()}) nên không thể dùng chung key.\n\nVui lòng nhập API Key của ${provider.toUpperCase()} vào ô "API Key dự phòng" trước khi bấm kiểm tra!`);
       return;
     }
@@ -4018,7 +4091,15 @@ async function testAiHubConnection(isFallback = false) {
     const res = await fetch('/api/ai/test-connection', {
       method: 'POST',
       headers: getHeaders(),
-      body: JSON.stringify({ provider, model, apiKey, baseUrl, isFallback })
+      body: JSON.stringify({ 
+        provider, 
+        model, 
+        apiKey, 
+        baseUrl, 
+        isFallback,
+        primaryProvider,
+        primaryApiKey
+      })
     });
     const result = await res.json();
 
@@ -4055,10 +4136,21 @@ async function scanAvailableModels(isFallback = false) {
   const modelSelect = isFallback 
     ? document.getElementById('ai-fallback-model-select') 
     : document.getElementById('ai-model-select');
+
+  const primaryProvider = document.getElementById('ai-provider-select')?.value || 'gemini';
+  const primaryRawKey = document.getElementById('ai-apikey-input')?.value || '';
+  const primaryApiKey = primaryRawKey.trim().replace(/^["']|["']$/g, '');
+
   const rawApiKey = isFallback 
     ? document.getElementById('ai-fallback-apikey-input')?.value 
     : document.getElementById('ai-apikey-input')?.value;
-  const apiKey = (rawApiKey || '').trim().replace(/^["']|["']$/g, '');
+  let apiKey = (rawApiKey || '').trim().replace(/^["']|["']$/g, '');
+
+  // Kế thừa key chính nếu fallback cùng provider và chưa nhập key riêng
+  if (isFallback && !apiKey && provider === primaryProvider && primaryApiKey) {
+    apiKey = primaryApiKey;
+  }
+
   const baseUrl = isFallback 
     ? '' 
     : document.getElementById('ai-baseurl-input')?.value;
@@ -4069,7 +4161,14 @@ async function scanAvailableModels(isFallback = false) {
     const res = await fetch('/api/ai/scan-models', {
       method: 'POST',
       headers: getHeaders(),
-      body: JSON.stringify({ provider, apiKey, baseUrl, isFallback })
+      body: JSON.stringify({ 
+        provider, 
+        apiKey, 
+        baseUrl, 
+        isFallback,
+        primaryProvider,
+        primaryApiKey
+      })
     });
     const result = await res.json();
     if (result.data && Array.isArray(result.data) && result.data.length > 0) {
