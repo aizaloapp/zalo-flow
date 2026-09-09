@@ -695,11 +695,85 @@
             </div>
           </div>
         </details>
+
+        <!-- SECTION 7: KHUNG THỬ NGHIỆM GỬI TIN (IN-PLACE TEST DRAWER) -->
+        <div id="camp-test-send-drawer" class="camp-test-drawer" style="display: none;">
+          <div class="camp-test-drawer-header">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 1.1rem;">🧪</span>
+              <div>
+                <strong style="font-size: 0.85rem; color: #38bdf8;">Gửi Thử Nghiệm 1 Tin Nhắn</strong>
+                <div style="font-size: 0.72rem; color: var(--text-muted);">Gửi kiểm tra thực tế tới 1 hội thoại để xem cách hiển thị trước khi phát hàng loạt.</div>
+              </div>
+            </div>
+            <button type="button" class="modal-close-btn" onclick="toggleCampaignTestDrawer(false)" style="font-size: 1rem; width: 24px; height: 24px;">&times;</button>
+          </div>
+
+          <div class="camp-test-drawer-body">
+            <!-- CHỌN HỘI THOẠI & TÊN KHÁCH MẪU -->
+            <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 10px;">
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" style="font-size: 0.72rem; font-weight: 700; color: #38bdf8; text-transform: uppercase;">
+                  👤 Chọn Hội Thoại Nhận Test (*):
+                </label>
+                <select class="form-select" id="camp-test-recipient-select" onchange="onCampTestRecipientChange()" style="font-size: 0.8rem; padding: 6px 10px;">
+                  <option value="">-- Đang nạp danh sách hội thoại... --</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" style="font-size: 0.72rem; font-weight: 700; color: #94a3b8; text-transform: uppercase;">
+                  🏷️ Tên Khách Hàng Thay Thế {name}:
+                </label>
+                <input type="text" class="form-input" id="camp-test-sample-name" placeholder="Ví dụ: Anh Khoa..." oninput="refreshCampTestPreview()" style="font-size: 0.8rem; padding: 6px 10px;">
+              </div>
+            </div>
+
+            <!-- LIVE TEST PREVIEW (Mô phỏng Bong bóng Zalo) -->
+            <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 10px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span style="font-size: 0.72rem; font-weight: 700; color: #f59e0b; text-transform: uppercase;">
+                  📱 Xem Trước Tin Nhắn Sẽ Gửi Đi:
+                </span>
+                <button type="button" class="filter-btn" onclick="refreshCampTestPreview()" style="font-size: 0.7rem; padding: 2px 8px; color: #38bdf8;">
+                  🎲 Đổi Biến Thể Spintax Khác
+                </button>
+              </div>
+
+              <!-- Hộp xem trước tin nhắn -->
+              <div id="camp-test-preview-bubble" class="camp-test-bubble">
+                <div id="camp-test-preview-media" style="display: none; margin-bottom: 6px;"></div>
+                <div id="camp-test-preview-text" style="font-size: 0.82rem; line-height: 1.45; white-space: pre-wrap; word-break: break-word;"></div>
+              </div>
+
+              <!-- Huy hiệu trạng thái dispatch -->
+              <div id="camp-test-dispatch-badge" style="margin-top: 6px; font-size: 0.72rem; display: flex; align-items: center; gap: 6px;">
+                <!-- Rendered dynamically -->
+              </div>
+            </div>
+
+            <!-- NÚT GỬI THỬ -->
+            <div style="display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-top: 4px;">
+              <button type="button" class="filter-btn" onclick="toggleCampaignTestDrawer(false)" style="font-size: 0.78rem;">Đóng Khung Thử</button>
+              <button type="button" class="send-btn" id="btn-camp-test-send" onclick="executeCampaignTestSend()" style="background: linear-gradient(135deg, #0284c7, #0ea5e9); font-size: 0.82rem; font-weight: 700; padding: 7px 18px; display: inline-flex; align-items: center; gap: 6px;">
+                <span>🚀</span>
+                <span id="btn-camp-test-send-text">Gửi Tin Thử Nghiệm Ngay</span>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 8px;">
-        <button class="filter-btn" onclick="closeCampaignEditor()">Hủy</button>
-        <button class="send-btn" onclick="saveCampaign()" style="padding: 8px 20px; font-weight: 700;">💾 Lưu Chiến Dịch</button>
+      <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <button type="button" class="filter-btn" id="btn-toggle-camp-test" onclick="toggleCampaignTestDrawer()" style="color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); font-weight: 700; display: inline-flex; align-items: center; gap: 5px;">
+            <span>🧪</span>
+            <span>Gửi Thử 1 Tin</span>
+          </button>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button class="filter-btn" onclick="closeCampaignEditor()">Hủy</button>
+          <button class="send-btn" onclick="saveCampaign()" style="padding: 8px 20px; font-weight: 700;">💾 Lưu Chiến Dịch</button>
+        </div>
       </div>
     </div>
   </div>

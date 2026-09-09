@@ -1158,13 +1158,51 @@ try {
 
 console.log('   ✅ Campaign Quick-Message Media Integration passed!\n');
 
+// -----------------------------------------------------------------------------
+// Test 34: Campaign Test Send Protocol (Smart Caption Integration & Cold Outbound Shield)
+// -----------------------------------------------------------------------------
+console.log('34. Testing Campaign Test Send Protocol (Smart Caption & Cold Outbound Shield)...');
+const { resolveCampaignAttachments, dispatchSmartCampaignMessage } = await import('../src/routes/campaigns.js');
+const { zaloClient } = await import('../src/zalo-client.js');
+
+// 1. Verify Cold Outbound Shield logic
+const dummyConv = store.getConversation('nonexistent_cold_uid_8888');
+assert.strictEqual(dummyConv, null, 'Cold outbound UID must return null');
+
+// 2. Verify Smart Caption Dispatch logic with safe mock
+const origUpload = zaloClient.uploadAttachment;
+const origSend = zaloClient.sendMessage;
+let mockedUploadCalls = [];
+zaloClient.uploadAttachment = async (tId, p, isG, opt) => {
+  mockedUploadCalls.push({ tId, p, isG, opt });
+  return { status: 'ok' };
+};
+zaloClient.sendMessage = async () => ({ status: 'ok' });
+
+try {
+  const testCaptionResult = await dispatchSmartCampaignMessage({
+    threadId: 'test_thread_34',
+    customerName: 'Anh Nam',
+    rawMessage: '{Chào|Hello} {name} nhé, ưu đãi nè!',
+    localFilePaths: [{ path: '/tmp/banner.png', mediaUrl: '/media/banner.png', mediaType: 'image', originalName: 'banner.png' }],
+    isGroup: false
+  });
+  assert.strictEqual(testCaptionResult.isCaptionMerged, true, '1 image + text <= 1000 must merge caption');
+  assert.strictEqual(mockedUploadCalls.length, 1, 'Mocked uploadAttachment must be called once');
+  assert.ok(mockedUploadCalls[0].opt.caption.includes('Anh Nam'), 'Personalized caption must include customer name');
+  console.log('   ✅ Campaign Test Send Protocol passed!\n');
+} finally {
+  zaloClient.uploadAttachment = origUpload;
+  zaloClient.sendMessage = origSend;
+}
+
 // Clean test db
 store.close();
 if (fs.existsSync(testDbFile)) {
   try { fs.unlinkSync(testDbFile); } catch {}
 }
 
-console.log('🎉 ALL 33 INTEGRITY, SECURITY, CRM, AIZALO REMARKETING, AI SUITE, BULK DEEP-SYNC, QR AUTH, MEMORY GUARD, ZALO SANITIZER, DESKTOP PACKAGED, CLEAN SWITCH, MULTI-DEVICE SYNC, GROUP MENTION & CAMPAIGN QUICK-MSG INTEGRATION TESTS PASSED 100%!');
+console.log('🎉 ALL 34 INTEGRITY, SECURITY, CRM, AIZALO REMARKETING, AI SUITE, BULK DEEP-SYNC, QR AUTH, MEMORY GUARD, ZALO SANITIZER, DESKTOP PACKAGED, CLEAN SWITCH, MULTI-DEVICE SYNC, GROUP MENTION, QUICK-MSG & CAMPAIGN TEST DISPATCH TESTS PASSED 100%!');
 
 
 

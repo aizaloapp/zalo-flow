@@ -2162,6 +2162,65 @@ body {
 }
 
 /* =============================================================================
+   CAMPAIGN IN-PLACE TEST DRAWER (AIZALO Style & Semantic Tokens)
+   ============================================================================= */
+.camp-test-drawer {
+  background: var(--bg-card);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: campDrawerSlideDown 0.25s ease-out;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes campDrawerSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.camp-test-drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+}
+
+.camp-test-drawer-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.camp-test-bubble {
+  background: var(--bg-sidebar);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: var(--text-main);
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.camp-test-bubble-media-thumb {
+  max-width: 140px;
+  max-height: 140px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid var(--border);
+  display: block;
+}
+
+/* =============================================================================
    AI SUITE (5 TABS): TOGGLES, BADGES, BOT BUBBLES & PLAYGROUND
    ============================================================================= */
 

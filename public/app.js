@@ -1292,6 +1292,7 @@ function renderCampaignsList() {
 
         <!-- COL 5: THAO TÁC -->
         <div style="display: flex; justify-content: flex-end; gap: 6px;">
+          <button class="camp-action-btn" onclick="openCampaignTestDirectly('${c.id}')" title="Gửi thử nghiệm 1 tin nhắn" style="color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); font-weight: 700;">🧪 Thử</button>
           ${isRunning ? 
             `<button class="camp-action-btn" style="color:var(--danger);" onclick="pauseCampaignNow('${c.id}')" title="Tạm dừng gửi">⏸️</button>` :
             `<button class="camp-action-btn run" onclick="runCampaignNow('${c.id}')" title="Chạy ngay">▶️ Chạy</button>`
@@ -1393,11 +1394,312 @@ function openCampaignEditor(id = null) {
   renderCampTagPills();
   toggleCampScheduleModeUI();
   renderCampAttachmentChips();
+  toggleCampaignTestDrawer(false);
   openModal('modal-campaign-editor');
 }
 
 function closeCampaignEditor() {
+  toggleCampaignTestDrawer(false);
   closeModal('modal-campaign-editor');
+}
+
+function openCampaignTestDirectly(id) {
+  openCampaignEditor(id);
+  setTimeout(() => {
+    toggleCampaignTestDrawer(true);
+    const drawer = document.getElementById('camp-test-send-drawer');
+    if (drawer && typeof drawer.scrollIntoView === 'function') {
+      drawer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, 120);
+}
+
+// -----------------------------------------------------------------------------
+// Campaign In-Place Test Send Drawer
+// -----------------------------------------------------------------------------
+function toggleCampaignTestDrawer(forceState) {
+  const drawer = document.getElementById('camp-test-send-drawer');
+  const toggleBtn = document.getElementById('btn-toggle-camp-test');
+  if (!drawer) return;
+
+  const isCurrentlyOpen = drawer.style.display !== 'none';
+  const shouldOpen = forceState !== undefined ? forceState : !isCurrentlyOpen;
+
+  if (shouldOpen) {
+    drawer.style.display = 'flex';
+    if (toggleBtn) {
+      toggleBtn.style.background = 'rgba(56, 189, 248, 0.2)';
+      toggleBtn.style.borderColor = '#38bdf8';
+    }
+    populateCampTestRecipients();
+    refreshCampTestPreview();
+  } else {
+    drawer.style.display = 'none';
+    if (toggleBtn) {
+      toggleBtn.style.background = '';
+      toggleBtn.style.borderColor = 'rgba(56, 189, 248, 0.4)';
+    }
+  }
+}
+
+function populateCampTestRecipients() {
+  const select = document.getElementById('camp-test-recipient-select');
+  const nameInput = document.getElementById('camp-test-sample-name');
+  if (!select) return;
+
+  const convs = Array.isArray(state.conversations) ? [...state.conversations] : [];
+
+  if (convs.length === 0) {
+    select.innerHTML = '<option value="">-- Chưa có hội thoại nào trong danh bạ --</option>';
+    if (nameInput) nameInput.value = '';
+    return;
+  }
+
+  // Thuật toán phân loại ưu tiên thông minh theo phản biện Opus:
+  // 1. Tên chứa Cloud/Truyền File
+  // 2. Hội thoại cá nhân
+  // 3. Hội thoại nhóm
+  const isCloudOrSelf = (c) => {
+    const nameLower = (c.name || '').toLowerCase();
+    return nameLower.includes('truyền file') || nameLower.includes('cloud') || nameLower.includes('my cloud') || Boolean(c.isSelf);
+  };
+
+  convs.sort((a, b) => {
+    const aCloud = isCloudOrSelf(a);
+    const bCloud = isCloudOrSelf(b);
+    if (aCloud && !bCloud) return -1;
+    if (!aCloud && bCloud) return 1;
+
+    // Ưu tiên cá nhân trước nhóm
+    if (!a.isGroup && b.isGroup) return -1;
+    if (a.isGroup && !b.isGroup) return 1;
+
+    return 0;
+  });
+
+  select.innerHTML = convs.map((c, idx) => {
+    const isCloud = isCloudOrSelf(c);
+    const icon = isCloud ? '☁️' : (c.isGroup ? '👥' : '👤');
+    const badge = isCloud ? ' [Khuyên dùng]' : (c.isGroup ? ' [Nhóm]' : '');
+    const cleanName = escapeHtml(c.name || c.id);
+    return `<option value="${c.id}" data-name="${cleanName}" ${idx === 0 ? 'selected' : ''}>${icon} ${cleanName}${badge}</option>`;
+  }).join('');
+
+  onCampTestRecipientChange();
+}
+
+function onCampTestRecipientChange() {
+  const select = document.getElementById('camp-test-recipient-select');
+  const nameInput = document.getElementById('camp-test-sample-name');
+  if (!select) return;
+
+  const selectedOption = select.options[select.selectedIndex];
+  if (selectedOption && nameInput) {
+    nameInput.value = selectedOption.getAttribute('data-name') || '';
+  }
+
+  refreshCampTestPreview();
+}
+
+function resolveClientSpintax(template, customerName = 'Bạn') {
+  if (!template || typeof template !== 'string') return '';
+
+  let result = template;
+
+  // 1. Replace variables {name}, {time}, {date}
+  result = result.replace(/\{name\}/gi, customerName);
+
+  const hour = new Date().getHours();
+  let timeGreeting = 'buổi sáng';
+  if (hour >= 12 && hour < 18) {
+    timeGreeting = 'buổi chiều';
+  } else if (hour >= 18 || hour < 5) {
+    timeGreeting = 'buổi tối';
+  }
+  result = result.replace(/\{time\}/gi, timeGreeting);
+
+  const dayNames = ['Chủ Nhật', 'thứ Hai', 'thứ Ba', 'thứ Tư', 'thứ Năm', 'thứ Sáu', 'thứ Bảy'];
+  const dayStr = dayNames[new Date().getDay()];
+  result = result.replace(/\{date\}/gi, dayStr);
+
+  // 2. Resolve spintax patterns: {a|b|c}
+  const spintaxRegex = /\{([^{}]+)\}/g;
+  let hasSpin = true;
+  let iterations = 0;
+
+  while (hasSpin && iterations < 10) {
+    iterations++;
+    hasSpin = false;
+    result = result.replace(spintaxRegex, (match, choices) => {
+      if (choices.includes('|')) {
+        hasSpin = true;
+        const options = choices.split('|');
+        const chosen = options[Math.floor(Math.random() * options.length)];
+        return chosen !== undefined ? chosen.trim() : '';
+      }
+      return match;
+    });
+  }
+
+  return result.trim();
+}
+
+function refreshCampTestPreview() {
+  const msgInput = document.getElementById('camp-edit-message');
+  const nameInput = document.getElementById('camp-test-sample-name');
+  const bubbleText = document.getElementById('camp-test-preview-text');
+  const bubbleMedia = document.getElementById('camp-test-preview-media');
+  const badgeEl = document.getElementById('camp-test-dispatch-badge');
+
+  const rawTemplate = msgInput?.value || '';
+  const customerName = (nameInput?.value || '').trim() || 'Bạn';
+  const resolvedText = resolveClientSpintax(rawTemplate, customerName);
+
+  const attachments = campaignsState.editingAttachments || [];
+  const imageItems = attachments.filter(att => 
+    att.mediaType === 'image' || /\.(png|jpg|jpeg|webp|gif|bmp)$/i.test(att.mediaUrl || '')
+  );
+
+  // Kiểm tra điều kiện gộp Caption theo đúng logic backend
+  const canMergeCaption = imageItems.length === 1 && Boolean(resolvedText && resolvedText.trim()) && resolvedText.length <= 1000;
+
+  // Render text
+  if (bubbleText) {
+    if (resolvedText) {
+      bubbleText.innerText = resolvedText;
+      bubbleText.style.display = 'block';
+    } else {
+      bubbleText.innerHTML = '<span style="color: var(--text-muted); font-style: italic;">(Không có nội dung văn bản)</span>';
+      bubbleText.style.display = attachments.length > 0 ? 'none' : 'block';
+    }
+  }
+
+  // Render media preview
+  if (bubbleMedia) {
+    if (attachments.length === 0) {
+      bubbleMedia.style.display = 'none';
+      bubbleMedia.innerHTML = '';
+    } else {
+      bubbleMedia.style.display = 'flex';
+      bubbleMedia.style.flexWrap = 'wrap';
+      bubbleMedia.style.gap = '6px';
+      
+      const authParam = state.adminToken ? `?token=${encodeURIComponent(state.adminToken)}` : '';
+      bubbleMedia.innerHTML = attachments.map(att => {
+        const isImg = att.mediaType === 'image' || /\.(png|jpg|jpeg|webp|gif|bmp)$/i.test(att.mediaUrl || '');
+        const fileUrl = (att.mediaUrl || '') + authParam;
+        if (isImg) {
+          return `<img src="${escapeHtml(fileUrl)}" class="camp-test-bubble-media-thumb" />`;
+        }
+        return `
+          <div style="display:inline-flex; align-items:center; gap:5px; background:rgba(0,0,0,0.3); border:1px solid var(--border); padding:4px 8px; border-radius:6px; font-size:0.75rem;">
+            <span>📄</span>
+            <span style="color:#38bdf8;">${escapeHtml(att.mediaName || 'Tài liệu')}</span>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+
+  // Render badge
+  if (badgeEl) {
+    if (canMergeCaption) {
+      badgeEl.innerHTML = `
+        <span style="color: #34d399; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+          <span>✨</span>
+          <span><strong>Tự động gộp Caption dính liền:</strong> 1 ảnh và văn bản (${resolvedText.length}/1000 ký tự) sẽ dính liền đẹp mắt trong 1 tin nhắn duy nhất.</span>
+        </span>
+      `;
+    } else if (imageItems.length > 1) {
+      badgeEl.innerHTML = `
+        <span style="color: #38bdf8; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+          <span>📦</span>
+          <span><strong>Phân tách an toàn:</strong> Gửi ${imageItems.length} ảnh dạng album + tin nhắn chữ riêng.</span>
+        </span>
+      `;
+    } else if (resolvedText.length > 1000 && imageItems.length === 1) {
+      badgeEl.innerHTML = `
+        <span style="color: #fb923c; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+          <span>⚠️</span>
+          <span><strong>Văn bản dài (${resolvedText.length} ký tự > 1000):</strong> Hệ thống sẽ tự động tách thành 1 tin nhắn chữ và 1 tin gửi ảnh riêng.</span>
+        </span>
+      `;
+    } else if (attachments.length > 0) {
+      badgeEl.innerHTML = `
+        <span style="color: #38bdf8; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+          <span>📎</span>
+          <span>Đính kèm ${attachments.length} tệp tin.</span>
+        </span>
+      `;
+    } else {
+      badgeEl.innerHTML = `
+        <span style="color: var(--text-muted); font-size: 0.72rem;">
+          💬 Tin nhắn văn bản thuần túy.
+        </span>
+      `;
+    }
+  }
+}
+
+async function executeCampaignTestSend() {
+  const select = document.getElementById('camp-test-recipient-select');
+  const nameInput = document.getElementById('camp-test-sample-name');
+  const msgInput = document.getElementById('camp-edit-message');
+  const btn = document.getElementById('btn-camp-test-send');
+  const btnText = document.getElementById('btn-camp-test-send-text');
+
+  const threadId = select?.value;
+  if (!threadId) {
+    return alert('Vui lòng chọn một hội thoại nhận tin thử nghiệm!');
+  }
+
+  const customerName = nameInput?.value.trim() || '';
+  const message = msgInput?.value.trim() || '';
+  const mediaUrls = campaignsState.editingAttachments || [];
+
+  if (!message && mediaUrls.length === 0) {
+    return alert('Vui lòng nhập nội dung tin nhắn hoặc đính kèm ít nhất 1 tệp tin trước khi gửi thử!');
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.style.opacity = '0.7';
+    btn.style.cursor = 'not-allowed';
+  }
+  if (btnText) btnText.innerText = 'Đang gửi thử nghiệm...';
+
+  try {
+    const res = await fetch('/api/campaigns/test-send', {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({
+        threadId,
+        customerName,
+        message,
+        mediaUrls
+      })
+    });
+
+    const result = await res.json();
+    if (!res.ok || result.error) {
+      alert('Lỗi gửi thử: ' + (result.error || 'Vui lòng thử lại'));
+      return;
+    }
+
+    const d = result.data || {};
+    const modeLabel = d.isCaptionMerged ? '📸 (Gộp Caption dính liền)' : '💬 (Tin nhắn tiêu chuẩn)';
+    alert(`🎉 Gửi thử thành công!\n\nĐã gửi tin ${modeLabel} tới: ${d.customerName || threadId}\n\nHãy mở ứng dụng Zalo trên điện thoại hoặc máy tính để kiểm tra kết quả thực tế.`);
+
+  } catch (err) {
+    alert('Lỗi kết nối khi gửi thử: ' + err.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      btn.style.cursor = 'pointer';
+    }
+    if (btnText) btnText.innerText = 'Gửi Tin Thử Nghiệm Ngay';
+  }
 }
 
 async function saveCampaign() {

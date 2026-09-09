@@ -366,6 +366,145 @@ router.get('/campaigns/:id/logs', requireAuth, (req, res) => {
 });
 
 // =============================================================================
+// Shared Helpers: Resolve Campaign Attachments & Smart Dispatch Protocol
+// =============================================================================
+
+/**
+ * Resolve media items (strings, objects, stringified JSON) to validated local file paths
+ * with multi-directory fallback (campaigns -> quick-msg -> chat-media)
+ */
+export function resolveCampaignAttachments(rawInput = []) {
+  let rawItems = [];
+  try {
+    rawItems = Array.isArray(rawInput) ? rawInput : JSON.parse(rawInput || '[]');
+  } catch (_) {
+    rawItems = [];
+  }
+
+  // Flatten nested JSON if legacy items contained stringified arrays
+  const mediaItems = [];
+  for (const item of rawItems) {
+    const itemStr = typeof item === 'string' ? item.trim() : (typeof item?.mediaUrl === 'string' ? item.mediaUrl.trim() : '');
+    if (itemStr.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(itemStr);
+        if (Array.isArray(parsed)) mediaItems.push(...parsed);
+        else mediaItems.push(item);
+      } catch (_) {
+        mediaItems.push(item);
+      }
+    } else {
+      mediaItems.push(item);
+    }
+  }
+
+  const localFilePaths = [];
+  for (const m of mediaItems) {
+    const urlStr = typeof m === 'string' ? m : (m.mediaUrl || '');
+    const fn = path.basename(urlStr);
+    if (!fn) continue;
+
+    // Multi-Directory Storage Fallback (campaigns -> quick-msg -> chat-media)
+    let targetPath = path.resolve('data/uploads/campaigns', fn);
+    let resolvedApiUrl = `/api/campaigns/media/${fn}`;
+
+    if (!fs.existsSync(targetPath)) {
+      const qmPath = path.resolve('data/uploads/quick-msg', fn);
+      if (fs.existsSync(qmPath)) {
+        targetPath = qmPath;
+        resolvedApiUrl = `/api/quick-messages/media/${fn}`;
+      } else {
+        const chatPath = path.resolve('data/uploads/chat-media', fn);
+        if (fs.existsSync(chatPath)) {
+          targetPath = chatPath;
+          resolvedApiUrl = `/api/chat-media/${fn}`;
+        }
+      }
+    }
+
+    if (fs.existsSync(targetPath)) {
+      const ext = path.extname(fn).toLowerCase();
+      const isImage = ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp'].includes(ext);
+      localFilePaths.push({
+        path: targetPath,
+        mediaUrl: (typeof m === 'object' && m.mediaUrl && !m.mediaUrl.startsWith('[')) ? m.mediaUrl : resolvedApiUrl,
+        mediaType: (typeof m === 'object' && m.mediaType) ? m.mediaType : (isImage ? 'image' : 'file'),
+        originalName: (typeof m === 'object' && m.mediaName) ? m.mediaName : fn
+      });
+    } else {
+      logger.warn(`⚠️ [Campaign Attachment] File not found on disk: "${fn}" (Checked campaigns, quick-msg, chat-media)`);
+    }
+  }
+
+  return localFilePaths;
+}
+
+/**
+ * Smart Campaign Message Dispatcher (Single-Image Caption Integration & Fallback Guard)
+ */
+export async function dispatchSmartCampaignMessage({ threadId, customerName, rawMessage, localFilePaths = [], isGroup = false }) {
+  // 1. Resolve Spintax & Personalization variables ({name}, {time}, {date})
+  const personalizedMessage = rawMessage ? resolveSpintax(rawMessage, {
+    name: customerName || 'bạn',
+    threadId
+  }) : '';
+
+  // 2. Smart Dispatch Protocol (Single-Image Caption Integration & Fallback Guard)
+  const imageItems = localFilePaths.filter(f => f.mediaType === 'image');
+  const docItems = localFilePaths.filter(f => f.mediaType !== 'image');
+
+  // Điều kiện gộp Caption: đúng 1 bức ảnh VÀ có nội dung text VÀ text <= 1000 ký tự
+  const canMergeCaption = imageItems.length === 1 && Boolean(personalizedMessage && personalizedMessage.trim()) && personalizedMessage.length <= 1000;
+
+  if (canMergeCaption) {
+    // [Luồng Gộp Caption Dính Liền]: Gửi đúng 1 ảnh mang caption dính liền
+    const singleImage = imageItems[0];
+    await zaloClient.uploadAttachment(threadId, [singleImage.path], isGroup, {
+      caption: personalizedMessage,
+      items: [singleImage],
+      mediaUrl: singleImage.mediaUrl,
+      mediaType: 'image',
+      originalName: singleImage.originalName || '[Hình ảnh]'
+    });
+    logger.info(`📸 [Campaign] Dispatched 1 image with merged caption to ${customerName || threadId}`);
+
+    // Nếu có thêm tài liệu (PDF, docx), gửi gom toàn bộ docItems trong 1 request riêng biệt
+    if (docItems.length > 0) {
+      const docDiskPaths = docItems.map(f => f.path);
+      await zaloClient.uploadAttachment(threadId, docDiskPaths, isGroup, {
+        items: docItems,
+        mediaUrl: docItems[0].mediaUrl,
+        mediaType: 'file',
+        originalName: docItems.length === 1 ? docItems[0].originalName : `${docItems.length} tài liệu đính kèm`
+      });
+    }
+  } else {
+    // [Luồng Phân Tách An Toàn]: Nhiều ảnh (album), text siêu dài > 1000 ký tự, hoặc chỉ có file tài liệu
+    if (personalizedMessage) {
+      await zaloClient.sendMessage(threadId, personalizedMessage, isGroup);
+    }
+
+    if (localFilePaths.length > 0) {
+      const diskPaths = localFilePaths.map(f => f.path);
+      await zaloClient.uploadAttachment(threadId, diskPaths, isGroup, {
+        items: localFilePaths,
+        mediaUrl: localFilePaths[0].mediaUrl,
+        mediaType: localFilePaths[0].mediaType,
+        originalName: localFilePaths.length === 1 ? localFilePaths[0].originalName : `${localFilePaths.length} tệp đính kèm`
+      });
+    }
+  }
+
+  return {
+    personalizedMessage,
+    isCaptionMerged: canMergeCaption,
+    imageCount: imageItems.length,
+    docCount: docItems.length,
+    totalMediaCount: localFilePaths.length
+  };
+}
+
+// =============================================================================
 // 12. Adaptive Safe Background Dispatcher (With Discrete Multi-Attachment Persistence)
 // =============================================================================
 async function runCampaignDispatcher(campaignId) {
@@ -389,134 +528,27 @@ async function runCampaignDispatcher(campaignId) {
       break;
     }
 
-    // 1. Resolve Spintax & Personalization
-    const personalizedMessage = campaign.message ? resolveSpintax(campaign.message, {
-      name: item.customerName || 'bạn',
-      threadId: item.threadId
-    }) : '';
-
     const isGroup = Boolean(item.isGroup);
 
     try {
-      logger.info(`📢 [Campaign] Dispatching to ${item.customerName} (${item.threadId}): "${(personalizedMessage || '[Đính kèm]').substring(0, 40)}..."`);
+      logger.info(`📢 [Campaign] Dispatching to ${item.customerName} (${item.threadId})...`);
       
-      // 2. Resolve Multi-Attachments & Multi-Directory Storage Fallback (Guardrail #20)
-      let rawItems = [];
-      try {
-        rawItems = Array.isArray(campaign.mediaUrls) ? campaign.mediaUrls : JSON.parse(campaign.mediaUrls || '[]');
-      } catch (_) {
-        rawItems = [];
-      }
+      const localFilePaths = resolveCampaignAttachments(campaign.mediaUrls);
 
-      // Flatten nested JSON if legacy items contained stringified arrays
-      const mediaItems = [];
-      for (const item of rawItems) {
-        const itemStr = typeof item === 'string' ? item.trim() : (typeof item?.mediaUrl === 'string' ? item.mediaUrl.trim() : '');
-        if (itemStr.startsWith('[')) {
-          try {
-            const parsed = JSON.parse(itemStr);
-            if (Array.isArray(parsed)) mediaItems.push(...parsed);
-            else mediaItems.push(item);
-          } catch (_) {
-            mediaItems.push(item);
-          }
-        } else {
-          mediaItems.push(item);
-        }
-      }
-
-      const localFilePaths = [];
-      if (mediaItems.length > 0) {
-        for (const m of mediaItems) {
-          const urlStr = typeof m === 'string' ? m : (m.mediaUrl || '');
-          const fn = path.basename(urlStr);
-          if (!fn) continue;
-
-          // Multi-Directory Storage Fallback (campaigns -> quick-msg -> chat-media)
-          let targetPath = path.resolve('data/uploads/campaigns', fn);
-          let resolvedApiUrl = `/api/campaigns/media/${fn}`;
-
-          if (!fs.existsSync(targetPath)) {
-            const qmPath = path.resolve('data/uploads/quick-msg', fn);
-            if (fs.existsSync(qmPath)) {
-              targetPath = qmPath;
-              resolvedApiUrl = `/api/quick-messages/media/${fn}`;
-            } else {
-              const chatPath = path.resolve('data/uploads/chat-media', fn);
-              if (fs.existsSync(chatPath)) {
-                targetPath = chatPath;
-                resolvedApiUrl = `/api/chat-media/${fn}`;
-              }
-            }
-          }
-
-          if (fs.existsSync(targetPath)) {
-            const ext = path.extname(fn).toLowerCase();
-            const isImage = ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp'].includes(ext);
-            localFilePaths.push({
-              path: targetPath,
-              mediaUrl: (typeof m === 'object' && m.mediaUrl && !m.mediaUrl.startsWith('[')) ? m.mediaUrl : resolvedApiUrl,
-              mediaType: (typeof m === 'object' && m.mediaType) ? m.mediaType : (isImage ? 'image' : 'file'),
-              originalName: (typeof m === 'object' && m.mediaName) ? m.mediaName : fn
-            });
-          } else {
-            logger.warn(`⚠️ [Campaign Attachment] File not found on disk: "${fn}" (Checked campaigns, quick-msg, chat-media)`);
-          }
-        }
-      }
-
-      // 3. Smart Dispatch Protocol (Single-Image Caption Integration & Fallback Guard)
-      const imageItems = localFilePaths.filter(f => f.mediaType === 'image');
-      const docItems = localFilePaths.filter(f => f.mediaType !== 'image');
-
-      // Điều kiện gộp Caption: đúng 1 bức ảnh VÀ có nội dung text VÀ text <= 1000 ký tự
-      const canMergeCaption = imageItems.length === 1 && Boolean(personalizedMessage && personalizedMessage.trim()) && personalizedMessage.length <= 1000;
-
-      if (canMergeCaption) {
-        // [Luồng Gộp Caption Dính Liền]: Gửi đúng 1 ảnh mang caption dính liền
-        const singleImage = imageItems[0];
-        await zaloClient.uploadAttachment(item.threadId, [singleImage.path], isGroup, {
-          caption: personalizedMessage,
-          items: [singleImage],
-          mediaUrl: singleImage.mediaUrl,
-          mediaType: 'image',
-          originalName: singleImage.originalName || '[Hình ảnh]'
-        });
-        logger.info(`📸 [Campaign] Dispatched 1 image with merged caption to ${item.customerName}`);
-
-        // Nếu có thêm tài liệu (PDF, docx), gửi gom toàn bộ docItems trong 1 request riêng biệt
-        if (docItems.length > 0) {
-          const docDiskPaths = docItems.map(f => f.path);
-          await zaloClient.uploadAttachment(item.threadId, docDiskPaths, isGroup, {
-            items: docItems,
-            mediaUrl: docItems[0].mediaUrl,
-            mediaType: 'file',
-            originalName: docItems.length === 1 ? docItems[0].originalName : `${docItems.length} tài liệu đính kèm`
-          });
-        }
-      } else {
-        // [Luồng Phân Tách An Toàn]: Nhiều ảnh (album), text siêu dài > 1000 ký tự, hoặc chỉ có file tài liệu
-        if (personalizedMessage) {
-          await zaloClient.sendMessage(item.threadId, personalizedMessage, isGroup);
-        }
-
-        if (localFilePaths.length > 0) {
-          const diskPaths = localFilePaths.map(f => f.path);
-          await zaloClient.uploadAttachment(item.threadId, diskPaths, isGroup, {
-            items: localFilePaths,
-            mediaUrl: localFilePaths[0].mediaUrl,
-            mediaType: localFilePaths[0].mediaType,
-            originalName: localFilePaths.length === 1 ? localFilePaths[0].originalName : `${localFilePaths.length} tệp đính kèm`
-          });
-        }
-      }
+      const dispatchResult = await dispatchSmartCampaignMessage({
+        threadId: item.threadId,
+        customerName: item.customerName,
+        rawMessage: campaign.message,
+        localFilePaths,
+        isGroup
+      });
 
       localStore.updateQueueItem(item.id, { status: 'sent' });
       localStore.logCampaignSend({
         campaignId,
         threadId: item.threadId,
         customerName: item.customerName,
-        sentContent: personalizedMessage || `[Đã gửi ${mediaItems.length} tệp đính kèm]`,
+        sentContent: dispatchResult.personalizedMessage || `[Đã gửi ${localFilePaths.length} tệp đính kèm]`,
         status: 'success'
       });
 
@@ -569,7 +601,74 @@ async function runCampaignDispatcher(campaignId) {
 }
 
 // =============================================================================
-// 13. Auto-Schedule Background Ticker (Every 30 seconds)
+// 13. POST /api/campaigns/test-send - Safe Campaign Test Dispatch
+// =============================================================================
+router.post('/campaigns/test-send', requireAuth, async (req, res) => {
+  try {
+    const { threadId, customerName, message, mediaUrls } = req.body;
+
+    if (!threadId) {
+      return res.status(400).json({ error: 'Vui lòng chọn hội thoại nhận tin thử nghiệm' });
+    }
+
+    // Guard 1: Anti-Ban Cold Outbound Shield - Bắt buộc hội thoại phải có trong CSDL cục bộ
+    const conversation = localStore.getConversation(threadId);
+    if (!conversation) {
+      return res.status(400).json({
+        error: 'Vì lý do an toàn tài khoản Zalo, chỉ được phép gửi thử tới hội thoại đã có sẵn trong danh bạ hoặc lịch sử trò chuyện.'
+      });
+    }
+
+    // Ground-Truth isGroup resolution
+    const isGroup = conversation.isGroup ?? Boolean(req.body.isGroup);
+
+    // Guard 2: Empty Payload Check
+    const hasMessage = Boolean(message && message.trim());
+    const hasMedia = Array.isArray(mediaUrls) && mediaUrls.length > 0;
+    if (!hasMessage && !hasMedia) {
+      return res.status(400).json({ error: 'Nội dung tin nhắn hoặc tệp đính kèm không được để trống' });
+    }
+
+    // Guard 3: Missing Disk Attachments Check
+    const localFilePaths = resolveCampaignAttachments(mediaUrls);
+    if (hasMedia && localFilePaths.length === 0) {
+      return res.status(400).json({
+        error: 'Tệp đính kèm không còn tồn tại trên máy chủ. Vui lòng tải lại tệp trước khi gửi thử.'
+      });
+    }
+
+    const recipientName = (customerName && customerName.trim()) || conversation.name || 'Bạn';
+
+    // Dispatch message via Shared Smart Dispatch Helper
+    const result = await dispatchSmartCampaignMessage({
+      threadId,
+      customerName: recipientName,
+      rawMessage: message,
+      localFilePaths,
+      isGroup
+    });
+
+    logger.info(`🧪 [Campaign Test] Dispatched test message successfully to ${recipientName} (${threadId})`);
+
+    // Zero-Contamination Guarantee: Delta = 0 on campaign_queue and campaign_logs
+    res.json({
+      status: 'success',
+      data: {
+        threadId,
+        customerName: recipientName,
+        resolvedMessage: result.personalizedMessage,
+        isCaptionMerged: result.isCaptionMerged,
+        mediaCount: result.totalMediaCount
+      }
+    });
+  } catch (err) {
+    logger.error(`❌ [Campaign Test Error] ${err.message}`);
+    res.status(500).json({ error: err.message || 'Lỗi khi gửi tin thử nghiệm' });
+  }
+});
+
+// =============================================================================
+// 14. Auto-Schedule Background Ticker (Every 30 seconds)
 // =============================================================================
 setInterval(async () => {
   try {
