@@ -51,7 +51,7 @@ Khi phát hành phiên bản mới `vX.X.X` (ví dụ `1.0.7`), Agent cập nh�
 1. **`package.json`**: Cập nhật `"version": "X.X.X"`.
 2. **`installer/setup.iss`**: Cập nhật `#define MyAppVersion "X.X.X"`.
 3. **`README.md`**:
-   - Cập nhật số lượng test trên badge (ví dụ: `32/32 Passing`).
+   - Cập nhật số lượng test trên badge (ví dụ: `34/34 Passing`).
    - Cập nhật nút tải: `ZaloFlow-Setup-vX.X.X.exe`.
    - Bổ sung mục tóm tắt tính năng mới của `vX.X.X`.
 4. **`README.en.md`**:

@@ -47,6 +47,10 @@
    - Khi gọi `api.fetchAccountInfo()`, phản hồi có cấu trúc `{ profile: User }` (không phải `res.data`). 
    - Hàm trích xuất thông tin tài khoản BẮT BUỘC ưu tiên theo thứ tự: `res?.profile?.displayName` ➔ `name` ➔ `zaloName` ➔ `userProfile.displayName`.
    - **SQLite Identity Fallback:** Nếu API Zalo phản hồi chậm hoặc thiếu dữ liệu, BẮT BUỘC truy vấn ngược CSDL SQLite cục bộ (bảng `messages` theo UID) để lấy `senderName` và `avatar` thật của chính chủ, TUYỆT ĐỐI KHÔNG ghi đè tên tạm bợ `Zalo User (...)` lên giao diện người dùng.
+8. **Single-Image Media Caption Integration & Fallback Protocol:**
+   - Khi phát tin nhắn chiến dịch hoặc tin tự động có tệp đính kèm:
+     - **Điều kiện Gộp Caption:** Nếu danh sách tệp có đúng **1 hình ảnh** (`imageItems.length === 1`) VÀ có nội dung văn bản VÀ độ dài văn bản `<= 1000` ký tự ➔ BẮT BUỘC gọi `uploadAttachment` truyền kèm `{ caption: personalizedMessage }`. Giúp ảnh và nội dung chữ dính liền đẹp mắt chuẩn Zalo Mobile & PC trong 1 tin nhắn duy nhất, loại bỏ hoàn toàn việc phân tách làm 2 tin nhắn rời rạc gây loãng hội thoại.
+     - **Phân Tách An Toàn (Fallback Guard):** Khi có nhiều hơn 1 ảnh (album ảnh) HOẶC nội dung văn bản siêu dài `> 1000` ký tự (vượt ngưỡng caption của Zalo gây cắt cụt chữ) ➔ BẮT BUỘC phân tách an toàn: gửi tin nhắn văn bản trước qua `sendMessage`, sau đó gửi tệp đính kèm qua `uploadAttachment`.
 
 ---
 
@@ -67,6 +71,9 @@
      - **Phạm vi dọn dẹp (Chỉ dữ liệu hội thoại):** Chỉ xóa các bảng `conversations`, `messages`, `conversation_tags` để tránh nhầm lẫn nội dung giữa các nick khác nhau.
      - **Whitelist bảo tồn vĩnh viễn (Bảo vệ tài sản tri thức):** BẢO TOÀN 100% các bảng `ai_settings` (cấu hình Prompt/Key), `tags` (danh mục thẻ CRM), `quick_messages` (mẫu tin nhắn nhanh), `campaigns` (kịch bản chiến dịch).
      - **Anti-Ban Queue Purge:** BẮT BUỘC hủy toàn bộ tin nhắn trạng thái `pending` trong `campaign_queue` và đặt `isEnabled = 0` cho các chiến dịch để ngăn chặn việc gửi nhầm tin nhắn chiến dịch cũ sang tập khách hàng của tài khoản mới.
+6. **Campaign Test Dispatch Isolation & Anti-Ban Cold Outbound Shield:**
+   - **Anti-Ban Cold Outbound Shield:** Khi người dùng gửi thử nghiệm 1 tin nhắn chiến dịch (`POST /api/campaigns/test-send`), backend BẮT BUỘC phải kiểm tra sự tồn tại của hội thoại trong CSDL cục bộ bằng `localStore.getConversation(threadId)`. Nếu UID không tồn tại (chưa từng nhắn tin), lập tức từ chối `400 Bad Request` để bảo vệ tài khoản Zalo không bị khóa do gửi tin lạnh (cold outbound).
+   - **Zero-Contamination Boundary (Delta = 0):** Lệnh gửi thử nghiệm TUYỆT ĐỐI KHÔNG chèn bản ghi vào bảng `campaign_queue`, KHÔNG ghi nhật ký vào `campaign_logs`, và KHÔNG làm thay đổi bất kỳ chỉ số nào (`sentCount`, `failedCount`, `status`) của chiến dịch thật. Tin nhắn chỉ được lưu vào bảng `messages` như một tương tác gửi đi bình thường.
 
 ---
 
@@ -91,6 +98,9 @@
 6. **Zalo Desktop Chat Typography & Bubble Ergonomics:**
    - **Chuẩn Typography Zalo PC:** Nội dung tin nhắn chat chuẩn hóa cỡ chữ `0.88rem` (tương đương 14px), khoảng cách dòng `line-height: 1.45`, bo góc `12px` và padding `9px 13px`.
    - **Tránh phình to khung chat:** Không đặt `font-size >= 0.95rem` cho văn bản chat thông thường vì sẽ gây cảm giác cồng kềnh, thô kệch và mất cân xứng so với trải nghiệm Zalo Desktop nguyên bản.
+7. **Template Variable Caret-Position Insertion & Anti-Modal Hell Invariant:**
+   - **Caret Position Insertion:** Khi chèn biến cá nhân hóa (`{name}`, `{time}`, Spintax...) vào khung nhập văn bản (`textarea` hoặc `input`), TUYỆT ĐỐI KHÔNG sử dụng phép cộng dồn chuỗi cuối đuôi (`textarea.value += varName`) vì sẽ gây ức chế khi người dùng đang soạn thảo ở giữa câu. BẮT BUỘC sử dụng chỉ số con trỏ `selectionStart`/`selectionEnd` để chèn đúng vị trí con trỏ, tự động cập nhật lại vùng chọn con trỏ (`setSelectionRange(start + text.length, ...)`) và kích hoạt sự kiện `input` (`dispatchEvent(new Event('input'))`) để các listener phản ứng kịp thời.
+   - **Anti-Modal Hell Architecture:** Khi cần bổ sung tiện ích phụ trợ (như chọn mẫu tin nhắn nhanh, xem bảng tra cứu biến) vào một Modal/Dialog phức tạp đã mở sẵn, TUYỆT ĐỐI KHÔNG mở thêm Modal tầng 2, tầng 3 (Modal on Modal) đè lên nhau gây lỗi xung đột `z-index`, lỗi cuộn trang (scroll lock) và rủi ro click nhầm backdrop làm mất sạch dữ liệu form đang nhập. BẮT BUỘC thiết kế dưới dạng In-Place Collapsible Drawer hoặc Slide-Down Tray nằm gọn ngay bên trong form hiện tại kèm nút Đóng rõ ràng.
 
 ---
 
