@@ -328,25 +328,7 @@ export class LocalStore extends EventEmitter {
       if (!aiCols.includes('apiKeyEncrypted'))      this.db.exec("ALTER TABLE ai_settings ADD COLUMN apiKeyEncrypted TEXT DEFAULT '';");
       if (!aiCols.includes('fallbackApiKeyEncrypted')) this.db.exec("ALTER TABLE ai_settings ADD COLUMN fallbackApiKeyEncrypted TEXT DEFAULT '';");
 
-      // Auto-Reconciliation: Heals groups misclassified as isGroup = 0 when they have multiple distinct senders
-      try {
-        const healResult = this.db.prepare(`
-          UPDATE conversations 
-          SET isGroup = 1 
-          WHERE id IN (
-            SELECT threadId 
-            FROM messages 
-            WHERE senderId != '' AND senderId != 'self'
-            GROUP BY threadId 
-            HAVING COUNT(DISTINCT senderId) > 1
-          ) AND isGroup = 0;
-        `).run();
-        if (healResult.changes > 0) {
-          logger.info(`👥 [Group Healing] Restored isGroup=1 for ${healResult.changes} conversations with multiple senders.`);
-        }
-      } catch (e) {
-        logger.warn(`Group reconciliation note: ${e.message}`);
-      }
+
     } catch (err) {
       logger.warn(`Migration notice: ${err.message}`);
     }
@@ -416,6 +398,27 @@ export class LocalStore extends EventEmitter {
 
     stmt.run(conv.id, name, avatar, isGroup, lastMessage, lastTime, unreadCount, updatedAt);
   }
+
+  setConversationGroupState(threadId, isGroup) {
+    if (!threadId) return;
+    const val = isGroup ? 1 : 0;
+    this.db.prepare("UPDATE conversations SET isGroup = ?, updatedAt = datetime('now') WHERE id = ?").run(val, String(threadId));
+  }
+
+  reconcileGroupsWithGroundTruth(validGroupIds = new Set()) {
+    if (!validGroupIds || validGroupIds.size === 0) return 0;
+    const currentGroups = this.db.prepare('SELECT id FROM conversations WHERE isGroup = 1').all();
+    let healedCount = 0;
+    const updateStmt = this.db.prepare("UPDATE conversations SET isGroup = 0, updatedAt = datetime('now') WHERE id = ?");
+    for (const row of currentGroups) {
+      if (!validGroupIds.has(String(row.id))) {
+        updateStmt.run(row.id);
+        healedCount++;
+      }
+    }
+    return healedCount;
+  }
+
 
   getConversation(id) {
     const stmt = this.db.prepare('SELECT * FROM conversations WHERE id = ?');

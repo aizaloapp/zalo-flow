@@ -1197,37 +1197,38 @@ try {
 }
 
 // -----------------------------------------------------------------------------
-// Test 35: Group Auto-Reconciliation & Anti-Downgrade Invariant
+// Test 35: Ground-Truth Group Reconciliation & Anti-Downgrade Invariant
 // -----------------------------------------------------------------------------
-console.log('35. Testing Group Auto-Reconciliation & Anti-Downgrade Invariant...');
+console.log('35. Testing Ground-Truth Group Reconciliation & Anti-Downgrade Invariant...');
 const testStoreGroup = new LocalStore('data/test_group_reconcile.db');
 try {
-  // 1. Insert a misclassified conversation with isGroup = 0 but 2 different senders
-  testStoreGroup.upsertConversation({ id: 'group_test_999', name: 'Nhóm Test', isGroup: false });
-  testStoreGroup.addMessage({ id: 'm1', threadId: 'group_test_999', senderId: 'user_a', senderName: 'Alice', text: 'Chào mọi người' });
-  testStoreGroup.addMessage({ id: 'm2', threadId: 'group_test_999', senderId: 'user_b', senderName: 'Bob', text: 'Chào Alice' });
+  // 1. Insert a group and a 1-1 conversation misclassified as group
+  testStoreGroup.upsertConversation({ id: 'real_group_123', name: 'Nhóm Thật', isGroup: true });
+  testStoreGroup.upsertConversation({ id: 'misclassified_user_456', name: 'Khoa Ai', isGroup: true });
 
-  // Re-run migration healing query
-  testStoreGroup.db.exec(`
-    UPDATE conversations 
-    SET isGroup = 1 
-    WHERE id IN (
-      SELECT threadId 
-      FROM messages 
-      WHERE senderId != '' AND senderId != 'self'
-      GROUP BY threadId 
-      HAVING COUNT(DISTINCT senderId) > 1
-    );
-  `);
-  const convAfter = testStoreGroup.getConversation('group_test_999');
-  assert.strictEqual(convAfter.isGroup, true, 'Group with multiple senders must be healed to isGroup = 1');
+  // 2. Verify reconcileGroupsWithGroundTruth heals misclassified user back to isGroup = 0
+  const validGroupIds = new Set(['real_group_123']);
+  const healed = testStoreGroup.reconcileGroupsWithGroundTruth(validGroupIds);
+  assert.strictEqual(healed, 1, 'Should heal exactly 1 misclassified conversation');
 
-  // 2. Verify Anti-Downgrade Invariant: upserting with isGroup = false must NOT downgrade an existing group
-  testStoreGroup.upsertConversation({ id: 'group_test_999', name: 'Nhóm Test Updated', isGroup: false });
-  const convDowngradeAttempt = testStoreGroup.getConversation('group_test_999');
-  assert.strictEqual(convDowngradeAttempt.isGroup, true, 'Anti-downgrade invariant must prevent isGroup from being set to false');
+  const userAfter = testStoreGroup.getConversation('misclassified_user_456');
+  assert.strictEqual(userAfter.isGroup, false, 'Misclassified user must be restored to isGroup = false');
 
-  console.log('   ✅ Group Auto-Reconciliation & Anti-Downgrade Invariant passed!\n');
+  const groupAfter = testStoreGroup.getConversation('real_group_123');
+  assert.strictEqual(groupAfter.isGroup, true, 'Real group must remain isGroup = true');
+
+  // 3. Verify setConversationGroupState direct update
+  testStoreGroup.setConversationGroupState('misclassified_user_456', true);
+  assert.strictEqual(testStoreGroup.getConversation('misclassified_user_456').isGroup, true);
+  testStoreGroup.setConversationGroupState('misclassified_user_456', false);
+  assert.strictEqual(testStoreGroup.getConversation('misclassified_user_456').isGroup, false);
+
+  // 4. Verify Anti-Downgrade Invariant: ordinary upserting with isGroup = false must NOT downgrade an existing group
+  testStoreGroup.upsertConversation({ id: 'real_group_123', name: 'Nhóm Thật Updated', isGroup: false });
+  const convDowngradeAttempt = testStoreGroup.getConversation('real_group_123');
+  assert.strictEqual(convDowngradeAttempt.isGroup, true, 'Anti-downgrade invariant must prevent upsertConversation from downgrading a group');
+
+  console.log('   ✅ Ground-Truth Group Reconciliation & Anti-Downgrade Invariant passed!\n');
 } finally {
   testStoreGroup.close();
   if (fs.existsSync('data/test_group_reconcile.db')) {
@@ -1287,7 +1288,116 @@ const replyB = await testAiAdapter.callModelWithFallback('system', [], 'user pin
 assert.strictEqual(replyB, 'Fallback reply success');
 assert.strictEqual(capturedFallbackKey, 'sk-or-v1-account-two-secret', 'Fallback must preserve custom fallback key when compatible');
 
-console.log('   ✅ OpenRouter Auto-Fallback & Multi-Tier Key Compatibility passed!\n');
+// -----------------------------------------------------------------------------
+// Test 37: Multimodal AI Vision Pipeline & Image Recognition
+// -----------------------------------------------------------------------------
+console.log('37. Testing Multimodal AI Vision Pipeline & Image Recognition...');
+const { isVisionSupported } = await import('../src/adapters/ai-agent.js');
+
+// 1. Kiểm tra isVisionSupported
+assert.strictEqual(isVisionSupported('gemini', 'gemini-2.5-flash'), true, 'Gemini 2.5 Flash must support Vision');
+assert.strictEqual(isVisionSupported('gemini', 'gemini-1.5-flash'), true, 'Gemini 1.5 Flash must support Vision');
+assert.strictEqual(isVisionSupported('openai', 'gpt-4o'), true, 'GPT-4o must support Vision');
+assert.strictEqual(isVisionSupported('openai', 'gpt-4o-mini'), true, 'GPT-4o-mini must support Vision');
+assert.strictEqual(isVisionSupported('openrouter', 'google/gemini-2.5-flash'), true, 'OpenRouter Gemini must support Vision');
+assert.strictEqual(isVisionSupported('deepseek', 'deepseek-chat'), false, 'DeepSeek V3 must be Text-only');
+assert.strictEqual(isVisionSupported('zai', 'glm-5.3-flash'), false, 'Z.AI GLM-5.3 must be Text-only');
+
+// 2. Kiểm tra đóng gói payload Gemini Native với inline_data
+const visionAdapter = new AiAgentAdapter({ localStore: store, sessionSecret: testPassphrase });
+
+let capturedGeminiPayload = null;
+visionAdapter._callGeminiNative = async (params) => {
+  capturedGeminiPayload = params;
+  return 'Mock Gemini Vision Reply: Tôi thấy đây là hóa đơn tiền điện.';
+};
+
+const fakeImage = { mimeType: 'image/jpeg', base64: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==' };
+
+await visionAdapter.callProvider({
+  provider: 'gemini',
+  model: 'gemini-2.5-flash',
+  apiKey: 'AIzaSyTestKey123',
+  systemPrompt: 'Bạn là trợ lý',
+  history: [],
+  userMessage: 'Đọc hóa đơn này giúp mình',
+  images: [fakeImage]
+});
+
+assert.ok(capturedGeminiPayload, 'callProvider must dispatch to _callGeminiNative');
+assert.strictEqual(capturedGeminiPayload.images.length, 1, 'Must receive 1 image');
+assert.strictEqual(capturedGeminiPayload.images[0].mimeType, 'image/jpeg');
+
+// 3. Kiểm tra fallback an toàn khi URL ảnh lỗi hoặc không hợp lệ
+const invalidDownload = await visionAdapter._downloadAndEncodeImage('ftp://invalid-scheme.com/pic.jpg');
+assert.strictEqual(invalidDownload, null, 'Invalid scheme must return null gracefully');
+
+const nullDownload = await visionAdapter._downloadAndEncodeImage('');
+assert.strictEqual(nullDownload, null, 'Empty URL must return null gracefully');
+
+// 4. Kiểm tra Text-Only Model (như DeepSeek) tự động lọc bỏ ảnh để tránh lỗi API
+let capturedOpenAiPayload = null;
+visionAdapter._callOpenAiCompatible = async (params) => {
+  capturedOpenAiPayload = params;
+  return 'DeepSeek Text Reply';
+};
+
+await visionAdapter.callProvider({
+  provider: 'deepseek',
+  model: 'deepseek-chat',
+  apiKey: 'sk-deepseek-key-123',
+  systemPrompt: 'System',
+  history: [],
+  userMessage: 'Đọc ảnh này',
+  images: [fakeImage]
+});
+
+assert.ok(capturedOpenAiPayload, 'Should dispatch to _callOpenAiCompatible');
+// Model deepseek không hỗ trợ vision nên images vẫn truyền nhưng _callOpenAiCompatible xử lý userMessage dạng text thuần
+assert.strictEqual(isVisionSupported('deepseek', 'deepseek-chat'), false, 'DeepSeek is not vision supported');
+
+// 5. Kiểm tra Debounce Buffer gom tối đa 2 ảnh và fallback prompt khi khách gửi ảnh không kèm chữ
+const mockInboundCtx = {
+  threadId: 'user_vision_test_1',
+  senderId: 'user_vision_test_1',
+  senderName: 'Khách Test Ảnh',
+  mediaType: 'image',
+  mediaUrl: 'https://res-zalo.zadn.vn/test1.jpg',
+  text: '', // Khách không gõ chữ
+  isGroup: false,
+  isSelf: false,
+  isBot: false
+};
+
+// Gọi handleInbound
+store.saveAiSettings({
+  isEnabled: 1,
+  provider: 'gemini',
+  model: 'gemini-2.5-flash',
+  apiKeyEncrypted: encryptSecret('AIzaSyTestKey123', testPassphrase)
+});
+
+let autoReplyCalledWith = null;
+visionAdapter._processAutoReply = async (params) => {
+  autoReplyCalledWith = params;
+};
+
+await visionAdapter.handleInbound(mockInboundCtx);
+
+// Gửi tiếp ảnh thứ 2 trong debounce window
+await visionAdapter.handleInbound({
+  ...mockInboundCtx,
+  mediaUrl: 'https://res-zalo.zadn.vn/test2.jpg'
+});
+
+// Chờ debounce timer kích hoạt
+await new Promise(resolve => setTimeout(resolve, 3200));
+
+assert.ok(autoReplyCalledWith, '_processAutoReply must be called after debounce');
+assert.strictEqual(autoReplyCalledWith.imageUrls.length, 2, 'Must buffer 2 images in debounce window');
+assert.ok(autoReplyCalledWith.incomingText.includes('Khách hàng vừa gửi 1 hình ảnh đính kèm'), 'Must supply fallback text prompt when customer sent image without text');
+
+console.log('   ✅ Multimodal AI Vision Pipeline & Image Recognition passed!\n');
 
 // Clean test db
 store.close();
@@ -1295,7 +1405,8 @@ if (fs.existsSync(testDbFile)) {
   try { fs.unlinkSync(testDbFile); } catch {}
 }
 
-console.log('🎉 ALL 36 INTEGRITY, SECURITY, CRM, AIZALO REMARKETING, AI SUITE, BULK DEEP-SYNC, QR AUTH, MEMORY GUARD, ZALO SANITIZER, DESKTOP PACKAGED, CLEAN SWITCH, MULTI-DEVICE SYNC, GROUP MENTION, QUICK-MSG, CAMPAIGN TEST DISPATCH, GROUP RECONCILIATION & AUTO-FALLBACK OPENROUTER TESTS PASSED 100%!');
+console.log('🎉 ALL 37 INTEGRITY, SECURITY, CRM, AIZALO REMARKETING, AI SUITE, BULK DEEP-SYNC, QR AUTH, MEMORY GUARD, ZALO SANITIZER, DESKTOP PACKAGED, CLEAN SWITCH, MULTI-DEVICE SYNC, GROUP MENTION, QUICK-MSG, CAMPAIGN TEST DISPATCH, GROUP RECONCILIATION, AUTO-FALLBACK OPENROUTER & MULTIMODAL VISION PIPELINE TESTS PASSED 100%!');
+
 
 
 

@@ -72,12 +72,25 @@ export function isKeyCompatible(key, provider) {
   return true;
 }
 
+/**
+ * Kiểm tra xem cặp provider:model có hỗ trợ đọc hình ảnh (Multimodal Vision) không
+ */
+export function isVisionSupported(provider, model = '') {
+  const p = String(provider || '').toLowerCase();
+  const m = String(model || '').toLowerCase();
+  if (p === 'gemini') return true;
+  if (p === 'openai' && (m.includes('4o') || m.includes('vision'))) return true;
+  if (p === 'openrouter' && (m.includes('gemini') || m.includes('claude-3') || m.includes('gpt-4o') || m.includes('vision') || m.includes('qwen-vl') || m.includes('pixtral'))) return true;
+  return false;
+}
+
 export class AiAgentAdapter extends BaseAdapter {
   constructor(options = {}) {
     super('ai_agent');
     this.localStore = options.localStore || localStore;
     this.sessionSecret = options.sessionSecret || process.env.SESSION_SECRET;
     this._inboundBuffers = new Map(); // Map<bufferKey, string[]>
+    this._inboundImageBuffers = new Map(); // Map<bufferKey, string[]> (tối đa 2 ảnh per bufferKey)
     this._debounceTimers = new Map(); // Map<bufferKey, NodeJS.Timeout>
     this._groupMentionCooldowns = new Map(); // Map<senderCooldownKey, number>
     this._triggerMessages = new Map(); // Map<bufferKey, Object>
@@ -101,10 +114,49 @@ export class AiAgentAdapter extends BaseAdapter {
   }
 
   /**
+   * Tải hình ảnh từ Zalo CDN và chuyển đổi an toàn sang Base64 (giới hạn tối đa 4MB)
+   */
+  async _downloadAndEncodeImage(mediaUrl, maxBytes = 4 * 1024 * 1024) {
+    if (!mediaUrl || typeof mediaUrl !== 'string' || !mediaUrl.startsWith('http')) {
+      return null;
+    }
+    try {
+      const res = await axios.get(mediaUrl, {
+        responseType: 'arraybuffer',
+        timeout: 4000,
+        maxContentLength: maxBytes,
+        maxBodyLength: maxBytes,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Referer': 'https://chat.zalo.me/'
+        }
+      });
+      const buffer = Buffer.from(res.data);
+      if (!buffer || buffer.length === 0 || buffer.length > maxBytes) {
+        return null;
+      }
+      let mimeType = String(res.headers['content-type'] || 'image/jpeg');
+      if (mimeType.includes(';')) mimeType = mimeType.split(';')[0].trim();
+      if (!mimeType.startsWith('image/')) {
+        if (mediaUrl.includes('.png')) mimeType = 'image/png';
+        else if (mediaUrl.includes('.webp')) mimeType = 'image/webp';
+        else mimeType = 'image/jpeg';
+      }
+      const base64 = buffer.toString('base64');
+      return { mimeType, base64 };
+    } catch (err) {
+      logger.warn(`[AI Vision] Could not download image from ${mediaUrl.substring(0, 60)}...: ${err.message}`);
+      return null;
+    }
+  }
+
+  /**
    * Handle incoming message from Zalo Web
    */
   async handleInbound(ctx) {
-    if (!ctx || ctx.isSelf || ctx.isBot || !ctx.text || !ctx.threadId) {
+    const hasImage = Boolean((ctx.mediaType === 'image' || ctx.type === 'image') && (ctx.mediaUrl || ctx.url));
+    const rawText = String(ctx.text || '').trim();
+    if (!ctx || ctx.isSelf || ctx.isBot || (!rawText && !hasImage) || !ctx.threadId) {
       return;
     }
 
@@ -112,6 +164,8 @@ export class AiAgentAdapter extends BaseAdapter {
     if (!settings || !settings.isEnabled) {
       return;
     }
+
+    const effectiveText = rawText || '[Khách hàng vừa gửi 1 hình ảnh đính kèm. Bạn hãy xem kỹ nội dung hình ảnh này và phản hồi, tư vấn hỗ trợ cho khách thật tự nhiên theo SOUL & MEMORY]';
 
     // 1. Check thread-specific AI toggle
     const conv = this.localStore.getConversation(ctx.threadId);
@@ -130,7 +184,7 @@ export class AiAgentAdapter extends BaseAdapter {
       // Group Mention Detection (Zalo Tag Protocol, @ Symbol, Vocative Context)
       groupMentionResult = detectMention({
         message: ctx.message,
-        text: ctx.text,
+        text: effectiveText,
         botProfile: ctx.client?.userProfile,
         customAliases: settings.botAliases
       });
@@ -205,22 +259,36 @@ export class AiAgentAdapter extends BaseAdapter {
       }
     }
 
-    // 6. Inbound Debounce Buffer (Aggregates rapid multi-line user messages)
+    // 6. Inbound Debounce Buffer (Aggregates rapid multi-line user messages and images)
     const debounceSec = Math.max(1, Number(settings.debounceSeconds ?? 3));
     const bufferKey = ctx.isGroup ? `${ctx.threadId}:${ctx.senderId}` : ctx.threadId;
-    const textToBuffer = (ctx.isGroup && groupMentionResult?.cleanText) ? groupMentionResult.cleanText : ctx.text;
+    const textToBuffer = (ctx.isGroup && groupMentionResult?.cleanText) ? groupMentionResult.cleanText : effectiveText;
 
     if (!this._inboundBuffers.has(bufferKey)) {
       this._inboundBuffers.set(bufferKey, []);
     }
     this._inboundBuffers.get(bufferKey).push(textToBuffer);
 
+    // Buffer incoming image URLs (max 2 images per debounce window)
+    if (hasImage) {
+      const imgUrl = String(ctx.mediaUrl || ctx.url || '').trim();
+      if (imgUrl) {
+        if (!this._inboundImageBuffers.has(bufferKey)) {
+          this._inboundImageBuffers.set(bufferKey, []);
+        }
+        const imgList = this._inboundImageBuffers.get(bufferKey);
+        if (imgList.length < 2 && !imgList.includes(imgUrl)) {
+          imgList.push(imgUrl);
+        }
+      }
+    }
+
     // Lưu trigger message để Quote lại câu hỏi trong Nhóm Chat
     if (ctx.isGroup) {
       this._triggerMessages.set(bufferKey, {
         msgId: String(ctx.message?.msgId || ctx.message?.data?.msgId || ''),
         cliMsgId: String(ctx.message?.cliMsgId || ctx.message?.data?.cliMsgId || ''),
-        text: ctx.text,
+        text: effectiveText,
         senderId: ctx.senderId,
         senderName: ctx.senderName || ''
       });
@@ -234,15 +302,18 @@ export class AiAgentAdapter extends BaseAdapter {
       this._debounceTimers.delete(bufferKey);
       const buffer = this._inboundBuffers.get(bufferKey) || [];
       this._inboundBuffers.delete(bufferKey);
+      const imageUrls = this._inboundImageBuffers.get(bufferKey) || [];
+      this._inboundImageBuffers.delete(bufferKey);
       const triggerMsg = this._triggerMessages.get(bufferKey) || null;
       this._triggerMessages.delete(bufferKey);
 
-      if (buffer.length === 0) return;
-      const aggregatedText = buffer.join('\n');
+      if (buffer.length === 0 && imageUrls.length === 0) return;
+      const aggregatedText = buffer.join('\n') || '[Khách hàng vừa gửi 1 hình ảnh đính kèm. Hãy quan sát và phân tích nội dung hình ảnh này để hỗ trợ khách hàng tốt nhất.]';
 
       await this._processAutoReply({
         threadId: ctx.threadId,
         incomingText: aggregatedText,
+        imageUrls,
         isGroup: ctx.isGroup,
         client: ctx.client,
         senderName: ctx.senderName || '',
@@ -256,7 +327,7 @@ export class AiAgentAdapter extends BaseAdapter {
   /**
    * Process and dispatch AI auto-reply
    */
-  async _processAutoReply({ threadId, incomingText, isGroup, client, senderName = '', triggerMsg = null }) {
+  async _processAutoReply({ threadId, incomingText, imageUrls = [], isGroup, client, senderName = '', triggerMsg = null }) {
     try {
       const settings = this.localStore.getAiSettings();
       if (!settings || !settings.isEnabled) return;
@@ -287,9 +358,38 @@ export class AiAgentAdapter extends BaseAdapter {
       // Format incoming text for LLM: in groups, prefix member name so AI understands who asked
       const incomingTextForLLM = (isGroup && senderName) ? `[Thành viên: ${senderName}]: ${incomingText}` : incomingText;
 
-      logger.info(`🧠 [AI Engine] Generating reply for ${threadId} (Context: ${history.length} msgs, Customer: "${customerContext.name || 'Khách'}") via ${settings.provider}:${settings.model}...`);
+      // Tải và mã hóa hình ảnh nếu model hỗ trợ Vision
+      let images = [];
+      const visionSupported = isVisionSupported(settings.provider, settings.model);
+      if (Array.isArray(imageUrls) && imageUrls.length > 0) {
+        if (visionSupported) {
+          for (const url of imageUrls.slice(0, 2)) {
+            const encoded = await this._downloadAndEncodeImage(url);
+            if (encoded) images.push(encoded);
+          }
+          if (images.length > 0) {
+            logger.info(`🖼️ [AI Vision] Successfully loaded ${images.length} image(s) for ${threadId}`);
+          }
+        } else {
+          logger.info(`ℹ️ [AI Vision] Provider/Model (${settings.provider}:${settings.model}) does not support vision. Processing text only.`);
+        }
+      }
 
-      const replyText = await this.callModelWithFallback(systemPrompt, history, incomingTextForLLM, settings, { senderName: customerContext.name });
+      // Xây dựng lời nhắc có Override Directive khi có ảnh đính kèm để khử định kiến (De-biasing)
+      let textForModel = incomingTextForLLM;
+      if (images.length > 0) {
+        const extraNote = imageUrls.length > 2 ? ` (Đang xem 2 ảnh đầu tiên trong ${imageUrls.length} ảnh gửi kèm)` : '';
+        textForModel = `[HỆ THỐNG: Khách hàng vừa gửi đính kèm ${images.length} hình ảnh thực tế${extraNote}. Hãy bỏ qua mọi câu trả lời từ chối đọc ảnh trước đây trong lịch sử (nếu có), quan sát trực tiếp dữ liệu hình ảnh đính kèm trong lượt chat này để đọc chữ, xem chi tiết và hỗ trợ khách hàng theo đúng yêu cầu]:\n${incomingTextForLLM}`;
+      } else if (imageUrls.length > 0 && !visionSupported) {
+        textForModel = `[HỆ THỐNG: Khách hàng vừa gửi ảnh nhưng mô hình AI hiện tại đang cấu hình ở chế độ văn bản thuần túy. Hãy lịch sự thông báo em đã nhận được hình ảnh và chuyển cho chuyên viên tư vấn hỗ trợ kiểm tra trực tiếp]:\n${incomingTextForLLM}`;
+      }
+
+      logger.info(`🧠 [AI Engine] Generating reply for ${threadId} (Context: ${history.length} msgs, Images: ${images.length}, Customer: "${customerContext.name || 'Khách'}") via ${settings.provider}:${settings.model}...`);
+
+      const replyText = await this.callModelWithFallback(systemPrompt, history, textForModel, settings, { senderName: customerContext.name, images });
+
+      // Giải phóng bộ nhớ Base64 ngay lập tức cho V8 GC
+      images = null;
 
       if (replyText && replyText.trim()) {
         const cleanedReply = this.cleanForZalo(replyText);
@@ -421,13 +521,21 @@ export class AiAgentAdapter extends BaseAdapter {
    - Sử dụng các biểu tượng icon sinh động ở đầu dòng (ví dụ: 🔹 Bước 1, 👉 Chú ý, 💡 Mẹo nhỏ).
 3. Luôn xuống dòng thoáng giữa các đoạn, dùng gạch đầu dòng (-) hoặc (•) cho các danh sách liệt kê để tin nhắn trên điện thoại Zalo dễ đọc nhất.`;
 
+    let visionSection = '';
+    if (isVisionSupported(settings.provider, settings.model)) {
+      visionSection = `\n### [NĂNG LỰC NHÌN & ĐỌC HÌNH ẢNH (AI MULTIMODAL VISION)]:
+1. Bạn được trang bị đôi mắt AI có khả năng nhìn, đọc và phân tích hình ảnh đa phương tiện (ảnh chụp màn hình, hóa đơn, tài liệu, sản phẩm, danh thiếp, bảng biểu...).
+2. Khi lượt trò chuyện có dữ liệu hình ảnh đính kèm, bạn ĐÃ NHÌN THẤY RÕ nội dung ảnh. Hãy chủ động đọc toàn bộ chữ, số, chi tiết trên ảnh và giải đáp, hỗ trợ khách hàng tự nhiên theo SOUL & MEMORY.
+3. [NGUYÊN TẮC TRUNG THỰC & CHỐNG ẢO GIÁC]: Nếu ảnh quá mờ, lóa sáng, bị cắt góc hoặc chữ viết tay không thể nhìn rõ 100%, BẮT BUỘC phải thông báo rõ điểm nào chưa thấy và lịch sự nhờ khách chụp lại gần hơn, tuyệt đối không được đoán mò số tiền, số điện thoại hay thông tin pháp lý.\n`;
+    }
+
     return `### [GIỌNG ĐIỆU & NHÂN CÁCH (SOUL)]:
 ${soul}
 
 ### [TRI THỨC & BẢNG GIÁ (MEMORY)]:
 ${memory || 'Chưa có thông tin bổ sung.'}
 ${fewShot}${customerInfoSection}
-
+${visionSection}
 ### [RANH GIỚI & ĐIỀU CẤM KỴ (SCOPE)]:
 ${scope}
 ${formatRules}`;
@@ -703,6 +811,7 @@ ${scope || `1. Tuyệt đối không bịa đặt số tài khoản ngân hàng,
     const primaryKey = this._resolveApiKey(settings.apiKeyEncrypted, 'AI_API_KEY');
     const primaryBaseUrl = settings.baseUrl || '';
     const primaryTimeout = Math.max(Number(settings.timeoutMs || 35000), 35000);
+    const images = Array.isArray(extra.images) ? extra.images : [];
 
     try {
       return await this.callProvider({
@@ -713,6 +822,7 @@ ${scope || `1. Tuyệt đối không bịa đặt số tài khoản ngân hàng,
         systemPrompt,
         history,
         userMessage,
+        images,
         timeoutMs: primaryTimeout
       });
     } catch (primaryErr) {
@@ -746,6 +856,7 @@ ${scope || `1. Tuyệt đối không bịa đặt số tài khoản ngân hàng,
           systemPrompt,
           history,
           userMessage,
+          images: isVisionSupported(fallbackProvider, fallbackModel) ? images : [],
           timeoutMs: fallbackTimeout
         });
       }
@@ -757,7 +868,7 @@ ${scope || `1. Tuyệt đối không bịa đặt số tài khoản ngân hàng,
   /**
    * Low-level Universal Provider Dispatcher
    */
-  async callProvider({ provider, model, apiKey, baseUrl, systemPrompt, history = [], userMessage, timeoutMs = 35000 }) {
+  async callProvider({ provider, model, apiKey, baseUrl, systemPrompt, history = [], userMessage, images = [], timeoutMs = 35000 }) {
     if (provider !== 'ollama' && !apiKey) {
       throw new Error(`API Key is required for AI Provider: ${provider}`);
     }
@@ -765,9 +876,9 @@ ${scope || `1. Tuyệt đối không bịa đặt số tài khoản ngân hàng,
     const effectiveTimeout = (provider === 'ollama' && timeoutMs === 35000) ? 90000 : timeoutMs;
 
     if (provider === 'gemini') {
-      return await this._callGeminiNative({ model, apiKey, systemPrompt, history, userMessage, timeoutMs: effectiveTimeout });
+      return await this._callGeminiNative({ model, apiKey, baseUrl, systemPrompt, history, userMessage, images, timeoutMs: effectiveTimeout });
     } else {
-      return await this._callOpenAiCompatible({ provider, model, apiKey, baseUrl, systemPrompt, history, userMessage, timeoutMs: effectiveTimeout });
+      return await this._callOpenAiCompatible({ provider, model, apiKey, baseUrl, systemPrompt, history, userMessage, images, timeoutMs: effectiveTimeout });
     }
   }
 
@@ -801,7 +912,7 @@ ${scope || `1. Tuyệt đối không bịa đặt số tài khoản ngân hàng,
   /**
    * Google Gemini REST Native API
    */
-  async _callGeminiNative({ model, apiKey, systemPrompt, history = [], userMessage, timeoutMs = 35000 }) {
+  async _callGeminiNative({ model, apiKey, baseUrl, systemPrompt, history = [], userMessage, images = [], timeoutMs = 35000 }) {
     if (!apiKey || typeof apiKey !== 'string' || !apiKey.trim()) {
       throw new Error('Chưa cung cấp API Key cho Google Gemini. Vui lòng lấy key miễn phí tại https://aistudio.google.com/app/apikey');
     }
@@ -817,7 +928,19 @@ ${scope || `1. Tuyệt đối không bịa đặt số tài khoản ngân hàng,
     if (cleanModel === 'gemini-2.0-flash-exp') cleanModel = 'gemini-3.6-flash';
 
     // Google Gemini chuẩn mới: xác thực qua header x-goog-api-key, không kèm query string để tránh xung đột 400 Bad Request
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${cleanModel}:generateContent`;
+    let url = `https://generativelanguage.googleapis.com/v1beta/models/${cleanModel}:generateContent`;
+    if (baseUrl && baseUrl.trim()) {
+      let customBase = baseUrl.trim().replace(/\/+$/, '');
+      if (customBase.includes(':generateContent')) {
+        url = customBase;
+      } else if (customBase.endsWith('/models') || customBase.endsWith('/models/')) {
+        url = `${customBase}/${cleanModel}:generateContent`;
+      } else if (customBase.includes('/models/')) {
+        url = customBase.endsWith(':generateContent') ? customBase : `${customBase}:generateContent`;
+      } else {
+        url = `${customBase}/models/${cleanModel}:generateContent`;
+      }
+    }
 
     const contents = [];
     for (const msg of history) {
@@ -828,9 +951,25 @@ ${scope || `1. Tuyệt đối không bịa đặt số tài khoản ngân hàng,
         parts: [{ text: msg.text }]
       });
     }
+
+    const userParts = [];
+    if (Array.isArray(images) && images.length > 0) {
+      for (const img of images) {
+        if (img?.base64 && img?.mimeType) {
+          userParts.push({
+            inline_data: {
+              mime_type: img.mimeType,
+              data: img.base64
+            }
+          });
+        }
+      }
+    }
+    userParts.push({ text: userMessage });
+
     contents.push({
       role: 'user',
-      parts: [{ text: userMessage }]
+      parts: userParts
     });
 
     const body = {
@@ -867,7 +1006,7 @@ ${scope || `1. Tuyệt đối không bịa đặt số tài khoản ngân hàng,
   /**
    * OpenAI-Compatible Endpoint (OpenAI, DeepSeek, Z.AI, Groq, OpenRouter, Ollama)
    */
-  async _callOpenAiCompatible({ provider, model, apiKey, baseUrl, systemPrompt, history = [], userMessage, timeoutMs = 35000 }) {
+  async _callOpenAiCompatible({ provider, model, apiKey, baseUrl, systemPrompt, history = [], userMessage, images = [], timeoutMs = 35000 }) {
     const cleanKey = (apiKey || '').trim().replace(/^["']|["']$/g, '');
     if (provider !== 'ollama') {
       if (!cleanKey) {
@@ -905,10 +1044,20 @@ ${scope || `1. Tuyệt đối không bịa đặt số tài khoản ngân hàng,
       });
     }
 
-    messages.push({
-      role: 'user',
-      content: userMessage
-    });
+    if (Array.isArray(images) && images.length > 0 && isVisionSupported(provider, model)) {
+      const contentParts = [{ type: 'text', text: userMessage }];
+      for (const img of images) {
+        if (img?.base64 && img?.mimeType) {
+          contentParts.push({
+            type: 'image_url',
+            image_url: { url: `data:${img.mimeType};base64,${img.base64}` }
+          });
+        }
+      }
+      messages.push({ role: 'user', content: contentParts });
+    } else {
+      messages.push({ role: 'user', content: userMessage });
+    }
 
     const headers = {
       'Content-Type': 'application/json'

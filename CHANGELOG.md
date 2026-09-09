@@ -6,6 +6,27 @@ Mọi thay đổi đáng chú ý của dự án **Zalo-Flow** sẽ được ghi 
 
 ---
 
+## [1.0.9] - 2026-09-09
+
+### Added
+- **Mắt Thần Multimodal AI Vision (`src/adapters/ai-agent.js`):**
+  - Tự động nhận diện chữ (OCR), đọc và phân tích chi tiết hình ảnh đính kèm (hóa đơn, biên lai, sản phẩm, tài liệu, ảnh chụp màn hình...) gửi qua Zalo.
+  - Áp dụng kỹ thuật **Chỉ Thị Đè (Override Directive)**: Khử định kiến từ chối từ các câu trả lời cũ trong lịch sử chat mà vẫn bảo toàn 100% cấu trúc luân phiên `user` <-> `model`, triệt tiêu lỗi HTTP 400 của Google Gemini / OpenAI.
+  - Tích hợp **Dynamic Vision Prompting** và nguyên tắc **Anti-Hallucination Guard**: Nếu ảnh mờ/lóa sáng/không rõ chữ, bot lịch sự nhờ khách chụp lại cận cảnh, tuyệt đối không đoán mò số tiền hay thông tin pháp lý.
+  - Giới hạn kích thước ảnh tải về tối đa 4MB với `maxBodyLength` trong Axios để ngắt stream chunked lớn từ CDN, bảo đảm an toàn RAM < 100MB.
+
+### Fixed
+- **Đồng Bộ Phân Loại Nhóm Chuẩn Xác (Ground-Truth Group Reconciliation):**
+  - Xóa bỏ thuật toán heuristic đếm tin nhắn phỏng đoán trong constructor của `LocalStore` (nguyên nhân gây nhận diện nhầm các tin nhắn cá nhân 1-1 thành nhóm).
+  - Tích hợp hàm `reconcileGroupsWithGroundTruth`: Đồng bộ chính xác 100% trạng thái nhóm từ Zalo API (`getAllGroups()`). Mọi hội thoại không thuộc danh sách nhóm thật sẽ được tự động khôi phục về chat cá nhân (`isGroup: 0`).
+  - Bổ sung phương thức `setConversationGroupState(threadId, isGroup)` trong `LocalStore` cho phép cập nhật trạng thái có chủ đích mà không bị khóa `ON CONFLICT` của `upsertConversation` chặn lại.
+  - Bổ sung Test 35, 36, 37 trong `test/test-all.js` (37/37 test suites pass 100%).
+
+## [1.0.8] - 2026-09-09
+
+### Added
+- Tối ưu hóa UI Dashboard, Spintax Engine và Campaign Test Dispatch Isolation.
+
 ## [1.0.7] - 2026-09-09
 
 ### Added

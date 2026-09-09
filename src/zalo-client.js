@@ -206,6 +206,10 @@ export class ZaloClient {
         }
         if (groupIds.length > 0) {
           logger.info(`👥 Initial group sync: Synced ${groupIds.length} groups into LocalStore.`);
+          const healed = localStore.reconcileGroupsWithGroundTruth(this.groupUids);
+          if (healed > 0) {
+            logger.info(`👥 [Ground-Truth Reconcile] Corrected ${healed} misclassified conversations back to isGroup=0.`);
+          }
         }
       }
 
@@ -549,7 +553,7 @@ export class ZaloClient {
           cliMsgId: msgCliId
         });
 
-        // Dispatch to all registered adapters (Backward compatibility: raw text only)
+        // Dispatch to all registered adapters (Backward compatibility + Rich Media support)
         for (const handler of this.inboundHandlers) {
           try {
             await handler({
@@ -559,6 +563,8 @@ export class ZaloClient {
               senderName,
               threadId,
               isGroup,
+              mediaType: parsed.type,
+              mediaUrl: parsed.mediaUrl || '',
               client: this
             });
           } catch (handlerErr) {
