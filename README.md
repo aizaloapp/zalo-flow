@@ -15,7 +15,7 @@
 [![CI Quality Gate](https://github.com/aizaloapp/zalo-flow/actions/workflows/ci.yml/badge.svg)](https://github.com/aizaloapp/zalo-flow/actions/workflows/ci.yml)
 [![Anti-Leak & Secret Scan](https://github.com/aizaloapp/zalo-flow/actions/workflows/secret-scan.yml/badge.svg)](https://github.com/aizaloapp/zalo-flow/actions/workflows/secret-scan.yml)
 [![Memory Footprint](https://img.shields.io/badge/RAM-%3C%20100MB-success.svg)](test/test-all.js)
-[![Tests Passing](https://img.shields.io/badge/Tests-37%2F37%20Passing-brightgreen.svg)](test/test-all.js)
+[![Tests Passing](https://img.shields.io/badge/Tests-41%2F41%20Passing-brightgreen.svg)](test/test-all.js)
 [![Docker Ready](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](docker-compose.yml)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
@@ -33,13 +33,15 @@
 
 Không cần biết Git, không cần cài Node.js, không cần mở màn hình đen Terminal:
 
-[![Tải Bản Cài Đặt Windows](https://img.shields.io/badge/Windows-Download%20Setup%20v1.0.9%20(.exe)-0068FF?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/aizaloapp/zalo-flow/releases/latest)
+[![Tải Bản Cài Đặt Windows](https://img.shields.io/badge/Windows-Download%20Setup%20v1.1.0%20(.exe)-0068FF?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/aizaloapp/zalo-flow/releases/latest)
 
-> 💡 **Tải về chạy ngay:** Bấm nút ở trên để tải file **`ZaloFlow-Setup-v1.0.9.exe`** (Chỉ **24.5MB**). Cài đặt trong 30 giây là có ngay icon Zalo-Flow ngoài Desktop!
+> 💡 **Tải về chạy ngay:** Bấm nút ở trên để tải file **`ZaloFlow-Setup-v1.1.0.exe`** (Chỉ **24.5MB**). Cài đặt trong 30 giây là có ngay icon Zalo-Flow ngoài Desktop!
 
-> 🚀 **Điểm mới trong v1.0.9:**
-> - 👁️ **Multimodal AI Vision:** Tự động đọc và phân tích hình ảnh (hóa đơn, biên lai, sản phẩm, tài liệu, ảnh chụp màn hình...) bằng mô hình Vision (Gemini 2.5 Flash, GPT-4o, Claude 3.5 Sonnet) với kỹ thuật khử định kiến Override Directive.
-> - 👥 **Ground-Truth Group Reconciliation:** Lấy danh sách nhóm chuẩn xác từ Zalo API, triệt tiêu lỗi phân loại nhầm cuộc trò chuyện cá nhân thành nhóm.
+> 🚀 **Điểm mới trong v1.1.0:**
+> - 🖼️ **Khay Chờ Đính Kèm & Gộp Caption Ảnh (Pending Attachment Staging):** Tải hoặc dán ảnh (`Ctrl + V`) không còn bị gửi tức thì; người dùng có thể xem trước ảnh, gõ nội dung văn bản chú thích và gửi đồng thời cả Ảnh + Chữ dính liền trong 1 tin nhắn duy nhất.
+> - ⏰ **Lên Lịch Hẹn Tin Nhắn 1-1 (In-Thread Scheduling):** Lên lịch hẹn gửi tin kèm ảnh cho từng hội thoại cụ thể, thanh ghim đếm ngược trực quan và tự động tạm dừng an toàn khi khách phản hồi.
+> - 🌐 **Universal Wiki URL Ingestion & AI Knowledge Ops:** Nạp tài liệu Markdown trực tiếp từ URL bên ngoài (`aizalo.com/guide.md`) với lá chắn SSRF Guard và Golden Template 5 phần.
+> - 🔍 **Tự Động Định Danh Khách Hàng:** Tự động phân giải tên và avatar thật từ Zalo khi nhắn tin với người lạ, loại bỏ hoàn toàn hiển thị dãy số UID.
 
 </div>
 

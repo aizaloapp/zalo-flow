@@ -15,7 +15,7 @@
 [![CI Quality Gate](https://github.com/aizaloapp/zalo-flow/actions/workflows/ci.yml/badge.svg)](https://github.com/aizaloapp/zalo-flow/actions/workflows/ci.yml)
 [![Anti-Leak & Secret Scan](https://github.com/aizaloapp/zalo-flow/actions/workflows/secret-scan.yml/badge.svg)](https://github.com/aizaloapp/zalo-flow/actions/workflows/secret-scan.yml)
 [![Memory Footprint](https://img.shields.io/badge/RAM-%3C%20100MB-success.svg)](test/test-all.js)
-[![Tests Passing](https://img.shields.io/badge/Tests-37%2F37%20Passing-brightgreen.svg)](test/test-all.js)
+[![Tests Passing](https://img.shields.io/badge/Tests-41%2F41%20Passing-brightgreen.svg)](test/test-all.js)
 [![Docker Ready](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](docker-compose.yml)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
@@ -33,13 +33,15 @@
 
 No Git, no Node.js installation, no command line terminals required:
 
-[![Download Windows Setup](https://img.shields.io/badge/Windows-Download%20Setup%20v1.0.9%20(.exe)-0068FF?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/aizaloapp/zalo-flow/releases/latest)
+[![Download Windows Setup](https://img.shields.io/badge/Windows-Download%20Setup%20v1.1.0%20(.exe)-0068FF?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/aizaloapp/zalo-flow/releases/latest)
 
-> 💡 **Download & Run:** Click the button above to download **`ZaloFlow-Setup-v1.0.9.exe`** (Only **24.5MB**). Run the installer in 30 seconds to get your Zalo-Flow desktop assistant ready!
+> 💡 **Download & Run:** Click the button above to download **`ZaloFlow-Setup-v1.1.0.exe`** (Only **24.5MB**). Run the installer in 30 seconds to get your Zalo-Flow desktop assistant ready!
 
-> 🚀 **What's New in v1.0.9:**
-> - 👁️ **Multimodal AI Vision:** Automatically reads and analyzes inbound images (receipts, products, screenshots, contact cards) via Vision models (Gemini 2.5 Flash, GPT-4o, Claude 3.5 Sonnet) with Override Directive de-biasing.
-> - 👥 **Ground-Truth Group Reconciliation:** Ground-Truth synchronization directly from Zalo API to prevent misclassifying 1-1 direct chats as groups.
+> 🚀 **What's New in v1.1.0:**
+> - 🖼️ **Pending Attachment Staging & Merged Media Caption:** Uploading or pasting images (`Ctrl + V`) no longer triggers instant dispatches; users can preview the staged image, type captions/notes, and send both media + caption seamlessly merged in a single Zalo bubble.
+> - ⏰ **1-1 In-Thread Message Scheduling:** Schedule future messages and media attachments directly inside conversation threads, with sticky countdown badges and auto-pause protection upon customer replies.
+> - 🌐 **Universal Wiki URL Ingestion & AI Knowledge Ops:** Ingest markdown product knowledge and FAQs directly from external URLs (`aizalo.com/guide.md`) protected with SSRF shields and 5-section Golden Templates.
+> - 🔍 **Automatic Stranger Identity Resolution:** Automatically resolves real Zalo display names and avatars for stranger contacts, eliminating raw numeric UIDs.
 
 </div>
 

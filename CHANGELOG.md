@@ -4,6 +4,26 @@ Mọi thay đổi đáng chú ý của dự án **Zalo-Flow** sẽ được ghi 
 
 Định dạng dựa trên [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/), và dự án này tuân thủ [Semantic Versioning](https://semver.org/lang/vi/).
 
+## [1.1.0] - 2026-09-11
+
+### Added
+- **Khay Chờ Đính Kèm & Gộp Caption Ảnh (Pending Attachment Staging):**
+  - Tải ảnh hoặc dán ảnh (`Ctrl + V`) không còn gửi tức thì; chuyển sang cơ chế staging xem trước thumbnail trên thanh `#attachment-preview-bar`.
+  - Hỗ trợ gõ chữ và gửi đồng thời cả Ảnh + Chữ dính liền trong 1 tin nhắn duy nhất theo chuẩn Single-Image Caption Integration.
+  - Fallback Guard thông minh: Phân tách gửi tin nhắn chữ trước rồi gửi tệp sau nếu có nhiều hơn 1 tệp hoặc chữ dài > 1000 ký tự.
+  - Phân rã luồng Quote Reply + Ảnh mượt mà, chống rò rỉ RAM với `URL.revokeObjectURL()`, chống click đúp (Double-submit Race Condition).
+- **Lên Lịch Hẹn Tin Nhắn 1-1 Theo Hội Thoại (In-Thread Scheduling):**
+  - Hẹn giờ gửi tin nhắn văn bản và hình ảnh cho từng khách hàng cụ thể trực tiếp từ Live Chat.
+  - Thanh ghim đếm ngược trực quan trên đỉnh khung chat kèm nút gửi ngay.
+  - Tự động tạm dừng an toàn (Auto-Pause) khi khách hàng nhắn tin lại trước giờ hẹn chống spam ngô nghê.
+- **Universal Wiki URL Ingestion & Golden Template (`src/routes/ai-settings.js`):**
+  - Nạp tài liệu Markdown trực tiếp từ URL bên ngoài (`aizalo.com/guide.md`) qua HTTP request an toàn với SSRF Protection Shield.
+  - Bộ phân tích Dual-Mode Parser: Tự động nhận diện cấu trúc Golden Template 5 phần hoặc tài liệu tự do Mode 2.
+- **Tự Động Định Danh Khách Hàng Lạ (`public/app.js`, `src/routes/chat-actions.js`):**
+  - Tự động truy vấn và phân giải tên thật kèm avatar từ Zalo API khi mở cuộc trò chuyện với khách lạ, loại bỏ triệt để dãy số UID thô.
+- **Bộ Kiểm Thử Toàn Diện (41/41 Test Suites):**
+  - Bổ sung Suite 41 kiểm thử toàn diện giao thức gửi ảnh có caption và cơ chế fallback guard.
+
 ---
 
 ## [1.0.9] - 2026-09-09
