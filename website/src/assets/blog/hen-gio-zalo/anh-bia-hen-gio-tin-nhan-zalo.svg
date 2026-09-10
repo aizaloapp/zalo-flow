@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0b1329"/>
+      <stop offset="50%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </linearGradient>
+    <linearGradient id="primaryGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0084ff"/>
+      <stop offset="100%" stop-color="#00d2ff"/>
+    </linearGradient>
+    <linearGradient id="cardGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="30" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGrad)"/>
+  
+  <!-- Glow orbs -->
+  <circle cx="200" cy="150" r="180" fill="#0084ff" opacity="0.15" filter="url(#glow)"/>
+  <circle cx="1000" cy="450" r="220" fill="#00d2ff" opacity="0.12" filter="url(#glow)"/>
+
+  <!-- Grid overlay -->
+  <path d="M 0,105 H 1200 M 0,210 H 1200 M 0,315 H 1200 M 0,420 H 1200 M 0,525 H 1200" stroke="#1e293b" stroke-width="1" opacity="0.4"/>
+  <path d="M 200,0 V 630 M 400,0 V 630 M 600,0 V 630 M 800,0 V 630 M 1000,0 V 630" stroke="#1e293b" stroke-width="1" opacity="0.4"/>
+
+  <!-- Main Card Showcase -->
+  <g transform="translate(100, 70)">
+    <!-- Badge -->
+    <rect x="0" y="0" width="340" height="42" rx="21" fill="rgba(0, 132, 255, 0.15)" stroke="#00d2ff" stroke-width="1.5"/>
+    <text x="25" y="27" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="16" font-weight="700" fill="#00d2ff">⚡ TỰ ĐỘNG HÓA ZALO CÁ NHÂN 2026</text>
+
+    <!-- Main Title -->
+    <text x="0" y="110" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="44" font-weight="800" fill="#ffffff">
+      Cách Hẹn Giờ Gửi Tin Nhắn Zalo
+    </text>
+    <text x="0" y="165" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="44" font-weight="800" fill="url(#primaryGrad)">
+      Tự Động 1-1 Chuẩn Xác &amp; An Toàn
+    </text>
+
+    <!-- Subtitle -->
+    <text x="0" y="225" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="20" fill="#94a3b8">
+      Chăm sóc khách hàng tự động • Đính kèm ảnh &amp; hợp đồng • Lá chắn Auto-Pause
+    </text>
+
+    <!-- UI Mockup Window -->
+    <g transform="translate(0, 270)">
+      <!-- Window container -->
+      <rect width="1000" height="230" rx="16" fill="url(#cardGrad)" stroke="#334155" stroke-width="2"/>
+      
+      <!-- Window header -->
+      <rect width="1000" height="45" rx="16" fill="#1e293b"/>
+      <rect y="35" width="1000" height="10" fill="#1e293b"/>
+      <circle cx="25" cy="22" r="6" fill="#ef4444"/>
+      <circle cx="45" cy="22" r="6" fill="#f59e0b"/>
+      <circle cx="65" cy="22" r="6" fill="#10b981"/>
+      <text x="95" y="28" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14" fill="#94a3b8" font-weight="600">Zalo-Flow v1.1.0 — Quản Lý Lịch Hẹn Tin Nhắn</text>
+
+      <!-- Pin Bar: Scheduled message banner -->
+      <rect x="25" y="60" width="950" height="52" rx="10" fill="rgba(245, 158, 11, 0.12)" stroke="#f59e0b" stroke-width="1.5"/>
+      <text x="50" y="92" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="16" fill="#fbbf24" font-weight="700">⏱️ LỊCH HẸN GỬI:</text>
+      <text x="195" y="92" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="15" fill="#e2e8f0">09:00:00 Sáng mai (Sau 2 giờ 15 phút) — "Dạ anh Hoàng ơi em gửi bảng giá căn hộ 2PN..."</text>
+      <rect x="880" y="71" width="80" height="30" rx="6" fill="#ef4444" opacity="0.8"/>
+      <text x="905" y="91" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" fill="#ffffff" font-weight="600">Hủy lịch</text>
+
+      <!-- Chat Bubble -->
+      <rect x="25" y="130" width="600" height="75" rx="12" fill="#0084ff"/>
+      <text x="45" y="158" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="15" fill="#ffffff" font-weight="600">Dạ chào anh Hoàng! Em đã chuẩn bị xong hợp đồng và bảng chiết khấu.</text>
+      <text x="45" y="183" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" fill="rgba(255,255,255,0.8)">📎 Hop_Dong_Dat_Coc.pdf (1.2MB) • 09:00 • Đã lên lịch tự động</text>
+
+      <!-- Safety Shield Badge -->
+      <g transform="translate(660, 132)">
+        <rect width="315" height="72" rx="12" fill="rgba(16, 185, 129, 0.12)" stroke="#10b981" stroke-width="1.5"/>
+        <text x="20" y="32" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14" fill="#34d399" font-weight="700">🛡️ LÁ CHẮN AUTO-PAUSE AN TOÀN</text>
+        <text x="20" y="55" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" fill="#cbd5e1">Tự hủy lịch nếu khách nhắn tin trước giờ hẹn</text>
+      </g>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 450" width="1000" height="450">
+  <defs>
+    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+    <linearGradient id="boxBg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1000" height="450" rx="16" fill="#0b1329"/>
+  <rect x="2" y="2" width="996" height="446" rx="14" fill="none" stroke="#334155" stroke-width="1.5"/>
+
+  <!-- Title -->
+  <text x="50" y="50" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="24" font-weight="800" fill="#ffffff">
+    Cơ Chế Lá Chắn Tự Động Tạm Dừng Thông Minh (Auto-Pause)
+  </text>
+  <text x="50" y="78" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14" fill="#94a3b8">
+    Giải quyết nỗi sợ lớn nhất: Hẹn giờ nhưng khách đã nhắn tin trước hoặc thay đổi kế hoạch
+  </text>
+
+  <!-- Flowchart 3 steps -->
+  <!-- Step 1: Lên lịch -->
+  <g transform="translate(50, 110)">
+    <rect width="260" height="290" rx="12" fill="url(#boxBg)" stroke="#334155" stroke-width="1"/>
+    <circle cx="130" cy="50" r="28" fill="rgba(0, 132, 255, 0.2)"/>
+    <text x="118" y="58" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="22">⏱️</text>
+    <text x="130" y="110" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="16" font-weight="700" fill="#38bdf8" text-anchor="middle">1. Đã Lên Lịch</text>
+    <text x="25" y="145" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" fill="#cbd5e1">Bạn cài đặt gửi tin nhắn chúc mừng hoặc báo giá vào lúc 09:00 sáng mai.</text>
+    <rect x="20" y="200" width="220" height="60" rx="8" fill="#0f172a"/>
+    <text x="35" y="225" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#94a3b8">Trạng thái hàng đợi:</text>
+    <text x="35" y="245" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#fbbf24" font-weight="700">⏳ PENDING (Chờ gửi)</text>
+  </g>
+
+  <!-- Arrow 1 -->
+  <g transform="translate(325, 230)">
+    <path d="M 0,0 H 40" stroke="#64748b" stroke-width="3" marker-end="url(#arrow)"/>
+    <text x="20" y="-12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#94a3b8" text-anchor="middle">Nếu</text>
+  </g>
+
+  <!-- Step 2: Biến cố khách nhắn tin trước -->
+  <g transform="translate(380, 110)">
+    <rect width="260" height="290" rx="12" fill="url(#boxBg)" stroke="#f59e0b" stroke-width="1.5"/>
+    <circle cx="130" cy="50" r="28" fill="rgba(245, 158, 11, 0.2)"/>
+    <text x="118" y="58" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="22">💬</text>
+    <text x="130" y="110" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="16" font-weight="700" fill="#fbbf24" text-anchor="middle">2. Khách Nhắn Trước</text>
+    <text x="25" y="145" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" fill="#cbd5e1">Lúc 08:30, khách hàng chủ động gửi tin nhắn: "Anh bận rồi, hủy lịch nhé em".</text>
+    <rect x="20" y="200" width="220" height="60" rx="8" fill="#0f172a"/>
+    <text x="35" y="225" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#f87171">Phát hiện tương tác mới</text>
+    <text x="35" y="245" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#e2e8f0">từ chính khách hàng!</text>
+  </g>
+
+  <!-- Arrow 2 -->
+  <g transform="translate(655, 230)">
+    <path d="M 0,0 H 40" stroke="#10b981" stroke-width="3"/>
+  </g>
+
+  <!-- Step 3: Tự động hủy an toàn -->
+  <g transform="translate(710, 110)">
+    <rect width="240" height="290" rx="12" fill="url(#boxBg)" stroke="#10b981" stroke-width="2"/>
+    <circle cx="120" cy="50" r="28" fill="rgba(16, 185, 129, 0.2)"/>
+    <text x="108" y="58" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="22">🛡️</text>
+    <text x="120" y="110" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="16" font-weight="700" fill="#34d399" text-anchor="middle">3. Tự Hủy Lịch</text>
+    <text x="20" y="145" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" fill="#cbd5e1">Zalo-Flow tự động hủy tin nhắn hẹn lúc 09:00 để tránh gửi tin vô duyên.</text>
+    <rect x="15" y="200" width="210" height="60" rx="8" fill="rgba(16, 185, 129, 0.15)"/>
+    <text x="25" y="225" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#34d399" font-weight="700">✓ AN TOÀN TUYỆT ĐỐI</text>
+    <text x="25" y="245" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#cbd5e1">Giữ trọn uy tín của bạn!</text>
+  </g>
+</svg>

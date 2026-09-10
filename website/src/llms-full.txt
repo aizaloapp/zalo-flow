@@ -90,3 +90,9 @@
 
 ### Q18: Tham gia cộng đồng hỗ trợ ở đâu?
 **Đáp:** Bạn có thể tham gia nhóm Zalo hỗ trợ kỹ thuật chính thức tại: https://zalo.me/g/mcihan713 hoặc trao đổi trên GitHub Discussions.
+
+### Q19: Zalo-Flow có hỗ trợ hẹn giờ gửi tin nhắn cho Zalo cá nhân không?
+**Đáp:** Có. Từ phiên bản v1.1.0, Zalo-Flow hỗ trợ tính năng Hẹn Giờ Gửi Tin Nhắn 1-1 trực tiếp trong từng cuộc trò chuyện trên máy tính Windows. Bạn có thể lên lịch gửi tin kèm hình ảnh, tài liệu và theo dõi thời gian đếm ngược trực quan. Chi tiết xem tại: https://aizalo.com/blog/cach-hen-gio-gui-tin-nhan-zalo-ca-nhan-tu-dong.html
+
+### Q20: Cơ chế Auto-Pause khi hẹn giờ hoạt động ra sao?
+**Đáp:** Auto-Pause là lá chắn an toàn độc quyền trên Zalo-Flow: Nếu bạn đã lên lịch gửi tin nhắn cho khách hàng, nhưng trước thời điểm phát tin khách hàng chủ động gửi tin nhắn mới vào khung chat, Zalo-Flow sẽ tự động hủy lịch gửi để bạn không bị rơi vào tình huống gửi thông điệp lệch ngữ cảnh.

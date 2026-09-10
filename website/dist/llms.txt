@@ -13,24 +13,26 @@
 - **Mã hóa:** AES-256-CBC lưu trữ cục bộ trong SQLite.
 
 ## Tính Năng Chính
-1. **Mắt Thần Multimodal AI Vision:** Tự động đọc và phân tích hình ảnh (hóa đơn, biên lai, sản phẩm, tài liệu, ảnh chụp màn hình...) gửi qua Zalo, tư vấn thông minh theo đúng nhân cách thương hiệu.
-2. **Tạo Chatbot Zalo Cá Nhân Bằng AI:** Kết nối Google Gemini, DeepSeek, OpenAI tự động trả lời khách hàng 24/7.
-3. **Bóc Tách Danh Thiếp (chat.contact):** Tự động lọc sạch JSON kỹ thuật, trích xuất số điện thoại và chuyển đổi chuẩn Việt Nam `0xxxxxxxxx`.
-4. **Cơ Chế Anti-Ban 3 Lớp & Ground-Truth Group Reconciliation:**
+1. **Khay Chờ Đính Kèm & Gộp Caption Ảnh:** Xem trước ảnh trên thanh staging, nhập nội dung văn bản và gửi đồng thời cả ảnh + chữ dính liền trong 1 tin nhắn duy nhất.
+2. **Lên Lịch Hẹn Tin Nhắn 1-1:** Hẹn giờ gửi tin và tài liệu đính kèm cho từng khách hàng, thanh ghim đếm ngược thông minh và tự hủy an toàn khi khách trả lời.
+3. **Mắt Thần Multimodal AI Vision:** Tự động đọc và phân tích hình ảnh (hóa đơn, biên lai, sản phẩm, tài liệu, ảnh chụp màn hình...) gửi qua Zalo, tư vấn thông minh theo đúng nhân cách thương hiệu.
+4. **Universal Wiki URL Ingestion:** Nạp tài liệu Markdown trực tiếp từ URL bên ngoài (`aizalo.com/guide.md`) với Golden Template và SSRF Shield.
+5. **Cơ Chế Anti-Ban 3 Lớp & Ground-Truth Group Reconciliation:**
    - Token Bucket Rate Limiter: Giãn cách tối thiểu 3 giây/tin, tối đa 20 tin/phút.
    - Self-Echo Shield: Bộ đệm 30s chống vòng lặp phản xạ bot tự nói chuyện với chính mình.
    - Flood Detector: Tự động ngắt tạm thời 60s khi bị dội tin dồn dập.
    - Ground-Truth Reconciliation: Đồng bộ phân loại nhóm chính xác 100% theo Zalo API.
-5. **Web Dashboard Quản Trị:** Giao diện Live Chat trực tiếp tại `localhost:3000`, phân loại khách hàng bằng thẻ tag màu sắc.
-6. **Chiến Dịch Remarketing & Spintax:** Gửi tin nhắn chăm sóc khách hàng định kỳ kèm hình ảnh/tài liệu và đảo ngẫu nhiên cú pháp.
-7. **Mở Rộng Đội Ngũ:** Tích hợp 2 chiều với Chatwoot CRM khi cần nhiều nhân viên cùng trực 1 số Zalo.
+6. **Web Dashboard Quản Trị & Tự Động Định Danh:** Giao diện Live Chat trực tiếp tại `localhost:3000`, phân loại khách hàng bằng thẻ tag màu sắc, tự động nhận diện tên và avatar thật của khách lạ.
+7. **Chiến Dịch Remarketing & Spintax:** Gửi tin nhắn chăm sóc khách hàng định kỳ kèm hình ảnh/tài liệu và đảo ngẫu nhiên cú pháp.
+8. **Mở Rộng Đội Ngũ:** Tích hợp 2 chiều với Chatwoot CRM khi cần nhiều nhân viên cùng trực 1 số Zalo.
 
 ## Hướng Dẫn Tải Về & Cài Đặt
-- Tải gói cài đặt Windows: `https://github.com/aizaloapp/zalo-flow/releases/latest` (file `ZaloFlow-Setup-v1.0.9.exe`).
+- Tải gói cài đặt Windows: `https://github.com/aizaloapp/zalo-flow/releases/latest` (file `ZaloFlow-Setup-v1.1.0.exe`).
 - Cài đặt qua dòng lệnh: `npx zalo-flow init`
 - Lưu ý Windows SmartScreen: Khi xuất hiện màn hình "Windows protected your PC", bấm "More info" -> "Run anyway" (phần mềm cộng đồng chưa mua chứng chỉ thương mại Microsoft, sạch 0/70 trên VirusTotal).
 
 ## Cẩm Nang & Bài Viết Chuyên Sâu
+- Cách hẹn giờ gửi tin nhắn Zalo cá nhân tự động: https://aizalo.com/blog/cach-hen-gio-gui-tin-nhan-zalo-ca-nhan-tu-dong.html
 - Bí quyết chống khóa nick Zalo: https://aizalo.com/blog/cach-gui-tin-nhan-tu-dong-tren-zalo-khong-bi-khoa.html
 - Hướng dẫn cài đặt 3 phút: https://aizalo.com/blog/huong-dan-cach-tao-chatbot-zalo-ca-nhan.html
 - Tích hợp Gemini & DeepSeek: https://aizalo.com/blog/tich-hop-ai-gemini-deepseek-vao-zalo-ca-nhan.html

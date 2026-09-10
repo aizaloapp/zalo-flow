@@ -1,4 +1,4 @@
-﻿# 🧠 MINI SECOND BRAIN WIKI — HƯỚNG DẪN CÀI ĐẶT & SỬ DỤNG ZALO FLOW
+# 🧠 MINI SECOND BRAIN WIKI — HƯỚNG DẪN CÀI ĐẶT & SỬ DỤNG ZALO FLOW
 
 > **Mục đích:** Tài liệu tri thức chuẩn vàng (Golden AI Knowledge) cung cấp toàn bộ hướng dẫn cài đặt, kích hoạt, cấu hình AI và sử dụng các tính năng của phần mềm Zalo-Flow. Được tối ưu hóa cho AI Mini Second Brain đọc hiểu và tự động tư vấn, hỗ trợ kỹ thuật cho người dùng 24/7.
 > **Trang chủ chính thức:** https://aizalo.com
@@ -33,7 +33,7 @@
 1. **Yêu cầu hệ thống:** Windows 10 hoặc Windows 11 (64-bit), ổ cứng trống tối thiểu 500MB, kết nối mạng ổn định.
 2. **Quy trình cài đặt 1-Click (Chỉ mất 3 phút):**
    - **Bước 1:** Tải bộ cài đặt Windows `.exe` mới nhất tại: `https://aizalo.com/#download` hoặc GitHub Releases: `https://github.com/aizaloapp/zalo-flow/releases`.
-   - **Bước 2:** Nhấp đúp vào file `ZaloFlow-Setup-x.x.x.exe` để cài đặt tự động (đã tích hợp sẵn Node.js Portable và SQLite, không cần cài thêm công cụ lập trình).
+   - **Bước 2:** Nhấp đúp vào file `ZaloFlow-Setup-v1.1.0.exe` để cài đặt tự động (đã tích hợp sẵn Node.js Portable và SQLite, không cần cài thêm công cụ lập trình).
    - **Bước 3:** Nhấp đúp vào biểu tượng **Zalo-Flow** ngoài Desktop để khởi động. Ứng dụng chạy ngầm và tự động mở giao diện tại `http://localhost:3000`.
    - **Xem bài viết chi tiết có ảnh minh họa:** `https://aizalo.com/blog/huong-dan-cach-tao-chatbot-zalo-ca-nhan.html`
 
@@ -90,7 +90,14 @@
 
 ---
 
-### I. Tắt / Dừng / Khởi Động Lại Phần Mềm
+### I. Khay Chờ Đính Kèm Xem Trước & Gộp Caption Ảnh (Tính năng mới ở v1.1.0)
+- **Vấn đề cũ:** Khi tải ảnh (🖼️) hoặc dán ảnh (`Ctrl + V`), ảnh bị gửi ngay lập tức làm người gửi không kịp viết nội dung văn bản kèm theo.
+- **Giải pháp trên v1.1.0:** Ảnh được đưa vào thanh xem trước (staging preview bar) phía trên ô chat kèm tên, dung lượng và nút đỏ `×` hủy bỏ.
+- **Cách dùng:** Dán hoặc chọn ảnh ➔ Gõ lời nhắn, báo giá vào ô chat ➔ Bấm **Gửi (✈️)** hoặc nhấn **Enter**: Hệ thống tự động gộp ảnh và chữ thành 1 tin nhắn dính liền (Single-Image Caption Integration) hiển thị cực kỳ chuyên nghiệp và tiện lợi.
+
+---
+
+### J. Tắt / Dừng / Khởi Động Lại Phần Mềm
 - **Dừng phần mềm:** Vào Start Menu hoặc thư mục cài đặt (`%LOCALAPPDATA%\Programs\ZaloFlow`), bấm đúp `Dừng Zalo-Flow.bat`.
 - **Khởi động lại:** Nhấp đúp vào icon `Zalo-Flow` ngoài Desktop.
 
@@ -108,6 +115,12 @@
   🔹 Bước 2: Nhấp đúp chuột để cài đặt tự động, sau đó mở phần mềm ngoài Desktop.
   🔹 Bước 3: Quét mã QR bằng điện thoại trên `localhost:3000` là dùng được ngay ạ!
   👉 Anh/chị xem bài viết hướng dẫn chi tiết có ảnh chụp màn hình từng bước tại đây nhé: https://aizalo.com/blog/huong-dan-cach-tao-chatbot-zalo-ca-nhan.html
+
+- **Khách hỏi:** Làm thế nào để gửi ảnh kèm chữ chú thích cùng lúc trên Zalo-Flow?
+  **👉 Trả lời chuẩn:** Dạ trên bản mới v1.1.0, anh/chị chỉ cần dán ảnh (Ctrl + V) hoặc chọn ảnh vào ô chat, ảnh sẽ hiện xem trước ở trên; sau đó anh/chị gõ thêm lời nhắn, giá tiền vào ô chat rồi bấm Gửi (Enter) là ảnh và chữ sẽ tự động gộp dính liền trong 1 tin nhắn duy nhất cực kỳ tiện lợi ạ!
+
+- **Khách hỏi:** Có thể hẹn giờ gửi tin nhắn riêng cho từng khách hàng trên Zalo Flow không?
+  **👉 Trả lời chuẩn:** Dạ hoàn toàn được ạ! Trong từng cuộc trò chuyện, anh/chị bấm vào biểu tượng Hẹn giờ ⏰ để đặt thời gian gửi tin nhắn và ảnh cho khách. Hệ thống có thanh đếm ngược thông minh và tự động hủy an toàn nếu khách nhắn tin lại trước giờ hẹn ạ!
 
 - **Khách hỏi:** Sử dụng Zalo Flow có sợ bị lộ tin nhắn hay mất nick Zalo không?
   **👉 Trả lời chuẩn:** Dạ anh/chị hoàn toàn yên tâm ạ! Zalo-Flow chạy 100% cục bộ trên máy tính của anh/chị (Localhost), cơ sở dữ liệu SQLite và phiên đăng nhập được mã hóa AES-256 lưu trực tiếp trong máy. Tuyệt đối không có dữ liệu nào bị gửi lên máy chủ bên thứ ba, bảo mật quyền riêng tư tuyệt đối ạ.
