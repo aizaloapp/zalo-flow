@@ -1,6 +1,6 @@
 ---
 name: release
-description: Quy trình phát hành phiên bản Zalo-Flow đồng bộ toàn diện — kiểm tra chất lượng (Quality Gates), nâng version 8 điểm chạm, build bộ cài Windows Native (.exe qua Inno Setup), tạo GitHub Release và deploy Cloudflare Pages aizalo.com. Kích hoạt bằng '/release', '/deploy', 'phát hành bản mới', 'deploy zalo-flow'.
+description: Quy trình phát hành phiên bản Zalo-Flow đồng bộ toàn diện — kiểm tra chất lượng (Quality Gates), nâng version 9 điểm chạm, build bộ cài Windows Native (.exe qua Inno Setup), tạo GitHub Release và deploy Cloudflare Pages aizalo.com. Kích hoạt bằng '/release', '/deploy', 'phát hành bản mới', 'deploy zalo-flow'.
 ---
 
 # 🚀 Quy Trình Phát Hành Phiên Bản Zalo-Flow Đồng Bộ (Zalo-Flow Release Pipeline)
@@ -17,7 +17,7 @@ Quy trình này tự động hóa và chuẩn hóa 100% việc phát hành phiê
 
 ```mermaid
 flowchart TD
-    A[Pha 1: Pre-flight Safety & Quality Gates] --> B[Pha 2: Nâng Version 8 Điểm Chạm]
+    A[Pha 1: Pre-flight Safety & Quality Gates] --> B[Pha 2: Nâng Version 9 Điểm Chạm]
     B --> C[Pha 3: Build Bộ Cài Windows .exe]
     C --> D[Pha 4: Git Push & GitHub Release]
     D --> E[Pha 5: Build & Deploy Cloudflare Pages]
@@ -44,14 +44,14 @@ Trước khi tiến hành bất kỳ thao tác đóng gói nào, Agent **BẮT B
 
 ---
 
-### Pha 2: Nâng Version Đồng Bộ 8 Điểm Chạm
+### Pha 2: Nâng Version Đồng Bộ 9 Điểm Chạm
 
 Khi phát hành phiên bản mới `vX.X.X` (ví dụ `1.0.7`), Agent cập nhật đồng bộ các file sau:
 
 1. **`package.json`**: Cập nhật `"version": "X.X.X"`.
 2. **`installer/setup.iss`**: Cập nhật `#define MyAppVersion "X.X.X"`.
 3. **`README.md`**:
-   - Cập nhật số lượng test trên badge (ví dụ: `34/34 Passing`).
+   - Cập nhật số lượng test trên badge (ví dụ: `40/40 Passing`).
    - Cập nhật nút tải: `ZaloFlow-Setup-vX.X.X.exe`.
    - Bổ sung mục tóm tắt tính năng mới của `vX.X.X`.
 4. **`README.en.md`**:
@@ -62,7 +62,12 @@ Khi phát hành phiên bản mới `vX.X.X` (ví dụ `1.0.7`), Agent cập nh�
    - Cập nhật phiên bản mới nhất cho AI Crawlers.
 7. **`website/src/llms-full.txt`**:
    - Cập nhật tài liệu toàn văn cho AI search engines.
-8. **`CHANGELOG.md`** *(nếu có)*:
+8. **`website/src/guide.md` & `website/src/wiki.md` (AI Knowledge Ops):**
+   - Cập nhật phiên bản & link tải file cài đặt mới nhất `ZaloFlow-Setup-vX.X.X.exe`.
+   - Bổ sung hướng dẫn các tính năng mới vào mục `📚 2. Kho Tri Thức Sản Phẩm (Memory)`.
+   - Bổ sung các câu hỏi thường gặp mới vào mục `❓ 3. Bách Khoa Hỏi Đáp (Q&A FAQ)`.
+   - Giúp người dùng khi bấm **🔄 Cập Nhật URL** trên Zalo-Flow là Bot AI được nạp ngay tri thức mới nhất về bản phát hành.
+9. **`CHANGELOG.md`** *(nếu có)*:
    - Thêm mốc lịch sử phiên bản `[X.X.X] - YYYY-MM-DD`.
 
 ---
