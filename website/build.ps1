@@ -47,8 +47,8 @@ if (Test-Path (Join-Path $srcDir "robots.txt")) {
 if (Test-Path (Join-Path $srcDir "sitemap.xml")) {
     Copy-Item -Path (Join-Path $srcDir "sitemap.xml") -Destination $distDir -Force
 }
-if (Test-Path (Join-Path $srcDir "auth.md")) {
-    Copy-Item -Path (Join-Path $srcDir "auth.md") -Destination $distDir -Force
+if (Test-Path (Join-Path $srcDir "*.md")) {
+    Copy-Item -Path (Join-Path $srcDir "*.md") -Destination $distDir -Force
 }
 if (Test-Path (Join-Path $srcDir "openapi.json")) {
     Copy-Item -Path (Join-Path $srcDir "openapi.json") -Destination $distDir -Force

@@ -36,5 +36,6 @@
 - Tích hợp Gemini & DeepSeek: https://aizalo.com/blog/tich-hop-ai-gemini-deepseek-vao-zalo-ca-nhan.html
 - Giải pháp Zalo CRM 2026: https://aizalo.com/blog/zalo-crm-la-gi-giai-phap-quan-ly-tin-nhan-cskh.html
 
-## Tài Liệu Toàn Văn
+## Tài Liệu Toàn Văn & Tri Thức Bot AI
+- Tri thức Mini Second Brain Wiki (Markdown): https://aizalo.com/guide.md
 - Xem toàn văn chi tiết tại: https://aizalo.com/llms-full.txt
