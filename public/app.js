@@ -10,6 +10,9 @@ let state = {
   tags: [],
   quickMessages: [],
   pendingQuickAttachments: null,
+  pendingChatFiles: [],
+  pendingPreviewUrls: [],
+  isSendingMessage: false,
   selectedTagColor: '#38bdf8'
 };
 
@@ -1971,6 +1974,10 @@ async function selectConversation(threadId) {
   const conv = state.conversations.find(c => c.id === threadId) || { id: threadId, name: threadId };
   state.activeThread = conv;
 
+  // Dọn dẹp trích dẫn và tệp đính kèm chờ gửi của hội thoại trước chống gửi nhầm
+  cancelQuote();
+  cancelAttachment();
+
   renderConversations();
 
   emptyStateEl.style.display = 'none';
@@ -2564,28 +2571,43 @@ async function sendQuickLike() {
 
 async function sendMessage() {
   const text = chatInputEl.value.trim();
-  if (!text || !state.activeThreadId) return;
+  const hasText = Boolean(text);
+  const filesToSend = [...(state.pendingChatFiles || [])];
+  const pendingAtts = state.pendingQuickAttachments ? [...state.pendingQuickAttachments] : null;
+  const hasFiles = filesToSend.length > 0;
+  const hasQuickAtts = Boolean(pendingAtts && pendingAtts.length > 0);
+
+  if ((!hasText && !hasFiles && !hasQuickAtts) || !state.activeThreadId) return;
+  if (state.isSendingMessage) return;
+
+  state.isSendingMessage = true;
+  sendBtnEl.disabled = true;
 
   const quoteToUse = currentQuote ? { ...currentQuote } : null;
   cancelQuote();
 
-  // Capture pending quick message attachments and clear preview bar immediately
-  const pendingAtts = state.pendingQuickAttachments ? [...state.pendingQuickAttachments] : null;
-  state.pendingQuickAttachments = null;
+  // Clear pending state & preview bar immediately
   cancelAttachment();
-
   chatInputEl.value = '';
-  sendBtnEl.disabled = true;
 
   // 1. Optimistic UI insertion for instant feedback
   const tempId = 'temp_' + Date.now();
+  const isImageAttachment = hasFiles && filesToSend[0].type && filesToSend[0].type.startsWith('image/');
+  let tempBlobUrl = '';
+  if (isImageAttachment) {
+    try {
+      tempBlobUrl = URL.createObjectURL(filesToSend[0]);
+    } catch (_) {}
+  }
+
   const optimisticMsg = {
     id: tempId,
     threadId: state.activeThreadId,
     senderId: 'self',
     senderName: 'Admin (Bạn)',
-    text,
-    mediaType: 'text',
+    text: text || (hasFiles ? (isImageAttachment ? '[Hình ảnh]' : (filesToSend[0].name || '[Tập tin]')) : ''),
+    mediaType: isImageAttachment ? 'image' : (hasFiles ? 'file' : 'text'),
+    mediaUrl: tempBlobUrl,
     quoteText: quoteToUse ? quoteToUse.text : '',
     quoteSender: quoteToUse ? quoteToUse.senderName : '',
     isGroup: Boolean(state.activeThread?.isGroup),
@@ -2602,7 +2624,7 @@ async function sendMessage() {
   // Update conversation card preview immediately
   let conv = state.conversations.find(c => c.id === state.activeThreadId);
   if (conv) {
-    conv.lastMessage = text;
+    conv.lastMessage = optimisticMsg.text;
     conv.lastTime = optimisticMsg.timestamp;
     state.conversations = [conv, ...state.conversations.filter(c => c.id !== state.activeThreadId)];
     renderConversations();
@@ -2610,8 +2632,61 @@ async function sendMessage() {
 
   try {
     let res;
-    if (quoteToUse) {
-      // Send Quote Reply
+    if (hasFiles) {
+      // Luồng gửi Tệp / Ảnh đính kèm (có thể kèm Caption và/hoặc Quote)
+      if (quoteToUse) {
+        // Zalo không hỗ trợ vừa Quote vừa Upload Media trong 1 API call -> Gửi Quote text trước
+        const quoteRes = await fetch(`/api/conversations/${state.activeThreadId}/reply-quote`, {
+          method: 'POST',
+          headers: getHeaders(),
+          body: JSON.stringify({
+            text: text || 'Đã gửi kèm tệp đính kèm',
+            quoteData: {
+              content: quoteToUse.text,
+              text: quoteToUse.text,
+              senderName: quoteToUse.senderName,
+              msgId: quoteToUse.msgId
+            },
+            isGroup: Boolean(state.activeThread?.isGroup)
+          })
+        });
+        const quoteData = await quoteRes.json();
+        if (!quoteRes.ok || quoteData.error) {
+          throw new Error(quoteData.error || 'Không thể gửi phản hồi trích dẫn');
+        }
+
+        // Sau đó gửi tệp đính kèm (caption = '')
+        const formData = new FormData();
+        for (const file of filesToSend) {
+          formData.append('files', file);
+        }
+        formData.append('isGroup', Boolean(state.activeThread?.isGroup));
+
+        res = await fetch(`/api/conversations/${state.activeThreadId}/upload-media`, {
+          method: 'POST',
+          headers: state.adminToken ? { 'x-admin-token': state.adminToken } : {},
+          body: formData
+        });
+      } else {
+        // Không có Quote: Gửi thẳng vào /upload-media kèm caption
+        const formData = new FormData();
+        for (const file of filesToSend) {
+          formData.append('files', file);
+        }
+        if (text) {
+          formData.append('caption', text);
+          formData.append('message', text);
+        }
+        formData.append('isGroup', Boolean(state.activeThread?.isGroup));
+
+        res = await fetch(`/api/conversations/${state.activeThreadId}/upload-media`, {
+          method: 'POST',
+          headers: state.adminToken ? { 'x-admin-token': state.adminToken } : {},
+          body: formData
+        });
+      }
+    } else if (quoteToUse) {
+      // Send Quote Reply (Chỉ có chữ)
       res = await fetch(`/api/conversations/${state.activeThreadId}/reply-quote`, {
         method: 'POST',
         headers: getHeaders(),
@@ -2627,7 +2702,7 @@ async function sendMessage() {
         })
       });
     } else {
-      // Send Normal Message
+      // Send Normal Message (Chỉ có chữ)
       res = await fetch('/api/send-message', {
         method: 'POST',
         headers: getHeaders(),
@@ -2647,7 +2722,7 @@ async function sendMessage() {
       return;
     }
 
-    // 2. Dispatch Pending Quick Message Attachments (Up to 5)
+    // 2. Dispatch Pending Quick Message Attachments (Up to 5) nếu có
     if (pendingAtts && pendingAtts.length > 0 && state.activeThreadId) {
       setTimeout(async () => {
         try {
@@ -2673,6 +2748,7 @@ async function sendMessage() {
     if (failedBubble) failedBubble.style.opacity = '0.5';
     alert('Không thể gửi tin nhắn: ' + err.message);
   } finally {
+    state.isSendingMessage = false;
     sendBtnEl.disabled = false;
     chatInputEl.focus();
   }
@@ -2762,86 +2838,121 @@ async function handleFileInputChange(event, type) {
   const files = event.target.files;
   if (!files || files.length === 0 || !state.activeThreadId) return;
 
-  for (const file of files) {
-    await uploadAndSendAttachment(file);
-  }
+  await stageChatAttachment(files);
   event.target.value = '';
 }
 
-async function uploadAndSendAttachment(rawFile) {
-  if (!state.activeThreadId || !rawFile) return;
+/**
+ * Đính kèm tệp / ảnh vào khay chờ (Staging) để người dùng gõ thêm chú thích (Caption)
+ * - Tự động nén ảnh qua Canvas chuẩn Zalo HD 2560px/90% (<0.2s)
+ * - Hiển thị thumbnail và thông tin dung lượng trên #attachment-preview-bar
+ * - Thu hồi Blob URL cũ để chống rò rỉ bộ nhớ
+ */
+async function stageChatAttachment(rawFiles) {
+  if (!state.activeThreadId || !rawFiles) return;
 
-  // 1. Tự động nén ảnh nếu là file ảnh chụp dung lượng cao
-  let file = rawFile;
-  if (rawFile.type && rawFile.type.startsWith('image/')) {
-    file = await compressImageFile(rawFile);
+  const files = Array.isArray(rawFiles) ? rawFiles : Array.from(rawFiles);
+  if (files.length === 0) return;
+
+  // Xóa mẫu tin nhanh đính kèm nếu người dùng tự đính kèm tệp cá nhân
+  state.pendingQuickAttachments = null;
+
+  const validFiles = [];
+  for (const rawFile of files) {
+    if ((state.pendingChatFiles?.length || 0) + validFiles.length >= 5) {
+      alert('Chỉ có thể đính kèm tối đa 5 tệp tin cùng lúc!');
+      break;
+    }
+    if (rawFile.size > 25 * 1024 * 1024) {
+      alert(`Tệp "${rawFile.name || 'đính kèm'}" vượt quá dung lượng cho phép của Zalo (tối đa 25MB)!`);
+      continue;
+    }
+    let file = rawFile;
+    if (rawFile.type && rawFile.type.startsWith('image/')) {
+      file = await compressImageFile(rawFile);
+    }
+    validFiles.push(file);
   }
 
-  // 2. Kiểm tra trần dung lượng 25MB (Chuẩn Zalo)
-  if (file.size > 25 * 1024 * 1024) {
-    return alert('Tệp tin vượt quá dung lượng cho phép của Zalo (tối đa 25MB)!');
-  }
+  if (validFiles.length === 0) return;
+
+  state.pendingChatFiles = [...(state.pendingChatFiles || []), ...validFiles];
 
   const bar = document.getElementById('attachment-preview-bar');
   const infoEl = document.getElementById('attachment-preview-info');
   const imgEl = document.getElementById('attachment-preview-img');
 
   if (bar && infoEl) {
-    infoEl.innerText = `⏳ Đang tải lên và gửi: ${file.name || 'hình ảnh'}...`;
-    if (file.type && file.type.startsWith('image/')) {
-      const url = URL.createObjectURL(file);
-      if (imgEl) {
-        imgEl.src = url;
-        imgEl.style.display = 'block';
+    // Thu hồi các Blob URL xem trước cũ để giải phóng RAM
+    if (state.pendingPreviewUrls && state.pendingPreviewUrls.length > 0) {
+      for (const u of state.pendingPreviewUrls) {
+        try { URL.revokeObjectURL(u); } catch (_) {}
       }
+      state.pendingPreviewUrls = [];
+    }
+
+    const firstImg = state.pendingChatFiles.find(f => f.type && f.type.startsWith('image/'));
+    if (firstImg && imgEl) {
+      const url = URL.createObjectURL(firstImg);
+      state.pendingPreviewUrls.push(url);
+      imgEl.src = url;
+      imgEl.style.display = 'block';
     } else if (imgEl) {
       imgEl.style.display = 'none';
     }
+
+    const totalCount = state.pendingChatFiles.length;
+    const fileSummary = state.pendingChatFiles.map(f => {
+      const sizeMb = (f.size / (1024 * 1024)).toFixed(1);
+      return `${f.name || 'hình ảnh'} (${sizeMb}MB)`;
+    }).join(', ');
+
+    infoEl.innerText = `📎 Đính kèm sẵn sàng (${totalCount} tệp): ${fileSummary}`;
     bar.classList.add('active');
   }
 
-  try {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('isGroup', Boolean(state.activeThread?.isGroup));
-
-    const res = await fetch(`/api/conversations/${state.activeThreadId}/upload-media`, {
-      method: 'POST',
-      headers: state.adminToken ? { 'x-admin-token': state.adminToken } : {},
-      body: formData
-    });
-
-    const data = await res.json();
-    if (!res.ok || data.error) {
-      alert('Lỗi gửi tệp: ' + (data.error || 'Không thể gửi tệp tin này.'));
-    }
-  } catch (err) {
-    alert('Lỗi upload: ' + err.message);
-  } finally {
-    cancelAttachment();
-  }
+  chatInputEl.focus();
 }
 
 function cancelAttachment() {
+  state.pendingQuickAttachments = null;
+  state.pendingChatFiles = [];
+  if (state.pendingPreviewUrls && state.pendingPreviewUrls.length > 0) {
+    for (const u of state.pendingPreviewUrls) {
+      try { URL.revokeObjectURL(u); } catch (_) {}
+    }
+    state.pendingPreviewUrls = [];
+  }
   const bar = document.getElementById('attachment-preview-bar');
+  const imgEl = document.getElementById('attachment-preview-img');
+  const infoEl = document.getElementById('attachment-preview-info');
   if (bar) bar.classList.remove('active');
+  if (imgEl) {
+    imgEl.src = '';
+    imgEl.style.display = 'none';
+  }
+  if (infoEl) infoEl.innerText = '';
 }
 
-// Global Clipboard Paste (Ctrl + V)
+// Global Clipboard Paste (Ctrl + V) - Staging thông minh không cướp sự kiện text thông thường
 window.addEventListener('paste', async (e) => {
   if (!state.activeThreadId) return;
   const items = (e.clipboardData || e.originalEvent?.clipboardData)?.items;
   if (!items) return;
 
+  const imageFiles = [];
   for (const item of items) {
-    if (item.type.indexOf('image') !== -1) {
+    if (item.type && item.type.indexOf('image') !== -1) {
       const blob = item.getAsFile();
       if (blob) {
-        e.preventDefault();
-        await uploadAndSendAttachment(blob);
-        break;
+        imageFiles.push(blob);
       }
     }
+  }
+
+  if (imageFiles.length > 0) {
+    e.preventDefault();
+    await stageChatAttachment(imageFiles);
   }
 });
 

@@ -1764,7 +1764,7 @@ body {
   align-items: center;
   gap: 10px;
   padding: 6px 14px;
-  background: rgba(30, 41, 59, 0.95);
+  background: var(--bg-card);
   border-left: 3px solid #34d399;
   border-top: 1px solid var(--border);
   margin: 6px 16px 2px 16px;

@@ -152,23 +152,45 @@ router.post('/conversations/:threadId/upload-media', requireAuth, uploadAny, asy
     return res.status(400).json({ error: 'Vui lòng đính kèm tệp tin hợp lệ (tối đa 5 tệp, mỗi tệp <= 10MB)!' });
   }
 
-  try {
-    const diskPaths = localFilePaths.map(f => f.path);
-    const firstItem = localFilePaths[0];
+  const { message = '', caption = '' } = req.body || {};
+  const effectiveCaption = (caption || message || '').trim();
 
-    const result = await zaloClient.uploadAttachment(threadId, diskPaths, isGroup, {
-      items: localFilePaths,
-      mediaUrl: firstItem.mediaUrl,
-      mediaType: firstItem.mediaType,
-      originalName: localFilePaths.length === 1 ? firstItem.originalName : `${localFilePaths.length} tệp đính kèm`
-    });
+  try {
+    const firstItem = localFilePaths[0];
+    const isSingleImage = localFilePaths.length === 1 && firstItem.mediaType === 'image';
+    let result;
+
+    if (isSingleImage && effectiveCaption.length <= 1000) {
+      // Gộp caption dính liền theo AGENTS.md Trụ Cột II Điều 8
+      result = await zaloClient.uploadAttachment(threadId, [firstItem.path], isGroup, {
+        items: localFilePaths,
+        mediaUrl: firstItem.mediaUrl,
+        mediaType: firstItem.mediaType,
+        originalName: firstItem.originalName || '[Hình ảnh]',
+        caption: effectiveCaption
+      });
+    } else {
+      // Phân tách an toàn nếu nhiều tệp hoặc caption > 1000 ký tự
+      if (effectiveCaption) {
+        await zaloClient.sendMessage(threadId, effectiveCaption, isGroup);
+      }
+      const diskPaths = localFilePaths.map(f => f.path);
+      result = await zaloClient.uploadAttachment(threadId, diskPaths, isGroup, {
+        items: localFilePaths,
+        mediaUrl: firstItem.mediaUrl,
+        mediaType: firstItem.mediaType,
+        originalName: localFilePaths.length === 1 ? firstItem.originalName : `${localFilePaths.length} tệp đính kèm`,
+        caption: ''
+      });
+    }
 
     res.json({
       status: 'success',
       message: `Đã gửi ${localFilePaths.length} tệp tin đính kèm thành công!`,
       data: {
         ...result,
-        items: localFilePaths
+        items: localFilePaths,
+        caption: effectiveCaption
       }
     });
   } catch (err) {

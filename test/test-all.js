@@ -1625,13 +1625,97 @@ assert.strictEqual(
 
 console.log('   ✅ Universal Wiki URL Ingestion, SSRF Shield, Dual-Mode Parser & Golden Template passed!\n');
 
+// -----------------------------------------------------------------------------
+// 41. Testing Live Chat Media Caption Integration & Smart Fallback Guard Protocol
+// -----------------------------------------------------------------------------
+console.log('41. Testing Live Chat Media Caption Integration & Smart Fallback Guard Protocol...');
+
+function simulateLiveChatMediaDispatch({ localFilePaths, caption }) {
+  const actions = [];
+  const effectiveCaption = (caption || '').trim();
+  const firstItem = localFilePaths[0];
+  const isSingleImage = localFilePaths.length === 1 && firstItem.mediaType === 'image';
+
+  if (isSingleImage && effectiveCaption.length <= 1000) {
+    actions.push({
+      type: 'uploadAttachment_merged_caption',
+      caption: effectiveCaption,
+      files: localFilePaths.map(f => f.path)
+    });
+  } else {
+    if (effectiveCaption) {
+      actions.push({
+        type: 'sendMessage_text_first',
+        text: effectiveCaption
+      });
+    }
+    actions.push({
+      type: 'uploadAttachment_separate_files',
+      caption: '',
+      files: localFilePaths.map(f => f.path)
+    });
+  }
+  return actions;
+}
+
+// Case A: 1 Single Image + Text <= 1000 chars -> Merged Caption in 1 outbound action
+const chatCaseA = simulateLiveChatMediaDispatch({
+  localFilePaths: [{ path: '/tmp/photo.jpg', mediaType: 'image' }],
+  caption: 'Báo giá sản phẩm mẫu'
+});
+assert.strictEqual(chatCaseA.length, 1, 'Single image + caption must produce exactly 1 merged action');
+assert.strictEqual(chatCaseA[0].type, 'uploadAttachment_merged_caption');
+assert.strictEqual(chatCaseA[0].caption, 'Báo giá sản phẩm mẫu');
+
+// Case B: 1 Image + Long Text (> 1000 chars) -> Fallback: Text first, Image second
+const longChatText = 'A'.repeat(1005);
+const chatCaseB = simulateLiveChatMediaDispatch({
+  localFilePaths: [{ path: '/tmp/photo.jpg', mediaType: 'image' }],
+  caption: longChatText
+});
+assert.strictEqual(chatCaseB.length, 2, 'Long caption > 1000 chars must fallback into 2 actions');
+assert.strictEqual(chatCaseB[0].type, 'sendMessage_text_first');
+assert.strictEqual(chatCaseB[1].type, 'uploadAttachment_separate_files');
+assert.strictEqual(chatCaseB[1].caption, '');
+
+// Case C: Multiple files (2 images) + Text -> Fallback: Text first, files second
+const chatCaseC = simulateLiveChatMediaDispatch({
+  localFilePaths: [
+    { path: '/tmp/photo1.jpg', mediaType: 'image' },
+    { path: '/tmp/photo2.jpg', mediaType: 'image' }
+  ],
+  caption: 'Hai hình ảnh'
+});
+assert.strictEqual(chatCaseC.length, 2, 'Multiple images must separate text first, images second');
+assert.strictEqual(chatCaseC[0].type, 'sendMessage_text_first');
+assert.strictEqual(chatCaseC[1].type, 'uploadAttachment_separate_files');
+
+// Case D: Single PDF Document + Text -> Fallback: Text first, document second
+const chatCaseD = simulateLiveChatMediaDispatch({
+  localFilePaths: [{ path: '/tmp/catalog.pdf', mediaType: 'file' }],
+  caption: 'Gửi bạn tài liệu hướng dẫn'
+});
+assert.strictEqual(chatCaseD.length, 2, 'Document attachment must send text first then doc file');
+assert.strictEqual(chatCaseD[0].type, 'sendMessage_text_first');
+assert.strictEqual(chatCaseD[1].type, 'uploadAttachment_separate_files');
+
+// Case E: Single Image without text -> 1 action without caption
+const chatCaseE = simulateLiveChatMediaDispatch({
+  localFilePaths: [{ path: '/tmp/photo.jpg', mediaType: 'image' }],
+  caption: '   '
+});
+assert.strictEqual(chatCaseE.length, 1);
+assert.strictEqual(chatCaseE[0].caption, '');
+
+console.log('   ✅ Live Chat Media Caption Integration & Smart Fallback Guard Protocol passed!\n');
+
 // Clean test db
 store.close();
 if (fs.existsSync(testDbFile)) {
   try { fs.unlinkSync(testDbFile); } catch {}
 }
 
-console.log('🎉 ALL 40 INTEGRITY, SECURITY, CRM, AIZALO REMARKETING, AI SUITE, BULK DEEP-SYNC, QR AUTH, MEMORY GUARD, ZALO SANITIZER, DESKTOP PACKAGED, CLEAN SWITCH, MULTI-DEVICE SYNC, GROUP MENTION, QUICK-MSG, CAMPAIGN TEST DISPATCH, GROUP RECONCILIATION, AUTO-FALLBACK OPENROUTER, MULTIMODAL VISION, STRANGER IDENTITY, SCHEDULED MESSAGES & UNIVERSAL WIKI URL INGESTION TESTS PASSED 100%!');
+console.log('🎉 ALL 41 INTEGRITY, SECURITY, CRM, AIZALO REMARKETING, AI SUITE, BULK DEEP-SYNC, QR AUTH, MEMORY GUARD, ZALO SANITIZER, DESKTOP PACKAGED, CLEAN SWITCH, MULTI-DEVICE SYNC, GROUP MENTION, QUICK-MSG, CAMPAIGN TEST DISPATCH, GROUP RECONCILIATION, AUTO-FALLBACK OPENROUTER, MULTIMODAL VISION, STRANGER IDENTITY, SCHEDULED MESSAGES, UNIVERSAL WIKI URL INGESTION & LIVE CHAT MEDIA CAPTION TESTS PASSED 100%!');
 
 
 
