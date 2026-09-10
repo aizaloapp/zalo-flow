@@ -5675,7 +5675,21 @@ function renderScheduledMsgPinBar(schedule) {
   const dateObj = new Date(schedule.scheduledAt);
   const timeStr = dateObj.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
   const dateStr = dateObj.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
-  const formattedTime = `${timeStr} (${dateStr})`;
+  
+  const diffMinutes = Math.round((schedule.scheduledAt - Date.now()) / 60000);
+  let countdownStr = '';
+  if (diffMinutes > 0) {
+    if (diffMinutes < 60) {
+      countdownStr = ` • còn ${diffMinutes}p`;
+    } else {
+      const h = Math.floor(diffMinutes / 60);
+      const m = diffMinutes % 60;
+      countdownStr = ` • còn ${h}h${m > 0 ? m + 'p' : ''}`;
+    }
+  } else if (diffMinutes <= 0 && schedule.status === 'pending') {
+    countdownStr = ' • đang gửi...';
+  }
+  const formattedTime = `${timeStr} (${dateStr}${countdownStr})`;
 
   if (timeEl) timeEl.innerText = formattedTime;
   if (snippetEl) {
@@ -5698,6 +5712,7 @@ function renderScheduledMsgPinBar(schedule) {
     // pending or processing
     if (iconEl) iconEl.innerText = '⏰';
     if (titleEl) titleEl.innerText = 'Hẹn gửi:';
+    if (btnSendNow) btnSendNow.style.display = '';
   }
 
   pinBar.style.display = 'flex';
@@ -5850,8 +5865,8 @@ function openScheduleMsgModal(editData = null) {
       contentInput.value = currentTyped;
     }
 
-    // Default time: +1 hour
-    applySchedulePreset(60);
+    // Default time: +5 minutes
+    applySchedulePreset(5);
   }
 
   updateSchedulePreview();
