@@ -42,6 +42,59 @@ export const CURATED_MODELS = {
   ]
 };
 
+export const GOLDEN_WIKI_TEMPLATE = `# 🧠 MINI SECOND BRAIN WIKI — MẪU TRI THỨC CHUẨN VÀNG CHO AI ZALO
+
+> **Hướng dẫn:** Điền thông tin doanh nghiệp, sản phẩm, dịch vụ và bảng giá vào các phần bên dưới. AI sẽ tự động đọc hiểu và tư vấn khách hàng chính xác 100%.
+
+---
+
+## 🎭 1. Nhân Cách & Vai Trò Trợ Lý (Soul & Personality)
+- **Tên trợ lý:** Bé Trúc (Chuyên viên tư vấn khách hàng).
+- **Giọng điệu:** Thân thiện, nhiệt tình, lịch sự, xưng "em" và gọi khách là "anh/chị" hoặc "{name}".
+- **Phong cách:** Câu từ súc tích, ngắt ý rõ ràng, dùng emoji vừa phải (1-2 emoji/tin) tạo cảm giác gần gũi. Luôn chủ động đặt câu hỏi gợi mở để hỗ trợ khách tốt nhất.
+
+---
+
+## 📚 2. Kho Tri Thức Sản Phẩm & Bảng Giá (Memory & Products)
+### Danh Mục Sản Phẩm & Dịch Vụ:
+1. **Gói Cơ Bản (Standard):**
+   - Giá niêm yết: 1.200.000đ / năm.
+   - Tính năng: Quản lý khách hàng, tag phân loại, trả lời nhanh theo mẫu.
+2. **Gói Nâng Cao (Pro Business):**
+   - Giá niêm yết: 2.500.000đ / năm.
+   - Tính năng: Tích hợp Bot AI tự động tư vấn 24/7, Mini Second Brain, chiến dịch Remarketing theo tag.
+
+### Chính Sách & Khuyến Mãi:
+- **Ưu đãi hiện tại:** Giảm ngay 10% khi đăng ký từ 2 năm trở lên.
+- **Bảo hành & Hỗ trợ:** Hỗ trợ kỹ thuật 1-1 qua Zalo từ 8h00 - 22h00 hàng ngày.
+
+---
+
+## ❓ 3. Bách Khoa Hỏi Đáp (Q&A FAQ)
+- **Khách hỏi:** Có được dùng thử trước khi thanh toán không?
+  **👉 Trả lời chuẩn:** Dạ bên em có hỗ trợ trải nghiệm dùng thử miễn phí 3 ngày để anh/chị xem thực tế hiệu quả trước khi quyết định ạ!
+
+- **Khách hỏi:** Hình thức thanh toán và kích hoạt như thế nào?
+  **👉 Trả lời chuẩn:** Dạ bên em hỗ trợ chuyển khoản qua ngân hàng hoặc quét mã QR. Sau khi nhận được thanh toán, hệ thống sẽ kích hoạt tài khoản trong vòng 5 phút ạ.
+
+- **Khách hỏi:** Phần mềm có hỗ trợ trên điện thoại không?
+  **👉 Trả lời chuẩn:** Dạ có ạ, hệ thống hoạt động mượt mà trên cả máy tính và điện thoại thông qua trình duyệt web ạ.
+
+---
+
+## 💬 4. Mẫu Đoạn Chat Thực Chiến (Few-Shot Exemplar)
+- **Khách:** Cho mình hỏi giá gói Pro thế nào shop?
+- **Bot:** Dạ em chào anh {name}! Gói Pro Business bên em hiện có giá niêm yết là 2.500.000đ/năm, đã bao gồm đầy đủ Bot AI tự động tư vấn 24/7 và hệ thống Remarketing ạ. Anh đang quan tâm tính năng nào để em tư vấn chi tiết hơn cho mình nhé ạ?
+
+---
+
+## 🛡️ 5. Ranh Giới, Quy Tắc & Điều Cấm Kỵ (Scope & Guardrails)
+1. Tuyệt đối không tự ý cam kết giảm giá ngoài các chương trình khuyến mãi đã nêu trong mục Tri thức.
+2. Tuyệt đối không cung cấp số tài khoản cá nhân lạ, chỉ dùng thông tin thanh toán chính thức của công ty.
+3. Nếu khách hỏi vấn đề kỹ thuật chuyên sâu hoặc khiếu nại, lịch sự xin số điện thoại và báo sẽ chuyển ngay cho bộ phận kỹ sư hỗ trợ.
+4. Giữ câu từ ngắn gọn (1-3 câu/tin nhắn), không gửi đoạn văn quá dài gây ngợp trên app Zalo di động.
+`;
+
 export const GEMINI_KEY_PREFIXES = ['AIza', 'AQ.'];
 
 /**
@@ -630,26 +683,30 @@ ${scope || `1. Tuyệt đối không bịa đặt số tài khoản ngân hàng,
 
   /**
    * Parse / Decompile raw Markdown into structured sections (SOUL, MEMORY, Q&A, Few-Shot, SCOPE)
+   * Dual-Mode Smart Parser: Supports both standard structured wiki and free-form product documents
    */
-  parseWikiMarkdown(rawMarkdown) {
+  parseWikiMarkdown(rawMarkdown, currentSettings = {}) {
     if (!rawMarkdown || typeof rawMarkdown !== 'string') {
       return {
-        soul: '',
-        memory: '',
-        scope: '',
-        fewShot: '',
+        soul: currentSettings.soulPrompt || '',
+        memory: currentSettings.memoryPrompt || '',
+        scope: currentSettings.scopePrompt || '',
+        fewShot: currentSettings.fewShotPrompt || '',
         qnaPairs: [],
         recognizedSections: {
           hasSoul: false,
           hasMemory: false,
           hasScope: false,
           hasFewShot: false,
-          qnaCount: 0
+          qnaCount: 0,
+          isFreeForm: false
         }
       };
     }
 
-    const lines = rawMarkdown.split(/\r?\n/);
+    // Strip UTF-8 Byte Order Mark (BOM \uFEFF)
+    const cleanedRaw = rawMarkdown.replace(/^\uFEFF/, '');
+    const lines = cleanedRaw.split(/\r?\n/);
     let currentSection = null;
     const sections = {
       soul: [],
@@ -722,9 +779,25 @@ ${scope || `1. Tuyệt đối không bịa đặt số tài khoản ngân hàng,
     let scope = cleanSectionText(sections.scope);
     let fewShot = cleanSectionText(sections.fewshot);
 
-    // If completely unstructured (no standard section headings), treat entire text as memory
-    if (!soul && !memory && !scope && sections.qna.length === 0 && sections.other.length > 0) {
-      memory = cleanSectionText(sections.other);
+    // Dual-Mode Smart Parser:
+    // Kiểm tra xem có cấu trúc chuẩn hay là tài liệu tự do (Free-form Document)
+    const hasStandardHeadings = Boolean(soul || scope || sections.qna.length > 0 || sections.fewshot.length > 0);
+    let isFreeForm = false;
+
+    if (!hasStandardHeadings) {
+      // Mode 2: Tài liệu tự do (chỉ gồm bảng giá, catalogue, hướng dẫn sản phẩm...)
+      isFreeForm = true;
+      // Dồn toàn bộ nội dung thô vào trường memory
+      memory = (cleanedRaw || '').trim();
+      // BẢO TỒN NGUYÊN VẸN SOUL HIỆN CÓ CỦA SHOP
+      soul = currentSettings.soulPrompt || '';
+      scope = currentSettings.scopePrompt || '';
+      fewShot = currentSettings.fewShotPrompt || '';
+    } else {
+      // Mode 1: Tài liệu chuẩn
+      if (!soul && currentSettings.soulPrompt) soul = currentSettings.soulPrompt;
+      if (!scope && currentSettings.scopePrompt) scope = currentSettings.scopePrompt;
+      if (!fewShot && currentSettings.fewShotPrompt) fewShot = currentSettings.fewShotPrompt;
     }
 
     // Parse Q&A Pairs from sections.qna
@@ -757,7 +830,8 @@ ${scope || `1. Tuyệt đối không bịa đặt số tài khoản ngân hàng,
         hasMemory: Boolean(memory),
         hasScope: Boolean(scope),
         hasFewShot: Boolean(fewShot),
-        qnaCount: qnaPairs.length
+        qnaCount: qnaPairs.length,
+        isFreeForm
       }
     };
   }

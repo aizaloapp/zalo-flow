@@ -317,6 +317,7 @@ export class LocalStore extends EventEmitter {
           allowedTagIds           TEXT DEFAULT '[]',
           adminCooldownMinutes    INTEGER DEFAULT 15,
           debounceSeconds         INTEGER DEFAULT 3,
+          wikiSourceUrl           TEXT DEFAULT '',
           updatedAt               TEXT DEFAULT (datetime('now'))
         );
       `);
@@ -327,6 +328,7 @@ export class LocalStore extends EventEmitter {
       if (!aiCols.includes('debounceSeconds'))      this.db.exec("ALTER TABLE ai_settings ADD COLUMN debounceSeconds INTEGER DEFAULT 3;");
       if (!aiCols.includes('apiKeyEncrypted'))      this.db.exec("ALTER TABLE ai_settings ADD COLUMN apiKeyEncrypted TEXT DEFAULT '';");
       if (!aiCols.includes('fallbackApiKeyEncrypted')) this.db.exec("ALTER TABLE ai_settings ADD COLUMN fallbackApiKeyEncrypted TEXT DEFAULT '';");
+      if (!aiCols.includes('wikiSourceUrl'))        this.db.exec("ALTER TABLE ai_settings ADD COLUMN wikiSourceUrl TEXT DEFAULT '';");
 
       // Scheduled Messages (1-1 Direct In-Thread Scheduling) Table & Indexes
       this.db.exec(`
@@ -1390,7 +1392,8 @@ export class LocalStore extends EventEmitter {
       excludedTagIds: '[]',
       allowedTagIds: '[]',
       adminCooldownMinutes: 15,
-      debounceSeconds: 3
+      debounceSeconds: 3,
+      wikiSourceUrl: ''
     };
   }
 
@@ -1404,13 +1407,13 @@ export class LocalStore extends EventEmitter {
         fallbackEnabled, fallbackProvider, fallbackModel, fallbackBaseUrl, fallbackApiKeyEncrypted, fallbackTimeoutMs,
         soulPrompt, memoryPrompt, fewShotPrompt, scopePrompt, exemplarConversation,
         allowGroups, botAliases, autoTagNewLead, defaultLeadTagId, targetMode, excludedTagIds, allowedTagIds,
-        adminCooldownMinutes, debounceSeconds, updatedAt
+        adminCooldownMinutes, debounceSeconds, wikiSourceUrl, updatedAt
       ) VALUES (
         ?, ?, ?, ?, ?, ?, ?,
         ?, ?, ?, ?, ?, ?,
         ?, ?, ?, ?, ?,
         ?, ?, ?, ?, ?, ?, ?,
-        ?, ?, datetime('now')
+        ?, ?, ?, datetime('now')
       )
       ON CONFLICT(id) DO UPDATE SET
         isEnabled = excluded.isEnabled,
@@ -1439,6 +1442,7 @@ export class LocalStore extends EventEmitter {
         allowedTagIds = excluded.allowedTagIds,
         adminCooldownMinutes = excluded.adminCooldownMinutes,
         debounceSeconds = excluded.debounceSeconds,
+        wikiSourceUrl = excluded.wikiSourceUrl,
         updatedAt = datetime('now')
     `);
 
@@ -1469,7 +1473,8 @@ export class LocalStore extends EventEmitter {
       typeof updated.excludedTagIds === 'string' ? updated.excludedTagIds : JSON.stringify(updated.excludedTagIds || []),
       typeof updated.allowedTagIds === 'string' ? updated.allowedTagIds : JSON.stringify(updated.allowedTagIds || []),
       Number(updated.adminCooldownMinutes ?? 15),
-      Number(updated.debounceSeconds ?? 3)
+      Number(updated.debounceSeconds ?? 3),
+      updated.wikiSourceUrl || ''
     );
 
     return this.getAiSettings(id);

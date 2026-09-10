@@ -1,7 +1,8 @@
 import express from 'express';
+import dns from 'dns';
 import { requireAuth } from '../middleware/auth.js';
 import { localStore } from '../utils/local-store.js';
-import { aiAgentAdapter, CURATED_MODELS, isKeyCompatible } from '../adapters/ai-agent.js';
+import { aiAgentAdapter, CURATED_MODELS, isKeyCompatible, GOLDEN_WIKI_TEMPLATE } from '../adapters/ai-agent.js';
 import { encryptSecret, decryptSecret, maskApiKey } from '../utils/ai-crypto.js';
 import { logger } from '../utils/logger.js';
 
@@ -335,18 +336,287 @@ router.post('/ai/wiki-preview', requireAuth, (req, res) => {
 });
 
 // -----------------------------------------------------------------------------
+// Helper: Chuyển đổi các định dạng URL phổ biến sang dạng Raw/Export Text
+// -----------------------------------------------------------------------------
+export function normalizeWikiUrl(inputUrl) {
+  if (!inputUrl || typeof inputUrl !== 'string') return '';
+  let url = inputUrl.trim();
+
+  // 1. GitHub Blob -> Raw
+  const ghBlobRegex = /^https?:\/\/github\.com\/([^\/]+)\/([^\/]+)\/blob\/([^\/]+)\/(.+)$/i;
+  const ghMatch = url.match(ghBlobRegex);
+  if (ghMatch) {
+    return `https://raw.githubusercontent.com/${ghMatch[1]}/${ghMatch[2]}/${ghMatch[3]}/${ghMatch[4]}`;
+  }
+
+  // 2. GitHub Gist -> Raw
+  const gistRegex = /^https?:\/\/gist\.github\.com\/([^\/]+)\/([a-f0-9]+)(?:\/raw)?$/i;
+  const gistMatch = url.match(gistRegex);
+  if (gistMatch) {
+    return `https://gist.githubusercontent.com/${gistMatch[1]}/${gistMatch[2]}/raw`;
+  }
+
+  // 3. Pastebin -> Raw
+  const pastebinRegex = /^https?:\/\/(?:www\.)?pastebin\.com\/(?!raw\/)([a-zA-Z0-9]+)$/i;
+  const pbMatch = url.match(pastebinRegex);
+  if (pbMatch) {
+    return `https://pastebin.com/raw/${pbMatch[1]}`;
+  }
+
+  // 4. Google Docs Export
+  const gdocRegex = /^https?:\/\/docs\.google\.com\/document\/d\/([a-zA-Z0-9_-]+)(?:\/.*)?$/i;
+  const gdocMatch = url.match(gdocRegex);
+  if (gdocMatch) {
+    return `https://docs.google.com/document/d/${gdocMatch[1]}/export?format=txt`;
+  }
+
+  return url;
+}
+
+/**
+ * Kiểm tra địa chỉ IP có thuộc dải mạng nội bộ / loopback / dành riêng không
+ */
+export function isPrivateOrReservedIp(ip) {
+  if (!ip || typeof ip !== 'string') return true;
+
+  if (ip.startsWith('::ffff:')) {
+    ip = ip.replace('::ffff:', '');
+  }
+
+  if (ip === '::1' || ip === '::' || ip.toLowerCase().startsWith('fe80:') || ip.toLowerCase().startsWith('fc00:') || ip.toLowerCase().startsWith('fd')) {
+    return true;
+  }
+
+  const parts = ip.split('.').map(p => parseInt(p, 10));
+  if (parts.length !== 4 || parts.some(isNaN)) {
+    return true;
+  }
+
+  const [a, b] = parts;
+  if (a === 0) return true;
+  if (a === 127) return true;
+  if (a === 10) return true;
+  if (a === 172 && b >= 16 && b <= 31) return true;
+  if (a === 192 && b === 168) return true;
+  if (a === 169 && b === 254) return true;
+  if (a === 100 && b >= 64 && b <= 127) return true;
+  if (a >= 224) return true;
+
+  return false;
+}
+
+/**
+ * Kiểm tra an toàn cho Egress URL (Chống SSRF đa tầng)
+ */
+export async function isSafeEgressUrl(rawUrl) {
+  try {
+    const parsed = new URL(rawUrl);
+
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return { safe: false, reason: 'Chỉ chấp nhận giao thức http: hoặc https:' };
+    }
+
+    if (parsed.port && parsed.port !== '80' && parsed.port !== '443') {
+      return { safe: false, reason: `Cổng ${parsed.port} không được phép truy cập vì lý do an toàn mạng.` };
+    }
+
+    if (parsed.username || parsed.password) {
+      return { safe: false, reason: 'URL không được chứa thông tin xác thực (username/password).' };
+    }
+
+    const host = parsed.hostname.toLowerCase();
+
+    if (
+      host === 'localhost' ||
+      host.endsWith('.localhost') ||
+      host.endsWith('.local') ||
+      host.endsWith('.internal') ||
+      host.endsWith('.lan') ||
+      host.includes('127.0.0.1')
+    ) {
+      return { safe: false, reason: 'Không được phép truy cập địa chỉ localhost hoặc mạng nội bộ.' };
+    }
+
+    let records = [];
+    try {
+      records = await dns.promises.lookup(host, { all: true });
+    } catch (dnsErr) {
+      return { safe: false, reason: `Không thể phân giải tên miền: ${dnsErr.message}` };
+    }
+
+    if (!records || records.length === 0) {
+      return { safe: false, reason: 'Không tìm thấy địa chỉ IP cho tên miền này.' };
+    }
+
+    for (const record of records) {
+      if (isPrivateOrReservedIp(record.address)) {
+        return { safe: false, reason: `Địa chỉ IP (${record.address}) thuộc dải mạng nội bộ hoặc bị hạn chế.` };
+      }
+    }
+
+    return { safe: true, parsedUrl: parsed };
+  } catch (err) {
+    return { safe: false, reason: `Định dạng URL không hợp lệ: ${err.message}` };
+  }
+}
+
+/**
+ * Safe fetch URL with manual redirect following and bounded size guard (< 64KB)
+ */
+async function fetchWikiContentWithGuard(initialUrl, maxRedirects = 3) {
+  let currentUrl = initialUrl;
+  let redirectCount = 0;
+
+  while (redirectCount <= maxRedirects) {
+    const safety = await isSafeEgressUrl(currentUrl);
+    if (!safety.safe) {
+      throw new Error(`[Bảo mật SSRF] ${safety.reason}`);
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+    let res;
+    try {
+      res = await fetch(currentUrl, {
+        method: 'GET',
+        headers: {
+          'User-Agent': 'ZaloFlow-WikiIngest/1.0 (Mozilla/5.0 compatible; +https://aizalo.com)',
+          'Accept': 'text/plain, text/markdown, text/*, */*'
+        },
+        redirect: 'manual',
+        signal: controller.signal
+      });
+    } catch (fetchErr) {
+      clearTimeout(timeoutId);
+      if (fetchErr.name === 'AbortError') {
+        throw new Error('Yêu cầu tải URL quá thời gian chờ (Timeout 10s).');
+      }
+      throw fetchErr;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+
+    if ([301, 302, 307, 308].includes(res.status)) {
+      redirectCount++;
+      if (redirectCount > maxRedirects) {
+        throw new Error('Chuyển hướng (Redirect) quá nhiều lần (vượt quá 3 lần).');
+      }
+      const location = res.headers.get('location');
+      if (!location) {
+        throw new Error('Phản hồi chuyển hướng thiếu trường Location.');
+      }
+      currentUrl = new URL(location, currentUrl).toString();
+      continue;
+    }
+
+    if (!res.ok) {
+      throw new Error(`Không thể tải nội dung từ URL (HTTP ${res.status}: ${res.statusText})`);
+    }
+
+    const contentType = (res.headers.get('content-type') || '').toLowerCase();
+    if (contentType.includes('text/html') && !contentType.includes('markdown')) {
+      throw new Error('URL trả về trang web HTML thông thường. Vui lòng cung cấp liên kết Raw Markdown hoặc Plain Text (ví dụ raw.githubusercontent.com, pastebin.com/raw...).');
+    }
+
+    const MAX_BYTES = 65536;
+    let totalBytes = 0;
+    const chunks = [];
+
+    const reader = res.body.getReader();
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (value) {
+          totalBytes += value.length;
+          if (totalBytes > MAX_BYTES) {
+            reader.cancel();
+            controller.abort();
+            throw new Error('Tài liệu vượt quá dung lượng cho phép (tối đa 64KB). Vui lòng rút gọn tài liệu để tối ưu bộ nhớ AI.');
+          }
+          chunks.push(value);
+        }
+      }
+    } finally {
+      reader.releaseLock();
+    }
+
+    const buffer = Buffer.concat(chunks);
+    let text = buffer.toString('utf-8');
+    text = text.replace(/^\uFEFF/, '');
+
+    if (/<(?:!doctype\s+html|html)[\s>]/i.test(text.substring(0, 300))) {
+      throw new Error('Tài liệu tải về chứa mã nguồn HTML. Vui lòng kiểm tra lại liên kết Raw.');
+    }
+
+    return {
+      text,
+      finalUrl: currentUrl,
+      charCount: text.length,
+      bytes: totalBytes
+    };
+  }
+
+  throw new Error('Không thể tải URL sau các lượt chuyển hướng.');
+}
+
+// -----------------------------------------------------------------------------
+// GET /api/ai/wiki-template — Get Golden AI Knowledge Template
+// -----------------------------------------------------------------------------
+router.get('/ai/wiki-template', requireAuth, (req, res) => {
+  res.json({
+    status: 'success',
+    template: GOLDEN_WIKI_TEMPLATE
+  });
+});
+
+// -----------------------------------------------------------------------------
+// POST /api/ai/wiki-fetch-url — Ingest Knowledge from Universal Markdown URL
+// -----------------------------------------------------------------------------
+router.post('/ai/wiki-fetch-url', requireAuth, async (req, res) => {
+  try {
+    const { url } = req.body || {};
+    if (!url || typeof url !== 'string' || !url.trim()) {
+      return res.status(400).json({ error: 'Vui lòng cung cấp đường dẫn URL hợp lệ.' });
+    }
+
+    const normalizedUrl = normalizeWikiUrl(url);
+    const result = await fetchWikiContentWithGuard(normalizedUrl);
+
+    logger.info(`🌐 [Mini Second Brain Wiki] Fetched ${result.charCount} chars from ${normalizedUrl}`);
+
+    res.json({
+      status: 'success',
+      rawMarkdown: result.text,
+      normalizedUrl,
+      charCount: result.charCount,
+      estimatedTokens: Math.round(result.charCount / 3.0)
+    });
+  } catch (err) {
+    logger.warn(`[Wiki Fetch Error] ${err.message}`);
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// -----------------------------------------------------------------------------
 // POST /api/ai/wiki-apply — Apply & Sync Raw Markdown to Mini Second Brain Wiki
 // -----------------------------------------------------------------------------
 router.post('/ai/wiki-apply', requireAuth, (req, res) => {
   try {
-    const { markdown, replaceQna = false } = req.body || {};
+    const { markdown, replaceQna = false, wikiSourceUrl = '' } = req.body || {};
     if (!markdown || typeof markdown !== 'string' || !markdown.trim()) {
       return res.status(400).json({ error: 'Nội dung Markdown không được để trống.' });
     }
 
-    const parsed = aiAgentAdapter.parseWikiMarkdown(markdown);
+    const current = localStore.getAiSettings() || {};
+    const parsed = aiAgentAdapter.parseWikiMarkdown(markdown, current);
     const toUpdate = {};
     const updatedFields = [];
+
+    if (wikiSourceUrl) {
+      toUpdate.wikiSourceUrl = wikiSourceUrl.trim();
+    }
 
     if (parsed.soul) {
       toUpdate.soulPrompt = parsed.soul;
@@ -354,7 +624,7 @@ router.post('/ai/wiki-apply', requireAuth, (req, res) => {
     }
     if (parsed.memory) {
       toUpdate.memoryPrompt = parsed.memory;
-      updatedFields.push('MEMORY (Bảng giá/Tri thức)');
+      updatedFields.push(parsed.recognizedSections?.isFreeForm ? 'MEMORY (Tài liệu tự do)' : 'MEMORY (Bảng giá/Tri thức)');
     }
     if (parsed.scope) {
       toUpdate.scopePrompt = parsed.scope;

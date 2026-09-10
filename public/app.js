@@ -5015,6 +5015,19 @@ async function openSecondBrainWikiModal() {
       renderFormattedWiki(wikiMarkdown);
     }
 
+    // Toggle Sync Saved URL button visibility
+    const btnSyncSaved = document.getElementById('btn-wiki-sync-saved-url');
+    if (btnSyncSaved) {
+      if (aiSettingsState?.wikiSourceUrl) {
+        btnSyncSaved.style.display = 'inline-flex';
+        btnSyncSaved.title = `Cập nhật nhanh lại từ: ${aiSettingsState.wikiSourceUrl}`;
+      } else {
+        btnSyncSaved.style.display = 'none';
+      }
+    }
+    const tray = document.getElementById('wiki-url-tray');
+    if (tray) tray.style.display = 'none';
+
     // Reset Search input
     const searchInput = document.getElementById('wiki-search-input');
     if (searchInput) searchInput.value = '';
@@ -5028,6 +5041,8 @@ async function openSecondBrainWikiModal() {
 }
 
 function closeSecondBrainWikiModal() {
+  const tray = document.getElementById('wiki-url-tray');
+  if (tray) tray.style.display = 'none';
   closeModal('modal-second-brain-wiki');
 }
 
@@ -5141,6 +5156,149 @@ function handleWikiFileUpload(event) {
   reader.readAsText(file, 'utf-8');
 }
 
+function toggleWikiUrlTray(forceState) {
+  const tray = document.getElementById('wiki-url-tray');
+  if (!tray) return;
+  const isOpening = forceState !== undefined ? forceState : tray.style.display === 'none';
+  tray.style.display = isOpening ? 'block' : 'none';
+  if (isOpening) {
+    const urlInput = document.getElementById('wiki-url-input');
+    if (urlInput && !urlInput.value && aiSettingsState?.wikiSourceUrl) {
+      urlInput.value = aiSettingsState.wikiSourceUrl;
+    }
+    if (window.innerWidth > 768 && urlInput) {
+      setTimeout(() => urlInput.focus(), 50);
+    }
+  }
+}
+
+function fillWikiUrlSample(type) {
+  const urlInput = document.getElementById('wiki-url-input');
+  if (!urlInput) return;
+  if (type === 'github') {
+    urlInput.value = 'https://raw.githubusercontent.com/user/repo/main/tri-thuc-san-pham.md';
+  } else if (type === 'gist') {
+    urlInput.value = 'https://gist.githubusercontent.com/user/gist_id/raw';
+  } else if (type === 'pastebin') {
+    urlInput.value = 'https://pastebin.com/raw/sample_id';
+  } else if (type === 'gdocs') {
+    urlInput.value = 'https://docs.google.com/document/d/YOUR_DOC_ID/edit?usp=sharing';
+  }
+  showToast('Đã điền link mẫu! Hãy dán liên kết thật của bạn vào ô nhé.', 'info');
+  urlInput.focus();
+}
+
+async function pasteWikiUrlFromClipboard() {
+  try {
+    const text = await navigator.clipboard.readText();
+    const urlInput = document.getElementById('wiki-url-input');
+    if (urlInput && text) {
+      urlInput.value = text.trim();
+      showToast('Đã dán liên kết từ Clipboard!', 'info');
+    }
+  } catch {
+    showToast('Vui lòng nhấn Ctrl+V để dán trực tiếp vào ô nhập link', 'warning');
+  }
+}
+
+async function copyGoldenTemplate() {
+  try {
+    const res = await fetch('/api/ai/wiki-template', { headers: getHeaders() });
+    const json = await res.json();
+    if (!res.ok || !json.template) throw new Error(json.error || 'Không thể lấy mẫu chuẩn');
+    await navigator.clipboard.writeText(json.template);
+    showToast('📋 Đã sao chép Mẫu Chuẩn Vàng (Golden Template) vào Clipboard!', 'success');
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+async function downloadGoldenTemplate() {
+  try {
+    const res = await fetch('/api/ai/wiki-template', { headers: getHeaders() });
+    const json = await res.json();
+    if (!res.ok || !json.template) throw new Error(json.error || 'Không thể lấy mẫu chuẩn');
+    const blob = new Blob([json.template], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'mau-tri-thuc-chuan-ai.md';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('📥 Đã tải xuống file mau-tri-thuc-chuan-ai.md', 'info');
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+async function fetchWikiFromUrl() {
+  const urlInput = document.getElementById('wiki-url-input');
+  const url = urlInput?.value?.trim();
+  if (!url) {
+    showToast('Vui lòng nhập đường dẫn URL tài liệu Markdown!', 'warning');
+    urlInput?.focus();
+    return;
+  }
+
+  const btnFetch = document.getElementById('btn-wiki-do-fetch');
+  if (btnFetch) {
+    btnFetch.disabled = true;
+    btnFetch.innerHTML = '<span>⏳ Đang tải...</span>';
+  }
+
+  try {
+    const res = await fetch('/api/ai/wiki-fetch-url', {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ url })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Lỗi tải URL');
+
+    const content = json.rawMarkdown;
+    const rawEditor = document.getElementById('wiki-raw-editor');
+    if (rawEditor) {
+      rawEditor.value = content;
+      rawEditor.dataset.sourceUrl = json.normalizedUrl || url;
+    }
+
+    // Switch view to raw mode so user inspects the fetched markdown
+    switchWikiViewMode('raw');
+    handleWikiEditorInput(content);
+
+    // Close tray
+    toggleWikiUrlTray(false);
+
+    // Token warning badge if > 15,000 chars (~5000 tokens)
+    if (content.length > 15000) {
+      showToast(`⚠️ Tài liệu lớn (${content.length.toLocaleString()} ký tự ~ ${Math.round(content.length / 3.0)} tokens). Hãy xem trước rồi bấm "Lưu & Áp Dụng"!`, 'warning');
+    } else {
+      showToast(`🌐 Đã nạp ${content.length.toLocaleString()} ký tự từ URL! Hãy bấm "Lưu & Áp Dụng" để hoàn tất.`, 'success');
+    }
+  } catch (err) {
+    showToast(err.message, 'error');
+  } finally {
+    if (btnFetch) {
+      btnFetch.disabled = false;
+      btnFetch.innerHTML = '<span>🚀 Tải Về Trình Soạn Thảo</span>';
+    }
+  }
+}
+
+async function syncWikiFromSavedUrl() {
+  const savedUrl = aiSettingsState?.wikiSourceUrl;
+  if (!savedUrl) {
+    showToast('Chưa có liên kết URL nào được lưu trước đó.', 'warning');
+    return;
+  }
+  const urlInput = document.getElementById('wiki-url-input');
+  if (urlInput) urlInput.value = savedUrl;
+  toggleWikiUrlTray(true);
+  fetchWikiFromUrl();
+}
+
 async function saveRawWikiMarkdown() {
   const rawEditor = document.getElementById('wiki-raw-editor');
   const content = rawEditor?.value?.trim();
@@ -5149,6 +5307,8 @@ async function saveRawWikiMarkdown() {
     return;
   }
 
+  const sourceUrl = rawEditor?.dataset?.sourceUrl || aiSettingsState?.wikiSourceUrl || '';
+
   const btnSave = document.getElementById('btn-wiki-save-apply');
   if (btnSave) btnSave.innerText = '⏳ Đang phân tích...';
 
@@ -5156,7 +5316,7 @@ async function saveRawWikiMarkdown() {
     const res = await fetch('/api/ai/wiki-apply', {
       method: 'POST',
       headers: getHeaders(),
-      body: JSON.stringify({ markdown: content })
+      body: JSON.stringify({ markdown: content, wikiSourceUrl: sourceUrl })
     });
 
     const json = await res.json();
@@ -5182,7 +5342,17 @@ async function saveRawWikiMarkdown() {
         aiSettingsState.soulPrompt = soulPrompt;
         aiSettingsState.memoryPrompt = memoryPrompt;
         aiSettingsState.scopePrompt = scopePrompt;
+        if (sourceUrl) aiSettingsState.wikiSourceUrl = sourceUrl;
         if (exemplarConversation) aiSettingsState.exemplarConversation = exemplarConversation;
+      }
+
+      // Update sync URL button visibility
+      const btnSyncSaved = document.getElementById('btn-wiki-sync-saved-url');
+      if (btnSyncSaved) {
+        if (sourceUrl) {
+          btnSyncSaved.style.display = 'inline-flex';
+          btnSyncSaved.title = `Cập nhật nhanh lại từ: ${sourceUrl}`;
+        }
       }
     }
 

@@ -1482,6 +1482,12 @@
           <button type="button" class="filter-btn" onclick="triggerWikiFileUpload()" style="font-size: 0.75rem; padding: 4px 10px; color: #a78bfa; border-color: #8b5cf6;" title="Tải file Markdown từ máy tính">
             📂 Tải Lên .md
           </button>
+          <button type="button" class="filter-btn" id="btn-wiki-open-url-tray" onclick="toggleWikiUrlTray()" style="font-size: 0.75rem; padding: 4px 10px; color: #38bdf8; border-color: #0284c7; background: rgba(56, 189, 248, 0.1);" title="Nạp tri thức từ liên kết Markdown trực tuyến (GitHub, Gist, Pastebin...)">
+            🌐 Nạp Từ URL
+          </button>
+          <button type="button" class="filter-btn" id="btn-wiki-sync-saved-url" onclick="syncWikiFromSavedUrl()" style="display: none; font-size: 0.75rem; padding: 4px 10px; color: #10b981; border-color: #059669; background: rgba(16, 185, 129, 0.1);" title="Cập nhật nhanh lại từ URL đã lưu">
+            🔄 Cập Nhật URL
+          </button>
           <button type="button" class="filter-btn" onclick="recompileWiki()" style="font-size: 0.75rem; padding: 4px 10px;" title="Biên dịch lại từ dữ liệu mới nhất">
             🔄 Làm Mới
           </button>
@@ -1494,6 +1500,46 @@
           <button type="button" class="filter-btn" id="btn-wiki-save-apply" onclick="saveRawWikiMarkdown()" style="font-size: 0.75rem; padding: 4px 12px; background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid #22c55e; font-weight: 700;" title="Lưu và đồng bộ Markdown vào CSDL">
             💾 Lưu &amp; Áp Dụng
           </button>
+        </div>
+      </div>
+
+      <!-- IN-PLACE SLIDE-DOWN TRAY: NẠP TRI THỨC TỪ URL VẠN NĂNG (Anti-Modal Hell Invariant) -->
+      <div id="wiki-url-tray" style="display: none; background: var(--bg-card); border-bottom: 1px solid var(--border); padding: 12px 20px; transition: all 0.2s ease;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <div style="font-size: 0.85rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 6px;">
+            <span>🌐 Nạp Tri Thức Từ URL Vạn Năng</span>
+            <span style="font-size: 0.72rem; color: #10b981; font-weight: normal; background: rgba(16, 185, 129, 0.1); padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(16, 185, 129, 0.3);">Tự nhận diện bảng giá, sản phẩm &amp; bảo tồn SOUL</span>
+          </div>
+          <button type="button" onclick="toggleWikiUrlTray(false)" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1rem;" title="Đóng khay">✕</button>
+        </div>
+
+        <!-- URL Input Row -->
+        <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+          <input type="url" id="wiki-url-input" class="form-input" placeholder="Dán link Raw GitHub, Gist, Pastebin, Google Docs public hoặc web riêng..." style="flex: 1; font-size: 0.82rem; height: 34px;">
+          <button type="button" class="filter-btn" onclick="pasteWikiUrlFromClipboard()" style="font-size: 0.75rem; padding: 0 10px; height: 34px;" title="Dán từ Clipboard">📋 Dán</button>
+          <button type="button" class="filter-btn" id="btn-wiki-do-fetch" onclick="fetchWikiFromUrl()" style="font-size: 0.78rem; padding: 0 14px; height: 34px; background: linear-gradient(135deg, #0284c7, #2563eb); color: #fff; border: none; font-weight: 700; display: inline-flex; align-items: center; gap: 5px;">
+            <span>🚀 Tải Về Trình Soạn Thảo</span>
+          </button>
+        </div>
+
+        <!-- Source Chips & Template Tools Row -->
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+            <span style="font-size: 0.72rem; color: var(--text-muted);">Gợi ý nguồn:</span>
+            <button type="button" class="filter-btn" onclick="fillWikiUrlSample('github')" style="font-size: 0.7rem; padding: 2px 7px;">GitHub</button>
+            <button type="button" class="filter-btn" onclick="fillWikiUrlSample('gist')" style="font-size: 0.7rem; padding: 2px 7px;">Gist</button>
+            <button type="button" class="filter-btn" onclick="fillWikiUrlSample('pastebin')" style="font-size: 0.7rem; padding: 2px 7px;">Pastebin</button>
+            <button type="button" class="filter-btn" onclick="fillWikiUrlSample('gdocs')" style="font-size: 0.7rem; padding: 2px 7px;">Google Docs</button>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <button type="button" class="filter-btn" onclick="copyGoldenTemplate()" style="font-size: 0.72rem; padding: 3px 8px; color: #a78bfa; border-color: #8b5cf6;" title="Sao chép Mẫu Chuẩn Vàng để tự soạn">
+              📋 Sao Chép Mẫu Chuẩn
+            </button>
+            <button type="button" class="filter-btn" onclick="downloadGoldenTemplate()" style="font-size: 0.72rem; padding: 3px 8px; color: #38bdf8; border-color: #0284c7;" title="Tải file mẫu mau-tri-thuc-chuan-ai.md về máy">
+              ⬇️ Tải File Mẫu (.md)
+            </button>
+          </div>
         </div>
       </div>
 

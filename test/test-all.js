@@ -8,6 +8,8 @@ import { FloodDetector } from '../src/utils/flood-detector.js';
 import { LocalStore } from '../src/utils/local-store.js';
 import { parseMessage } from '../src/utils/message-parser.js';
 import { resolveSpintax, generateSamplePreviews } from '../src/utils/spintax.js';
+import { normalizeWikiUrl, isSafeEgressUrl, isPrivateOrReservedIp } from '../src/routes/ai-settings.js';
+import { aiAgentAdapter, GOLDEN_WIKI_TEMPLATE } from '../src/adapters/ai-agent.js';
 
 console.log('🧪 Starting Zalo-Flow Integrity Test Suite (Lean Chatwoot CRM + Remarketing)...\n');
 
@@ -1530,13 +1532,106 @@ assert.strictEqual(schedAfterClean, null, 'Pending schedules must be cleaned on 
 
 console.log('   ✅ Scheduled Messages & Lifecycle Guards passed!\n');
 
+console.log('40. Testing Universal Wiki URL Ingestion, SSRF Security Shield, Dual-Mode Parser & Golden Template...');
+
+// 1. URL Normalization
+const ghBlob = 'https://github.com/aizaloapp/zalo-flow/blob/main/docs/san-pham.md';
+assert.strictEqual(
+  normalizeWikiUrl(ghBlob),
+  'https://raw.githubusercontent.com/aizaloapp/zalo-flow/main/docs/san-pham.md',
+  'Must normalize GitHub blob to raw'
+);
+
+const gistUrl = 'https://gist.github.com/user123/abcd1234ef56';
+assert.strictEqual(
+  normalizeWikiUrl(gistUrl),
+  'https://gist.githubusercontent.com/user123/abcd1234ef56/raw',
+  'Must normalize Gist URL to raw'
+);
+
+const pbUrl = 'https://pastebin.com/xyz987';
+assert.strictEqual(
+  normalizeWikiUrl(pbUrl),
+  'https://pastebin.com/raw/xyz987',
+  'Must normalize Pastebin URL to raw'
+);
+
+const gdocUrl = 'https://docs.google.com/document/d/1A2B3C4D5E/edit?usp=sharing';
+assert.strictEqual(
+  normalizeWikiUrl(gdocUrl),
+  'https://docs.google.com/document/d/1A2B3C4D5E/export?format=txt',
+  'Must normalize Google Docs URL to export text'
+);
+
+// 2. SSRF Shield: IP & Port Validation
+assert.strictEqual(isPrivateOrReservedIp('127.0.0.1'), true, '127.0.0.1 must be private');
+assert.strictEqual(isPrivateOrReservedIp('10.0.0.1'), true, '10.0.0.1 must be private');
+assert.strictEqual(isPrivateOrReservedIp('192.168.1.100'), true, '192.168.1.100 must be private');
+assert.strictEqual(isPrivateOrReservedIp('172.16.5.1'), true, '172.16.5.1 must be private');
+assert.strictEqual(isPrivateOrReservedIp('169.254.169.254'), true, '169.254.169.254 must be private');
+assert.strictEqual(isPrivateOrReservedIp('::1'), true, '::1 loopback must be private');
+assert.strictEqual(isPrivateOrReservedIp('8.8.8.8'), false, '8.8.8.8 is public');
+
+const ssrfLocal = await isSafeEgressUrl('http://127.0.0.1:3000/api/ai/settings');
+assert.strictEqual(ssrfLocal.safe, false, 'Must block localhost/loopback IP');
+
+const ssrfPort = await isSafeEgressUrl('http://example.com:8080/data.md');
+assert.strictEqual(ssrfPort.safe, false, 'Must block non-standard port 8080');
+
+const ssrfFtp = await isSafeEgressUrl('ftp://example.com/file.txt');
+assert.strictEqual(ssrfFtp.safe, false, 'Must block non-http/https protocol');
+
+// 3. Dual-Mode Smart Parser
+// Mode 1: Standard Structured Wiki
+const standardWiki = `# 🧠 MINI SECOND BRAIN WIKI
+## 🎭 1. Nhân Cách & Vai Trò (Soul)
+Tư vấn viên nhiệt tình xưng em.
+## 📚 2. Kho Tri Thức Sản Phẩm (Memory)
+Gói VIP 5tr/năm.
+## 🛡️ 5. Ranh Giới (Scope)
+Không được giảm giá tự ý.
+`;
+const parsedStandard = aiAgentAdapter.parseWikiMarkdown(standardWiki, { soulPrompt: 'Cũ' });
+assert.strictEqual(parsedStandard.recognizedSections.isFreeForm, false, 'Standard headings must be recognized as Mode 1');
+assert.strictEqual(parsedStandard.soul.includes('Tư vấn viên nhiệt tình'), true);
+assert.strictEqual(parsedStandard.memory.includes('Gói VIP 5tr/năm'), true);
+assert.strictEqual(parsedStandard.scope.includes('Không được giảm giá'), true);
+
+// Mode 2: Free-form Document (BOM UTF-8 + Bảng giá tự do)
+const freeFormDoc = '\uFEFFBẢNG GIÁ CĂN HỘ VINHOMES:\n- Căn 1PN: 2.2 tỷ\n- Căn 2PN: 3.5 tỷ\nLiên hệ hotline 0909123456';
+const currentShopSettings = { soulPrompt: 'Em là Trúc chuyên viên BĐS', scopePrompt: 'Cấm cãi khách' };
+const parsedFreeForm = aiAgentAdapter.parseWikiMarkdown(freeFormDoc, currentShopSettings);
+assert.strictEqual(parsedFreeForm.recognizedSections.isFreeForm, true, 'Free form doc must be recognized as Mode 2');
+assert.strictEqual(parsedFreeForm.memory.includes('BẢNG GIÁ CĂN HỘ VINHOMES'), true, 'Free-form doc must be stored in memory');
+assert.strictEqual(parsedFreeForm.memory.startsWith('\uFEFF'), false, 'BOM UTF-8 must be stripped');
+assert.strictEqual(parsedFreeForm.soul, 'Em là Trúc chuyên viên BĐS', 'Must preserve existing soul in Mode 2');
+assert.strictEqual(parsedFreeForm.scope, 'Cấm cãi khách', 'Must preserve existing scope in Mode 2');
+
+// 4. Golden Template Integrity
+assert.ok(/soul/i.test(GOLDEN_WIKI_TEMPLATE), 'Golden template must have SOUL');
+assert.ok(/memory/i.test(GOLDEN_WIKI_TEMPLATE), 'Golden template must have MEMORY');
+assert.ok(/q&a|faq/i.test(GOLDEN_WIKI_TEMPLATE), 'Golden template must have Q&A');
+assert.ok(/few[-_\s]*shot/i.test(GOLDEN_WIKI_TEMPLATE), 'Golden template must have FEW-SHOT');
+assert.ok(/scope|guardrail/i.test(GOLDEN_WIKI_TEMPLATE), 'Golden template must have SCOPE');
+
+// 5. SQLite Schema Roundtrip for wikiSourceUrl
+store.saveAiSettings({ wikiSourceUrl: 'https://raw.githubusercontent.com/shop/data/main/price.md' });
+const savedAiSettingsWithUrl = store.getAiSettings();
+assert.strictEqual(
+  savedAiSettingsWithUrl.wikiSourceUrl,
+  'https://raw.githubusercontent.com/shop/data/main/price.md',
+  'wikiSourceUrl must persist in SQLite'
+);
+
+console.log('   ✅ Universal Wiki URL Ingestion, SSRF Shield, Dual-Mode Parser & Golden Template passed!\n');
+
 // Clean test db
 store.close();
 if (fs.existsSync(testDbFile)) {
   try { fs.unlinkSync(testDbFile); } catch {}
 }
 
-console.log('🎉 ALL 39 INTEGRITY, SECURITY, CRM, AIZALO REMARKETING, AI SUITE, BULK DEEP-SYNC, QR AUTH, MEMORY GUARD, ZALO SANITIZER, DESKTOP PACKAGED, CLEAN SWITCH, MULTI-DEVICE SYNC, GROUP MENTION, QUICK-MSG, CAMPAIGN TEST DISPATCH, GROUP RECONCILIATION, AUTO-FALLBACK OPENROUTER, MULTIMODAL VISION, STRANGER IDENTITY & SCHEDULED MESSAGES TESTS PASSED 100%!');
+console.log('🎉 ALL 40 INTEGRITY, SECURITY, CRM, AIZALO REMARKETING, AI SUITE, BULK DEEP-SYNC, QR AUTH, MEMORY GUARD, ZALO SANITIZER, DESKTOP PACKAGED, CLEAN SWITCH, MULTI-DEVICE SYNC, GROUP MENTION, QUICK-MSG, CAMPAIGN TEST DISPATCH, GROUP RECONCILIATION, AUTO-FALLBACK OPENROUTER, MULTIMODAL VISION, STRANGER IDENTITY, SCHEDULED MESSAGES & UNIVERSAL WIKI URL INGESTION TESTS PASSED 100%!');
 
 
 
