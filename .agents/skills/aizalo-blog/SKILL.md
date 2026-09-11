@@ -72,9 +72,10 @@ Trước khi viết bài, Agent **BẮT BUỘC** gọi MCP Tool `dataforseo` đ�
 
 #### Cấu Trúc Kim Tự Tháp Ngược Bắt Buộc:
 1. **0–5 giây đầu tiên (Thỏa mãn Intent tức thì):**
+   - Thẻ `<title>`: Kiểm soát nghiêm ngặt trong khoảng **50–70 ký tự** (bao gồm hậu tố `— AIzalo.com`) chống bị Google cắt ngắn.
    - Thẻ `H1`: Chứa từ khóa chính số 1.
    - Thẻ `<img>` Hero Banner: Đặt ngay dưới H1.
-   - **GEO Direct Answer Box (`.geo-answer-box`):** Đoạn định nghĩa chuẩn xác từ 40–60 từ để cướp trích dẫn Google AI Overview và Perplexity.
+   - **GEO Direct Answer Box (`.geo-answer-box`):** Đoạn định nghĩa chuẩn xác từ **40–60 từ** đặt trong `<p class="geo-answer-text">` để cướp trích dẫn Google AI Overview và Perplexity.
    - **Key Takeaways Box (`.geo-tldr-box`):** 4 gạch đầu dòng then chốt cho người đọc vội.
 2. **Thân bài (Storytelling Khoa AI + Hướng dẫn kỹ thuật):**
    - **Dopamine Cliffhanger Hook:** Mở đầu bằng một tình huống thực tế "báo động đỏ" khiến người đọc tò mò.
@@ -82,9 +83,11 @@ Trước khi viết bài, Agent **BẮT BUỘC** gọi MCP Tool `dataforseo` đ�
    - **Hardcoded Semantic Headings:** Mọi thẻ `<h2>`, `<h3>` phải có sẵn thuộc tính `id="tieu-de-khong-dau"` tĩnh trong HTML.
    - **Endorphin Humor & Turning Point:** Tháo nút thắt bất ngờ bằng tính năng độc quyền của Zalo-Flow (ví dụ Auto-Pause, tự nén ảnh HD...).
    - **Table Responsive Wrapper:** Mọi bảng so sánh BẮT BUỘC bọc trong `<div class="geo-table-wrapper">`.
-3. **Cuối bài (FAQ & CTA Semantic Isolation):**
+3. **Cuối bài (FAQ, CTA & Khối Bài Viết Liên Quan Semantic Isolation):**
    - **FAQ Section:** Tối thiểu 3–4 câu hỏi trả lời chi tiết bằng `<details class="geo-faq-item">` tương ứng với Schema JSON-LD.
    - **CTA Box:** BẮT BUỘC dùng `<div class="cta-box"><div class="cta-title">...</div>...</div>`. **TUYỆT ĐỐI KHÔNG dùng thẻ `<h2>` hoặc `<h3>` trong CTA Box** để không làm ô nhiễm bộ sinh mục lục tự động `blog-toc.js`.
+   - **Khối Bài Viết Liên Quan (`.related-posts-section`):** Đặt bên ngoài thẻ `</article>` (ngay sau `.article-layout` và trước `<footer>`), hiển thị Grid 3 bài viết ngữ cảnh liên quan nhất với tiêu đề `<h2 class="related-title" id="bai-viet-lien-quan">` để giảm Bounce Rate và tăng sức mạnh SEO internal links.
+   - **Script Tương Tác UX:** BẮT BUỘC nhúng `<script src="/blog-toc.js"></script>` ở chân trang để kích hoạt Mục lục tự động và Nút Scroll-to-Top kèm Circular Reading Progress Ring.
 
 ---
 
@@ -127,8 +130,8 @@ Agent tạo thư mục `website/src/assets/blog/<slug>/` và sinh tối thiểu 
 - [ ] 5. Cập nhật `website/src/llms.txt` và `website/src/llms-full.txt`.
 - [ ] 6. Đồng bộ thư mục `website/dist/`.
 
-#### 2. Chạy Pre-Flight AST & Schema Validator:
-Chạy lệnh kiểm tra nhanh bằng Node.js trước khi build:
+#### 2. Chạy Pre-Flight AST, Schema Validator & Unified Audit 2-Pass:
+Chạy lệnh kiểm tra cú pháp nhanh và đo kiểm toàn diện 4 trụ cột (On-page SEO, Technical, GEO, Agent Readiness Level 5):
 ```powershell
 node -e "
 const fs = require('fs');
@@ -138,6 +141,9 @@ const jsonMatch = html.match(/<script type=\"application\/ld\+json\">([\s\S]*?)<
 if (jsonMatch) JSON.parse(jsonMatch[1]);
 console.log('✅ AST & Schema Validation Passed!');
 "
+
+# Đo kiểm toàn diện 2-Pass đảm bảo đạt 100/100 tuyệt đối
+node scripts/audit-aizalo.mjs
 ```
 
 #### 3. Biên dịch Tĩnh Cục Bộ (Local Build):
@@ -148,7 +154,7 @@ powershell website/build.ps1
 #### 4. Khóa An Toàn Phát Hành (One-Way Door Deployment Guardrail):
 > [!CAUTION]
 > **Dừng lại xin phê duyệt:** Tuyệt đối KHÔNG tự ý chạy lệnh `npx wrangler pages deploy`. 
-> Agent phải dừng lại, báo cáo kết quả build thành công cho người dùng kèm danh sách tệp đã thay đổi. Chỉ khi người dùng nhắn xác nhận ("OK deploy" hoặc "Đồng ý phát hành"), Agent mới thực thi:
+> Agent phải dừng lại, báo cáo kết quả audit 100/100 và build thành công cho người dùng kèm danh sách tệp đã thay đổi. Chỉ khi người dùng nhắn xác nhận ("OK deploy" hoặc "Đồng ý phát hành"), Agent mới thực thi:
 > ```powershell
 > npx wrangler pages deploy website/dist --project-name aizalo-portal
 > ```

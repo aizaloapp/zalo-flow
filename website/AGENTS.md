@@ -78,3 +78,25 @@ Khi chuyển giao hoặc cấu hình tên miền chính (`aizalo.com`) sang Clou
    - Các tiêu đề khối phụ trợ BẮT BUỘC dùng `<div class="cta-title">`, `<div class="geo-answer-label">` hoặc `<p><strong>...</strong></p>` để bảo toàn tính thuần khiết của cây phả hệ mục lục.
 7. **Pipeline Xuất Bản Chuyên Trách (`/aizalo-blog`):**
    - Mọi bài viết blog mới BẮT BUỘC được điều phối qua skill chuyên trách [`.agents/skills/aizalo-blog/SKILL.md`](file:///d:/A-Du-An/Zalo-Flow/.agents/skills/aizalo-blog/SKILL.md) để bảo đảm tuân thủ 100% các bước từ nghiên cứu DataForSEO, sinh ảnh SVG vector nhẹ < 5KB đến kiểm thử AST/Schema.
+
+---
+
+## 💎 5. Chuẩn Trải Nghiệm Đọc, Giảm Bounce Rate & Bộ Kiểm Định 2-Pass
+
+1. **Nút Cuộn Đầu Trang Kèm Vòng Tròn Tiến Độ Đọc (Cloudflare-Style Scroll-To-Top):**
+   - Mọi bài viết blog dài BẮT BUỘC nạp `blog-toc.js`.
+   - Script tự động khởi tạo nút tròn 46px (`.scroll-top-btn`) với vòng viền SVG chạy tiến độ đọc từ 0% ➔ 100% bằng nét màu **Cyan Neon (`#00d2ff`)** theo thời gian thực (60 FPS qua `requestAnimationFrame`), góc bắt đầu từ 12 giờ (`transform: rotate(-90deg)`).
+   - Nút chỉ hiện khi `scrollY > 280px`, xếp tầng mượt mà ở góc phải dưới (`bottom: 5.2rem; right: 1.5rem;`), tự động co giãn 42px và né thanh điều hướng trên di động (`safe-area-inset-bottom`).
+2. **Khối Đề Xuất Bài Viết Liên Quan (Related Posts Grid 3 Cards & Bounce Rate Shield):**
+   - Mọi bài viết blog BẮT BUỘC có khối `.related-posts-section` gồm 3 thẻ bài viết ngữ cảnh liên quan chặt chẽ nhất đặt ở chân trang (ngay sau nút CTA Box và trước thẻ `<footer>`).
+   - Khối này BẮT BUỘC nằm bên ngoài thẻ `<article class="article-main">` và tiêu đề mang `h2 id="bai-viet-lien-quan"` để bảo đảm **Semantic Isolation** tuyệt đối, không làm ô nhiễm bộ sinh mục lục tự động `blog-toc.js`, đồng thời hạ tỷ lệ Bounce Rate và tăng sức mạnh mạng lưới liên kết nội bộ.
+3. **Giới Hạn Vàng Độ Dài Title & GEO Quotable Snippet:**
+   - **Thẻ `<title>` bài viết blog:** Kiểm soát nghiêm ngặt trong khoảng **50 – 70 ký tự** (bao gồm hậu tố thương hiệu `— AIzalo.com`) để tránh việc công cụ tìm kiếm cắt cụt hoặc tự ý viết lại (rewrite) tiêu đề trên SERP.
+   - **Khối `.geo-answer-box`:** BẮT BUỘC chứa thẻ `<p class="geo-answer-text">` với độ dài nội dung đúng dải chuẩn **40 – 60 từ** để Google AI Overviews và các công cụ tìm kiếm AI (Perplexity, SearchGPT) bốc nguyên văn làm câu trả lời trích dẫn trực tiếp (Quotable Snippet) kèm link nguồn.
+4. **Bộ Kiểm Định Thống Nhất 2-Pass (Unified Audit Engine Invariant):**
+   - Trước mỗi lần bàn giao hoặc deploy lên Cloudflare Pages, Agent BẮT BUỘC thực thi:
+     ```powershell
+     node scripts/audit-aizalo.mjs
+     ```
+   - Xác nhận Pass 1 (Static AST/Schema/Links) và Pass 2 (Live Edge CDN, RFC 9264 describedby, Markdown Content Negotiation) đạt **100/100 tuyệt đối trên toàn bộ 4 trụ cột** (On-page SEO, Technical & Schema, GEO, Agent Readiness Level 5) với 0 P0, 0 P1, 0 P2.
+
