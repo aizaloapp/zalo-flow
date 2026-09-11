@@ -24,12 +24,38 @@ flowchart TD
 
 ---
 
-### Pha 1: Pre-flight Research & Anti-Cannibalization Check
+### Pha 1: Pre-flight Research & DataForSEO Intent Validation
 
-Trước khi viết bài, Agent **BẮT BUỘC** thực hiện 2 thao tác thẩm định:
-1. **Phân tích Ý định Tìm kiếm (Search Intent):**
-   - Xác định rõ từ khóa chính mang ý định gì: **Transactional** (tìm tool dùng ngay), **Navigational** (tìm hướng dẫn cụ thể), hay **Informational** (tìm hiểu khái niệm).
-2. **Khóa chống tự ăn thịt từ khóa (Keyword Cannibalization Guard):**
+Trước khi viết bài, Agent **BẮT BUỘC** gọi MCP Tool `dataforseo` để lấy dữ liệu thực nghiệm thị trường Việt Nam (`location_code: 2704`, `language_code: "vi"`):
+
+1. **Bước 1.1: Truy vấn Khối lượng tìm kiếm & Ý định người dùng (Volume & Search Intent):**
+   - Gọi tool `call_mcp_tool` (`ServerName: "dataforseo"`, `ToolName: "api_request"`) với endpoint `/v3/keywords_data/google_ads/search_volume/live`:
+     ```json
+     [
+       {
+         "location_code": 2704,
+         "language_code": "vi",
+         "keywords": ["<từ-khóa-1>", "<từ-khóa-2>", "<từ-khóa-3>"]
+       }
+     ]
+     ```
+   - Trích xuất: `search_volume`, `competition`, `cpc` và tỷ lệ `intent` (ưu tiên bài viết có **Transactional > 50%** để dẫn phễu tải Zalo-Flow).
+
+2. **Bước 1.2: Phân tích Lỗ hổng Đối thủ SERP Top 10 (Competitor Gap Analysis):**
+   - Gọi endpoint `/v3/serp/google/organic/live/advanced` cho từ khóa chính số 1:
+     ```json
+     [
+       {
+         "location_code": 2704,
+         "language_code": "vi",
+         "keyword": "<từ-khóa-chính-nhất>"
+       }
+     ]
+     ```
+   - Đọc 10 kết quả đầu tiên để xác định: *Đối thủ đang hướng dẫn cái gì? Họ có điểm yếu nào khiến người đọc thất vọng?* (Ví dụ: báo lớn hướng dẫn tính năng Nhắc hẹn Zalo không tự gửi tin, hoặc ép mua Zalo OA doanh nghiệp đắt đỏ). 
+   - Biến lỗ hổng đó thành **đòn đánh chiến lược** cho bài viết aizalo.com.
+
+3. **Bước 1.3: Khóa chống tự ăn thịt từ khóa (Keyword Cannibalization Guard):**
    - Quét qua danh sách các bài viết hiện có trong `website/src/blog/`:
      - `cach-gui-tin-nhan-tu-dong-tren-zalo-khong-bi-khoa.html` (Đã chiếm giữ: `tin nhắn tự động zalo`, `anti-ban`).
      - `huong-dan-cach-tao-chatbot-zalo-ca-nhan.html` (Đã chiếm giữ: `tạo chatbot zalo cá nhân`, `bot zalo`).
