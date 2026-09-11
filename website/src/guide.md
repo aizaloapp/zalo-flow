@@ -69,10 +69,12 @@
 
 ---
 
-### F. Hướng Dẫn Hẹn Giờ Nhắn Tin 1-1 (Scheduled Message)
-1. **Ứng dụng:** Nhắc lịch hẹn cà phê, xem nhà, gửi tài liệu báo giá, nhắc thanh toán vào đúng ngày giờ đã chốt.
-2. **Thao tác:** Trong khung chat của khách, bấm biểu tượng **Chiếc Đồng Hồ ⏰** trên đỉnh chat ➔ Chọn ngày giờ, nhập nội dung (kèm ảnh/tin nhắn nhanh nếu có) ➔ Bấm **Tạo Lịch Hẹn**.
-3. **Tự động tạm dừng thông minh:** Nếu khách chủ động nhắn tin trước giờ hẹn, lịch hẹn sẽ tự động tạm dừng để tránh làm phiền khách.
+### F. Hướng Dẫn Hẹn Giờ Nhắn Tin 1-1 & Lá Chắn Auto-Pause (Scheduled Message)
+1. **Ứng dụng:** Nhắc lịch hẹn cà phê, xem nhà, gửi tài liệu hợp đồng, bảng báo giá tự động cho khách hàng cá nhân vào đúng ngày giờ đã hẹn.
+2. **Thao tác 3 bước:** Trong khung chat với khách, bấm biểu tượng **Lên lịch hẹn (⏰)** ➔ Nhập nội dung (hỗ trợ biến `{name}` tự động xưng tên khách), chọn ảnh/tài liệu PDF đính kèm ➔ Chọn mốc thời gian gợi ý (+15p, +1h, 9h sáng mai) hoặc mở lịch chọn chính xác ngày giờ ➔ Bấm **Lên Lịch Ngay**.
+3. **Thanh ghim đếm ngược trực quan:** Trên đỉnh khung chat xuất hiện thanh Pin Bar màu cam đếm ngược thời gian phát tin kèm nút **"HỦY LỊCH"** màu đỏ giúp bạn chủ động dừng lệnh gửi bất kỳ lúc nào.
+4. **Lá chắn độc quyền Auto-Pause:** Nếu khách hàng chủ động nhắn tin mới vào khung chat trước thời điểm hẹn, Zalo-Flow sẽ tự động hủy lịch gửi để bạn không bị rơi vào tình huống gửi tin nhắn vô duyên.
+5. **Xem cẩm nang hướng dẫn chi tiết có ảnh minh họa:** `https://aizalo.com/blog/cach-hen-gio-gui-tin-nhan-zalo-ca-nhan-tu-dong.html`
 
 ---
 
@@ -120,7 +122,8 @@
   **👉 Trả lời chuẩn:** Dạ trên bản mới v1.1.0, anh/chị chỉ cần dán ảnh (Ctrl + V) hoặc chọn ảnh vào ô chat, ảnh sẽ hiện xem trước ở trên; sau đó anh/chị gõ thêm lời nhắn, giá tiền vào ô chat rồi bấm Gửi (Enter) là ảnh và chữ sẽ tự động gộp dính liền trong 1 tin nhắn duy nhất cực kỳ tiện lợi ạ!
 
 - **Khách hỏi:** Có thể hẹn giờ gửi tin nhắn riêng cho từng khách hàng trên Zalo Flow không?
-  **👉 Trả lời chuẩn:** Dạ hoàn toàn được ạ! Trong từng cuộc trò chuyện, anh/chị bấm vào biểu tượng Hẹn giờ ⏰ để đặt thời gian gửi tin nhắn và ảnh cho khách. Hệ thống có thanh đếm ngược thông minh và tự động hủy an toàn nếu khách nhắn tin lại trước giờ hẹn ạ!
+  **👉 Trả lời chuẩn:** Dạ hoàn toàn được ạ! Trong từng cuộc trò chuyện, anh/chị bấm vào biểu tượng Hẹn giờ ⏰ để đặt thời gian gửi tin nhắn và đính kèm ảnh/hợp đồng cho khách. Hệ thống có thanh đếm ngược thông minh và lá chắn Auto-Pause tự động hủy an toàn nếu khách nhắn tin lại trước giờ hẹn ạ!
+  👉 Anh/chị xem bài viết hướng dẫn chi tiết từng bước tại đây nhé: https://aizalo.com/blog/cach-hen-gio-gui-tin-nhan-zalo-ca-nhan-tu-dong.html
 
 - **Khách hỏi:** Sử dụng Zalo Flow có sợ bị lộ tin nhắn hay mất nick Zalo không?
   **👉 Trả lời chuẩn:** Dạ anh/chị hoàn toàn yên tâm ạ! Zalo-Flow chạy 100% cục bộ trên máy tính của anh/chị (Localhost), cơ sở dữ liệu SQLite và phiên đăng nhập được mã hóa AES-256 lưu trực tiếp trong máy. Tuyệt đối không có dữ liệu nào bị gửi lên máy chủ bên thứ ba, bảo mật quyền riêng tư tuyệt đối ạ.
@@ -144,7 +147,8 @@
   **👉 Trả lời chuẩn:** Dạ anh/chị vào mục "Cài đặt AI" ➔ Bấm "Mở Mini Second Brain Wiki" ➔ Bấm "🌐 Nạp Từ URL" để dán link tài liệu Markdown từ GitHub/Google Docs, hoặc bấm "Tải File Mẫu (.md)" về điền thông tin sản phẩm rồi bấm "Lưu & Áp Dụng" là bot AI nắm trọn kiến thức tư vấn ngay ạ!
 
 - **Khách hỏi:** Tính năng hẹn giờ 1-1 có gửi trùng tin nếu khách đã nhắn tin trước không?
-  **👉 Trả lời chuẩn:** Dạ không hề bị trùng ạ! Zalo-Flow có cơ chế tự động bảo vệ thông minh: Nếu khách hàng chủ động nhắn tin đến trước giờ hẹn, hệ thống sẽ tự động tạm dừng lịch hẹn để tránh gửi tin nhắn ngô nghê hoặc làm phiền khách ạ.
+  **👉 Trả lời chuẩn:** Dạ không hề bị trùng ạ! Zalo-Flow tích hợp lá chắn Auto-Pause độc quyền: Nếu khách hàng chủ động nhắn tin đến trước giờ hẹn (ví dụ báo bận hoặc dời lịch), hệ thống sẽ tự động hủy lệnh gửi đang chờ để bạn không bị rơi vào tình huống gửi thông điệp lệch ngữ cảnh ạ.
+  👉 Anh/chị xem thêm cơ chế hoạt động của Auto-Pause tại: https://aizalo.com/blog/cach-hen-gio-gui-tin-nhan-zalo-ca-nhan-tu-dong.html
 
 ---
 
@@ -160,6 +164,13 @@
 - **Khách:** Cho mình hỏi Zalo Flow gửi tin nhắn chăm sóc khách có bị khóa nick không shop?
 - **Bot:** Dạ anh/chị hoàn toàn yên tâm nhé! Zalo-Flow tích hợp sẵn cơ chế Anti-Ban 3 lớp: giãn cách an toàn 3-5 giây giữa các tin nhắn và hỗ trợ đảo nội dung ngẫu nhiên Spintax. Chỉ cần anh/chị gửi cho khách hàng cũ trong danh bạ và không spam người lạ thì nick luôn an toàn 100% ạ!
   👉 Anh/chị xem thêm cẩm nang bí quyết chống khóa nick tại đây nhé: https://aizalo.com/blog/cach-gui-tin-nhan-tu-dong-tren-zalo-khong-bi-khoa.html
+
+- **Khách:** Bạn ơi Zalo Flow có cách nào hẹn giờ gửi tin nhắn và bảng giá cho khách vào sáng mai không?
+- **Bot:** Dạ hoàn toàn được anh/chị {name} nhé! Zalo-Flow v1.1.0 hỗ trợ hẹn giờ tin nhắn 1-1 cực kỳ tiện lợi:
+  🔹 Bước 1: Mở khung chat với khách, bấm biểu tượng Hẹn giờ ⏰.
+  🔹 Bước 2: Nhập nội dung, đính kèm file ảnh/PDF báo giá và chọn giờ gửi (ví dụ: 9h sáng mai).
+  🔹 Bước 3: Bấm "Lên Lịch Ngay". Hệ thống có thanh đếm ngược và lá chắn Auto-Pause tự hủy lịch nếu khách nhắn tin trước giờ hẹn để đảm bảo an toàn tuyệt đối ạ!
+  👉 Anh/chị xem bài viết hướng dẫn có ảnh chụp màn hình chi tiết tại đây nhé: https://aizalo.com/blog/cach-hen-gio-gui-tin-nhan-zalo-ca-nhan-tu-dong.html
 
 ---
 
