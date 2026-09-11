@@ -31,7 +31,7 @@ const chatContentEl = document.getElementById('chat-pane-content');
 const messagesStreamEl = document.getElementById('messages-stream');
 const chatInputEl = document.getElementById('chat-input');
 const sendBtnEl = document.getElementById('send-btn');
-const activeAvatarEl = document.getElementById('active-chat-avatar');
+const activeAvatarContainerEl = document.getElementById('active-chat-avatar-container');
 const activeNameEl = document.getElementById('active-chat-name');
 const activeTagsEl = document.getElementById('active-chat-tags');
 const reconnectBannerEl = document.getElementById('reconnect-banner');
@@ -1991,12 +1991,7 @@ async function selectConversation(threadId) {
   activeNameEl.innerText = conv.name || conv.id;
   renderActiveChatTags();
   updateAiToggleButton(conv);
-  
-  if (conv.avatar) {
-    activeAvatarEl.outerHTML = `<img class="conv-avatar" id="active-chat-avatar" src="${conv.avatar}" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.outerHTML='<div class=\\'conv-avatar\\' id=\\'active-chat-avatar\\'>${(conv.name || conv.id).substring(0, 2).toUpperCase()}</div>'">`;
-  } else {
-    activeAvatarEl.outerHTML = `<div class="conv-avatar" id="active-chat-avatar">${(conv.name || conv.id).substring(0, 2).toUpperCase()}</div>`;
-  }
+  renderActiveChatAvatar(conv);
 
   // Mark read
   if (conv.unreadCount > 0) {
@@ -2035,15 +2030,46 @@ async function selectConversation(threadId) {
   await loadMessages(threadId);
 }
 
-function dismissUnfriendedWarning() {
-  const unfriendedBar = document.getElementById('unfriended-warning-bar');
-  if (unfriendedBar) unfriendedBar.style.display = 'none';
+function renderActiveChatAvatar(conv) {
+  let container = document.getElementById('active-chat-avatar-container');
+  if (!container) {
+    const avatarEl = document.getElementById('active-chat-avatar');
+    if (avatarEl && avatarEl.parentElement) {
+      container = avatarEl.parentElement;
+    }
+  }
+  if (!container) return;
+
+  const name = (conv && (conv.name || conv.id)) || '';
+  const initials = name ? name.substring(0, 2).toUpperCase() : 'Z';
+  const avatarUrl = conv?.avatar;
+  const isGroup = Boolean(conv?.isGroup);
+
+  if (avatarUrl) {
+    container.innerHTML = `
+      <img class="conv-avatar" id="active-chat-avatar" src="${avatarUrl}" alt="${escapeHtml(name)}" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.onerror=null; this.outerHTML='<div class=\\'conv-avatar\\' id=\\'active-chat-avatar\\'>${initials}</div>';">
+      ${isGroup ? '<div class="group-badge-icon">👥</div>' : ''}
+    `;
+  } else {
+    container.innerHTML = `
+      <div class="conv-avatar" id="active-chat-avatar">${initials}</div>
+      ${isGroup ? '<div class="group-badge-icon">👥</div>' : ''}
+    `;
+  }
+}
+
+function closeActiveChat() {
+  if (appLayoutEl) appLayoutEl.classList.remove('in-chat');
+  state.activeThreadId = null;
+  state.activeThread = null;
+  state.messages = [];
+  if (chatContentEl) chatContentEl.style.display = 'none';
+  if (emptyStateEl) emptyStateEl.style.display = 'flex';
+  renderConversations();
 }
 
 function closeChatMobile() {
-  appLayoutEl.classList.remove('in-chat');
-  state.activeThreadId = null;
-  renderConversations();
+  closeActiveChat();
 }
 
 async function loadMessages(threadId) {
@@ -3193,11 +3219,8 @@ function handleStreamEvent(eventType, rawData) {
         }
         if (String(state.activeThreadId) === String(convData.id)) {
           const chatNameEl = document.getElementById('active-chat-name');
-          const chatAvatarEl = document.getElementById('active-chat-avatar');
           if (chatNameEl && convData.name) chatNameEl.innerText = convData.name;
-          if (chatAvatarEl && convData.avatar) {
-            chatAvatarEl.outerHTML = `<img class="conv-avatar" id="active-chat-avatar" src="${convData.avatar}" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.outerHTML='<div class=\\'conv-avatar\\' id=\\'active-chat-avatar\\'>${(convData.name || convData.id).substring(0, 2).toUpperCase()}</div>'">`;
-          }
+          renderActiveChatAvatar(convData);
         }
       }
     } else if (eventType === 'scheduled_msg_updated') {
@@ -4747,8 +4770,15 @@ function openZaloLoginModal() {
 
 function renderZaloLoginModalState(profile) {
   if (!profile) return;
+  const prevUserId = currentZaloProfile?.userId;
   currentZaloProfile = profile;
   updateZaloHeaderStatus(profile);
+
+  // Nếu người dùng đổi sang nick Zalo khác, dọn dẹp chat đang mở và tải lại hội thoại
+  if (profile.isLoggedIn && prevUserId && profile.userId && String(prevUserId) !== String(profile.userId)) {
+    closeActiveChat();
+    loadConversations();
+  }
 
   const stateIdle = document.getElementById('zalo-login-state-idle');
   const stateQr = document.getElementById('zalo-login-state-qr');
@@ -4849,9 +4879,8 @@ async function doLogoutZalo(cleanData = false) {
     if (json.data) {
       renderZaloLoginModalState(json.data);
     }
-    if (cleanData) {
-      await loadConversations();
-    }
+    closeActiveChat();
+    await loadConversations();
     alert('Đã đăng xuất tài khoản Zalo thành công.');
   } catch (e) {
     alert('Lỗi đăng xuất: ' + e.message);
@@ -4859,6 +4888,7 @@ async function doLogoutZalo(cleanData = false) {
 }
 
 async function doGenerateZaloLoginQr(cleanData = false) {
+  closeActiveChat();
   const btn = document.getElementById('btn-generate-qr');
   if (btn) {
     btn.disabled = true;
@@ -5887,11 +5917,8 @@ async function lazyResolveStranger(threadId) {
         // Update active chat header if currently opening
         if (String(state.activeThreadId) === String(threadId)) {
           const chatNameEl = document.getElementById('active-chat-name');
-          const chatAvatarEl = document.getElementById('active-chat-avatar');
           if (chatNameEl) chatNameEl.innerText = displayName;
-          if (chatAvatarEl && avatar) {
-            chatAvatarEl.outerHTML = `<img class="conv-avatar" id="active-chat-avatar" src="${avatar}" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.outerHTML='<div class=\\'conv-avatar\\' id=\\'active-chat-avatar\\'>${displayName.substring(0, 2).toUpperCase()}</div>'">`;
-          }
+          renderActiveChatAvatar(conv);
         }
       }
     }

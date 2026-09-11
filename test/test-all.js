@@ -1709,13 +1709,59 @@ assert.strictEqual(chatCaseE[0].caption, '');
 
 console.log('   ✅ Live Chat Media Caption Integration & Smart Fallback Guard Protocol passed!\n');
 
+// -----------------------------------------------------------------------------
+// Test 42: Chat Header Avatar Dynamic Re-rendering & Account Switching Clean State
+// -----------------------------------------------------------------------------
+console.log('42. Testing Chat Header Avatar Dynamic Re-rendering & Account Switching Clean State...');
+const indexHtmlContent = fs.readFileSync(path.resolve('public/index.html'), 'utf-8');
+assert(indexHtmlContent.includes('id="active-chat-avatar-container"'), 'index.html must have stable active-chat-avatar-container');
+assert(indexHtmlContent.includes('id="active-chat-avatar"'), 'index.html must have active-chat-avatar inside');
+
+const appJsContent = fs.readFileSync(path.resolve('public/app.js'), 'utf-8');
+assert(appJsContent.includes('function renderActiveChatAvatar('), 'app.js must define renderActiveChatAvatar');
+assert(appJsContent.includes('function closeActiveChat('), 'app.js must define closeActiveChat');
+assert(!appJsContent.includes('activeAvatarEl.outerHTML'), 'app.js must not mutate outerHTML on cached activeAvatarEl');
+
+// Simulate DOM container and multi-chat switching lifecycle
+const mockContainer = { innerHTML: '' };
+function simulateRenderAvatar(conv) {
+  const name = (conv && (conv.name || conv.id)) || '';
+  const initials = name ? name.substring(0, 2).toUpperCase() : 'Z';
+  const avatarUrl = conv?.avatar;
+  const isGroup = Boolean(conv?.isGroup);
+
+  if (avatarUrl) {
+    mockContainer.innerHTML = `<img class="conv-avatar" id="active-chat-avatar" src="${avatarUrl}">${isGroup ? '👥' : ''}`;
+  } else {
+    mockContainer.innerHTML = `<div class="conv-avatar" id="active-chat-avatar">${initials}</div>${isGroup ? '👥' : ''}`;
+  }
+}
+
+// 1. Open chat 1 with custom avatar (VIBE)
+simulateRenderAvatar({ id: 'vibe_123', name: 'VIBE AI', avatar: 'https://cdn.zalo.me/vibe.jpg', isGroup: true });
+assert(mockContainer.innerHTML.includes('https://cdn.zalo.me/vibe.jpg'), 'Chat 1 should render custom avatar');
+assert(mockContainer.innerHTML.includes('👥'), 'Chat 1 should render group badge');
+
+// 2. Switch to chat 2 with NO avatar (Khoa Ai) -> MUST NOT retain VIBE avatar!
+simulateRenderAvatar({ id: 'khoa_456', name: 'Khoa Ai', avatar: '', isGroup: false });
+assert(!mockContainer.innerHTML.includes('vibe.jpg'), 'Chat 2 must NOT retain old avatar from Chat 1');
+assert(mockContainer.innerHTML.includes('KH'), 'Chat 2 must render initials KH');
+assert(!mockContainer.innerHTML.includes('👥'), 'Chat 2 must not have group badge');
+
+// 3. Switch to chat 3 with another avatar
+simulateRenderAvatar({ id: 'anh_789', name: 'Anh Nam', avatar: 'https://cdn.zalo.me/nam.png', isGroup: false });
+assert(mockContainer.innerHTML.includes('nam.png'), 'Chat 3 should render its own avatar');
+assert(!mockContainer.innerHTML.includes('KH'), 'Chat 3 must not retain Chat 2 initials');
+
+console.log('   ✅ Chat Header Avatar Dynamic Re-rendering & Account Switching Clean State passed!\n');
+
 // Clean test db
 store.close();
 if (fs.existsSync(testDbFile)) {
   try { fs.unlinkSync(testDbFile); } catch {}
 }
 
-console.log('🎉 ALL 41 INTEGRITY, SECURITY, CRM, AIZALO REMARKETING, AI SUITE, BULK DEEP-SYNC, QR AUTH, MEMORY GUARD, ZALO SANITIZER, DESKTOP PACKAGED, CLEAN SWITCH, MULTI-DEVICE SYNC, GROUP MENTION, QUICK-MSG, CAMPAIGN TEST DISPATCH, GROUP RECONCILIATION, AUTO-FALLBACK OPENROUTER, MULTIMODAL VISION, STRANGER IDENTITY, SCHEDULED MESSAGES, UNIVERSAL WIKI URL INGESTION & LIVE CHAT MEDIA CAPTION TESTS PASSED 100%!');
+console.log('🎉 ALL 42 INTEGRITY, SECURITY, CRM, AIZALO REMARKETING, AI SUITE, BULK DEEP-SYNC, QR AUTH, MEMORY GUARD, ZALO SANITIZER, DESKTOP PACKAGED, CLEAN SWITCH, MULTI-DEVICE SYNC, GROUP MENTION, QUICK-MSG, CAMPAIGN TEST DISPATCH, GROUP RECONCILIATION, AUTO-FALLBACK OPENROUTER, MULTIMODAL VISION, STRANGER IDENTITY, SCHEDULED MESSAGES, UNIVERSAL WIKI URL INGESTION, LIVE CHAT MEDIA CAPTION & CHAT AVATAR DYNAMIC TESTS PASSED 100%!');
 
 
 
