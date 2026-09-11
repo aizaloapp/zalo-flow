@@ -725,6 +725,121 @@ body {
   }
 }
 
+/* ==============================================================================
+   Related Posts Recommendation Section
+   ============================================================================== */
+.related-posts-section {
+  background: linear-gradient(180deg, rgba(7, 11, 20, 0.4) 0%, rgba(4, 6, 11, 0.8) 100%);
+  border-top: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  padding: 3.5rem 0 2.5rem;
+  margin-top: 4rem;
+}
+
+.related-header {
+  margin-bottom: 2rem;
+}
+
+.related-tag {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--cyan, #00d2ff);
+  background: rgba(0, 210, 255, 0.1);
+  border: 1px solid rgba(0, 210, 255, 0.25);
+  padding: 0.25rem 0.65rem;
+  border-radius: 9999px;
+  margin-bottom: 0.6rem;
+}
+
+.related-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.related-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+.related-card {
+  display: flex;
+  flex-direction: column;
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.related-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(0, 210, 255, 0.45);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.4), 0 0 16px rgba(0, 210, 255, 0.12);
+}
+
+.related-card-badge {
+  align-self: flex-start;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.2rem 0.55rem;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-muted, #94a3b8);
+  margin-bottom: 0.85rem;
+}
+
+.related-card-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.45;
+  color: #f1f5f9;
+  margin: 0 0 0.65rem 0;
+  transition: color 0.2s ease;
+}
+
+.related-card:hover .related-card-title {
+  color: var(--cyan, #00d2ff);
+}
+
+.related-card-desc {
+  font-size: 0.85rem;
+  color: var(--text-muted, #94a3b8);
+  line-height: 1.5;
+  margin: 0 0 1.25rem 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.related-card-meta {
+  margin-top: auto;
+  font-size: 0.78rem;
+  color: var(--text-muted, #94a3b8);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+@media (max-width: 900px) {
+  .related-grid {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+  .related-posts-section {
+    padding: 2.5rem 0 1.5rem;
+    margin-top: 2.5rem;
+  }
+}
+
 /* Footer */
 .footer {
   background: #04060b;
