@@ -638,6 +638,93 @@ body {
   50% { transform: translateY(-4px); }
 }
 
+/* ==============================================================================
+   Scroll to Top with Circular Reading Progress Ring (Cloudflare-style)
+   ============================================================================== */
+.scroll-top-btn {
+  position: fixed;
+  bottom: 5.2rem;
+  right: 1.5rem;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: rgba(11, 18, 33, 0.88);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4), 0 0 12px rgba(0, 210, 255, 0.12);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-floating, 999);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(14px) scale(0.88);
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.25s ease,
+              border-color 0.25s ease,
+              background 0.25s ease;
+  padding: 0;
+  outline: none;
+}
+
+.scroll-top-btn.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0) scale(1);
+}
+
+.scroll-top-btn:hover {
+  transform: translateY(-3px) scale(1.06);
+  border-color: rgba(0, 210, 255, 0.6);
+  box-shadow: 0 8px 25px rgba(0, 210, 255, 0.35), 0 0 18px rgba(0, 210, 255, 0.2);
+  background: rgba(15, 25, 45, 0.96);
+}
+
+.scroll-top-btn:active {
+  transform: translateY(-1px) scale(0.98);
+}
+
+.scroll-top-btn .progress-ring {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: rotate(-90deg); /* Start progress from 12 o'clock */
+  pointer-events: none;
+}
+
+.scroll-top-btn .progress-ring-circle {
+  transition: stroke-dashoffset 0.08s linear;
+}
+
+.scroll-top-btn .scroll-top-icon {
+  color: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.25s ease, color 0.25s ease;
+}
+
+.scroll-top-btn:hover .scroll-top-icon {
+  color: var(--cyan, #00d2ff);
+  transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+  .scroll-top-btn {
+    bottom: calc(max(1rem, env(safe-area-inset-bottom)) + 3.6rem);
+    right: 1rem;
+    width: 42px;
+    height: 42px;
+  }
+  .scroll-top-btn .progress-ring {
+    width: 42px;
+    height: 42px;
+  }
+}
+
 /* Footer */
 .footer {
   background: #04060b;
