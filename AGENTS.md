@@ -18,6 +18,7 @@
 | **Core Lib** | `zca-js: 2.1.2` (Khóa cứng version) | **Chạy Wizard cấu hình:** | `npm run init` |
 | **Web Server** | Express.js (Port 3000) | **Build bộ cài Windows (.exe):** | `powershell installer/build-local.ps1` |
 | **Portal Cộng Đồng** | Cloudflare Pages (`https://aizalo.com/`) | **Build Portal Tĩnh:** | `powershell website/build.ps1` |
+| **Xuất Bản Blog aizalo.com** | `.agents/skills/aizalo-blog/` | **Kích hoạt Pipeline Blog:** | `/aizalo-blog` |
 | **Mã hóa** | AES-256-CBC (`SESSION_SECRET`) | **Khởi chạy container Docker:** | `docker compose up -d` |
 
 ---
