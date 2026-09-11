@@ -1,0 +1,207 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Zalo-Flow Client API",
+    "description": "OpenAPI specification for Zalo-Flow automation, messaging, and CRM bridge endpoints. This document is a discovery reference for AI agents and client applications.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Zalo-Flow Community",
+      "url": "https://aizalo.com"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://github.com/aizaloapp/zalo-flow"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Local Zalo-Flow Desktop Client Instance"
+    },
+    {
+      "url": "https://api.aizalo.com/v1",
+      "description": "Cloud Gateway Reference (Optional Bridge)"
+    }
+  ],
+  "paths": {
+    "/api/system/status": {
+      "get": {
+        "summary": "Check client status",
+        "description": "Returns current Zalo connection state, bot profile, and system metrics.",
+        "operationId": "getSystemStatus",
+        "responses": {
+          "200": {
+            "description": "System status response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemStatus"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          { "BearerAuth": [] }
+        ]
+      }
+    },
+    "/api/conversations": {
+      "get": {
+        "summary": "List conversations",
+        "description": "Fetches recent conversations, threads, unread counts, and tags.",
+        "operationId": "listConversations",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Number of conversations to return",
+            "required": false,
+            "schema": { "type": "integer", "default": 20 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of active conversations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Conversation" }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          { "BearerAuth": [] }
+        ]
+      }
+    },
+    "/api/messages/send": {
+      "post": {
+        "summary": "Send message",
+        "description": "Dispatches a text message or attachment to a specific Zalo thread (anti-ban rate limited).",
+        "operationId": "sendMessage",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendMessageRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Message dispatched successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendMessageResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          { "BearerAuth": [] }
+        ]
+      }
+    },
+    "/api/campaigns/broadcast": {
+      "post": {
+        "summary": "Send broadcast campaign",
+        "description": "Enqueues a broadcast message to contacts matching specified CRM tags.",
+        "operationId": "sendBroadcast",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BroadcastRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Broadcast enqueued",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "queuedCount": { "type": "integer" }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          { "BearerAuth": [] }
+        ]
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "PAT"
+      }
+    },
+    "schemas": {
+      "SystemStatus": {
+        "type": "object",
+        "properties": {
+          "connected": { "type": "boolean" },
+          "userName": { "type": "string" },
+          "userId": { "type": "string" },
+          "uptimeSeconds": { "type": "integer" }
+        }
+      },
+      "Conversation": {
+        "type": "object",
+        "properties": {
+          "threadId": { "type": "string" },
+          "name": { "type": "string" },
+          "isGroup": { "type": "boolean" },
+          "unreadCount": { "type": "integer" },
+          "lastMessage": { "type": "string" },
+          "tags": { "type": "array", "items": { "type": "string" } }
+        }
+      },
+      "SendMessageRequest": {
+        "type": "object",
+        "required": ["threadId", "message"],
+        "properties": {
+          "threadId": { "type": "string" },
+          "message": { "type": "string" },
+          "isGroup": { "type": "boolean" }
+        }
+      },
+      "SendMessageResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "msgId": { "type": "string" },
+          "cliMsgId": { "type": "string" }
+        }
+      },
+      "BroadcastRequest": {
+        "type": "object",
+        "required": ["tagId", "message"],
+        "properties": {
+          "tagId": { "type": "string" },
+          "message": { "type": "string" },
+          "delaySeconds": { "type": "integer", "default": 5 }
+        }
+      }
+    }
+  }
+}

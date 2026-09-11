@@ -1,0 +1,89 @@
+{
+  "onPage": {
+    "score": 75,
+    "checks": [],
+    "issues": [
+      {
+        "issue": "Độ dài thẻ <title> trong blog/cach-gui-tin-nhan-tu-dong-tren-zalo-khong-bi-khoa.html (84 chars) nằm ngoài khoảng tối ưu 30-75 ký tự",
+        "points": 5,
+        "priority": "P2"
+      },
+      {
+        "issue": "Độ dài thẻ <title> trong blog/cach-hen-gio-gui-tin-nhan-zalo-ca-nhan-tu-dong.html (94 chars) nằm ngoài khoảng tối ưu 30-75 ký tự",
+        "points": 5,
+        "priority": "P2"
+      },
+      {
+        "issue": "Độ dài thẻ <title> trong blog/huong-dan-cach-tao-chatbot-zalo-ca-nhan.html (77 chars) nằm ngoài khoảng tối ưu 30-75 ký tự",
+        "points": 5,
+        "priority": "P2"
+      },
+      {
+        "issue": "Độ dài thẻ <title> trong blog/tich-hop-ai-gemini-deepseek-vao-zalo-ca-nhan.html (80 chars) nằm ngoài khoảng tối ưu 30-75 ký tự",
+        "points": 5,
+        "priority": "P2"
+      },
+      {
+        "issue": "Độ dài thẻ <title> trong blog/zalo-crm-la-gi-giai-phap-quan-ly-tin-nhan-cskh.html (78 chars) nằm ngoài khoảng tối ưu 30-75 ký tự",
+        "points": 5,
+        "priority": "P2"
+      }
+    ]
+  },
+  "technical": {
+    "score": 100,
+    "checks": [],
+    "issues": []
+  },
+  "geo": {
+    "score": 80,
+    "checks": [],
+    "issues": [
+      {
+        "issue": "Khối GEO Direct Answer trong blog/cach-gui-tin-nhan-tu-dong-tren-zalo-khong-bi-khoa.html có 86 từ (dải chuẩn tối ưu cho AI Overview là 40-60 từ)",
+        "points": 5,
+        "priority": "P2"
+      },
+      {
+        "issue": "Khối GEO Direct Answer trong blog/cach-hen-gio-gui-tin-nhan-zalo-ca-nhan-tu-dong.html có 111 từ (dải chuẩn tối ưu cho AI Overview là 40-60 từ)",
+        "points": 5,
+        "priority": "P2"
+      },
+      {
+        "issue": "Khối GEO Direct Answer trong blog/huong-dan-cach-tao-chatbot-zalo-ca-nhan.html có 74 từ (dải chuẩn tối ưu cho AI Overview là 40-60 từ)",
+        "points": 5,
+        "priority": "P2"
+      },
+      {
+        "issue": "Khối GEO Direct Answer trong blog/tich-hop-ai-gemini-deepseek-vao-zalo-ca-nhan.html có 93 từ (dải chuẩn tối ưu cho AI Overview là 40-60 từ)",
+        "points": 5,
+        "priority": "P2"
+      }
+    ]
+  },
+  "agentReadiness": {
+    "score": 100,
+    "level": 5,
+    "checks": [],
+    "issues": []
+  },
+  "liveEdge": {
+    "checks": [],
+    "issues": []
+  },
+  "summary": {
+    "p0": [],
+    "p1": [],
+    "p2": [
+      "[ONPAGE] Độ dài thẻ <title> trong blog/cach-gui-tin-nhan-tu-dong-tren-zalo-khong-bi-khoa.html (84 chars) nằm ngoài khoảng tối ưu 30-75 ký tự",
+      "[GEO] Khối GEO Direct Answer trong blog/cach-gui-tin-nhan-tu-dong-tren-zalo-khong-bi-khoa.html có 86 từ (dải chuẩn tối ưu cho AI Overview là 40-60 từ)",
+      "[ONPAGE] Độ dài thẻ <title> trong blog/cach-hen-gio-gui-tin-nhan-zalo-ca-nhan-tu-dong.html (94 chars) nằm ngoài khoảng tối ưu 30-75 ký tự",
+      "[GEO] Khối GEO Direct Answer trong blog/cach-hen-gio-gui-tin-nhan-zalo-ca-nhan-tu-dong.html có 111 từ (dải chuẩn tối ưu cho AI Overview là 40-60 từ)",
+      "[ONPAGE] Độ dài thẻ <title> trong blog/huong-dan-cach-tao-chatbot-zalo-ca-nhan.html (77 chars) nằm ngoài khoảng tối ưu 30-75 ký tự",
+      "[GEO] Khối GEO Direct Answer trong blog/huong-dan-cach-tao-chatbot-zalo-ca-nhan.html có 74 từ (dải chuẩn tối ưu cho AI Overview là 40-60 từ)",
+      "[ONPAGE] Độ dài thẻ <title> trong blog/tich-hop-ai-gemini-deepseek-vao-zalo-ca-nhan.html (80 chars) nằm ngoài khoảng tối ưu 30-75 ký tự",
+      "[GEO] Khối GEO Direct Answer trong blog/tich-hop-ai-gemini-deepseek-vao-zalo-ca-nhan.html có 93 từ (dải chuẩn tối ưu cho AI Overview là 40-60 từ)",
+      "[ONPAGE] Độ dài thẻ <title> trong blog/zalo-crm-la-gi-giai-phap-quan-ly-tin-nhan-cskh.html (78 chars) nằm ngoài khoảng tối ưu 30-75 ký tự"
+    ]
+  }
+}

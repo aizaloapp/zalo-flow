@@ -24,6 +24,46 @@
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
   <link rel="stylesheet" href="/style.css">
 
+  <!-- Schema CollectionPage & BreadcrumbList -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "CollectionPage",
+        "@id": "https://aizalo.com/blog/#webpage",
+        "url": "https://aizalo.com/blog/",
+        "name": "Cẩm Nang Zalo Automation & Chatbot AI — AIzalo.com",
+        "description": "Tổng hợp kinh nghiệm thực tế về tự động hóa Zalo cá nhân, bí quyết gửi tin nhắn không bị khóa, tích hợp AI Gemini & DeepSeek và giải pháp Zalo CRM 2026.",
+        "isPartOf": {
+          "@type": "WebSite",
+          "@id": "https://aizalo.com/#website",
+          "name": "AIzalo.com",
+          "url": "https://aizalo.com/"
+        }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": "https://aizalo.com/blog/#breadcrumb",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Trang Chủ",
+            "item": "https://aizalo.com/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Cẩm Nang Blog",
+            "item": "https://aizalo.com/blog/"
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
   <!-- Traks Web Analytics -->
   <script>window.traks=window.traks||function(){(window.traks.q=window.traks.q||[]).push(arguments)}</script><script defer data-site="pb_live_jbrwzdo04plqmz8u15gnrvjq" src="https://traks-collect.dragonfarm2509.workers.dev/t.js"></script>
 </head>
@@ -83,7 +123,7 @@
       <!-- Post New: Huấn Luyện AI Bán Hàng Zalo -->
       <a href="/blog/cach-huan-luyen-ai-ban-hang-zalo-bang-bang-gia-rieng.html" class="card blog-card" style="border-color: rgba(16, 185, 129, 0.4); box-shadow: 0 4px 20px rgba(16, 185, 129, 0.15);">
         <span class="blog-tag" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3);">🤖 AI Bán Hàng Thực Chiến</span>
-        <h2 class="card-title">Cách Huấn Luyện AI Bán Hàng Zalo Cá Nhân Bằng Bảng Giá Riêng (Không Ảo Giác Giá)</h2>
+        <h2 class="card-title" id="post-cach-huan-luyen-ai-ban-hang-zalo">Cách Huấn Luyện AI Bán Hàng Zalo Cá Nhân Bằng Bảng Giá Riêng (Không Ảo Giác Giá)</h2>
         <p class="card-desc">
           Bí quyết nạp bảng giá sản phẩm riêng cho AI trên Zalo cá nhân: phản hồi 24/7 trong 3 giây, khóa nhiệt độ Temperature 0.2 chống bịa giá, kỹ thuật upsell combo và tự động xin số điện thoại chốt đơn.
         </p>
@@ -99,7 +139,7 @@
       <!-- Post: Hẹn Giờ Tin Nhắn Zalo -->
       <a href="/blog/cach-hen-gio-gui-tin-nhan-zalo-ca-nhan-tu-dong.html" class="card blog-card" style="border-color: rgba(0, 210, 255, 0.4); box-shadow: 0 4px 20px rgba(0, 132, 255, 0.15);">
         <span class="blog-tag" style="background: rgba(0, 210, 255, 0.15); color: var(--cyan); border: 1px solid rgba(0, 210, 255, 0.3);">⚡ Tính Năng Mới v1.1.0</span>
-        <h2 class="card-title">Cách Hẹn Giờ Gửi Tin Nhắn Zalo Cá Nhân Tự Động: Bí Quyết Chăm Sóc Khách Không Lo Bỏ Sót</h2>
+        <h2 class="card-title" id="post-cach-hen-gio-gui-tin-nhan-zalo">Cách Hẹn Giờ Gửi Tin Nhắn Zalo Cá Nhân Tự Động: Bí Quyết Chăm Sóc Khách Không Lo Bỏ Sót</h2>
         <p class="card-desc">
           Bóc trần sự thật về tính năng "Nhắc hẹn" Zalo, giải pháp hẹn giờ 1-1 cho nick cá nhân trên máy tính Windows, đính kèm ảnh hợp đồng và lá chắn Auto-Pause thông minh chống gửi nhầm.
         </p>
@@ -115,7 +155,7 @@
       <!-- Post 1 -->
       <a href="/blog/cach-gui-tin-nhan-tu-dong-tren-zalo-khong-bi-khoa.html" class="card blog-card">
         <span class="blog-tag">Bí Quyết Anti-Ban</span>
-        <h2 class="card-title">Cách Gửi Tin Nhắn Tự Động Trên Zalo Không Bị Khóa Tài Khoản (Bí Quyết Anti-Ban 2026)</h2>
+        <h2 class="card-title" id="post-cach-gui-tin-nhan-tu-dong-khong-bi-khoa">Cách Gửi Tin Nhắn Tự Động Trên Zalo Không Bị Khóa Tài Khoản (Bí Quyết Anti-Ban 2026)</h2>
         <p class="card-desc">
           Tìm hiểu nguyên lý của thuật toán Token Bucket Rate Limiter giãn cách 3s, cơ chế Self-Echo Shield chống vòng lặp và kỹ thuật biến đổi nội dung Spintax giúp gửi tin an toàn 100%.
         </p>
@@ -131,7 +171,7 @@
       <!-- Post 2 -->
       <a href="/blog/huong-dan-cach-tao-chatbot-zalo-ca-nhan.html" class="card blog-card">
         <span class="blog-tag">Hướng Dẫn Cài Đặt</span>
-        <h2 class="card-title">Hướng Dẫn Cách Tạo Chatbot Zalo Cá Nhân Bằng Zalo-Flow Trong 3 Phút (1-Click)</h2>
+        <h2 class="card-title" id="post-huong-dan-cach-tao-chatbot-zalo">Hướng Dẫn Cách Tạo Chatbot Zalo Cá Nhân Bằng Zalo-Flow Trong 3 Phút (1-Click)</h2>
         <p class="card-desc">
           Hướng dẫn chi tiết từ tải bộ cài Windows, cách vượt màn hình cảnh báo Microsoft Defender SmartScreen, quét mã QR đăng nhập và thiết lập bot chạy ngầm không hiện màn hình đen.
         </p>
@@ -147,7 +187,7 @@
       <!-- Post 3 -->
       <a href="/blog/tich-hop-ai-gemini-deepseek-vao-zalo-ca-nhan.html" class="card blog-card">
         <span class="blog-tag">Trí Tuệ Nhân Tạo</span>
-        <h2 class="card-title">Tích Hợp AI Gemini &amp; DeepSeek Vào Zalo Cá Nhân Tự Động Trả Lời Tin Nhắn Miễn Phí</h2>
+        <h2 class="card-title" id="post-tich-hop-ai-gemini-deepseek">Tích Hợp AI Gemini &amp; DeepSeek Vào Zalo Cá Nhân Tự Động Trả Lời Tin Nhắn Miễn Phí</h2>
         <p class="card-desc">
           Cách nhận API Key miễn phí từ Google AI Studio, nạp Prompt nhân cách tư vấn bán hàng và tính năng tự động bóc tách danh thiếp Zalo lấy số điện thoại khách hàng.
         </p>
@@ -163,7 +203,7 @@
       <!-- Post 4 -->
       <a href="/blog/zalo-crm-la-gi-giai-phap-quan-ly-tin-nhan-cskh.html" class="card blog-card">
         <span class="blog-tag">Quản Trị CSKH</span>
-        <h2 class="card-title">Zalo CRM Là Gì? Giải Pháp Quản Lý Tin Nhắn &amp; Chăm Sóc Khách Hàng Zalo Đỉnh Cao</h2>
+        <h2 class="card-title" id="post-zalo-crm-la-gi">Zalo CRM Là Gì? Giải Pháp Quản Lý Tin Nhắn &amp; Chăm Sóc Khách Hàng Zalo Đỉnh Cao</h2>
         <p class="card-desc">
           Phân tích xu hướng tìm kiếm Zalo CRM bùng nổ trong năm 2026, cách quản lý hội thoại tập trung, phân loại khách hàng bằng thẻ tag màu sắc và chiến dịch remarketing không tốn phí.
         </p>

@@ -1,6 +1,6 @@
 /*
   Content-Signal: search=yes, ai-train=yes, ai-input=yes
-  Link: </llms.txt>; rel="alternate"; type="text/markdown", </llms-full.txt>; rel="alternate"; type="text/markdown", </.well-known/api-catalog>; rel="service-desc"
+  Link: </llms.txt>; rel="describedby"; type="text/markdown", </llms.txt>; rel="alternate"; type="text/markdown", </llms-full.txt>; rel="alternate"; type="text/markdown", </.well-known/api-catalog>; rel="service-desc"
   X-Content-Type-Options: nosniff
   X-Frame-Options: SAMEORIGIN
   Referrer-Policy: strict-origin-when-cross-origin
@@ -30,6 +30,9 @@
   Content-Type: application/json; charset=utf-8
 
 /openapi.json
+  Content-Type: application/json; charset=utf-8
+
+/.well-known/openapi.json
   Content-Type: application/json; charset=utf-8
 
 /llms.txt
