@@ -128,7 +128,8 @@ Agent tạo thư mục `website/src/assets/blog/<slug>/` và sinh tối thiểu 
        * **NẾU bài viết về TÍNH NĂNG MỚI Zalo-Flow (Feature/How-to):** BẮT BUỘC cập nhật: (1) Thêm tóm tắt tính năng ở Mục 2; (2) Thêm câu hỏi FAQ kèm Deep-Link bài blog ở Mục 3; (3) Thêm mẫu đối thoại Few-Shot ở Mục 4.
        * **NẾU bài viết về MẸO KINH DOANH / CASE STUDY MỞ RỘNG (General SEO Tips):** BỎ QUA `guide.md` & `wiki.md` để chống phình to bộ não Bot AI (Prompt Bloat Guardrail < 250 dòng).
 - [ ] 5. Cập nhật `website/src/llms.txt` và `website/src/llms-full.txt`.
-- [ ] 6. Đồng bộ thư mục `website/dist/`.
+- [ ] 6. Kiểm tra chuẩn Dual-Tier CTA: Navbar mang `🤖 Thử Bot Zalo AI`, CTA Box và Floating Badge mang `🤖 Trải Nghiệm Thử Bot Zalo AI` trỏ về `https://zalo.me/0373315784`.
+- [ ] 7. Đồng bộ thư mục `website/dist/`.
 
 #### 2. Chạy Pre-Flight AST, Schema Validator & Unified Audit 2-Pass:
 Chạy lệnh kiểm tra cú pháp nhanh và đo kiểm toàn diện 4 trụ cột (On-page SEO, Technical, GEO, Agent Readiness Level 5):

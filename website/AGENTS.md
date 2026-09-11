@@ -99,4 +99,10 @@ Khi chuyển giao hoặc cấu hình tên miền chính (`aizalo.com`) sang Clou
      node scripts/audit-aizalo.mjs
      ```
    - Xác nhận Pass 1 (Static AST/Schema/Links) và Pass 2 (Live Edge CDN, RFC 9264 describedby, Markdown Content Negotiation) đạt **100/100 tuyệt đối trên toàn bộ 4 trụ cột** (On-page SEO, Technical & Schema, GEO, Agent Readiness Level 5) với 0 P0, 0 P1, 0 P2.
+5. **Phân Tầng Phễu Chuyển Đổi Dual-Tier & Bot Demo Routing (Invariant):**
+   - **Tầng 1 (Conversion Hook / Trải Nghiệm Tức Thì):** Toàn bộ Navbar (`.btn-zalo`), Floating Badge cố định góc phải (`.floating-badge`), và nút phụ trong CTA Box (`.cta-box .btn-zalo`) BẮT BUỘC trỏ trực tiếp 1-1 tới số Zalo Bot Demo (`https://zalo.me/0373315784`).
+     - Nhãn Navbar: `🤖 Thử Bot Zalo AI`
+     - Nhãn Floating Badge & CTA Box: `🤖 Trải Nghiệm Thử Bot Zalo AI`
+     - *Mục đích:* Triệt tiêu rào cản e ngại nhóm đông người, kích thích khách hàng bấm vào trò chuyện và tự mình kiểm chứng năng lực AI phản hồi trong 3 giây.
+   - **Tầng 2 (Community Retention / Giao Lưu Kỹ Thuật):** Liên kết Nhóm Zalo (`https://zalo.me/g/mcihan713`) TUYỆT ĐỐI KHÔNG chiếm vị trí Conversion Hook chính. Chỉ duy trì ở khu vực chân trang (Footer) hoặc Section `#community` dành cho thành viên muốn thảo luận chuyên sâu.
 
