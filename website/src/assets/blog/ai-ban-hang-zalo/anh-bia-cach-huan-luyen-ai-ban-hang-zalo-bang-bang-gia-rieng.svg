@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0b1329"/>
+      <stop offset="50%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </linearGradient>
+    <linearGradient id="primaryGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0084ff"/>
+      <stop offset="100%" stop-color="#00d2ff"/>
+    </linearGradient>
+    <linearGradient id="cardGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#fbbf24"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="30" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGrad)"/>
+  
+  <!-- Glow orbs -->
+  <circle cx="220" cy="140" r="180" fill="#0084ff" opacity="0.16" filter="url(#glow)"/>
+  <circle cx="980" cy="460" r="220" fill="#10b981" opacity="0.14" filter="url(#glow)"/>
+
+  <!-- Grid overlay -->
+  <path d="M 0,105 H 1200 M 0,210 H 1200 M 0,315 H 1200 M 0,420 H 1200 M 0,525 H 1200" stroke="#1e293b" stroke-width="1" opacity="0.4"/>
+  <path d="M 200,0 V 630 M 400,0 V 630 M 600,0 V 630 M 800,0 V 630 M 1000,0 V 630" stroke="#1e293b" stroke-width="1" opacity="0.4"/>
+
+  <!-- Main Card Showcase -->
+  <g transform="translate(100, 65)">
+    <!-- Badge -->
+    <rect x="0" y="0" width="370" height="42" rx="21" fill="rgba(16, 185, 129, 0.15)" stroke="#10b981" stroke-width="1.5"/>
+    <text x="25" y="27" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="15" font-weight="700" fill="#34d399">🤖 AI SALES AGENT — KHÔNG ẢO GIÁC GIÁ</text>
+
+    <!-- Main Title -->
+    <text x="0" y="110" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="44" font-weight="800" fill="#ffffff">
+      Cách Huấn Luyện AI Bán Hàng Zalo
+    </text>
+    <text x="0" y="165" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="44" font-weight="800" fill="url(#primaryGrad)">
+      Bằng Bảng Giá Riêng &amp; Chốt Đơn 24/7
+    </text>
+
+    <!-- Subtitle -->
+    <text x="0" y="225" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="19" fill="#94a3b8">
+      Nạp bảng giá Markdown • Khóa chống bịa giá (Temp 0.2) • Đọc ảnh &amp; chốt số điện thoại
+    </text>
+
+    <!-- UI Mockup Window -->
+    <g transform="translate(0, 265)">
+      <!-- Window container -->
+      <rect width="1000" height="240" rx="16" fill="url(#cardGrad)" stroke="#334155" stroke-width="2"/>
+      
+      <!-- Window header -->
+      <rect width="1000" height="45" rx="16" fill="#1e293b"/>
+      <rect y="35" width="1000" height="10" fill="#1e293b"/>
+      <circle cx="25" cy="22" r="6" fill="#ef4444"/>
+      <circle cx="45" cy="22" r="6" fill="#f59e0b"/>
+      <circle cx="65" cy="22" r="6" fill="#10b981"/>
+      <text x="95" y="28" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14" fill="#94a3b8" font-weight="600">Zalo-Flow AI Engine — Khóa Huấn Luyện Bảng Giá Cục Bộ (Zero Leak)</text>
+
+      <!-- Left Column: Price Knowledge Markdown -->
+      <g transform="translate(25, 60)">
+        <rect width="460" height="155" rx="10" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+        <text x="16" y="28" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" fill="#38bdf8" font-weight="700">📄 BẢNG GIÁ NẠP VÀO AI (Markdown Format):</text>
+        <text x="16" y="52" font-family="'Consolas', 'Courier New', monospace" font-size="12" fill="#cbd5e1">- Combo Trị Mụn PureSkin: 450.000đ (Freeship)</text>
+        <text x="16" y="74" font-family="'Consolas', 'Courier New', monospace" font-size="12" fill="#cbd5e1">- Serum Tái Tạo Da HA+: 290.000đ (Tặng cọ đắp)</text>
+        <text x="16" y="96" font-family="'Consolas', 'Courier New', monospace" font-size="12" fill="#cbd5e1">- Chính sách: Mua 2 giảm 10%, đổi trả 7 ngày</text>
+        <rect x="16" y="112" width="220" height="26" rx="6" fill="rgba(16, 185, 129, 0.15)" stroke="#10b981" stroke-width="1"/>
+        <text x="26" y="129" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" fill="#34d399" font-weight="700">🔒 Temperature: 0.2 (Khóa giá cứng)</text>
+      </g>
+
+      <!-- Right Column: Live Chat Consultation -->
+      <g transform="translate(515, 60)">
+        <!-- Customer bubble -->
+        <rect width="455" height="42" rx="10" fill="#334155"/>
+        <text x="16" y="26" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" fill="#e2e8f0">Khách: "Shop ơi combo mụn giá bao nhiêu, có freeship ko?"</text>
+
+        <!-- Bot AI Reply bubble -->
+        <g transform="translate(0, 52)">
+          <rect width="455" height="103" rx="10" fill="#0084ff"/>
+          <text x="16" y="24" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" fill="#ffffff" font-weight="700">Bé Flow (AI Bot):</text>
+          <text x="16" y="46" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" fill="#ffffff">"Dạ combo Trị Mụn PureSkin giá chuẩn 450.000đ và được</text>
+          <text x="16" y="66" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" fill="#ffffff">FREESHIP toàn quốc ạ! Nếu anh/chị lấy kèm Serum HA+ thì</text>
+          <text x="16" y="86" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" fill="#ffffff">được giảm thêm 10%. Anh/chị cho em xin SĐT giao hàng nha! 📦"</text>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

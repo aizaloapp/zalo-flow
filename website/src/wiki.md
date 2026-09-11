@@ -66,6 +66,7 @@
    - Dán link tài liệu Markdown công khai (ví dụ tài liệu mẫu: `https://aizalo.com/guide.md`).
    - Bấm **Tải Về Trình Soạn Thảo** để xem trước ➔ Bấm **Lưu & Áp Dụng**.
    - Nếu chưa có sẵn file, bấm nút **Sao Chép Mẫu Chuẩn** hoặc **Tải File Mẫu (.md)** để chỉnh sửa thông tin doanh nghiệp mình.
+   - **Xem cẩm nang huấn luyện AI bằng bảng giá riêng:** `https://aizalo.com/blog/cach-huan-luyen-ai-ban-hang-zalo-bang-bang-gia-rieng.html`
 
 ---
 
@@ -145,6 +146,7 @@
 
 - **Khách hỏi:** Tôi muốn nạp tài liệu bảng giá sản phẩm riêng cho bot học thì làm thế nào?
   **👉 Trả lời chuẩn:** Dạ anh/chị vào mục "Cài đặt AI" ➔ Bấm "Mở Mini Second Brain Wiki" ➔ Bấm "🌐 Nạp Từ URL" để dán link tài liệu Markdown từ GitHub/Google Docs, hoặc bấm "Tải File Mẫu (.md)" về điền thông tin sản phẩm rồi bấm "Lưu & Áp Dụng" là bot AI nắm trọn kiến thức tư vấn ngay ạ!
+  👉 Anh/chị xem cẩm nang huấn luyện bot bằng bảng giá chi tiết tại: https://aizalo.com/blog/cach-huan-luyen-ai-ban-hang-zalo-bang-bang-gia-rieng.html
 
 - **Khách hỏi:** Tính năng hẹn giờ 1-1 có gửi trùng tin nếu khách đã nhắn tin trước không?
   **👉 Trả lời chuẩn:** Dạ không hề bị trùng ạ! Zalo-Flow tích hợp lá chắn Auto-Pause độc quyền: Nếu khách hàng chủ động nhắn tin đến trước giờ hẹn (ví dụ báo bận hoặc dời lịch), hệ thống sẽ tự động hủy lệnh gửi đang chờ để bạn không bị rơi vào tình huống gửi thông điệp lệch ngữ cảnh ạ.
@@ -164,6 +166,12 @@
 - **Khách:** Cho mình hỏi Zalo Flow gửi tin nhắn chăm sóc khách có bị khóa nick không shop?
 - **Bot:** Dạ anh/chị hoàn toàn yên tâm nhé! Zalo-Flow tích hợp sẵn cơ chế Anti-Ban 3 lớp: giãn cách an toàn 3-5 giây giữa các tin nhắn và hỗ trợ đảo nội dung ngẫu nhiên Spintax. Chỉ cần anh/chị gửi cho khách hàng cũ trong danh bạ và không spam người lạ thì nick luôn an toàn 100% ạ!
   👉 Anh/chị xem thêm cẩm nang bí quyết chống khóa nick tại đây nhé: https://aizalo.com/blog/cach-gui-tin-nhan-tu-dong-tren-zalo-khong-bi-khoa.html
+
+- **Khách:** Làm sao để bot AI tự động báo giá đúng sản phẩm của mình mà không bị bịa giá vậy shop?
+- **Bot:** Dạ anh/chị {name} chỉ cần 2 thao tác cực kỳ đơn giản:
+  🔹 Bước 1: Soạn bảng giá dạng Markdown gạch đầu dòng và dán vào mục "Cài đặt AI" trên Zalo-Flow.
+  🔹 Bước 2: Kéo thanh "Nhiệt độ (Temperature)" về mức 0.2 để khóa cứng giá, bot sẽ trả lời chuẩn 100% không lo bịa giá ạ!
+  👉 Anh/chị xem bài viết hướng dẫn chi tiết có bảng giá mẫu tại đây nhé: https://aizalo.com/blog/cach-huan-luyen-ai-ban-hang-zalo-bang-bang-gia-rieng.html
 
 - **Khách:** Bạn ơi Zalo Flow có cách nào hẹn giờ gửi tin nhắn và bảng giá cho khách vào sáng mai không?
 - **Bot:** Dạ hoàn toàn được anh/chị {name} nhé! Zalo-Flow v1.1.0 hỗ trợ hẹn giờ tin nhắn 1-1 cực kỳ tiện lợi:

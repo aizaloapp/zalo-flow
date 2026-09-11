@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 480" width="1000" height="480">
+  <defs>
+    <linearGradient id="bgBoxGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0b1329"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="winGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#064e3b"/>
+      <stop offset="100%" stop-color="#022c22"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background container -->
+  <rect width="1000" height="480" rx="16" fill="url(#bgBoxGrad)" stroke="#334155" stroke-width="1.5"/>
+
+  <!-- Header -->
+  <text x="50" y="50" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="22" font-weight="800" fill="#ffffff">SO SÁNH CÁC GIẢI PHÁP TỰ ĐỘNG BÁN HÀNG TRÊN ZALO</text>
+  <text x="50" y="76" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14" fill="#94a3b8">Chọn đúng mô hình để không mất khách và tránh tình trạng AI bịa giá gây thua lỗ</text>
+
+  <!-- Column 1: Chatbot Kịch Bản Cũ (Rule-based) -->
+  <g transform="translate(50, 105)">
+    <rect width="280" height="340" rx="12" fill="#1e293b" stroke="#475569" stroke-width="1"/>
+    <!-- Col Header -->
+    <rect width="280" height="52" rx="12" fill="#334155"/>
+    <rect y="40" width="280" height="12" fill="#334155"/>
+    <text x="20" y="32" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="15" font-weight="700" fill="#cbd5e1">1. Chatbot Kịch Bản (Cũ)</text>
+
+    <!-- Content items -->
+    <text x="20" y="85" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" fill="#ef4444" font-weight="600">❌ Cứng nhắc, dễ tắc tị:</text>
+    <text x="20" y="107" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#94a3b8">Bắt khách bấm phím 1, 2, 3;</text>
+    <text x="20" y="125" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#94a3b8">khách hỏi lệch 1 chữ là im lặng.</text>
+
+    <text x="20" y="155" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" fill="#ef4444" font-weight="600">❌ Không hiểu tiếng lóng:</text>
+    <text x="20" y="177" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#94a3b8">Khách gõ "giá nhiu", "ship hcm"</text>
+    <text x="20" y="195" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#94a3b8">thì bot bó tay không giải quyết.</text>
+
+    <text x="20" y="225" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" fill="#f59e0b" font-weight="600">⚠️ Chi phí thiết lập:</text>
+    <text x="20" y="247" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#94a3b8">Vẽ sơ đồ cây kịch bản phức tạp,</text>
+    <text x="20" y="265" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#94a3b8">mỗi lần đổi giá phải sửa từng nút.</text>
+
+    <rect x="20" y="295" width="240" height="30" rx="6" fill="rgba(239, 68, 68, 0.15)"/>
+    <text x="35" y="315" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#f87171" font-weight="700">Tỷ lệ rớt khách: Rất cao (~60%)</text>
+  </g>
+
+  <!-- Column 2: AI Chung Chung (Raw LLM) -->
+  <g transform="translate(360, 105)">
+    <rect width="280" height="340" rx="12" fill="#1e293b" stroke="#f59e0b" stroke-width="1.5"/>
+    <!-- Col Header -->
+    <rect width="280" height="52" rx="12" fill="#78350f"/>
+    <rect y="40" width="280" height="12" fill="#78350f"/>
+    <text x="20" y="32" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="15" font-weight="700" fill="#fde68a">2. AI Chung Chung (Prompt thô)</text>
+
+    <!-- Content items -->
+    <text x="20" y="85" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" fill="#10b981" font-weight="600">✔️ Giọng văn tự nhiên:</text>
+    <text x="20" y="107" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#94a3b8">Trò chuyện mượt mà, hiểu ngữ</text>
+    <text x="20" y="125" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#94a3b8">cảnh và tiếng lóng người Việt.</text>
+
+    <text x="20" y="155" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" fill="#ef4444" font-weight="600">❌ Ảo giác giá (Nguy hiểm):</text>
+    <text x="20" y="177" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#94a3b8">Tự động bịa giá ngoài thị trường,</text>
+    <text x="20" y="195" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#94a3b8">báo sai tồn kho, hứa khuyến mãi ảo.</text>
+
+    <text x="20" y="225" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" fill="#ef4444" font-weight="600">❌ Không chốt được đơn:</text>
+    <text x="20" y="247" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#94a3b8">Nói lan man triết lý, không có</text>
+    <text x="20" y="265" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#94a3b8">kỹ năng xin SĐT &amp; chốt số lượng.</text>
+
+    <rect x="20" y="295" width="240" height="30" rx="6" fill="rgba(245, 158, 11, 0.15)"/>
+    <text x="40" y="315" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#fbbf24" font-weight="700">Rủi ro: Báo sai giá làm đền bù</text>
+  </g>
+
+  <!-- Column 3: Zalo-Flow AI Huấn Luyện Bảng Giá (WINNER) -->
+  <g transform="translate(670, 105)">
+    <rect width="280" height="340" rx="12" fill="url(#winGrad)" stroke="#10b981" stroke-width="2"/>
+    <!-- Col Header -->
+    <rect width="280" height="52" rx="12" fill="#047857"/>
+    <rect y="40" width="280" height="12" fill="#047857"/>
+    <text x="20" y="32" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="15" font-weight="800" fill="#a7f3d0">⭐ 3. Zalo-Flow AI Bảng Giá</text>
+
+    <!-- Content items -->
+    <text x="20" y="85" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" fill="#34d399" font-weight="700">✔️ Khóa giá chuẩn 100%:</text>
+    <text x="20" y="107" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#e2e8f0">Nạp bảng giá Markdown cục bộ,</text>
+    <text x="20" y="125" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#e2e8f0">Temp 0.2 triệt tiêu 100% bịa giá.</text>
+
+    <text x="20" y="155" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" fill="#34d399" font-weight="700">✔️ Kỹ năng Upsell &amp; Chốt đơn:</text>
+    <text x="20" y="177" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#e2e8f0">Gợi ý mua combo giảm 10%,</text>
+    <text x="20" y="195" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#e2e8f0">khéo léo xin SĐT và địa chỉ nhận.</text>
+
+    <text x="20" y="225" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" fill="#34d399" font-weight="700">✔️ Miễn phí trọn đời (1-Click):</text>
+    <text x="20" y="247" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#e2e8f0">Dùng key Gemini miễn phí,</text>
+    <text x="20" y="265" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#e2e8f0">chạy trên Zalo cá nhân, không cần OA.</text>
+
+    <rect x="20" y="295" width="240" height="30" rx="6" fill="rgba(16, 185, 129, 0.25)"/>
+    <text x="35" y="315" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#6ee7b7" font-weight="800">Hiệu quả: Tăng x3 tỷ lệ chốt</text>
+  </g>
+</svg>

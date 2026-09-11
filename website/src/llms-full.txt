@@ -96,3 +96,9 @@
 
 ### Q20: Cơ chế Auto-Pause khi hẹn giờ hoạt động ra sao?
 **Đáp:** Auto-Pause là lá chắn an toàn độc quyền trên Zalo-Flow: Nếu bạn đã lên lịch gửi tin nhắn cho khách hàng, nhưng trước thời điểm phát tin khách hàng chủ động gửi tin nhắn mới vào khung chat, Zalo-Flow sẽ tự động hủy lịch gửi để bạn không bị rơi vào tình huống gửi thông điệp lệch ngữ cảnh.
+
+### Q21: Làm thế nào để huấn luyện AI bán hàng Zalo bằng bảng giá riêng mà không bị ảo giác giá?
+**Đáp:** Bạn chuẩn hóa bảng giá sản phẩm dạng Markdown, nạp vào mục Cài đặt AI của Zalo-Flow, thiết lập thông số Nhiệt độ (Temperature) ở mức 0.2 và bổ sung chỉ thị Zero-Hallucination. Ở mức nhiệt độ này, bot sẽ báo giá chuẩn 100% theo tài liệu và biết tự động gợi ý combo giảm giá kèm xin số điện thoại giao hàng. Chi tiết xem tại: https://aizalo.com/blog/cach-huan-luyen-ai-ban-hang-zalo-bang-bang-gia-rieng.html
+
+### Q22: AI bán hàng Zalo-Flow có đọc được hình ảnh sản phẩm và bill chuyển khoản của khách không?
+**Đáp:** Có. Với mô hình Gemini Multimodal Vision, Zalo-Flow cho phép bot phân tích ảnh chụp sản phẩm của khách để tra cứu bảng giá, đồng thời đọc ảnh bill ngân hàng để xác nhận giao dịch tự động.

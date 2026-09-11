@@ -32,6 +32,7 @@
 - Lưu ý Windows SmartScreen: Khi xuất hiện màn hình "Windows protected your PC", bấm "More info" -> "Run anyway" (phần mềm cộng đồng chưa mua chứng chỉ thương mại Microsoft, sạch 0/70 trên VirusTotal).
 
 ## Cẩm Nang & Bài Viết Chuyên Sâu
+- Cách huấn luyện AI bán hàng Zalo bằng bảng giá riêng: https://aizalo.com/blog/cach-huan-luyen-ai-ban-hang-zalo-bang-bang-gia-rieng.html
 - Cách hẹn giờ gửi tin nhắn Zalo cá nhân tự động: https://aizalo.com/blog/cach-hen-gio-gui-tin-nhan-zalo-ca-nhan-tu-dong.html
 - Bí quyết chống khóa nick Zalo: https://aizalo.com/blog/cach-gui-tin-nhan-tu-dong-tren-zalo-khong-bi-khoa.html
 - Hướng dẫn cài đặt 3 phút: https://aizalo.com/blog/huong-dan-cach-tao-chatbot-zalo-ca-nhan.html
