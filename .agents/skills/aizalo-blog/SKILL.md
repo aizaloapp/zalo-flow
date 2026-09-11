@@ -121,7 +121,9 @@ Agent tạo thư mục `website/src/assets/blog/<slug>/` và sinh tối thiểu 
 - [ ] 1. Thêm card bài viết mới lên đầu trang `website/src/blog/index.html`.
 - [ ] 2. Chèn Inbound Link và cập nhật `dateModified` trong các bài blog cũ.
 - [ ] 3. Cập nhật `website/src/sitemap.xml` (thêm URL mới, cập nhật `<lastmod>` của `/` và `/blog/`).
-- [ ] 4. Cập nhật `website/src/guide.md` và `website/src/wiki.md` (AI Knowledge Ops).
+- [ ] 4. Cập nhật `website/src/guide.md` và `website/src/wiki.md` (Conditional AI Knowledge Ops):
+       * **NẾU bài viết về TÍNH NĂNG MỚI Zalo-Flow (Feature/How-to):** BẮT BUỘC cập nhật: (1) Thêm tóm tắt tính năng ở Mục 2; (2) Thêm câu hỏi FAQ kèm Deep-Link bài blog ở Mục 3; (3) Thêm mẫu đối thoại Few-Shot ở Mục 4.
+       * **NẾU bài viết về MẸO KINH DOANH / CASE STUDY MỞ RỘNG (General SEO Tips):** BỎ QUA `guide.md` & `wiki.md` để chống phình to bộ não Bot AI (Prompt Bloat Guardrail < 250 dòng).
 - [ ] 5. Cập nhật `website/src/llms.txt` và `website/src/llms-full.txt`.
 - [ ] 6. Đồng bộ thư mục `website/dist/`.
 
