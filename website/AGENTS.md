@@ -1,4 +1,4 @@
-﻿# 🌐 WEBSITE & PORTAL AGENTS.MD — QUY CHUẨN CỔNG THÔNG TIN CỘNG ĐỒNG AIZALO.COM
+# 🌐 WEBSITE & PORTAL AGENTS.MD — QUY CHUẨN CỔNG THÔNG TIN CỘNG ĐỒNG AIZALO.COM
 
 > **Sứ mệnh:** Cổng thông tin mã nguồn mở, Landing Page cộng đồng, Blog kỹ thuật và tài liệu AI Crawlers cho Zalo-Flow.  
 > **Địa chỉ chính thức:** `https://aizalo.com/` (Cloudflare Pages: `aizalo-portal`).  
@@ -44,7 +44,8 @@ Khi chuyển giao hoặc cấu hình tên miền chính (`aizalo.com`) sang Clou
    - Bài 1 (`cach-gui-tin-nhan-tu-dong-tren-zalo-khong-bi-khoa.html`): `gửi tin nhắn tự động trên zalo`, `anti-ban zalo` (User intent: sợ khóa nick).
    - Bài 2 (`huong-dan-cach-tao-chatbot-zalo-ca-nhan.html`): `cách tạo chatbot zalo cá nhân`, `tạo bot zalo` (User intent: cài đặt nhanh không cần code).
    - Bài 3 (`tich-hop-ai-gemini-deepseek-vao-zalo-ca-nhan.html`): `tích hợp ai vào zalo`, `chatbot gemini zalo`, `deepseek zalo` (User intent: AI thông minh).
-   - Bài 4 (`zalo-crm-la-gi-giai-phap-quan-ly-tin-nhan-cskh.html`): `zalo crm`, `quản lý tin nhắn cskh zalo`, `chatwoot zalo` (User intent: bán hàng & đội ngũ).
+    - Bài 4 (`zalo-crm-la-gi-giai-phap-quan-ly-tin-nhan-cskh.html`): `zalo crm`, `quản lý tin nhắn cskh zalo`, `chatwoot zalo` (User intent: bán hàng & đội ngũ).
+    - Bài 5 (`cach-hen-gio-gui-tin-nhan-zalo-ca-nhan-tu-dong.html`): `hẹn giờ gửi tin nhắn zalo`, `lên lịch gửi tin nhắn zalo cá nhân` (User intent: chăm sóc khách hàng 1-1, hẹn giờ tự động).
 3. **Nguyên tắc GEO (Generative Engine Optimization):**
    - BẮT BUỘC duy trì tệp `llms.txt` (tóm tắt cho AI Crawlers) và `llms-full.txt` (toàn văn kèm gắn `X-Robots-Tag: noindex`).
    - Đoạn văn bản định nghĩa ngắn 40-60 từ (Quotable Snippets) và bảng so sánh trên trang chủ phải luôn rõ ràng, cô đọng để các AI search engine (ChatGPT, Perplexity, Gemini, Claude) dễ dàng trích dẫn trực tiếp.
@@ -65,3 +66,15 @@ Khi chuyển giao hoặc cấu hình tên miền chính (`aizalo.com`) sang Clou
    - *Mục đích:* Bảo toàn cây phả hệ ngữ nghĩa (Semantic Hierarchy) thuần khiết cho các công cụ tìm kiếm và ngăn chặn việc parser mục lục gom nhầm nút CTA vào danh sách đọc.
 4. **Build Script Asset Synchronization:**
    - Khi bổ sung bất kỳ tệp script (`.js`) hoặc asset tĩnh mới nào trong `website/src/`, tệp `website/build.ps1` BẮT BUỘC phải có lệnh sao chép tường minh sang `website/dist/` trước khi chạy lệnh deploy Cloudflare Pages.
+5. **Topical Internal Link Mesh & Freshness Invariant:**
+   - Khi xuất bản bài viết blog mới, Agent BẮT BUỘC thực hiện liên kết 2 chiều:
+     (1) Bài mới trỏ về Trang chủ, `guide.md` và các bài cũ liên quan;
+     (2) Mở ít nhất 2 bài viết cũ có chủ đề liên quan để chèn khối Callout dẫn link ngược vào bài mới (Inbound Links);
+     (3) Cập nhật trường `"dateModified": "YYYY-MM-DD"` trong Schema JSON-LD của các bài cũ để kích hoạt tín hiệu Content Freshness.
+   - Cập nhật thẻ `<url>` trong `sitemap.xml` kèm làm mới `<lastmod>` cho cả `/` và `/blog/`.
+6. **Anti-TOC Breakage & Semantic Isolation Invariant:**
+   - Script `blog-toc.js` tự động quét tất cả thẻ `h2, h3` bên trong `.article-body`.
+   - TUYỆT ĐỐI KHÔNG sử dụng thẻ `<h2>` hoặc `<h3>` bên trong các khối phụ trợ như CTA Box, GEO Direct Answer Box, Key Takeaways Box, hay Author Bio.
+   - Các tiêu đề khối phụ trợ BẮT BUỘC dùng `<div class="cta-title">`, `<div class="geo-answer-label">` hoặc `<p><strong>...</strong></p>` để bảo toàn tính thuần khiết của cây phả hệ mục lục.
+7. **Pipeline Xuất Bản Chuyên Trách (`/aizalo-blog`):**
+   - Mọi bài viết blog mới BẮT BUỘC được điều phối qua skill chuyên trách [`.agents/skills/aizalo-blog/SKILL.md`](file:///d:/A-Du-An/Zalo-Flow/.agents/skills/aizalo-blog/SKILL.md) để bảo đảm tuân thủ 100% các bước từ nghiên cứu DataForSEO, sinh ảnh SVG vector nhẹ < 5KB đến kiểm thử AST/Schema.
