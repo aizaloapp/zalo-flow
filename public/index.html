@@ -120,6 +120,25 @@
           </div>
         </div>
 
+        <!-- Startup Synchronization Banner (Smart Non-Blocking Indicator) -->
+        <div id="startup-sync-banner" class="startup-sync-banner" style="display: none;">
+          <div class="sync-banner-content">
+            <div class="sync-banner-spinner" id="sync-banner-icon">
+              <svg class="sync-spin-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <circle cx="12" cy="12" r="9" stroke-opacity="0.25"></circle>
+                <path d="M12 3a9 9 0 0 1 9 9" stroke-linecap="round"></path>
+              </svg>
+            </div>
+            <div class="sync-banner-info">
+              <div class="sync-banner-title" id="sync-banner-title">Đang đồng bộ dữ liệu Zalo...</div>
+              <div class="sync-banner-desc" id="sync-banner-desc">Đang nạp danh bạ & nhóm. Bạn có thể xem tin cũ bình thường.</div>
+            </div>
+          </div>
+          <div class="sync-progress-indeterminate">
+            <div class="sync-progress-bar"></div>
+          </div>
+        </div>
+
         <div class="conversation-list" id="conversation-list">
           <!-- Dynamic conversation cards rendered here -->
         </div>
@@ -209,6 +228,12 @@
           <!-- Message Stream -->
           <div class="messages-stream" id="messages-stream">
             <!-- Dynamic message bubbles rendered here -->
+          </div>
+
+          <!-- Soft Sync Warning in Chat -->
+          <div id="chat-sync-soft-warning" class="chat-sync-soft-warning" style="display: none;">
+            <div class="chat-sync-warning-icon">⚡</div>
+            <div class="chat-sync-warning-text">Hệ thống đang cập nhật tin nhắn mới nhất từ Zalo... Bạn nên đợi vài giây để tin nhắn hiển thị đầy đủ trước khi trả lời.</div>
           </div>
 
           <!-- Chat Input Bar & Autocomplete Popup -->

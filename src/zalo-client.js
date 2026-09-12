@@ -35,6 +35,33 @@ export class ZaloClient {
     this.maxStrangerCacheSize = 500;
     this.strangerCacheTtlMs = 24 * 60 * 60 * 1000; // 24 hours
     this.pendingStrangerResolves = new Map(); // Anti-race lock for pending requests
+    this.startupSyncState = { stage: 'idle', message: '', errorDetail: null };
+    this.onStartupSyncCallback = null;
+  }
+
+  /**
+   * Update and broadcast startup synchronization state
+   * @param {'idle'|'contacts'|'groups'|'messages'|'ready'|'error'} stage
+   * @param {string} message
+   * @param {string|null} errorDetail
+   */
+  _setStartupSyncState(stage, message = '', errorDetail = null) {
+    this.startupSyncState = { stage, message, errorDetail, timestamp: Date.now() };
+    if (typeof this.onStartupSyncCallback === 'function') {
+      try {
+        this.onStartupSyncCallback(this.startupSyncState);
+      } catch (err) {
+        logger.warn(`[Startup Sync Callback] Error: ${err.message}`);
+      }
+    }
+  }
+
+  /**
+   * Register listener for startup sync progress events
+   * @param {Function} callback - ({ stage, message, errorDetail, timestamp })
+   */
+  onStartupSync(callback) {
+    this.onStartupSyncCallback = callback;
   }
 
   /**
@@ -158,6 +185,8 @@ export class ZaloClient {
   async syncInitialContacts() {
     if (!this.api) return;
     try {
+      this._setStartupSyncState('contacts', 'Đang nạp danh bạ bạn bè Zalo...');
+
       // 1. Sync Friends
       if (typeof this.api.getAllFriends === 'function') {
         const friends = await this.api.getAllFriends();
@@ -177,6 +206,8 @@ export class ZaloClient {
           logger.info(`📇 Initial contact sync: Synced ${friends.length} friends into LocalStore and in-memory cache.`);
         }
       }
+
+      this._setStartupSyncState('groups', 'Đang đồng bộ danh sách nhóm...');
 
       // 2. Sync Groups & Group Info
       if (typeof this.api.getAllGroups === 'function') {
@@ -217,6 +248,8 @@ export class ZaloClient {
         }
       }
 
+      this._setStartupSyncState('messages', 'Đang cập nhật tin nhắn mới nhất...');
+
       // 3. Request Recent Old Messages for User and Group threads via WebSocket
       if (this.api.listener && typeof this.api.listener.requestOldMessages === 'function') {
         setTimeout(() => {
@@ -228,9 +261,17 @@ export class ZaloClient {
             logger.warn(`Could not request old messages: ${e.message}`);
           }
         }, 1500);
+
+        // Transition to ready state after short buffer allowing socket frames to arrive
+        setTimeout(() => {
+          this._setStartupSyncState('ready', 'Đồng bộ hoàn tất! Dữ liệu đã sẵn sàng.');
+        }, 4000);
+      } else {
+        this._setStartupSyncState('ready', 'Đồng bộ hoàn tất! Dữ liệu đã sẵn sàng.');
       }
     } catch (err) {
       logger.warn(`⚠️ syncInitialContacts fallback: ${err.message}`);
+      this._setStartupSyncState('error', 'Gặp sự cố khi nạp dữ liệu: ' + err.message, err.message);
     }
   }
 
@@ -1268,6 +1309,7 @@ export class ZaloClient {
     this.scannedUser = null;
     this.friendUids.clear();
     this._deliveredQueue.clear();
+    this.startupSyncState = { stage: 'idle', message: '', errorDetail: null };
 
     if (cleanData) {
       try {
@@ -1393,6 +1435,7 @@ export class ZaloClient {
     this.scannedUser = null;
     this.friendUids.clear();
     this._deliveredQueue.clear();
+    this.startupSyncState = { stage: 'idle', message: '', errorDetail: null };
 
     if (cleanData) {
       try {

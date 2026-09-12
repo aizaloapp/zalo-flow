@@ -2024,6 +2024,12 @@ async function selectConversation(threadId) {
     schedToggleBtn.style.display = conv.isGroup ? 'none' : '';
   }
 
+  // Startup Sync Soft Warning Guard in Chat Pane
+  const syncWarning = document.getElementById('chat-sync-soft-warning');
+  if (syncWarning) {
+    syncWarning.style.display = isStartupSyncActive ? 'flex' : 'none';
+  }
+
   // Tải thông tin lịch hẹn đang hoạt động (nếu có)
   loadActiveScheduledMessage(threadId);
 
@@ -2065,6 +2071,8 @@ function closeActiveChat() {
   state.messages = [];
   if (chatContentEl) chatContentEl.style.display = 'none';
   if (emptyStateEl) emptyStateEl.style.display = 'flex';
+  const syncWarning = document.getElementById('chat-sync-soft-warning');
+  if (syncWarning) syncWarning.style.display = 'none';
   renderConversations();
 }
 
@@ -3246,6 +3254,8 @@ function handleStreamEvent(eventType, rawData) {
       if (ramPill) {
         ramPill.className = 'status-pill ram-pill critical';
       }
+    } else if (eventType === 'startup_sync_status') {
+      handleStartupSyncEvent(data);
     }
   } catch (err) {
     console.error('Error handling stream event:', err);
@@ -4704,6 +4714,133 @@ async function syncAllHistoryWithProgress() {
       syncBtn.disabled = false;
       syncBtn.innerText = '🔄 Đồng Bộ Lịch Sử';
     }
+  }
+}
+
+// -----------------------------------------------------------------------------
+// 🔄 SMART STARTUP SYNCHRONIZATION MANAGER (Non-Blocking Indicator & Soft Warning)
+// -----------------------------------------------------------------------------
+let isStartupSyncActive = false;
+let startupSyncIdleTimer = null;
+
+function handleStartupSyncEvent(data) {
+  if (!data || !data.stage) return;
+
+  // Reset Idle Watchdog Timer on any activity from server
+  if (startupSyncIdleTimer) {
+    clearTimeout(startupSyncIdleTimer);
+    startupSyncIdleTimer = null;
+  }
+
+  const banner = document.getElementById('startup-sync-banner');
+  const title = document.getElementById('sync-banner-title');
+  const desc = document.getElementById('sync-banner-desc');
+  const icon = document.getElementById('sync-banner-icon');
+  const softWarning = document.getElementById('chat-sync-soft-warning');
+
+  if (!banner) return;
+
+  // Start Idle Watchdog timer (20s timeout if connection freezes or no new events arrive)
+  if (data.stage !== 'ready' && data.stage !== 'idle') {
+    startupSyncIdleTimer = setTimeout(() => {
+      dismissStartupSyncBanner();
+    }, 20000);
+  }
+
+  if (data.stage === 'idle') {
+    isStartupSyncActive = false;
+    banner.style.display = 'none';
+    if (softWarning) softWarning.style.display = 'none';
+    return;
+  }
+
+  if (data.stage === 'contacts' || data.stage === 'groups' || data.stage === 'messages') {
+    isStartupSyncActive = true;
+    banner.className = 'startup-sync-banner';
+    banner.style.display = 'block';
+
+    if (icon) {
+      icon.innerHTML = `
+        <svg class="sync-spin-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <circle cx="12" cy="12" r="9" stroke-opacity="0.25"></circle>
+          <path d="M12 3a9 9 0 0 1 9 9" stroke-linecap="round"></path>
+        </svg>
+      `;
+    }
+
+    if (title) {
+      if (data.stage === 'contacts') title.innerText = 'Đang đồng bộ danh bạ Zalo...';
+      else if (data.stage === 'groups') title.innerText = 'Đang đồng bộ danh sách nhóm...';
+      else if (data.stage === 'messages') title.innerText = 'Đang cập nhật tin nhắn mới nhất...';
+      else title.innerText = 'Đang đồng bộ dữ liệu Zalo...';
+    }
+
+    if (desc) {
+      desc.innerText = data.message || 'Đang cập nhật dữ liệu. Bạn có thể xem các tin cũ bình thường.';
+    }
+
+    // Show soft warning in chat if user currently has an active conversation open
+    if (softWarning && state.activeThreadId) {
+      softWarning.style.display = 'flex';
+    }
+  } else if (data.stage === 'ready') {
+    isStartupSyncActive = false;
+    banner.className = 'startup-sync-banner success';
+
+    if (icon) {
+      icon.innerHTML = `<span style="font-size: 1.1rem; line-height: 1;">✅</span>`;
+    }
+    if (title) title.innerText = 'Đã đồng bộ mới nhất!';
+    if (desc) desc.innerText = 'Dữ liệu danh bạ và tin nhắn đã sẵn sàng.';
+
+    if (softWarning) {
+      softWarning.style.display = 'none';
+    }
+
+    // Smooth fade-out after 2.2s
+    setTimeout(() => {
+      dismissStartupSyncBanner();
+    }, 2200);
+
+    // Refresh conversations list to show newest order and names
+    loadConversations();
+  } else if (data.stage === 'error') {
+    isStartupSyncActive = false;
+    banner.className = 'startup-sync-banner error';
+
+    if (icon) {
+      icon.innerHTML = `<span style="font-size: 1.1rem; line-height: 1;">⚠️</span>`;
+    }
+    if (title) title.innerText = 'Đồng bộ khởi tạo gặp gián đoạn';
+    if (desc) desc.innerText = data.errorDetail || data.message || 'Kiểm tra lại kết nối Zalo.';
+
+    if (softWarning) {
+      softWarning.style.display = 'none';
+    }
+
+    // Keep error visible briefly then dismiss after 6s
+    setTimeout(() => {
+      dismissStartupSyncBanner();
+    }, 6000);
+  }
+}
+
+function dismissStartupSyncBanner() {
+  if (startupSyncIdleTimer) {
+    clearTimeout(startupSyncIdleTimer);
+    startupSyncIdleTimer = null;
+  }
+  isStartupSyncActive = false;
+  const banner = document.getElementById('startup-sync-banner');
+  const softWarning = document.getElementById('chat-sync-soft-warning');
+  if (softWarning) softWarning.style.display = 'none';
+
+  if (banner && banner.style.display !== 'none') {
+    banner.classList.add('fade-out');
+    setTimeout(() => {
+      banner.style.display = 'none';
+      banner.classList.remove('fade-out');
+    }, 350);
   }
 }
 

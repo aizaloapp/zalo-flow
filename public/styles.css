@@ -3022,4 +3022,197 @@ body {
   border: 1px dashed var(--border);
 }
 
+/* ==============================================================================
+   🔄 SMART STARTUP SYNCHRONIZATION BANNER & SOFT WARNING
+   ============================================================================== */
+.startup-sync-banner {
+  margin: 6px 10px 4px 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: syncSlideDown 0.3s ease-out;
+  flex-shrink: 0;
+}
+
+@keyframes syncSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    max-height: 90px;
+  }
+}
+
+.startup-sync-banner.fade-out {
+  opacity: 0;
+  transform: translateY(-6px);
+  margin-top: 0;
+  margin-bottom: 0;
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  border-width: 0;
+  transition: all 0.35s ease;
+}
+
+.sync-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+}
+
+.sync-banner-spinner {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--primary);
+}
+
+.sync-spin-svg {
+  width: 18px;
+  height: 18px;
+  animation: syncSpin 1s linear infinite;
+}
+
+@keyframes syncSpin {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.sync-banner-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.sync-banner-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sync-banner-desc {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  line-height: 1.2;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Indeterminate Shimmer / Pulse Progress Bar */
+.sync-progress-indeterminate {
+  width: 100%;
+  height: 2.5px;
+  background: rgba(56, 189, 248, 0.15);
+  overflow: hidden;
+  position: relative;
+}
+
+.sync-progress-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  background: var(--primary);
+  border-radius: 2px;
+  animation: syncIndeterminate 1.6s cubic-bezier(0.65, 0.815, 0.735, 0.395) infinite;
+}
+
+@keyframes syncIndeterminate {
+  0% {
+    left: -40%;
+    width: 35%;
+  }
+  60% {
+    left: 100%;
+    width: 60%;
+  }
+  100% {
+    left: 100%;
+    width: 0%;
+  }
+}
+
+/* Success / Ready State */
+.startup-sync-banner.success {
+  border-color: rgba(16, 185, 129, 0.4);
+  background: rgba(16, 185, 129, 0.08);
+}
+
+.startup-sync-banner.success .sync-banner-spinner {
+  color: #10b981;
+}
+
+.startup-sync-banner.success .sync-progress-indeterminate {
+  background: rgba(16, 185, 129, 0.2);
+}
+
+.startup-sync-banner.success .sync-progress-bar {
+  background: #10b981;
+  animation: none;
+  width: 100%;
+  left: 0;
+}
+
+/* Error State */
+.startup-sync-banner.error {
+  border-color: rgba(239, 68, 68, 0.4);
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.startup-sync-banner.error .sync-banner-spinner {
+  color: #ef4444;
+}
+
+.startup-sync-banner.error .sync-progress-indeterminate {
+  display: none;
+}
+
+/* Soft Sync Warning inside Chat Pane */
+.chat-sync-soft-warning {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: rgba(245, 158, 11, 0.1);
+  border-top: 1px solid rgba(245, 158, 11, 0.25);
+  font-size: 0.78rem;
+  color: #d97706;
+  line-height: 1.35;
+  animation: syncSlideDown 0.25s ease-out;
+  flex-shrink: 0;
+}
+
+.chat-sync-warning-icon {
+  font-size: 0.95rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.chat-sync-warning-text {
+  flex: 1;
+  font-weight: 500;
+}
+
+
 

@@ -81,6 +81,12 @@ app.get('/api/events', requireAuth, (req, res) => {
   }
   res.write(': connected\n\n');
 
+  // Single Source of Truth: Send active startup sync state immediately if present
+  if (zaloClient && zaloClient.startupSyncState && zaloClient.startupSyncState.stage !== 'idle') {
+    sseEventId++;
+    res.write(`id: ${sseEventId}\nevent: startup_sync_status\ndata: ${JSON.stringify(zaloClient.startupSyncState)}\n\n`);
+  }
+
   // Heartbeat ping every 15 seconds
   const heartbeat = setInterval(() => {
     res.write(':ping\n\n');
@@ -142,6 +148,11 @@ localStore.on('conversationUpdated', (conv) => {
 
 localStore.on('scheduledMessageUpdated', (data) => {
   broadcastSSE('scheduled_msg_updated', data);
+});
+
+// Forward Zalo startup synchronization lifecycle events
+zaloClient.onStartupSync((syncState) => {
+  broadcastSSE('startup_sync_status', syncState);
 });
 
 // -----------------------------------------------------------------------------
@@ -444,6 +455,10 @@ function startServer(port, host, attempt = 0, maxAttempts = 5) {
     ws.on('error', () => wsClients.delete(ws));
     try {
       ws.send(JSON.stringify({ event: 'connected', data: { timestamp: Date.now() } }));
+      // Single Source of Truth: Send active startup sync state immediately upon connection
+      if (zaloClient && zaloClient.startupSyncState && zaloClient.startupSyncState.stage !== 'idle') {
+        ws.send(JSON.stringify({ event: 'startup_sync_status', data: zaloClient.startupSyncState }));
+      }
     } catch {}
   });
 
