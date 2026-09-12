@@ -1,20 +1,22 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
   <defs>
-    <linearGradient id="zf-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#00C6FF"/>
-      <stop offset="100%" stop-color="#0072FF"/>
+    <linearGradient id="zf-blue-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#009BF8"/>
+      <stop offset="100%" stop-color="#0058F6"/>
     </linearGradient>
-    <linearGradient id="zf-spark" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="zf-spark-grad" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#FFFFFF"/>
-      <stop offset="100%" stop-color="#A6E3E9"/>
+      <stop offset="100%" stop-color="#00FFFF"/>
     </linearGradient>
+    <filter id="zf-subtle-glow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-color="#003db3" flood-opacity="0.35"/>
+    </filter>
   </defs>
-  <!-- Background rounded squircle -->
-  <rect width="64" height="64" rx="18" fill="#0A0F1D"/>
-  <!-- Glowing border -->
-  <rect x="1" y="1" width="62" height="62" rx="17" stroke="url(#zf-grad)" stroke-width="2" stroke-opacity="0.6"/>
-  <!-- Speech bubble -->
-  <path d="M16 22C16 17.5817 19.5817 14 24 14H40C44.4183 14 48 17.5817 48 22V36C48 40.4183 44.4183 44 40 44H26L18 50V44H24C19.5817 44 16 40.4183 16 36V22Z" fill="url(#zf-grad)"/>
-  <!-- AI Sparkle / Lightning flow inside -->
-  <path d="M32 20L34.5 28.5L43 31L34.5 33.5L32 42L29.5 33.5L21 31L29.5 28.5L32 20Z" fill="url(#zf-spark)"/>
+  <!-- Zalo Speech Bubble (100% Transparent Background) -->
+  <path d="M32 5C17.088 5 5 16.64 5 31c0 7.82 3.666 14.845 9.534 19.78L11.5 60l11.536-4.808C25.96 56.326 28.91 57 32 57c14.912 0 27-11.64 27-26S46.912 5 32 5z" fill="url(#zf-blue-grad)" filter="url(#zf-subtle-glow)"/>
+  <!-- High-Contrast Bold White Z (Ultra Sharp at 16x16) -->
+  <path d="M22 21h20v5.5l-12.8 15h13v6H21.8v-5.5l12.8-15H22V21z" fill="#FFFFFF"/>
+  <!-- AI Sparkle (✦) Representing Intelligent Automation -->
+  <path d="M49 8l1.6 4.4L55 14l-4.4 1.6L49 20l-1.6-4.4L43 14l4.4-1.6L49 8z" fill="url(#zf-spark-grad)"/>
+  <circle cx="49" cy="14" r="1.5" fill="#FFFFFF"/>
 </svg>
