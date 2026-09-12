@@ -12,7 +12,7 @@ $distDir = Join-Path $scriptDir "dist"
 Write-Host "Starting build for Zalo-Flow Website (Cloudflare Pages)..." -ForegroundColor Cyan
 
 # Ensure dist directories exist
-New-Item -ItemType Directory -Force -Path $distDir, (Join-Path $distDir "blog"), (Join-Path $distDir "assets"), (Join-Path $distDir ".well-known") | Out-Null
+New-Item -ItemType Directory -Force -Path $distDir, (Join-Path $distDir "blog"), (Join-Path $distDir "en"), (Join-Path $distDir "assets"), (Join-Path $distDir ".well-known") | Out-Null
 
 # Copy HTML, CSS & JS
 Copy-Item -Path (Join-Path $srcDir "index.html") -Destination (Join-Path $distDir "index.html") -Force
@@ -20,6 +20,11 @@ Copy-Item -Path (Join-Path $srcDir "404.html") -Destination (Join-Path $distDir 
 Copy-Item -Path (Join-Path $srcDir "style.css") -Destination (Join-Path $distDir "style.css") -Force
 if (Test-Path (Join-Path $srcDir "*.js")) {
     Copy-Item -Path (Join-Path $srcDir "*.js") -Destination $distDir -Force
+}
+
+# Copy English (EN) files
+if (Test-Path (Join-Path $srcDir "en")) {
+    Copy-Item -Path (Join-Path $srcDir "en\*") -Destination (Join-Path $distDir "en\") -Recurse -Force
 }
 
 # Copy Blog files

@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  
+  <!-- Primary Meta Tags -->
+  <title>Zalo-Flow — Open-Source Personal Zalo Chatbot &amp; AI Automation</title>
+  <meta name="title" content="Zalo-Flow — Open-Source Personal Zalo Chatbot &amp; AI Automation">
+  <meta name="description" content="Free, open-source personal Zalo automation software powered by Gemini &amp; DeepSeek AI. Features 3-layer anti-ban protection, local AES-256 encryption, and Chatwoot CRM.">
+  <meta name="keywords" content="zalo chatbot personal, personal zalo bot, zalo automation software, zalo auto reply, zalo crm integration, chatwoot zalo, open source zalo automation, anti-ban zalo bot">
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+  <link rel="canonical" href="https://aizalo.com/en/">
+  <link rel="alternate" hreflang="vi" href="https://aizalo.com/">
+  <link rel="alternate" hreflang="en" href="https://aizalo.com/en/">
+  <link rel="alternate" hreflang="x-default" href="https://aizalo.com/">
+
+  <!-- Open Graph / Facebook / Zalo Share -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://aizalo.com/en/">
+  <meta property="og:site_name" content="AIzalo — Zalo-Flow">
+  <meta property="og:title" content="Zalo-Flow — Open-Source Personal Zalo Chatbot &amp; AI Automation">
+  <meta property="og:description" content="Free, open-source personal Zalo automation software powered by Gemini &amp; DeepSeek AI. Features 3-layer anti-ban protection, local AES-256 encryption, and Chatwoot CRM.">
+  <meta property="og:image" content="https://aizalo.com/assets/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Zalo-Flow Open-Source Personal Zalo Chatbot &amp; AI Automation">
+  <meta property="og:locale" content="en_US">
+
+  <!-- Twitter Meta Tags -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Zalo-Flow — Open-Source Personal Zalo Chatbot &amp; AI Automation">
+  <meta name="twitter:description" content="Turn standard personal Zalo accounts into 24/7 AI-powered chatbots with Gemini &amp; DeepSeek. 100% local, anti-ban protection, zero OA fees.">
+  <meta name="twitter:image" content="https://aizalo.com/assets/og-image.png">
+
+  <!-- Favicon & PWA -->
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg?v=2">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon.png?v=2">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico?v=2">
+  <link rel="shortcut icon" href="/favicon.ico?v=2">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png?v=2">
+  <meta name="theme-color" content="#070a13">
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="/style.css">
+
+  <!-- AI Agent Alternate Formats & Discovery -->
+  <link rel="alternate" type="text/markdown" href="/llms.txt" title="Zalo-Flow AI Documentation">
+  <link rel="alternate" type="text/markdown" href="/llms-full.txt" title="Zalo-Flow Full AI Specification">
+  <link rel="service-desc" type="application/json" href="/.well-known/api-catalog" title="API Catalog">
+
+  <!-- Structured Data: SoftwareApplication & FAQPage & Organization -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "SoftwareApplication",
+        "name": "Zalo-Flow",
+        "applicationCategory": "BusinessApplication, CommunicationApplication",
+        "operatingSystem": "Windows 10, Windows 11, Linux, macOS (Docker)",
+        "softwareVersion": "1.1.0",
+        "fileSize": "24.2MB",
+        "inLanguage": "en",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "downloadUrl": "https://github.com/aizaloapp/zalo-flow/releases/latest",
+        "license": "https://github.com/aizaloapp/zalo-flow/blob/main/LICENSE"
+      },
+      {
+        "@type": "Organization",
+        "name": "AIzalo Community",
+        "url": "https://aizalo.com/en/",
+        "sameAs": [
+          "https://github.com/aizaloapp/zalo-flow",
+          "https://zalo.me/g/mcihan713"
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "inLanguage": "en",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What is Zalo-Flow and is it completely free?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Zalo-Flow is an open-source software (MIT License with Commons Clause) that is 100% free forever. It turns any standard personal Zalo account into a 24/7 automated AI assistant without requiring expensive Zalo Official Account (OA) business registration or monthly subscription fees."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Will my personal Zalo account get banned using this chatbot?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Zalo-Flow features an immutable 3-layer anti-ban architecture: Token Bucket Rate Limiting (minimum 3-second delay, maximum 20 messages/minute), Self-Echo Shield preventing conversational feedback loops, and an Inbound Flood Detector that temporarily mutes incoming storms. It operates strictly in-thread and behaves like a genuine human user."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does Zalo-Flow read or steal my passwords and private messages?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Zalo-Flow is 100% local-first and completely open-source for public audit on GitHub. All session tokens and AI keys are encrypted with military-grade AES-256-CBC and stored strictly within a local SQLite database on your machine. Zero data is sent to external cloud servers."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does the bot stay active when my computer is shut down or sleeps?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Because Zalo-Flow runs locally on your computer, the Node.js process pauses when the computer shuts down or goes to sleep. For 24/7 continuous operation, set your PC power mode to 'Never Sleep' while plugged in, or deploy Zalo-Flow via Docker on an affordable Linux VPS."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Which AI models does Zalo-Flow support?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Zalo-Flow supports multiple leading AI providers out-of-the-box: Google Gemini (Gemini 1.5 Flash, 2.5 Flash), DeepSeek (Chat, Reasoner), OpenAI (GPT-4o, GPT-4o-mini), and local offline LLMs running via Ollama."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <!-- Traks Web Analytics -->
+  <script>window.traks=window.traks||function(){(window.traks.q=window.traks.q||[]).push(arguments)}</script><script defer data-site="pb_live_jbrwzdo04plqmz8u15gnrvjq" src="https://traks-collect.dragonfarm2509.workers.dev/t.js"></script>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <header class="navbar">
+    <div class="container nav-container">
+      <a href="/en/" class="brand">
+        <img src="/assets/logo.png" alt="Zalo-Flow Logo" class="brand-icon">
+        <span>Zalo-Flow</span>
+        <span class="brand-tag">v1.1.0</span>
+      </a>
+
+      <ul class="nav-menu" id="navMenu">
+        <li class="mobile-only-action">
+          <div class="lang-switcher-drawer" aria-label="Language selector">
+            <a href="/" class="lang-btn" title="Tiếng Việt">🇻🇳 Tiếng Việt</a>
+            <span class="lang-divider">|</span>
+            <a href="/en/" class="lang-btn active" title="English">🇬🇧 English</a>
+          </div>
+        </li>
+        <li><a href="#features" class="nav-link">Features</a></li>
+        <li><a href="#smartscreen" class="nav-link">Install</a></li>
+        <li><a href="#comparison" class="nav-link">Comparison</a></li>
+        <li><a href="#faq" class="nav-link">FAQ</a></li>
+        <li><a href="/blog/" class="nav-link">Articles (VI)</a></li>
+        <li><a href="#community" class="nav-link">Community</a></li>
+        <li class="mobile-only-action">
+          <a href="https://zalo.me/0373315784" target="_blank" rel="noopener" class="btn btn-zalo">
+            🤖 Try Zalo AI Bot
+          </a>
+        </li>
+        <li class="mobile-only-action">
+          <a href="https://github.com/aizaloapp/zalo-flow/releases/latest" target="_blank" rel="noopener" class="btn btn-primary">
+            🪟 Download .exe v1.1.0
+          </a>
+        </li>
+      </ul>
+
+      <div class="nav-actions">
+        <div class="lang-switcher" aria-label="Language selector">
+          <a href="/" class="lang-btn" title="Tiếng Việt">🇻🇳 VI</a>
+          <span class="lang-divider">/</span>
+          <a href="/en/" class="lang-btn active" title="English">🇬🇧 EN</a>
+        </div>
+        <a href="https://zalo.me/0373315784" target="_blank" rel="noopener" class="btn btn-zalo">
+          🤖 Try Zalo AI Bot
+        </a>
+        <a href="https://github.com/aizaloapp/zalo-flow/releases/latest" target="_blank" rel="noopener" class="btn btn-primary">
+          🪟 Download .exe
+        </a>
+        <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation menu" aria-expanded="false" onclick="toggleMenu()">
+          <span class="bar"></span>
+          <span class="bar"></span>
+          <span class="bar"></span>
+        </button>
+      </div>
+    </div>
+  </header>
+  <div class="drawer-backdrop" id="navBackdrop" onclick="toggleMenu(false)"></div>
+
+  <main>
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="container">
+        <div class="hero-pill">
+          ⚡ OPEN-SOURCE • 100% FREE • LOCAL-FIRST AUTOMATION
+        </div>
+
+        <h1 class="hero-title">
+          Build a <span class="gradient-text">Personal Zalo Chatbot</span><br>
+          &amp; Automate Customer Replies with AI
+        </h1>
+
+        <p class="hero-desc">
+          Turn your standard personal Zalo account into an intelligent 24/7 sales and customer support assistant. Powered by <strong>Gemini &amp; DeepSeek AI</strong>, automatic contact phone extraction, personalized remarketing, and <strong>3-layer immutable anti-ban protection</strong>.
+        </p>
+
+        <div class="hero-cta-group">
+          <a href="https://github.com/aizaloapp/zalo-flow/releases/latest" class="btn btn-primary btn-lg" target="_blank" rel="noopener">
+            🪟 Download for Windows (.exe v1.1.0)
+          </a>
+          <a href="https://zalo.me/0373315784" class="btn btn-zalo btn-lg" target="_blank" rel="noopener">
+            🤖 Try Zalo AI Bot Demo
+          </a>
+          <div class="cli-snippet" onclick="navigator.clipboard.writeText('npx zalo-flow init'); alert('Copied CLI command: npx zalo-flow init');">
+            <span>💻</span>
+            <span>npx zalo-flow init</span>
+            <span style="color: var(--text-dim); font-size: 0.8rem;">(Click copy)</span>
+          </div>
+        </div>
+
+        <!-- Badges Bar -->
+        <div class="badges-bar">
+          <div class="badge-item">🛡️ MIT + Commons Clause</div>
+          <div class="badge-item">•</div>
+          <div class="badge-item">⚡ Lightweight RAM &lt; 100MB</div>
+          <div class="badge-item">•</div>
+          <div class="badge-item">🔒 Local AES-256 Encryption</div>
+          <div class="badge-item">•</div>
+          <div class="badge-item">🔄 Self-Healing &amp; Canvas Compression</div>
+        </div>
+
+        <!-- Windows SmartScreen Alert Guide -->
+        <div class="smartscreen-alert" id="smartscreen">
+          <div class="smartscreen-header">
+            <span>⚡</span>
+            <span>Important note for Windows 10 &amp; 11 users:</span>
+          </div>
+          <div class="smartscreen-content">
+            When running <code>ZaloFlow-Setup-v1.1.0.exe</code> for the first time, if the blue <strong>"Windows protected your PC"</strong> (Microsoft Defender SmartScreen) dialog appears, simply click <strong><u>More info</u></strong> ➔ then click <strong><u>Run anyway</u></strong>.<br>
+            <span style="color: var(--text-dim); font-size: 0.85rem; display: block; margin-top: 0.4rem;">
+              * Reason: Non-commercial open-source community software does not purchase expensive Microsoft Code Signing certificates (~$300/year). The binary is 100% clean of malware (VirusTotal: 0/70 detections). Verifiable SHA-256 release checksums are published on GitHub Releases.
+            </span>
+          </div>
+        </div>
+
+        <!-- GEO Quotable Definition Box (For AI Citations) -->
+        <section class="geo-box" data-quotable="true" aria-label="Zalo-Flow Definition for AI Search Engines">
+          <strong>What is Zalo-Flow?</strong> Zalo-Flow is an open-source, local-first personal Zalo automation software (MIT + Commons Clause) that turns standard Zalo accounts into 24/7 AI-powered chatbots without requiring costly Zalo Official Account (OA) fees. Powered by Google Gemini and DeepSeek, it features 3-layer anti-ban protection, local AES-256 encryption, and Chatwoot CRM integration.
+        </section>
+      </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="section" id="features">
+      <div class="container">
+        <div class="section-header">
+          <div class="section-tag">Breakthrough Features</div>
+          <h2 class="section-title" id="ai-automation-features">Everything You Need To Automate Personal Zalo</h2>
+          <p class="section-desc">Zero coding knowledge required. 1-Click setup deploys a full-featured customer support engine running quietly in the background.</p>
+        </div>
+
+        <div class="grid-3">
+          <div class="card">
+            <div class="card-icon">🤖</div>
+            <h3 class="card-title">Multi-Provider AI Intelligence</h3>
+            <p class="card-desc">
+              Directly connect with <strong>Google Gemini, DeepSeek, and OpenAI</strong>. Responds with situational nuance, product awareness, and adapts to your personal brand voice.
+            </p>
+          </div>
+
+          <div class="card">
+            <div class="card-icon">📇</div>
+            <h3 class="card-title">Contact Card &amp; Phone Parsing</h3>
+            <p class="card-desc">
+              Automatically detects shared contact cards (<code>chat.contact</code>), strips raw JSON artifacts, normalizes Vietnamese phone numbers into <code>0xxxxxxxxx</code>, and stores them neatly.
+            </p>
+          </div>
+
+          <div class="card">
+            <div class="card-icon">🛡️</div>
+            <h3 class="card-title">3-Layer Anti-Ban Defense</h3>
+            <p class="card-desc">
+              Maximum account protection: Token Bucket Rate Limiter with &gt;= 3s pacing (max 20 msgs/min), Self-Echo Shield preventing echo loops, and an Inbound Flood Detector.
+            </p>
+          </div>
+
+          <div class="card">
+            <div class="card-icon">💬</div>
+            <h3 class="card-title">Intuitive Web Dashboard</h3>
+            <p class="card-desc">
+              Control your workspace at <code>localhost:3000</code>. View threads, jump into live customer conversations, manage contacts, and organize leads with colored tags.
+            </p>
+          </div>
+
+          <div class="card">
+            <div class="card-icon">📢</div>
+            <h3 class="card-title">Targeted Remarketing &amp; Spintax</h3>
+            <p class="card-desc">
+              Schedule automated follow-ups by tag. Built-in Spintax engine <code>{Hello|Hi|Greetings}</code> randomizes text phrasing to prevent pattern repetition.
+            </p>
+          </div>
+
+          <div class="card">
+            <div class="card-icon">🔄</div>
+            <h3 class="card-title">Self-Healing Architecture</h3>
+            <p class="card-desc">
+              Intelligent memory watchdog (&lt; 350MB ceiling). Automatically drains pending outbound messages and checkpoints the SQLite database before gracefully recycling.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Comparison Table -->
+    <section class="section" id="comparison">
+      <div class="container">
+        <div class="section-header">
+          <div class="section-tag">Solution Matrix</div>
+          <h2 class="section-title" id="solution-comparison">Why Zalo-Flow Is The Ideal Choice</h2>
+          <p class="section-desc">An objective comparison between Zalo-Flow, official Zalo Official Account (OA), and commercial proprietary alternatives.</p>
+        </div>
+
+        <div class="table-scroll-hint">📱 Swipe right to view the complete comparison table →</div>
+        <div class="table-wrapper">
+          <table class="comp-table">
+            <thead>
+              <tr>
+                <th>Comparison Factor</th>
+                <th class="highlight-col">Zalo-Flow (Open Source)</th>
+                <th>Zalo OA Enterprise</th>
+                <th>Commercial Closed-Source Tools</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>License &amp; Pricing</strong></td>
+                <td class="highlight-col"><strong>100% Free Forever</strong> (MIT + Commons)</td>
+                <td>Monthly subscription + per-message fees</td>
+                <td>$15 - $45 / month recurring fee</td>
+              </tr>
+              <tr>
+                <td><strong>Account Type</strong></td>
+                <td class="highlight-col"><strong>Personal Zalo Account</strong> (Anyone has one)</td>
+                <td>Requires business registration certificate</td>
+                <td>Personal Zalo Account</td>
+              </tr>
+              <tr>
+                <td><strong>Data Privacy &amp; Storage</strong></td>
+                <td class="highlight-col"><strong>Stored on your PC</strong> (SQLite AES-256)</td>
+                <td>Stored on Zalo cloud servers</td>
+                <td>Stored on unknown third-party servers</td>
+              </tr>
+              <tr>
+                <td><strong>AI Engine Flexibility</strong></td>
+                <td class="highlight-col"><strong>Full Choice:</strong> Gemini, DeepSeek, OpenAI</td>
+                <td>Restricted by tier capabilities</td>
+                <td>Locked to fixed proprietary models</td>
+              </tr>
+              <tr>
+                <td><strong>Multi-Agent Scalability</strong></td>
+                <td class="highlight-col"><strong>Native Chatwoot CRM</strong> integration</td>
+                <td>Requires paid seat upgrades</td>
+                <td>Closed proprietary UI</td>
+              </tr>
+              <tr>
+                <td><strong>Code Transparency</strong></td>
+                <td class="highlight-col"><strong>100% Public on GitHub</strong></td>
+                <td>Closed proprietary</td>
+                <td>Closed proprietary (Black box)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p style="text-align: center; color: var(--text-dim); font-size: 0.85rem; margin-top: 0.5rem;">
+          * Comparison accurate as of September 2026. All product names and registered trademarks are properties of their respective owners.
+        </p>
+      </div>
+    </section>
+
+    <!-- Quickstart Steps -->
+    <section class="section" id="install">
+      <div class="container">
+        <div class="section-header">
+          <div class="section-tag">Quickstart</div>
+          <h2 class="section-title" id="how-to-install-quickstart">3 Simple Steps To Get Running</h2>
+          <p class="section-desc">No complicated terminal configurations required. Anyone can be fully operational in under 3 minutes.</p>
+        </div>
+
+        <div class="grid-3">
+          <div class="card">
+            <div class="card-icon" style="background: rgba(0, 210, 255, 0.15); color: var(--cyan); font-weight: 800;">1</div>
+            <h3 class="card-title">Download &amp; Install</h3>
+            <p class="card-desc">
+              Download <code>ZaloFlow-Setup-v1.1.0.exe</code> from GitHub. Run the 1-click installer bundled with portable runtime — no Node.js installation required.
+            </p>
+          </div>
+
+          <div class="card">
+            <div class="card-icon" style="background: rgba(0, 132, 255, 0.15); color: var(--primary); font-weight: 800;">2</div>
+            <h3 class="card-title">Scan Zalo QR Code</h3>
+            <p class="card-desc">
+              Your browser opens <code>http://localhost:3000</code>. Use your personal Zalo mobile app to scan the QR code for encrypted local login via AES-256.
+            </p>
+          </div>
+
+          <div class="card">
+            <div class="card-icon" style="background: rgba(16, 185, 129, 0.15); color: var(--success); font-weight: 800;">3</div>
+            <h3 class="card-title">Activate AI &amp; Enjoy</h3>
+            <p class="card-desc">
+              Paste your free Gemini or DeepSeek API key into the AI Settings panel. Your bot immediately begins handling inquiries 24/7 according to your prompt.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Latest Blog Posts -->
+    <section class="section">
+      <div class="container">
+        <div class="section-header">
+          <div class="section-tag">Guides &amp; Articles</div>
+          <h2 class="section-title" id="expert-guides-articles">Technical Insights &amp; Tutorials</h2>
+          <p class="section-desc">Deep-dive technical articles on Zalo automation, anti-ban protocols, and CRM integration strategies.</p>
+        </div>
+
+        <div class="grid-2">
+          <a href="/blog/cach-gui-tin-nhan-tu-dong-tren-zalo-khong-bi-khoa.html" class="card blog-card">
+            <span class="blog-tag">Anti-Ban Engineering</span>
+            <h3 class="card-title">How To Safely Automate Zalo Messaging Without Account Restrictions</h3>
+            <p class="card-desc">
+              Learn how Token Bucket rate limiting, Self-Echo shields, and Spintax variation maintain natural human messaging dynamics.
+            </p>
+            <div class="blog-meta">
+              <span>📅 Sep 07, 2026</span>
+              <span>•</span>
+              <span>⏱️ 5 min read</span>
+            </div>
+          </a>
+
+          <a href="/blog/huong-dan-cach-tao-chatbot-zalo-ca-nhan.html" class="card blog-card">
+            <span class="blog-tag">Installation Guide</span>
+            <h3 class="card-title">How To Build A Personal Zalo Chatbot Using Zalo-Flow in 3 Minutes</h3>
+            <p class="card-desc">
+              Step-by-step walkthrough: 1-click Windows setup, bypassing Defender SmartScreen, and scanning QR codes securely.
+            </p>
+            <div class="blog-meta">
+              <span>📅 Sep 07, 2026</span>
+              <span>•</span>
+              <span>⏱️ 4 min read</span>
+            </div>
+          </a>
+
+          <a href="/blog/tich-hop-ai-gemini-deepseek-vao-zalo-ca-nhan.html" class="card blog-card">
+            <span class="blog-tag">Artificial Intelligence</span>
+            <h3 class="card-title">Integrating Gemini &amp; DeepSeek AI Into Personal Zalo For Auto-Replies</h3>
+            <p class="card-desc">
+              Acquiring free Google AI Studio keys, tuning prompt templates, and extracting phone numbers automatically from contact cards.
+            </p>
+            <div class="blog-meta">
+              <span>📅 Sep 07, 2026</span>
+              <span>•</span>
+              <span>⏱️ 6 min read</span>
+            </div>
+          </a>
+
+          <a href="/blog/zalo-crm-la-gi-giai-phap-quan-ly-tin-nhan-cskh.html" class="card blog-card">
+            <span class="blog-tag">Customer Care CRM</span>
+            <h3 class="card-title">What Is Zalo CRM? Modern Omnichannel Messaging &amp; Lead Management</h3>
+            <p class="card-desc">
+              Why Zalo CRM adoption is surging: Color-coded lead tagging, Chatwoot sync, and zero-cost remarketing campaigns.
+            </p>
+            <div class="blog-meta">
+              <span>📅 Sep 07, 2026</span>
+              <span>•</span>
+              <span>⏱️ 5 min read</span>
+            </div>
+          </a>
+        </div>
+
+        <div style="text-align: center; margin-top: 2.5rem;">
+          <a href="/blog/" class="btn btn-secondary">Explore All Technical Blog Posts ➔</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ Hub -->
+    <section class="section" id="faq">
+      <div class="container">
+        <div class="section-header">
+          <div class="section-tag">Questions &amp; Answers</div>
+          <h2 class="section-title" id="frequently-asked-questions">Frequently Asked Questions (FAQ)</h2>
+          <p class="section-desc">Detailed answers about installation, operations, privacy, and account security.</p>
+        </div>
+
+        <div class="faq-list">
+          <details class="faq-item" open>
+            <summary class="faq-summary">What is Zalo-Flow and is it completely free?</summary>
+            <div class="faq-content">
+              Zalo-Flow is open-source software (MIT + Commons Clause) that is <strong>100% free forever</strong>. It transforms any personal Zalo account into an automated AI assistant without requiring business licenses or recurring subscription fees.
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-summary">Will my personal Zalo account get banned using this chatbot?</summary>
+            <div class="faq-content">
+              Zalo-Flow integrates an immutable <strong>3-layer anti-ban defense</strong>: Token Bucket Rate Limiting (minimum 3s interval, max 20 msgs/min), Self-Echo Shield preventing conversational feedback loops, and an Inbound Flood Detector that temporarily mutes incoming storms. You should strictly reply in-thread and avoid cold spam messaging.
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-summary">Does Zalo-Flow read or steal my passwords and private messages?</summary>
+            <div class="faq-content">
+              Never. The entire Zalo-Flow source code is publicly audited on GitHub. The software runs 100% locally on your machine, with session cookies and API keys encrypted via military-grade AES-256-CBC in a local SQLite file. Zero telemetry or user data is dispatched to external servers.
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-summary">Does the bot stay active when my computer is shut down or sleeps?</summary>
+            <div class="faq-content">
+              Because Zalo-Flow runs locally on your PC, the background process pauses when your computer shuts down or enters sleep mode. For uninterrupted 24/7 operation, configure your PC to "Never Sleep" while plugged in, or deploy Zalo-Flow using Docker on a low-cost Linux VPS.
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-summary">Which AI models does Zalo-Flow support?</summary>
+            <div class="faq-content">
+              Zalo-Flow supports multiple leading providers: Google Gemini (ultra-fast free Gemini 1.5 Flash), DeepSeek (DeepSeek-Chat, Reasoner), OpenAI (GPT-4o, GPT-4o-mini), and local offline LLMs via Ollama.
+            </div>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- Community Section -->
+    <section class="section" id="community">
+      <div class="container">
+        <div class="card" style="background: linear-gradient(135deg, rgba(0, 132, 255, 0.12) 0%, rgba(15, 23, 42, 0.8) 100%); border-color: rgba(0, 210, 255, 0.3); text-align: center; padding: 3.5rem 1.5rem;">
+          <div class="hero-pill" style="margin-bottom: 1rem;">COMMUNITY &amp; DEVELOPER HUB</div>
+          <h2 class="section-title" id="join-developer-community">Join Our Open Community &amp; Discussions</h2>
+          <p class="section-desc" style="max-width: 650px; margin: 0 auto 2rem;">
+            Need onboarding assistance, want to share prompt templates, or propose new features? Connect with hundreds of community members today!
+          </p>
+
+          <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem;">
+            <a href="https://zalo.me/g/mcihan713" target="_blank" rel="noopener" class="btn btn-zalo btn-lg">
+              💬 Join Zalo Group (zalo.me/g/mcihan713)
+            </a>
+            <a href="https://github.com/aizaloapp/zalo-flow" target="_blank" rel="noopener" class="btn btn-secondary btn-lg">
+              ⭐️ Star Repository on GitHub
+            </a>
+            <a href="https://github.com/aizaloapp/zalo-flow/issues" target="_blank" rel="noopener" class="btn btn-secondary btn-lg">
+              🐛 Report Issues / Propose Features
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Floating Bot Demo Badge -->
+  <a href="https://zalo.me/0373315784" target="_blank" rel="noopener" class="floating-badge" aria-label="Try live Zalo AI Bot Demo">
+    <span>🤖</span>
+    <span>Try Zalo AI Bot Demo</span>
+  </a>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <div class="footer-brand">
+            <img src="/assets/logo.png" alt="Zalo-Flow Logo" class="brand-icon">
+            <span>Zalo-Flow</span>
+          </div>
+          <p class="footer-text">
+            Personal Zalo chatbot and automated sales assistance engine powered by Google Gemini and DeepSeek. 100% free, local-first, privacy-respecting.
+          </p>
+          <p style="margin-top: 1rem; font-size: 0.8rem; color: var(--text-dim);">
+            License: <a href="https://github.com/aizaloapp/zalo-flow/blob/main/LICENSE" target="_blank" rel="noopener" style="color: var(--cyan);">MIT License with Commons Clause Condition v1.0 (Non-commercial)</a>.
+          </p>
+        </div>
+
+        <div>
+          <h4 class="footer-title">Resources</h4>
+          <ul class="footer-links">
+            <li><a href="https://github.com/aizaloapp/zalo-flow/releases/latest" class="footer-link">Download Windows Installer (.exe)</a></li>
+            <li><a href="/blog/" class="footer-link">Tutorials &amp; Documentation (VI)</a></li>
+            <li><a href="/llms.txt" class="footer-link">AI Documentation (llms.txt)</a></li>
+            <li><a href="/llms-full.txt" class="footer-link">Full AI Specification (llms-full.txt)</a></li>
+            <li><a href="/sitemap.xml" class="footer-link">XML Sitemap</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="footer-title">Community &amp; Legal</h4>
+          <ul class="footer-links">
+            <li><a href="https://zalo.me/g/mcihan713" target="_blank" rel="noopener" class="footer-link">Zalo Support Group</a></li>
+            <li><a href="https://github.com/aizaloapp/zalo-flow" target="_blank" rel="noopener" class="footer-link">GitHub Repository</a></li>
+            <li><a href="https://github.com/aizaloapp/zalo-flow/issues" target="_blank" rel="noopener" class="footer-link">Issue Tracker</a></li>
+            <li><a href="https://github.com/aizaloapp/zalo-flow/discussions" target="_blank" rel="noopener" class="footer-link">Discussions</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div>
+          © 2026 AIzalo Community. Software provided strictly for educational, research, and personal automation purposes. Spamming and harassment are strictly prohibited.
+        </div>
+        <div>
+          Not affiliated with VNG Corporation. "Zalo" is a registered trademark of VNG Corporation.
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Mobile Navigation Controller (Zero Dependency) -->
+  <script>
+    function toggleMenu(force) {
+      const menu = document.getElementById('navMenu');
+      const toggle = document.getElementById('navToggle');
+      const backdrop = document.getElementById('navBackdrop');
+      if (!menu || !toggle || !backdrop) return;
+      const isOpen = (force !== undefined) ? force : !menu.classList.contains('active');
+      menu.classList.toggle('active', isOpen);
+      backdrop.classList.toggle('active', isOpen);
+      toggle.classList.toggle('active', isOpen);
+      toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      document.body.style.overflow = isOpen ? 'hidden' : '';
+    }
+
+    document.querySelectorAll('#navMenu a').forEach(function(link) {
+      link.addEventListener('click', function() {
+        toggleMenu(false);
+      });
+    });
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') toggleMenu(false);
+    });
+  </script>
+</body>
+</html>

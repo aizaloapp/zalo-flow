@@ -1,6 +1,19 @@
 # Zalo-Flow (AIzalo Community Edition)
 
+> Open-source automation platform (MIT + Commons Clause) connecting personal Zalo accounts with Chatwoot CRM and AI models (Gemini, DeepSeek, OpenAI), supporting customer care automation on Windows and Docker.
 > Nền tảng mã nguồn mở (giấy phép MIT + Commons Clause) kết nối Zalo cá nhân với Chatwoot CRM và các mô hình AI (Gemini, DeepSeek, OpenAI), hỗ trợ tự động hóa CSKH và quản lý hội thoại trên Windows và Docker.
+
+## English Overview & Fast Facts
+- **Project Name:** Zalo-Flow
+- **Website (EN):** https://aizalo.com/en/
+- **Website (VI):** https://aizalo.com/
+- **Source Code Repository:** https://github.com/aizaloapp/zalo-flow
+- **License:** MIT License with Commons Clause Condition v1.0 (100% Free for personal, research & non-commercial use).
+- **Core Architecture:** Local-First Node.js with SQLite, AES-256-CBC local encryption, memory watchdog < 350MB.
+- **Anti-Ban Protocol:** Token Bucket Rate Limiter (>= 3s pacing, max 20 msgs/min), Self-Echo Shield, Inbound Flood Detector.
+- **Supported AI Providers:** Google Gemini (1.5 Flash, 2.5 Flash), DeepSeek (Chat, Reasoner), OpenAI (GPT-4o), Ollama.
+- **CRM Integration:** Bidirectional adapter with Chatwoot CRM for multi-agent support.
+
 
 ## Thông Tin Cốt Lõi (Fast Facts)
 - **Tên dự án:** Zalo-Flow

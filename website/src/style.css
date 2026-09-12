@@ -125,6 +125,61 @@ body {
   gap: 0.75rem;
 }
 
+/* Language Switcher Styling */
+.lang-switcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-subtle);
+  border-radius: 20px;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.lang-btn {
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.1rem 0.25rem;
+  border-radius: 6px;
+}
+
+.lang-btn:hover {
+  color: #fff;
+}
+
+.lang-btn.active {
+  color: var(--cyan);
+  font-weight: 700;
+}
+
+.lang-divider {
+  color: var(--border-subtle);
+  font-size: 0.75rem;
+  user-select: none;
+}
+
+/* Mobile Drawer Language Switcher */
+.lang-switcher-drawer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0.6rem 1rem;
+  margin: 0.25rem 0 1rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+
 /* Mobile Nav Toggle (Hamburger Button) */
 .nav-toggle {
   display: none;
@@ -1486,6 +1541,10 @@ body {
 
   .nav-actions .btn-zalo {
     display: none; /* Ẩn bớt trên header mobile để chống đè logo, đã có trong Drawer và Hero */
+  }
+
+  .nav-actions .lang-switcher {
+    display: none; /* Ẩn trên header mobile chống tràn 375px, hiển thị bên trong Drawer */
   }
 
   /* 2. Hero Section & Typography chuẩn 2-3 dòng */
