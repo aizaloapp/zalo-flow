@@ -28,6 +28,11 @@ Copy-Item -Path (Join-Path $srcDir "blog\*") -Destination (Join-Path $distDir "b
 # Copy Assets
 Copy-Item -Path (Join-Path $srcDir "assets\*") -Destination (Join-Path $distDir "assets\") -Recurse -Force
 
+# Copy Favicons at Root
+if (Test-Path (Join-Path $srcDir "favicon*.*")) {
+    Copy-Item -Path (Join-Path $srcDir "favicon*.*") -Destination $distDir -Force
+}
+
 # Copy GEO / AI Crawler & Agent Readiness files
 if (Test-Path (Join-Path $srcDir "llms*.txt")) {
     Copy-Item -Path (Join-Path $srcDir "llms*.txt") -Destination $distDir -Force

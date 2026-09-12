@@ -41,3 +41,12 @@
 /llms-full.txt
   Content-Type: text/markdown; charset=utf-8
   X-Robots-Tag: noindex
+
+/favicon*
+  Cache-Control: public, max-age=0, must-revalidate
+
+/assets/favicon*
+  Cache-Control: public, max-age=0, must-revalidate
+
+/assets/apple-touch-icon*
+  Cache-Control: public, max-age=0, must-revalidate

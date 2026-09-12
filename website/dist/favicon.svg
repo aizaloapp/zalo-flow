@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="zf-blue-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#009BF8"/>
+      <stop offset="100%" stop-color="#0058F6"/>
+    </linearGradient>
+    <linearGradient id="zf-spark-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#00FFFF"/>
+    </linearGradient>
+    <filter id="zf-subtle-glow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-color="#003db3" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+  <!-- Zalo Speech Bubble (100% Transparent Background) -->
+  <path d="M32 5C17.088 5 5 16.64 5 31c0 7.82 3.666 14.845 9.534 19.78L11.5 60l11.536-4.808C25.96 56.326 28.91 57 32 57c14.912 0 27-11.64 27-26S46.912 5 32 5z" fill="url(#zf-blue-grad)" filter="url(#zf-subtle-glow)"/>
+  <!-- High-Contrast Bold White Z (Ultra Sharp at 16x16) -->
+  <path d="M22 21h20v5.5l-12.8 15h13v6H21.8v-5.5l12.8-15H22V21z" fill="#FFFFFF"/>
+  <!-- AI Sparkle (✦) Representing Intelligent Automation -->
+  <path d="M49 8l1.6 4.4L55 14l-4.4 1.6L49 20l-1.6-4.4L43 14l4.4-1.6L49 8z" fill="url(#zf-spark-grad)"/>
+  <circle cx="49" cy="14" r="1.5" fill="#FFFFFF"/>
+</svg>
