@@ -105,4 +105,13 @@ Khi chuyển giao hoặc cấu hình tên miền chính (`aizalo.com`) sang Clou
      - Nhãn Floating Badge & CTA Box: `🤖 Trải Nghiệm Thử Bot Zalo AI`
      - *Mục đích:* Triệt tiêu rào cản e ngại nhóm đông người, kích thích khách hàng bấm vào trò chuyện và tự mình kiểm chứng năng lực AI phản hồi trong 3 giây.
    - **Tầng 2 (Community Retention / Giao Lưu Kỹ Thuật):** Liên kết Nhóm Zalo (`https://zalo.me/g/mcihan713`) TUYỆT ĐỐI KHÔNG chiếm vị trí Conversion Hook chính. Chỉ duy trì ở khu vực chân trang (Footer) hoặc Section `#community` dành cho thành viên muốn thảo luận chuyên sâu.
-
+6. **First-Party Analytics & Edge Proxy Invariant (No Netlify 200! Rewrite):**
+   - Không cấu hình rewrite proxy ngoại vi trong file `_redirects` của Cloudflare Pages (Pages chỉ hỗ trợ 301/302 redirect, không hỗ trợ cú pháp Netlify `200!` rewrite).
+   - Tệp tracking tĩnh BẮT BUỘC lưu nội bộ tại `website/src/t.js` và sao chép qua `dist/t.js` trong `build.ps1` để phân phối trực tiếp từ Edge CDN Cloudflare Pages.
+   - Endpoint gửi dữ liệu tracking (`/api/event`) BẮT BUỘC proxy qua Cloudflare Pages Functions hoặc `website/src/_worker.js` chuyển tiếp ngầm về máy chủ Analytics.
+   - Tuyệt đối không để lộ username cá nhân, subdomain trực tiếp (`dragonfarm2509.workers.dev`) trên mã nguồn công khai, bảo đảm 100% tuân thủ mô hình First-Party Tracking và quyền riêng tư.
+7. **Video Tutorial Embed & VideoObject Schema Contract:**
+   - Khi bài viết blog có video hướng dẫn minh họa thực tế, BẮT BUỘC nhúng video bằng `<iframe>` tỷ lệ khung hình 16:9 chuẩn responsive (`.video-wrapper` hoặc `aspect-ratio: 16/9; max-width: 100%; border-radius: 12px;`).
+   - Sử dụng domain tăng cường quyền riêng tư `https://www.youtube-nocookie.com/embed/{id}` và gắn cờ `loading="lazy"` cùng `title` rõ nghĩa để tối ưu điểm Core Web Vitals (LCP/TBT).
+   - BẮT BUỘC khai báo đối tượng Schema `VideoObject` theo chuẩn Schema.org bên trong mảng `@graph` của bài viết (bao gồm `name`, `description`, `thumbnailUrl`, `uploadDate`, `contentUrl`, `embedUrl`).
+   - BẮT BUỘC cập nhật `"dateModified": "YYYY-MM-DD"` của bài viết lên ngày mới nhất để gửi tín hiệu Freshness tới Googlebot và các công cụ tìm kiếm AI (GEO).
