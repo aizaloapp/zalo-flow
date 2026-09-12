@@ -89,12 +89,12 @@
    - Container `.bubble-content` mặc định sử dụng `white-space: pre-wrap;`. Mọi khối HTML giàu thành phần (Contact Namecard, Product Card, Call Bubble, Mini Table...) nhúng bên trong BẮT BUỘC phải có khai báo `white-space: normal !important;` và `line-height: 1.35;`. Tuyệt đối không để newline hoặc khoảng trắng thụt dòng xen giữa các thẻ inline. *(Gốc: Rule 42)*
 2. **Multipart Boolean Ground-Truth & JSON Error Contract:**
    - Khi nhận `isGroup` từ `multipart/form-data`, luôn phân giải ground-truth qua CSDL: `localStore.getConversation(threadId)?.isGroup ?? (req.body.isGroup === 'true')`.
-   - Endpoint Multer BẮT BUỘC bọc trong middleware an toàn trả mã lỗi JSON `{ error: err.message }` status 400 khi lỗi. *(Gốc: Rule 18, 19)*
+   - **Multer Safe Middleware & Dual-Field Tolerance:** Mọi endpoint nhận tệp (Chat, Campaign, Quick Message, Scheduled Message) BẮT BUỘC bọc trong middleware an toàn `upload.any()(req, res, (err) => ...)` để bắt mọi `MulterError` (vượt dung lượng, sai trường...) và luôn trả về JSON `{ error: err.message }` status 400, **tuyệt đối không để rơi vào Express default error handler trả về HTML 500**. Phía backend trích xuất linh hoạt `const file = req.files?.[0] || req.file` để dung nạp cả field name `file` lẫn `image`. Phía frontend upload BẮT BUỘC kiểm tra an toàn bằng `res.text() ➔ JSON.parse()` trong `try...catch` để hiển thị lỗi máy chủ rõ ràng, triệt tiêu lỗi sập cú pháp `Unexpected token '<', "<!DOCTYPE "... is not valid JSON`. Luôn đính kèm `x-admin-token` nếu có. *(Gốc: Rule 18, 19)*
 3. **CRM Remarketing & Card-Style Media Protocols:**
    - Chiến dịch hỗ trợ 2 chế độ (`now`, `scheduled`), 5 mốc chọn nhanh, 4 tần suất lặp lại. Chiến dịch chạy 1 lần (`once`) tự động chuyển `completed` và tắt `isEnabled = 0` ngay khi xả xong hàng đợi.
    - Trình chọn tin nhắn mẫu nạp 1-Click cả văn bản và tệp đính kèm. Xem trước dạng Card vuông bo góc (`.camp-media-card-item`) kèm nút xóa tròn đỏ `×`. *(Gốc: Rule 22, 23, 24)*
 4. **Quality Gates & Pre-flight AST Validation:**
-   - Sau mỗi lần sửa `public/app.js`, BẮT BUỘC chạy kiểm tra cú pháp `node --check public/app.js` và `npm test` (đảm bảo 100% 36 test suites pass).
+   - Sau mỗi lần sửa `public/app.js`, BẮT BUỘC chạy kiểm tra cú pháp `node --check public/app.js` và `npm test` (đảm bảo 100% 43 test suites pass).
    - Trước đợt bàn giao lớn, BẮT BUỘC chạy Ma Trận Kiểm Thử 9 Vòng trực tiếp trên trình duyệt, đảm bảo DevTools Console đạt **0 lỗi đỏ JavaScript**. *(Gốc: Rule 8, 15, 25)*
 5. **Dual-Theme Semantic Tokenization & Active Contrast Invariant:**
    - **Zero Hardcoded Dark Colors:** TUYỆT ĐỐI KHÔNG sử dụng các mã màu tối ghi cứng (`#0f172a`, `#1e293b`, `rgba(15, 23, 42, ...)`, `color: #f1f5f9;`) trong các thành phần dùng chung. Mọi màu nền, màu chữ và đường viền BẮT BUỘC phải thông qua CSS Variables ngữ nghĩa (`var(--bg-sidebar)`, `var(--text-main)`, `var(--border)`, `var(--bg-card)`).
@@ -109,6 +109,10 @@
    - Tin nhắn đến trong nhóm chat BẮT BUỘC hiển thị Tên thành viên rõ nét phía trên và Avatar tròn 28px bên cạnh bong bóng chat.
    - Màu tên thành viên và avatar chữ cái viết tắt BẮT BUỘC ánh xạ qua CSS Data Attribute `data-sender-color="0..9"` với 10 biến CSS ngữ nghĩa (`--sender-color-0` đến `--sender-color-9`), bảo đảm hiển thị rực rỡ và tương phản hoàn hảo trên cả 2 giao diện Sáng và Tối.
    - Thẻ ảnh avatar bắt buộc có `onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';"` để tự động fallback sang chữ cái viết tắt gradient khi link Zalo CDN lỗi 403 hoặc hết hạn.
+9. **Zero Form Reset i18n Architecture & 1:1 Translation Contract:**
+   - **In-Place DOM Walk:** Khi chuyển đổi ngôn ngữ (`VI` ↔ `EN`), hệ thống BẮT BUỘC cập nhật thuộc tính hiển thị tại chỗ (`applyLanguageToDOM`) qua `data-i18n`, `data-i18n-placeholder`, `data-i18n-title`, `data-i18n-tooltip`. **TUYỆT ĐỐI KHÔNG reload trang hoặc render lại toàn bộ component** để bảo vệ 100% dữ liệu đang nhập dở của người dùng (Zero Form Reset Invariant).
+   - **Khóa đối soát 1:1:** Mọi từ khóa thêm mới vào từ điển `DICTIONARY` trong `public/i18n.js` BẮT BUỘC phải tồn tại đồng thời ở cả hai ngôn ngữ `vi` và `en`. Mọi bản build phải vượt qua Test Suite #43 (`npm test` & `test/test-i18n.js`).
+   - **Anti-FOUC & Query Params:** Script nạp ngôn ngữ tại `<head>` và engine `i18n.getLanguage()` BẮT BUỘC ưu tiên URL query param `?lang=` trước `localStorage` để phục vụ kiểm thử tự động không phụ thuộc state trình duyệt.
 
 ---
 
