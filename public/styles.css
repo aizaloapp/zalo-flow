@@ -3214,5 +3214,34 @@ body {
   font-weight: 500;
 }
 
+/* Language Switcher Button (Dual-Theme Compatible) */
+.lang-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-main);
+  user-select: none;
+}
 
+.lang-toggle-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
+}
 
+.lang-toggle-btn #lang-icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.lang-toggle-btn #lang-text {
+  letter-spacing: 0.5px;
+}

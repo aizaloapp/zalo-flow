@@ -16,19 +16,25 @@
   </noscript>
   <script>
     try {
-      var t = localStorage.getItem('zaloflow_theme');
+      var params = new URLSearchParams(window.location.search);
+      var t = params.get('theme') || localStorage.getItem('zaloflow_theme');
       if (!t && window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) t = 'light';
       document.documentElement.setAttribute('data-theme', t || 'dark');
+      var lang = params.get('lang') || localStorage.getItem('zaloflow_lang') || 'vi';
+      document.documentElement.setAttribute('lang', lang);
+      if (params.get('lang')) localStorage.setItem('zaloflow_lang', lang);
+      if (params.get('theme')) localStorage.setItem('zaloflow_theme', t);
     } catch (e) {
       document.documentElement.setAttribute('data-theme', 'dark');
     }
   </script>
   <link rel="stylesheet" href="/styles.css">
+  <script src="/i18n.js"></script>
 </head>
 <body>
 
   <!-- Reconnect Banner -->
-  <div class="reconnect-banner" id="reconnect-banner">
+  <div class="reconnect-banner" id="reconnect-banner" data-i18n="header.reconnect_title">
     🔄 Mất kết nối thời gian thực. Đang tự động kết nối lại...
   </div>
 
@@ -37,25 +43,29 @@
     <div class="brand-group">
       <img src="/logo.png" alt="Zalo-Flow Logo" style="width: 28px; height: 28px; border-radius: 8px; object-fit: cover; box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);">
       <h1 class="brand-logo">Zalo-Flow</h1>
-      <span class="brand-badge">LOCAL-FIRST</span>
+      <span class="brand-badge" data-i18n="header.brand_badge">LOCAL-FIRST</span>
     </div>
 
     <div class="header-status">
-      <div class="status-pill" id="zalo-status-pill" onclick="openZaloLoginModal()" style="cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 8px;" title="Bấm để xem thông tin / Đăng nhập / Đổi tài khoản Zalo">
+      <div class="status-pill" id="zalo-status-pill" onclick="openZaloLoginModal()" style="cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 8px;" title="Bấm để xem thông tin / Đăng nhập / Đổi tài khoản Zalo" data-i18n-title="header.account_pill_title">
         <img id="zalo-header-avatar" src="" alt="" style="width: 22px; height: 22px; border-radius: 50%; object-fit: cover; display: none; border: 1.5px solid #10b981;">
         <div class="dot" id="zalo-header-dot"></div>
-        <span id="zalo-account-name">Đã Kết Nối (Online)</span>
+        <span id="zalo-account-name" data-i18n="header.connected">Đã Kết Nối (Online)</span>
       </div>
-      <div class="status-pill ram-pill" id="ram-status-pill" style="display: none;" title="Mức tiêu thụ RAM thực tế / Ngưỡng an toàn (150MB)">
+      <div class="status-pill ram-pill" id="ram-status-pill" style="display: none;" title="Mức tiêu thụ RAM thực tế / Ngưỡng an toàn (150MB)" data-i18n-title="header.ram_title">
         <div class="dot" id="ram-header-dot" style="background: #34d399; box-shadow: 0 0 8px #34d399;"></div>
         <span id="ram-usage-text">RAM: ~58MB</span>
       </div>
-      <div class="status-pill version-pill" id="version-status-pill" onclick="openAppUpdateModal()" style="cursor: pointer; transition: all 0.2s ease; display: none;" title="Phiên bản Zalo-Flow. Bấm để kiểm tra & cập nhật">
+      <div class="status-pill version-pill" id="version-status-pill" onclick="openAppUpdateModal()" style="cursor: pointer; transition: all 0.2s ease; display: none;" title="Phiên bản Zalo-Flow. Bấm để kiểm tra & cập nhật" data-i18n-title="header.version_title">
         <span class="version-tag" id="version-text">v1.0.0</span>
-        <span class="update-indicator" id="update-indicator" style="display: none;">⬆️ Bản Mới</span>
+        <span class="update-indicator" id="update-indicator" style="display: none;" data-i18n="header.new_version_badge">⬆️ Bản Mới</span>
       </div>
-      <button class="filter-btn" id="sync-all-btn" onclick="syncAllHistoryWithProgress()" title="Đồng bộ toàn bộ danh bạ và tin nhắn lịch sử Zalo">
-        🔄 Đồng Bộ Lịch Sử
+      <button class="filter-btn" id="sync-all-btn" onclick="syncAllHistoryWithProgress()" title="Đồng bộ toàn bộ danh bạ và tin nhắn lịch sử Zalo" data-i18n-title="header.sync_all_title">
+        <span data-i18n="header.sync_all_btn">🔄 Đồng Bộ Lịch Sử</span>
+      </button>
+      <button class="lang-toggle-btn" id="lang-toggle-btn" onclick="toggleAppLanguage()" title="Chuyển đổi ngôn ngữ / Switch Language (VI / EN)" data-i18n-title="header.lang_toggle_title">
+        <span id="lang-icon">🇻🇳</span>
+        <span id="lang-text">VI</span>
       </button>
       <button class="theme-circle-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Chuyển đổi Giao diện Sáng / Tối">
         <span id="theme-icon">☀️</span>
@@ -69,22 +79,22 @@
     
     <!-- Left Navigation Rail (52px) -->
     <nav class="nav-rail">
-      <button class="rail-btn active" data-tooltip="💬 Hội Thoại" onclick="switchMainView('chat')">
+      <button class="rail-btn active" data-tooltip="💬 Hội Thoại" data-i18n-tooltip="rail.chat_tooltip" onclick="switchMainView('chat')">
         💬
       </button>
-      <button class="rail-btn" data-tooltip="🏷️ Thẻ Phân Loại" onclick="openModal('modal-tags')">
+      <button class="rail-btn" data-tooltip="🏷️ Thẻ Phân Loại" data-i18n-tooltip="rail.tags_tooltip" onclick="openModal('modal-tags')">
         🏷️
       </button>
-      <button class="rail-btn" data-tooltip="⚡ Tin Nhắn Nhanh" onclick="openModal('modal-quick-msg')">
+      <button class="rail-btn" data-tooltip="⚡ Tin Nhắn Nhanh" data-i18n-tooltip="rail.quick_msg_tooltip" onclick="openModal('modal-quick-msg')">
         ⚡
       </button>
-      <button class="rail-btn" data-tooltip="📢 Chiến Dịch Remarketing" onclick="openModal('modal-campaigns')">
+      <button class="rail-btn" data-tooltip="📢 Chiến Dịch Remarketing" data-i18n-tooltip="rail.campaigns_tooltip" onclick="openModal('modal-campaigns')">
         📢
       </button>
-      <button class="rail-btn" id="rail-btn-ai" data-tooltip="🧠 Trung Tâm AI (5 Tabs)" onclick="openModal('modal-ai-brain')">
+      <button class="rail-btn" id="rail-btn-ai" data-tooltip="🧠 Trung Tâm AI (5 Tabs)" data-i18n-tooltip="rail.ai_tooltip" onclick="openModal('modal-ai-brain')">
         🧠
       </button>
-      <button class="rail-btn" data-tooltip="💾 Sao Lưu & Phục Hồi" onclick="openModal('modal-backup')">
+      <button class="rail-btn" data-tooltip="💾 Sao Lưu & Phục Hồi" data-i18n-tooltip="rail.backup_tooltip" onclick="openModal('modal-backup')">
         💾
       </button>
     </nav>
@@ -98,24 +108,24 @@
           <div class="search-row-container" style="display: flex; gap: 6px; align-items: center;">
             <div class="search-input-wrap" style="flex: 1;">
               <span class="search-icon">🔍</span>
-              <input type="text" class="search-input" id="search-input" placeholder="Tìm theo tên hoặc ID..." oninput="handleSearch(this.value)">
+              <input type="text" class="search-input" id="search-input" placeholder="Tìm theo tên hoặc ID..." data-i18n-placeholder="sidebar.search_placeholder" oninput="handleSearch(this.value)">
             </div>
-            <button class="filter-btn" id="phone-lookup-btn" onclick="openPhoneLookupModal()" title="Tra cứu Profile Zalo qua Số Điện Thoại" style="padding: 7px 10px; font-size: 0.8rem; white-space: nowrap; flex-shrink: 0;">
-              Tra SĐT
+            <button class="filter-btn" id="phone-lookup-btn" onclick="openPhoneLookupModal()" title="Tra cứu Profile Zalo qua Số Điện Thoại" data-i18n-title="sidebar.phone_lookup_title" style="padding: 7px 10px; font-size: 0.8rem; white-space: nowrap; flex-shrink: 0;">
+              <span data-i18n="sidebar.phone_lookup_btn">Tra SĐT</span>
             </button>
           </div>
 
           <div class="filter-segmented-bar">
-            <button class="segmented-tab active" data-filter="all" onclick="setFilter('all')">Tất cả</button>
-            <button class="segmented-tab" data-filter="unread" onclick="setFilter('unread')">Chưa đọc</button>
-            <button class="segmented-tab" data-filter="personal" onclick="setFilter('personal')">Cá nhân</button>
-            <button class="segmented-tab" data-filter="group" onclick="setFilter('group')">Nhóm</button>
+            <button class="segmented-tab active" data-filter="all" data-i18n="sidebar.filter_all" onclick="setFilter('all')">Tất cả</button>
+            <button class="segmented-tab" data-filter="unread" data-i18n="sidebar.filter_unread" onclick="setFilter('unread')">Chưa đọc</button>
+            <button class="segmented-tab" data-filter="personal" data-i18n="sidebar.filter_personal" onclick="setFilter('personal')">Cá nhân</button>
+            <button class="segmented-tab" data-filter="group" data-i18n="sidebar.filter_group" onclick="setFilter('group')">Nhóm</button>
           </div>
 
           <div class="tag-filter-row">
-            <span class="tag-filter-label">📌 Lọc theo Thẻ:</span>
+            <span class="tag-filter-label" data-i18n="sidebar.tag_filter_label">📌 Lọc theo Thẻ:</span>
             <select class="tag-filter-select" id="tag-filter-select" onchange="handleTagFilterChange(this.value)">
-              <option value="">Tất cả Thẻ</option>
+              <option value="" data-i18n="sidebar.tag_filter_all">Tất cả Thẻ</option>
             </select>
           </div>
         </div>
@@ -130,8 +140,8 @@
               </svg>
             </div>
             <div class="sync-banner-info">
-              <div class="sync-banner-title" id="sync-banner-title">Đang đồng bộ dữ liệu Zalo...</div>
-              <div class="sync-banner-desc" id="sync-banner-desc">Đang nạp danh bạ & nhóm. Bạn có thể xem tin cũ bình thường.</div>
+              <div class="sync-banner-title" id="sync-banner-title" data-i18n="sidebar.sync_banner_title">Đang đồng bộ dữ liệu Zalo...</div>
+              <div class="sync-banner-desc" id="sync-banner-desc" data-i18n="sidebar.sync_banner_desc">Đang nạp danh bạ & nhóm. Bạn có thể xem tin cũ bình thường.</div>
             </div>
           </div>
           <div class="sync-progress-indeterminate">
@@ -150,8 +160,8 @@
         <!-- Empty State -->
         <div class="chat-empty-state" id="chat-empty-state">
           <div class="icon">💬</div>
-          <h3>Chọn khách hàng để xem lịch sử</h3>
-          <p>Mọi tin nhắn của Khách hàng, Bot AI tự động và Admin can thiệp sẽ xuất hiện tại đây theo thời gian thực.</p>
+          <h3 data-i18n="chat.empty_title">Chọn khách hàng để xem lịch sử</h3>
+          <p data-i18n="chat.empty_desc">Mọi tin nhắn của Khách hàng, Bot AI tự động và Admin can thiệp sẽ xuất hiện tại đây theo thời gian thực.</p>
         </div>
 
         <!-- Active Chat Container -->
@@ -160,7 +170,7 @@
           <!-- Chat Header -->
           <div class="chat-header">
             <div class="chat-header-user">
-              <button class="filter-btn" id="back-btn" style="display: none; padding: 4px 8px;" onclick="closeChatMobile()">← Quay lại</button>
+              <button class="filter-btn" id="back-btn" style="display: none; padding: 4px 8px;" onclick="closeChatMobile()" data-i18n="chat.back_btn">← Quay lại</button>
               <div class="conv-avatar-box" id="active-chat-avatar-container">
                 <div class="conv-avatar" id="active-chat-avatar">Z</div>
               </div>
@@ -171,26 +181,26 @@
             </div>
 
             <div class="chat-controls">
-              <button class="filter-btn btn-toggle-ai" id="btn-toggle-ai" onclick="toggleActiveThreadAi()" title="Bật/Tắt Bot AI tự động trả lời cho cuộc trò chuyện này">
+              <button class="filter-btn btn-toggle-ai" id="btn-toggle-ai" onclick="toggleActiveThreadAi()" title="Bật/Tắt Bot AI tự động trả lời cho cuộc trò chuyện này" data-i18n-title="chat.bot_ai_toggle_title">
                 ⚡ Bot AI: BẬT
               </button>
-              <button class="filter-btn" id="btn-toggle-crm" onclick="toggleCustomerInfoPanel()" title="Mở thông tin và ghi chú CRM khách hàng" style="border-color: rgba(56, 189, 248, 0.4); color: #38bdf8; background: rgba(56, 189, 248, 0.1);">
-                📑 Thông tin
+              <button class="filter-btn" id="btn-toggle-crm" onclick="toggleCustomerInfoPanel()" title="Mở thông tin và ghi chú CRM khách hàng" data-i18n-title="chat.info_btn_title" style="border-color: rgba(56, 189, 248, 0.4); color: #38bdf8; background: rgba(56, 189, 248, 0.1);">
+                <span data-i18n="chat.info_btn">📑 Thông tin</span>
               </button>
 
               <!-- Dropdown Menu ⋯ (Tác vụ khác) -->
               <div class="chat-more-wrapper">
-                <button class="filter-btn chat-more-btn" id="chat-more-btn" onclick="toggleChatMoreMenu(event)" title="Tác vụ khác">
+                <button class="filter-btn chat-more-btn" id="chat-more-btn" onclick="toggleChatMoreMenu(event)" title="Tác vụ khác" data-i18n-title="chat.more_btn_title">
                   ⋯
                 </button>
                 <div class="chat-more-dropdown" id="chat-more-dropdown">
-                  <button class="dropdown-item" onclick="openTagAssignModal(); closeChatMoreMenu();">
+                  <button class="dropdown-item" onclick="openTagAssignModal(); closeChatMoreMenu();" data-i18n="chat.more_assign_tag">
                     🏷️ Gắn thẻ phân loại
                   </button>
-                  <button class="dropdown-item" id="btn-header-exemplar" onclick="promptSetCurrentChatAsExemplar(); closeChatMoreMenu();">
+                  <button class="dropdown-item" id="btn-header-exemplar" onclick="promptSetCurrentChatAsExemplar(); closeChatMoreMenu();" data-i18n="chat.more_set_exemplar">
                     ⭐ Đặt làm mẫu AI
                   </button>
-                  <button class="dropdown-item" id="thread-sync-btn" onclick="syncCurrentThread(); closeChatMoreMenu();">
+                  <button class="dropdown-item" id="thread-sync-btn" onclick="syncCurrentThread(); closeChatMoreMenu();" data-i18n="chat.more_fetch_history">
                     📥 Kéo thêm lịch sử
                   </button>
                 </div>
@@ -202,7 +212,7 @@
           <div id="unfriended-warning-bar" style="display: none; background: #fefce8; border-bottom: 1px solid #fef08a; padding: 8px 16px; font-size: 0.82rem; color: #854d0e; align-items: center; justify-content: space-between; gap: 10px;">
             <div style="display: flex; align-items: center; gap: 8px;">
               <span style="font-size: 1.1rem; line-height: 1;">⚠️</span>
-              <span><b>Lưu ý:</b> Người này chưa có trong danh bạ bạn bè của tài khoản Zalo hiện tại. Nếu chưa từng kết bạn hoặc chưa mở nhận tin người lạ, Zalo có thể từ chối gửi tin.</span>
+              <span><b data-i18n="chat.unfriended_title">Lưu ý:</b> <span data-i18n="chat.unfriended_desc">Người này chưa có trong danh bạ bạn bè của tài khoản Zalo hiện tại. Nếu chưa từng kết bạn hoặc chưa mở nhận tin người lạ, Zalo có thể từ chối gửi tin.</span></span>
             </div>
             <button onclick="dismissUnfriendedWarning()" style="background: none; border: none; font-size: 1.2rem; color: #a16207; cursor: pointer; line-height: 1; padding: 0 4px;" title="Đóng cảnh báo">&times;</button>
           </div>
@@ -212,16 +222,16 @@
             <div class="pin-bar-left">
               <span class="pin-icon" id="pin-sched-icon">⏰</span>
               <div class="pin-info">
-                <span class="pin-title" id="pin-sched-title">Hẹn gửi:</span>
+                <span class="pin-title" id="pin-sched-title" data-i18n="chat.pin_sched_title">Hẹn gửi:</span>
                 <span class="pin-time" id="pin-sched-time">--:--</span>
                 <span class="pin-snippet" id="pin-sched-snippet">"..."</span>
               </div>
             </div>
             <div class="pin-bar-actions" id="pin-sched-actions">
-              <button type="button" class="pin-btn pin-btn-resume" id="btn-pin-resume" style="display: none;" onclick="resumeActiveSchedule()" title="Tiếp tục gửi lịch hẹn">Tiếp tục</button>
-              <button type="button" class="pin-btn pin-btn-sendnow" id="btn-pin-sendnow" style="display: none;" onclick="sendNowActiveSchedule()" title="Gửi tin nhắn này ngay bây giờ">Gửi ngay</button>
-              <button type="button" class="pin-btn pin-btn-edit" id="btn-pin-edit" onclick="editActiveSchedule()" title="Sửa nội dung hoặc dời giờ">Sửa</button>
-              <button type="button" class="pin-btn pin-btn-cancel" id="btn-pin-cancel" onclick="cancelActiveSchedule()" title="Hủy lịch hẹn">Hủy</button>
+              <button type="button" class="pin-btn pin-btn-resume" id="btn-pin-resume" style="display: none;" onclick="resumeActiveSchedule()" title="Tiếp tục gửi lịch hẹn" data-i18n="chat.pin_btn_resume">Tiếp tục</button>
+              <button type="button" class="pin-btn pin-btn-sendnow" id="btn-pin-sendnow" style="display: none;" onclick="sendNowActiveSchedule()" title="Gửi tin nhắn này ngay bây giờ" data-i18n="chat.pin_btn_sendnow">Gửi ngay</button>
+              <button type="button" class="pin-btn pin-btn-edit" id="btn-pin-edit" onclick="editActiveSchedule()" title="Sửa nội dung hoặc dời giờ" data-i18n="chat.pin_btn_edit">Sửa</button>
+              <button type="button" class="pin-btn pin-btn-cancel" id="btn-pin-cancel" onclick="cancelActiveSchedule()" title="Hủy lịch hẹn" data-i18n="chat.pin_btn_cancel">Hủy</button>
             </div>
           </div>
 
@@ -233,7 +243,7 @@
           <!-- Soft Sync Warning in Chat -->
           <div id="chat-sync-soft-warning" class="chat-sync-soft-warning" style="display: none;">
             <div class="chat-sync-warning-icon">⚡</div>
-            <div class="chat-sync-warning-text">Hệ thống đang cập nhật tin nhắn mới nhất từ Zalo... Bạn nên đợi vài giây để tin nhắn hiển thị đầy đủ trước khi trả lời.</div>
+            <div class="chat-sync-warning-text" data-i18n="chat.soft_sync_warning">Hệ thống đang cập nhật tin nhắn mới nhất từ Zalo... Bạn nên đợi vài giây để tin nhắn hiển thị đầy đủ trước khi trả lời.</div>
           </div>
 
           <!-- Chat Input Bar & Autocomplete Popup -->
@@ -242,12 +252,12 @@
             <div class="quick-msg-popover" id="quick-msg-popover">
               <div class="quick-msg-header">
                 <span id="quick-msg-popover-title">⚡ Tin nhắn nhanh (0)</span>
-                <span class="quick-msg-manage-btn" onclick="openModal('modal-quick-msg')">Quản lý</span>
+                <span class="quick-msg-manage-btn" onclick="openModal('modal-quick-msg')" data-i18n="chat.quick_popover_manage">Quản lý</span>
               </div>
               <div class="quick-msg-list" id="quick-msg-popover-list">
                 <!-- Items populated dynamically -->
               </div>
-              <div class="quick-msg-footer-hint">Gợi ý: Nhập <b style="color: #38bdf8;">/</b> vào ô chat để chọn nhanh</div>
+              <div class="quick-msg-footer-hint" data-i18n="chat.quick_popover_hint">Gợi ý: Nhập / vào ô chat để chọn nhanh</div>
             </div>
 
             <div class="quick-autocomplete-popup" id="quick-autocomplete-popup"></div>
@@ -255,9 +265,9 @@
             <!-- Toolbar Actions: Quick Msg, Schedule, Image, Doc -->
             <div class="chat-toolbar">
               <button class="toolbar-btn" id="btn-quick-msg-toggle" onclick="toggleQuickMsgPopover(event)" title="Tin nhắn nhanh (hoặc gõ / vào ô chat)">⚡</button>
-              <button class="toolbar-btn" id="btn-schedule-msg-toggle" onclick="openScheduleMsgModal()" title="Hẹn giờ gửi tin nhắn trực tiếp">⏰</button>
-              <button class="toolbar-btn" onclick="document.getElementById('chat-image-input').click()" title="Gửi hình ảnh (hoặc Dán ảnh Ctrl + V)">🖼️</button>
-              <button class="toolbar-btn" onclick="document.getElementById('chat-file-input').click()" title="Đính kèm tài liệu / tệp tin">📎</button>
+              <button class="toolbar-btn" id="btn-schedule-msg-toggle" onclick="openScheduleMsgModal()" title="Hẹn giờ gửi tin nhắn trực tiếp" data-i18n-title="chat.btn_schedule_title">⏰</button>
+              <button class="toolbar-btn" onclick="document.getElementById('chat-image-input').click()" title="Gửi hình ảnh (hoặc Dán ảnh Ctrl + V)" data-i18n-title="chat.btn_attach_title">🖼️</button>
+              <button class="toolbar-btn" onclick="document.getElementById('chat-file-input').click()" title="Đính kèm tài liệu / tệp tin" data-i18n-title="chat.btn_attach_title">📎</button>
               <input type="file" id="chat-image-input" accept="image/*" multiple style="display: none;" onchange="handleFileInputChange(event, 'image')">
               <input type="file" id="chat-file-input" accept=".pdf,.doc,.docx,.xls,.xlsx,.zip,.rar,.txt" multiple style="display: none;" onchange="handleFileInputChange(event, 'document')">
               <div class="toolbar-divider"></div>
@@ -281,10 +291,10 @@
             </div>
             
             <div class="chat-input-bar">
-              <input type="text" class="chat-input" id="chat-input" placeholder="Nhập tin nhắn đến khách hàng (Gõ / để chọn tin nhanh, Enter để gửi)..." onkeydown="handleInputKey(event)" oninput="handleChatInput(this.value)">
+              <input type="text" class="chat-input" id="chat-input" placeholder="Nhập tin nhắn đến khách hàng (Gõ / để chọn tin nhanh, Enter để gửi)..." data-i18n-placeholder="chat.input_placeholder" onkeydown="handleInputKey(event)" oninput="handleChatInput(this.value)">
               <button class="btn-quick-like" onclick="sendQuickLike()" title="Gửi nhanh Like 👍">👍</button>
-              <button class="send-btn" id="send-btn" onclick="sendMessage()">
-                <span>Gửi</span>
+              <button class="send-btn" id="send-btn" onclick="sendMessage()" data-i18n-title="chat.btn_send_title">
+                <span data-i18n="chat.send_btn_text">Gửi</span>
                 <span>✈️</span>
               </button>
             </div>
@@ -302,13 +312,13 @@
   <div class="modal-overlay" id="modal-tags">
     <div class="modal-dialog">
       <div class="modal-header">
-        <h2 class="modal-title">🏷️ Quản Lý Thẻ Phân Loại Khách Hàng</h2>
+        <h2 class="modal-title" data-i18n="modals.tags_title">🏷️ Quản Lý Thẻ Phân Loại Khách Hàng</h2>
         <button class="modal-close-btn" onclick="closeModal('modal-tags')">&times;</button>
       </div>
       <div class="modal-body">
         <div class="form-group">
-          <label class="form-label">Tên Thẻ Mới</label>
-          <input type="text" class="form-input" id="tag-name-input" placeholder="VD: Khách VIP, Quan tâm BĐS, Kèo thơm...">
+          <label class="form-label" data-i18n="modals.tags_add_new">Tên Thẻ Mới</label>
+          <input type="text" class="form-input" id="tag-name-input" placeholder="VD: Khách VIP, Quan tâm BĐS, Kèo thơm..." data-i18n-placeholder="modals.tags_name_placeholder">
         </div>
         
         <div class="form-group">
@@ -318,7 +328,9 @@
           </div>
         </div>
 
-        <button class="send-btn" style="align-self: flex-start;" onclick="createTag()">+ Tạo Thẻ Mới</button>
+        <button class="send-btn" style="align-self: flex-start;" onclick="createTag()">
+          <span data-i18n="modals.tags_add_new">+ Tạo Thẻ Mới</span>
+        </button>
         
         <hr style="border: none; border-top: 1px solid var(--border); margin: 12px 0;">
 
@@ -326,7 +338,7 @@
         <div id="tags-manager-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
       </div>
       <div class="modal-footer">
-        <button class="filter-btn" onclick="closeModal('modal-tags')">Đóng</button>
+        <button class="filter-btn" onclick="closeModal('modal-tags')" data-i18n="common.close">Đóng</button>
       </div>
     </div>
   </div>
@@ -348,7 +360,7 @@
         <div id="assign-tags-list" style="display: flex; flex-direction: column; gap: 8px; max-height: 280px; overflow-y: auto;"></div>
       </div>
       <div class="modal-footer">
-        <button class="filter-btn" onclick="closeModal('modal-assign-tag')">Xong</button>
+        <button class="filter-btn" onclick="closeModal('modal-assign-tag')" data-i18n="common.close">Xong</button>
       </div>
     </div>
   </div>
@@ -357,7 +369,7 @@
   <div class="modal-overlay" id="modal-quick-msg">
     <div class="modal-dialog">
       <div class="modal-header">
-        <h2 class="modal-title">⚡ Quản Lý Tin Nhắn Nhanh</h2>
+        <h2 class="modal-title" data-i18n="modals.quick_msg_title">⚡ Quản Lý Tin Nhắn Nhanh</h2>
         <button class="modal-close-btn" onclick="closeModal('modal-quick-msg')">&times;</button>
       </div>
       <div class="modal-body">
@@ -365,7 +377,7 @@
         <div style="display: grid; grid-template-columns: 140px 1fr; gap: 10px;">
           <div class="form-group">
             <label class="form-label">Phím Tắt</label>
-            <input type="text" class="form-input" id="qm-shortcut" placeholder="/banggia">
+            <input type="text" class="form-input" id="qm-shortcut" placeholder="/banggia" data-i18n-placeholder="modals.quick_msg_cmd_placeholder">
           </div>
           <div class="form-group">
             <label class="form-label">Tiêu Đề Mẫu</label>
@@ -374,7 +386,7 @@
         </div>
         <div class="form-group">
           <label class="form-label">Nội Dung Tin Nhắn</label>
-          <textarea class="form-textarea" id="qm-content" placeholder="Nhập nội dung mẫu câu trả lời..."></textarea>
+          <textarea class="form-textarea" id="qm-content" placeholder="Nhập nội dung mẫu câu trả lời..." data-i18n-placeholder="modals.quick_msg_text_placeholder"></textarea>
         </div>
 
         <!-- Đính Kèm File / Ảnh Cho Tin Nhắn Nhanh (Tối đa 5 tệp) -->
@@ -402,7 +414,9 @@
         </div>
 
         <div style="display: flex; gap: 8px; align-items: center;">
-          <button class="send-btn" id="qm-submit-btn" style="align-self: flex-start;" onclick="saveQuickMessageFromModal()">+ Thêm Mẫu Tin</button>
+          <button class="send-btn" id="qm-submit-btn" style="align-self: flex-start;" onclick="saveQuickMessageFromModal()">
+            <span data-i18n="modals.quick_msg_add_new">+ Thêm Mẫu Tin</span>
+          </button>
           <button class="filter-btn" id="qm-cancel-edit-btn" style="display: none; align-self: flex-start; background: rgba(255,255,255,0.08);" onclick="cancelQuickMsgEdit()">❌ Hủy Sửa</button>
         </div>
 
@@ -412,7 +426,7 @@
         <div id="qm-manager-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
       </div>
       <div class="modal-footer">
-        <button class="filter-btn" onclick="closeModal('modal-quick-msg')">Đóng</button>
+        <button class="filter-btn" onclick="closeModal('modal-quick-msg')" data-i18n="common.close">Đóng</button>
       </div>
     </div>
   </div>
@@ -421,7 +435,7 @@
   <div class="modal-overlay" id="modal-schedule-msg">
     <div class="modal-dialog" style="max-width: 520px;">
       <div class="modal-header">
-        <h2 class="modal-title" id="sched-modal-title">⏰ Hẹn Giờ Gửi Tin Nhắn</h2>
+        <h2 class="modal-title" id="sched-modal-title" data-i18n="modals.schedule_title">⏰ Hẹn Giờ Gửi Tin Nhắn</h2>
         <button class="modal-close-btn" onclick="closeModal('modal-schedule-msg')">&times;</button>
       </div>
       <div class="modal-body">
@@ -459,7 +473,7 @@
             <input type="date" class="form-input" id="sched-date-input" onchange="updateSchedulePreview()">
           </div>
           <div class="form-group">
-            <label class="form-label">Giờ Gửi</label>
+            <label class="form-label" data-i18n="modals.schedule_time_label">Giờ Gửi</label>
             <input type="time" class="form-input" id="sched-time-input" onchange="updateSchedulePreview()">
           </div>
         </div>
@@ -471,7 +485,7 @@
         <!-- Khung Soạn Thảo Nội Dung -->
         <div class="form-group" style="margin-top: 10px;">
           <label class="form-label" style="display: flex; justify-content: space-between; align-items: center;">
-            <span>Nội Dung Tin Nhắn Hẹn Giờ</span>
+            <span data-i18n="modals.schedule_content_label">Nội Dung Tin Nhắn Hẹn Giờ</span>
             <span style="font-size: 0.74rem; color: #38bdf8;">Hỗ trợ {name}, Spintax {A|B}</span>
           </label>
           <textarea class="form-textarea" id="sched-content" rows="3" placeholder="Ví dụ: Chào anh {name}, 9h sáng nay mình gặp ở quán cafe Highlands như đã hẹn nha anh!"></textarea>
@@ -505,9 +519,9 @@
       <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
         <button type="button" class="filter-btn" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3); display: none;" id="btn-sched-delete-in-modal" onclick="deleteScheduleFromModal()">🗑️ Hủy Lịch</button>
         <div style="display: flex; gap: 8px; margin-left: auto;">
-          <button type="button" class="filter-btn" onclick="closeModal('modal-schedule-msg')">Đóng</button>
+          <button type="button" class="filter-btn" onclick="closeModal('modal-schedule-msg')" data-i18n="common.close">Đóng</button>
           <button type="button" class="send-btn" id="btn-sched-save" onclick="saveScheduledMessage()">
-            <span>⏰ Lên Lịch Gửi</span>
+            <span data-i18n="modals.schedule_save_btn">⏰ Lên Lịch Gửi</span>
           </button>
         </div>
       </div>
@@ -519,7 +533,7 @@
     <div class="modal-dialog" style="max-width: 580px;">
       <div class="modal-header">
         <h2 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
-          <span>💾 Sao Lưu & Phục Hồi Dữ Liệu</span>
+          <span data-i18n="modals.backup_title">💾 Sao Lưu & Phục Hồi Dữ Liệu</span>
         </h2>
         <button class="modal-close-btn" onclick="closeModal('modal-backup')">&times;</button>
       </div>
@@ -528,7 +542,7 @@
         <!-- SECTION 1: XUẤT DỮ LIỆU -->
         <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 10px;">
           <div style="display: flex; align-items: center; justify-content: space-between;">
-            <label class="form-label" style="color: #38bdf8; font-weight: 800; font-size: 0.85rem; margin: 0; text-transform: uppercase;">
+            <label class="form-label" style="color: #38bdf8; font-weight: 800; font-size: 0.85rem; margin: 0; text-transform: uppercase;" data-i18n="modals.backup_export_title">
               📥 1. Xuất Dữ Liệu (Backup JSON)
             </label>
             <span style="font-size: 0.72rem; color: #94a3b8; font-weight: 600;">Chuẩn Open JSON</span>
@@ -538,9 +552,9 @@
           </p>
           <div style="display: flex; gap: 8px; margin-top: 4px;">
             <button class="send-btn" style="padding: 8px 16px; font-size: 0.82rem; display: inline-flex; align-items: center; gap: 6px;" onclick="exportBackupData()">
-              <span>📥 Tải File Backup (.json)</span>
+              <span data-i18n="modals.backup_export_btn">📥 Tải File Backup (.json)</span>
             </button>
-            <button class="filter-btn" style="padding: 8px 14px; font-size: 0.8rem;" onclick="copyBackupJsonToClipboard()">
+            <button class="filter-btn" style="padding: 8px 14px; font-size: 0.8rem;" onclick="copyBackupJsonToClipboard()" data-i18n="modals.backup_copy_btn">
               📋 Sao Chép JSON
             </button>
           </div>
@@ -549,7 +563,7 @@
         <!-- SECTION 2: NHẬP DỮ LIỆU -->
         <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 10px;">
           <div style="display: flex; align-items: center; justify-content: space-between;">
-            <label class="form-label" style="color: #34d399; font-weight: 800; font-size: 0.85rem; margin: 0; text-transform: uppercase;">
+            <label class="form-label" style="color: #34d399; font-weight: 800; font-size: 0.85rem; margin: 0; text-transform: uppercase;" data-i18n="modals.backup_import_title">
               📤 2. Nhập & Hợp Nhất (Import JSON)
             </label>
             <span style="font-size: 0.72rem; color: #34d399; font-weight: 700; background: rgba(52,211,153,0.1); padding: 2px 8px; border-radius: 12px; border: 1px solid rgba(52,211,153,0.2);">An Toàn: Không Xóa Cũ</span>
@@ -562,13 +576,13 @@
             <input type="file" id="backup-import-file-input" accept=".json" style="display: none;" onchange="handleBackupFileSelected(event)">
             <div style="display: flex; gap: 8px; align-items: center;">
               <button class="filter-btn" style="padding: 8px 16px; font-size: 0.82rem; color: #34d399; border-color: rgba(52,211,153,0.4); font-weight: 700;" onclick="document.getElementById('backup-import-file-input').click()">
-                📂 Chọn Tệp JSON...
+                <span data-i18n="modals.backup_choose_file_btn">📂 Chọn Tệp JSON...</span>
               </button>
               <span id="backup-selected-filename" style="font-size: 0.76rem; color: #94a3b8; font-style: italic;">Chưa chọn tệp nào</span>
             </div>
             
             <button class="send-btn" id="btn-do-import" style="display: none; background: linear-gradient(135deg, #059669, #10b981); margin-top: 4px; padding: 8px 16px; font-size: 0.82rem;" onclick="executeBackupImport()">
-              ⚡ Tiến Hành Nạp Dữ Liệu Vào Hệ Thống
+              <span data-i18n="modals.backup_start_import_btn">⚡ Tiến Hành Nạp Dữ Liệu Vào Hệ Thống</span>
             </button>
           </div>
 
@@ -577,7 +591,7 @@
 
       </div>
       <div class="modal-footer">
-        <button class="filter-btn" onclick="closeModal('modal-backup')">Đóng</button>
+        <button class="filter-btn" onclick="closeModal('modal-backup')" data-i18n="common.close">Đóng</button>
       </div>
     </div>
   </div>
@@ -590,7 +604,7 @@
       <div class="modal-header" style="padding: 16px 20px;">
         <div>
           <h2 class="modal-title" style="display: flex; align-items: center; gap: 8px; font-size: 1.15rem;">
-            <span>📢 Chiến dịch Remarketing</span>
+            <span data-i18n="modals.campaigns_title">📢 Chiến dịch Remarketing</span>
           </h2>
           <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">
             Tự động hóa gửi thông điệp chăm sóc &amp; ưu đãi an toàn tới khách hàng Zalo.
@@ -599,7 +613,7 @@
         <div style="display: flex; align-items: center; gap: 10px;">
           <button class="send-btn" onclick="openCampaignEditor()" style="padding: 7px 16px; font-size: 0.82rem; font-weight: 700; border-radius: 8px; display: flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #06b6d4, #3b82f6);">
             <span>➕</span>
-            <span>Tạo mới</span>
+            <span data-i18n="modals.campaigns_create_btn">Tạo mới</span>
           </button>
           <button class="modal-close-btn" onclick="closeModal('modal-campaigns')">&times;</button>
         </div>
@@ -624,11 +638,11 @@
 
         <!-- TABLE HEADER -->
         <div class="camp-table-header" style="display: grid; grid-template-columns: 2.2fr 1.3fr 1.1fr 0.9fr 1.3fr; gap: 10px; padding: 10px 14px; background: rgba(0,0,0,0.3); border-radius: 8px; font-size: 0.75rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">
-          <div>CHIẾN DỊCH</div>
-          <div>ĐỐI TƯỢNG</div>
+          <div data-i18n="modals.campaigns_name">CHIẾN DỊCH</div>
+          <div data-i18n="modals.campaigns_target">ĐỐI TƯỢNG</div>
           <div>THỜI GIAN GỬI</div>
-          <div style="text-align: center;">TRẠNG THÁI</div>
-          <div style="text-align: right;">THAO TÁC</div>
+          <div style="text-align: center;" data-i18n="modals.campaigns_status">TRẠNG THÁI</div>
+          <div style="text-align: right;" data-i18n="common.actions">THAO TÁC</div>
         </div>
 
         <!-- CAMPAIGNS TABLE BODY -->
@@ -639,7 +653,7 @@
 
       <div class="modal-footer" style="padding: 12px 20px; display: flex; justify-content: space-between; align-items: center;">
         <div id="camp-stats-summary" style="font-size: 0.78rem; color: var(--text-muted);"></div>
-        <button class="filter-btn" onclick="closeModal('modal-campaigns')">Đóng</button>
+        <button class="filter-btn" onclick="closeModal('modal-campaigns')" data-i18n="common.close">Đóng</button>
       </div>
     </div>
   </div>
@@ -1033,7 +1047,7 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button class="filter-btn" onclick="closeModal('modal-forward-msg')">Hủy</button>
+        <button class="filter-btn" onclick="closeModal('modal-forward-msg')" data-i18n="common.cancel">Hủy</button>
         <button class="send-btn" id="btn-submit-forward" onclick="submitForwardMessage()">↪️ Gửi Chuyển Tiếp</button>
       </div>
     </div>
@@ -1045,14 +1059,16 @@
       <div class="phone-lookup-header">
         <div class="phone-lookup-title">
           <span>🔍</span>
-          <span>Tra Cứu Zalo Qua Số Điện Thoại</span>
+          <span data-i18n="modals.phone_lookup_title">Tra Cứu Zalo Qua Số Điện Thoại</span>
         </div>
         <button class="phone-lookup-close-btn" onclick="closePhoneLookupModal()">&times;</button>
       </div>
       <div class="phone-lookup-body">
         <div class="phone-lookup-input-wrap">
-          <input type="tel" id="lookup-phone-input" class="crm-input" placeholder="Nhập số điện thoại (ví dụ: 0912345678)..." onkeydown="if(event.key==='Enter') executePhoneLookup()">
-          <button class="send-btn" id="btn-do-lookup" onclick="executePhoneLookup()" style="padding: 8px 16px; font-size: 0.84rem; white-space: nowrap;">Tra Cứu</button>
+          <input type="tel" id="lookup-phone-input" class="crm-input" placeholder="Nhập số điện thoại (ví dụ: 0912345678)..." data-i18n-placeholder="modals.phone_lookup_input_placeholder" onkeydown="if(event.key==='Enter') executePhoneLookup()">
+          <button class="send-btn" id="btn-do-lookup" onclick="executePhoneLookup()" style="padding: 8px 16px; font-size: 0.84rem; white-space: nowrap;">
+            <span data-i18n="modals.phone_lookup_submit_btn">Tra Cứu</span>
+          </button>
         </div>
 
         <div id="phone-lookup-loading" style="display: none; text-align: center; color: var(--primary); font-size: 0.86rem; padding: 12px;">
@@ -1081,7 +1097,7 @@
           <div style="display: flex; align-items: center; gap: 10px;">
             <span style="font-size: 1.4rem;">🧠</span>
             <div>
-              <h2 class="modal-title" style="font-size: 1.05rem;">Trung Tâm Trí Tuệ &amp; Điều Khiển AI (5 Tabs)</h2>
+              <h2 class="modal-title" style="font-size: 1.05rem;" data-i18n="modals.ai_brain_title">Trung Tâm Trí Tuệ &amp; Điều Khiển AI (5 Tabs)</h2>
               <div style="font-size: 0.76rem; color: var(--text-muted);">Hệ thống AI Auto-Reply &amp; Trợ Lý Zalo độc lập (Local-First Engine)</div>
             </div>
           </div>
@@ -1096,11 +1112,11 @@
 
       <!-- AI 5 TABS NAVIGATION -->
       <div class="ai-tabs-nav" style="display: grid; grid-template-columns: repeat(5, 1fr); border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.3);">
-        <button class="ai-tab-btn active" onclick="switchKnowledgeTab('soul')" id="tab-btn-soul">🎭 1. Giọng điệu</button>
-        <button class="ai-tab-btn" onclick="switchKnowledgeTab('memory')" id="tab-btn-memory">📚 2. Tri thức</button>
-        <button class="ai-tab-btn" onclick="switchKnowledgeTab('brain')" id="tab-btn-brain">🌐 3. Bộ Não AI</button>
-        <button class="ai-tab-btn" onclick="switchKnowledgeTab('scope')" id="tab-btn-scope">🎯 4. Phạm vi</button>
-        <button class="ai-tab-btn" onclick="switchKnowledgeTab('sim')" id="tab-btn-sim">🧪 5. Thử nghiệm</button>
+        <button class="ai-tab-btn active" onclick="switchKnowledgeTab('soul')" id="tab-btn-soul" data-i18n="modals.ai_tab_prompt">🎭 1. Giọng điệu</button>
+        <button class="ai-tab-btn" onclick="switchKnowledgeTab('memory')" id="tab-btn-memory" data-i18n="modals.ai_tab_wiki">📚 2. Tri thức</button>
+        <button class="ai-tab-btn" onclick="switchKnowledgeTab('brain')" id="tab-btn-brain" data-i18n="modals.ai_tab_models">🌐 3. Bộ Não AI</button>
+        <button class="ai-tab-btn" onclick="switchKnowledgeTab('scope')" id="tab-btn-scope" data-i18n="modals.ai_tab_settings">🎯 4. Phạm vi</button>
+        <button class="ai-tab-btn" onclick="switchKnowledgeTab('sim')" id="tab-btn-sim" data-i18n="modals.ai_tab_history">🧪 5. Thử nghiệm</button>
       </div>
 
       <div class="modal-body" style="flex: 1; overflow-y: auto; padding: 16px 20px;">

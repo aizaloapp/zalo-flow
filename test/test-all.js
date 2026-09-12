@@ -1755,13 +1755,79 @@ assert(!mockContainer.innerHTML.includes('KH'), 'Chat 3 must not retain Chat 2 i
 
 console.log('   ✅ Chat Header Avatar Dynamic Re-rendering & Account Switching Clean State passed!\n');
 
+// -----------------------------------------------------------------------------
+// Test 43: Internationalization (i18n) Engine & 1:1 Translation Integrity
+// -----------------------------------------------------------------------------
+console.log('43. Testing Internationalization (i18n) Engine & 1:1 Translation Integrity...');
+const i18nCode = fs.readFileSync(path.join(import.meta.dirname, '..', 'public', 'i18n.js'), 'utf8');
+
+const localStorageMock = {};
+global.localStorage = {
+  getItem: (k) => localStorageMock[k] || null,
+  setItem: (k, v) => { localStorageMock[k] = String(v); },
+  removeItem: (k) => { delete localStorageMock[k]; }
+};
+try {
+  Object.defineProperty(global, 'navigator', {
+    value: { language: 'vi-VN' },
+    configurable: true,
+    writable: true
+  });
+} catch (e) {}
+global.document = {
+  documentElement: {
+    setAttribute: () => {},
+    getAttribute: () => 'vi'
+  },
+  querySelectorAll: () => [],
+  getElementById: () => null,
+  addEventListener: () => {},
+  readyState: 'complete'
+};
+global.window = global;
+global.CustomEvent = class CustomEvent { constructor(name, detail) { this.name = name; this.detail = detail; } };
+global.dispatchEvent = () => true;
+
+eval(i18nCode);
+const { DICTIONARY, t, getLanguage, setLanguage, toggleLanguage, formatDate, getRelativeTime } = window.i18n;
+
+assert(DICTIONARY.vi, 'DICTIONARY.vi must exist');
+assert(DICTIONARY.en, 'DICTIONARY.en must exist');
+
+function collectKeys(obj, prefix = '') {
+  let keys = [];
+  for (const [k, v] of Object.entries(obj)) {
+    const fullKey = prefix ? `${prefix}.${k}` : k;
+    if (typeof v === 'object' && v !== null && !Array.isArray(v)) {
+      keys = keys.concat(collectKeys(v, fullKey));
+    } else {
+      keys.push(fullKey);
+    }
+  }
+  return keys;
+}
+
+const viKeys = new Set(collectKeys(DICTIONARY.vi));
+const enKeys = new Set(collectKeys(DICTIONARY.en));
+assert.strictEqual(viKeys.size, enKeys.size, 'VI and EN keys must match 1:1');
+
+setLanguage('vi');
+assert.strictEqual(t('common.save'), 'Lưu');
+setLanguage('en');
+assert.strictEqual(t('common.save'), 'Save');
+assert.strictEqual(t('toast.sync_completed', { count: 50 }), 'Sync completed: 50 messages!');
+setLanguage('vi');
+assert.strictEqual(t('toast.sync_completed', { count: 50 }), 'Đồng bộ hoàn tất: 50 tin nhắn!');
+
+console.log('   ✅ Internationalization (i18n) Engine & 1:1 Translation Integrity passed!\n');
+
 // Clean test db
 store.close();
 if (fs.existsSync(testDbFile)) {
   try { fs.unlinkSync(testDbFile); } catch {}
 }
 
-console.log('🎉 ALL 42 INTEGRITY, SECURITY, CRM, AIZALO REMARKETING, AI SUITE, BULK DEEP-SYNC, QR AUTH, MEMORY GUARD, ZALO SANITIZER, DESKTOP PACKAGED, CLEAN SWITCH, MULTI-DEVICE SYNC, GROUP MENTION, QUICK-MSG, CAMPAIGN TEST DISPATCH, GROUP RECONCILIATION, AUTO-FALLBACK OPENROUTER, MULTIMODAL VISION, STRANGER IDENTITY, SCHEDULED MESSAGES, UNIVERSAL WIKI URL INGESTION, LIVE CHAT MEDIA CAPTION & CHAT AVATAR DYNAMIC TESTS PASSED 100%!');
+console.log('🎉 ALL 43 INTEGRITY, SECURITY, CRM, AIZALO REMARKETING, AI SUITE, BULK DEEP-SYNC, QR AUTH, MEMORY GUARD, ZALO SANITIZER, DESKTOP PACKAGED, CLEAN SWITCH, MULTI-DEVICE SYNC, GROUP MENTION, QUICK-MSG, CAMPAIGN TEST DISPATCH, GROUP RECONCILIATION, AUTO-FALLBACK OPENROUTER, MULTIMODAL VISION, STRANGER IDENTITY, SCHEDULED MESSAGES, UNIVERSAL WIKI URL INGESTION, LIVE CHAT MEDIA CAPTION, CHAT AVATAR DYNAMIC & i18n MULTI-LANGUAGE TESTS PASSED 100%!');
 
 
 

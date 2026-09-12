@@ -1,4 +1,4 @@
-﻿import { Router } from 'express';
+import { Router } from 'express';
 import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
@@ -31,6 +31,17 @@ const upload = multer({
   limits: { fileSize: 25 * 1024 * 1024 }
 });
 
+// Guardrail #19: Multer Safe Middleware & Guaranteed JSON Error Contract
+const uploadSafe = (req, res, next) => {
+  upload.any()(req, res, (err) => {
+    if (err) {
+      logger.error(`[Scheduled Msg Multer Error] ${err.message}`);
+      return res.status(400).json({ error: err.message || 'Lỗi khi tải tệp tin lên' });
+    }
+    next();
+  });
+};
+
 // =============================================================================
 // 0. Static Media Serving & Upload for Scheduled Messages
 // =============================================================================
@@ -44,19 +55,22 @@ router.get('/scheduled-messages/media/:filename', requireAuth, (req, res) => {
   }
 });
 
-router.post('/scheduled-messages/upload', requireAuth, upload.single('file'), (req, res) => {
+router.post('/scheduled-messages/upload', requireAuth, uploadSafe, (req, res) => {
   try {
-    if (!req.file) {
+    const file = req.files?.[0] || req.file;
+    if (!file) {
       return res.status(400).json({ error: 'Không tìm thấy tệp tải lên' });
     }
-    const mediaUrl = `/api/scheduled-messages/media/${req.file.filename}`;
+    const mediaUrl = `/api/scheduled-messages/media/${file.filename}`;
     res.json({
       status: 'success',
+      mediaUrl,
+      mediaName: file.originalname,
       data: {
         mediaUrl,
-        mediaName: req.file.originalname,
-        filename: req.file.filename,
-        size: req.file.size
+        mediaName: file.originalname,
+        filename: file.filename,
+        size: file.size
       }
     });
   } catch (err) {

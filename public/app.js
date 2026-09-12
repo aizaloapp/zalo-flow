@@ -68,14 +68,16 @@ function applyTheme(theme, save = true) {
   const labelEl = document.getElementById('theme-label');
   const btnEl = document.getElementById('theme-toggle-btn');
 
+  const lang = window.i18n ? window.i18n.getLanguage() : 'vi';
+  const isEn = lang === 'en';
   if (theme === 'light') {
     if (iconEl) iconEl.innerText = '🌙';
-    if (labelEl) labelEl.innerText = 'Giao diện Tối';
-    if (btnEl) btnEl.title = 'Bấm để chuyển sang Giao diện Tối (Dark Mode)';
+    if (labelEl) labelEl.innerText = isEn ? 'Dark Mode' : 'Giao diện Tối';
+    if (btnEl) btnEl.title = isEn ? 'Switch to Dark Mode' : 'Bấm để chuyển sang Giao diện Tối (Dark Mode)';
   } else {
     if (iconEl) iconEl.innerText = '☀️';
-    if (labelEl) labelEl.innerText = 'Giao diện Sáng';
-    if (btnEl) btnEl.title = 'Bấm để chuyển sang Giao diện Sáng (Chuẩn Zalo PC)';
+    if (labelEl) labelEl.innerText = isEn ? 'Light Mode' : 'Giao diện Sáng';
+    if (btnEl) btnEl.title = isEn ? 'Switch to Light Mode' : 'Bấm để chuyển sang Giao diện Sáng (Chuẩn Zalo PC)';
   }
 }
 
@@ -184,10 +186,13 @@ async function loadTags() {
 
 function renderTagFilterDropdown() {
   if (!tagFilterSelectEl) return;
+  const currentVal = state.currentTagId || '';
+  const allText = window.t ? window.t('sidebar.tag_filter_all') : 'Tất cả Thẻ';
   tagFilterSelectEl.innerHTML = `
-    <option value="">📌 Tất cả Thẻ</option>
+    <option value="">📌 ${allText}</option>
     ${state.tags.map(t => `<option value="${t.id}">${escapeHtml(t.name)} (${t.customerCount || 0})</option>`).join('')}
   `;
+  tagFilterSelectEl.value = currentVal;
 }
 
 function handleTagFilterChange(tagId) {
@@ -218,7 +223,8 @@ async function createTag() {
 }
 
 async function deleteTag(id) {
-  if (!confirm('Bạn có chắc muốn xóa thẻ này?')) return;
+  const msg = window.t ? window.t('confirm.delete_tag') : 'Bạn có chắc muốn xóa thẻ này?';
+  if (!confirm(msg)) return;
   try {
     await fetch(`/api/tags/${id}`, { method: 'DELETE', headers: getHeaders() });
     await loadTags();
@@ -685,7 +691,8 @@ async function removeSpecificMediaFromQuickMessage(id, index, event) {
 }
 
 async function deleteQuickMessage(id) {
-  if (!confirm('Xóa tin nhắn nhanh này?')) return;
+  const msg = window.t ? window.t('confirm.delete_quick_msg') : 'Xóa tin nhắn nhanh này?';
+  if (!confirm(msg)) return;
   try {
     await fetch(`/api/quick-messages/${id}`, { method: 'DELETE', headers: getHeaders() });
     if (document.getElementById('qm-id')?.value === id) {
@@ -1816,7 +1823,8 @@ async function pauseCampaignNow(id) {
 }
 
 async function deleteCampaignItem(id) {
-  if (!confirm('Bạn có chắc chắn muốn xóa chiến dịch này cùng toàn bộ lịch sử gửi?')) return;
+  const msg = window.t ? window.t('confirm.delete_campaign') : 'Bạn có chắc chắn muốn xóa chiến dịch này?';
+  if (!confirm(msg)) return;
   try {
     const res = await fetch(`/api/campaigns/${id}`, {
       method: 'DELETE',
@@ -3567,9 +3575,11 @@ function getDateSeparatorLabel(isoString) {
 
     const msgDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
 
-    if (msgDate.getTime() === today.getTime()) return 'Hôm nay';
-    if (msgDate.getTime() === yesterday.getTime()) return 'Hôm qua';
-    return new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(d);
+    const tFn = (key, fallback) => (window.t ? window.t(key, null, fallback) : fallback);
+    if (msgDate.getTime() === today.getTime()) return tFn('chat.date_today', 'Hôm nay');
+    if (msgDate.getTime() === yesterday.getTime()) return tFn('chat.date_yesterday', 'Hôm qua');
+    const locale = (window.i18n && window.i18n.getLanguage() === 'en') ? 'en-US' : 'vi-VN';
+    return new Intl.DateTimeFormat(locale, { day: '2-digit', month: '2-digit', year: 'numeric' }).format(d);
   } catch {
     return '';
   }
@@ -3854,7 +3864,9 @@ function updateAiToggleButton(conv) {
   }
   btn.style.display = 'inline-flex';
   const isEnabled = conv.aiEnabled !== 0;
-  btn.innerText = isEnabled ? '⚡ Bot AI: BẬT' : '⚡ Bot AI: TẮT';
+  const onText = window.t ? window.t('chat.bot_ai_on') : '⚡ Bot AI: BẬT';
+  const offText = window.t ? window.t('chat.bot_ai_off') : '⚡ Bot AI: TẮT';
+  btn.innerText = isEnabled ? onText : offText;
   btn.classList.toggle('off', !isEnabled);
 }
 
@@ -4885,11 +4897,12 @@ function updateZaloHeaderStatus(profile) {
 
   if (nameEl) {
     if (profile.isLoggedIn) {
-      nameEl.innerText = profile.displayName || 'Đã Kết Nối (Online)';
+      const defaultOnline = window.t ? window.t('header.connected') : 'Đã Kết Nối (Online)';
+      nameEl.innerText = profile.displayName || defaultOnline;
       nameEl.title = `Tài khoản: ${profile.displayName} (UID: ${profile.userId || 'Online'})`;
     } else {
-      nameEl.innerText = 'Chưa Kết Nối (Offline)';
-      nameEl.title = 'Bấm để quét mã QR kết nối Zalo';
+      nameEl.innerText = window.t ? window.t('header.disconnected') : 'Chưa Đăng Nhập';
+      nameEl.title = window.t ? window.t('header.account_pill_title') : 'Bấm để quét mã QR kết nối Zalo';
     }
   }
   if (dotEl) {
@@ -6119,12 +6132,16 @@ function renderScheduledMsgPinBar(schedule) {
   if (btnCancel) btnCancel.style.display = '';
 
   const dateObj = new Date(schedule.scheduledAt);
-  const timeStr = dateObj.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-  const dateStr = dateObj.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+  const lang = window.i18n ? window.i18n.getLanguage() : 'vi';
+  const locale = lang === 'en' ? 'en-US' : 'vi-VN';
+  const timeStr = dateObj.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
+  const dateStr = dateObj.toLocaleDateString(locale, { day: '2-digit', month: '2-digit' });
   
   const diffMinutes = Math.round((schedule.scheduledAt - Date.now()) / 60000);
   let countdownStr = '';
-  if (diffMinutes > 0) {
+  if (window.i18n && window.i18n.getRelativeTime) {
+    countdownStr = ` • ${window.i18n.getRelativeTime(diffMinutes)}`;
+  } else if (diffMinutes > 0) {
     if (diffMinutes < 60) {
       countdownStr = ` • còn ${diffMinutes}p`;
     } else {
@@ -6133,7 +6150,7 @@ function renderScheduledMsgPinBar(schedule) {
       countdownStr = ` • còn ${h}h${m > 0 ? m + 'p' : ''}`;
     }
   } else if (diffMinutes <= 0 && schedule.status === 'pending') {
-    countdownStr = ' • đang gửi...';
+    countdownStr = lang === 'en' ? ' • sending now...' : ' • đang gửi...';
   }
   const formattedTime = `${timeStr} (${dateStr}${countdownStr})`;
 
@@ -6141,23 +6158,24 @@ function renderScheduledMsgPinBar(schedule) {
   if (snippetEl) {
     const cleanSnippet = (schedule.message || '').replace(/\n/g, ' ').trim();
     const mediaBadge = schedule.mediaUrl ? '🖼️ ' : '';
-    snippetEl.innerText = `${mediaBadge}${cleanSnippet ? `"${cleanSnippet.substring(0, 32)}${cleanSnippet.length > 32 ? '...' : ''}"` : (schedule.mediaUrl ? '[Hình ảnh]' : '')}`;
+    const imgLabel = lang === 'en' ? '[Image]' : '[Hình ảnh]';
+    snippetEl.innerText = `${mediaBadge}${cleanSnippet ? `"${cleanSnippet.substring(0, 32)}${cleanSnippet.length > 32 ? '...' : ''}"` : (schedule.mediaUrl ? imgLabel : '')}`;
   }
 
   if (schedule.status === 'paused_by_reply') {
     pinBar.classList.add('status-paused');
     if (iconEl) iconEl.innerText = '⚠️';
-    if (titleEl) titleEl.innerText = 'Khách vừa nhắn mới (Tạm dừng):';
+    if (titleEl) titleEl.innerText = lang === 'en' ? 'Customer replied (Paused):' : 'Khách vừa nhắn mới (Tạm dừng):';
     if (btnResume) btnResume.style.display = '';
   } else if (schedule.status === 'missed') {
     pinBar.classList.add('status-missed');
     if (iconEl) iconEl.innerText = '⚠️';
-    if (titleEl) titleEl.innerText = 'Bỏ lỡ do máy tắt:';
+    if (titleEl) titleEl.innerText = lang === 'en' ? 'Missed due to app offline:' : 'Bỏ lỡ do máy tắt:';
     if (btnSendNow) btnSendNow.style.display = '';
   } else {
     // pending or processing
     if (iconEl) iconEl.innerText = '⏰';
-    if (titleEl) titleEl.innerText = 'Hẹn gửi:';
+    if (titleEl) titleEl.innerText = lang === 'en' ? 'Scheduled:' : 'Hẹn gửi:';
     if (btnSendNow) btnSendNow.style.display = '';
   }
 
@@ -6213,18 +6231,31 @@ async function handleScheduleImageUpload(input) {
   }
 
   const formData = new FormData();
+  formData.append('file', file);
   formData.append('image', file);
 
   try {
     showToast('Đang tải ảnh lên...', 'info');
     const res = await fetch('/api/scheduled-messages/upload', {
       method: 'POST',
+      headers: state.adminToken ? { 'x-admin-token': state.adminToken } : {},
       body: formData
     });
-    const json = await res.json();
+    
+    let json;
+    const text = await res.text();
+    try {
+      json = JSON.parse(text);
+    } catch {
+      throw new Error(`Máy chủ phản hồi không hợp lệ (${res.status}): ${text.substring(0, 100)}`);
+    }
+
     if (!res.ok) throw new Error(json.error || 'Lỗi tải ảnh lên');
 
-    showScheduleImagePreview(json.mediaUrl, json.mediaName || file.name);
+    const mediaUrl = json.data?.mediaUrl || json.mediaUrl;
+    const mediaName = json.data?.mediaName || json.mediaName || file.name;
+
+    showScheduleImagePreview(mediaUrl, mediaName);
     showToast('Đã đính kèm ảnh thành công! 📸', 'success');
   } catch (err) {
     showToast(err.message, 'error');
@@ -6503,7 +6534,8 @@ async function saveScheduledMessage() {
 
 async function cancelActiveSchedule() {
   if (!state.activeSchedule?.id) return;
-  if (!confirm('Bạn có chắc muốn hủy lịch hẹn gửi tin nhắn này không?')) return;
+  const msg = window.t ? window.t('confirm.cancel_schedule') : 'Bạn có chắc muốn hủy lịch hẹn gửi tin nhắn này không?';
+  if (!confirm(msg)) return;
 
   try {
     const res = await fetch(`/api/scheduled-messages/${state.activeSchedule.id}`, {
@@ -6571,3 +6603,20 @@ async function sendNowActiveSchedule() {
   }
 }
 
+// -----------------------------------------------------------------------------
+// 🌐 Internationalization (i18n) Dynamic UI Synchronizer
+// -----------------------------------------------------------------------------
+window.addEventListener('zaloflow:langchange', () => {
+  const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+  applyTheme(currentTheme, false);
+  renderTagFilterDropdown();
+  if (typeof currentZaloProfile !== 'undefined' && currentZaloProfile) {
+    updateZaloHeaderStatus(currentZaloProfile);
+  }
+  if (state.activeThread) {
+    updateAiToggleButton(state.activeThread);
+  }
+  if (state.activeSchedule) {
+    renderScheduledMsgPinBar(state.activeSchedule);
+  }
+});
