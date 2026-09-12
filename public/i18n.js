@@ -45,7 +45,9 @@
         theme_toggle_title_light: 'Bấm để chuyển sang Giao diện Tối (Dark Mode)',
         theme_label_dark: 'Giao diện Tối',
         theme_label_light: 'Giao diện Sáng',
-        lang_toggle_title: 'Chuyển đổi ngôn ngữ / Switch Language (VI / EN)'
+        lang_toggle_title: 'Chuyển đổi ngôn ngữ / Switch Language (VI / EN)',
+        donate_btn: 'Ủng Hộ',
+        donate_title: 'Ủng hộ phát triển Zalo-Flow'
       },
       rail: {
         chat_tooltip: '💬 Hội Thoại',
@@ -139,7 +141,17 @@
         schedule_save_btn: 'Lên Lịch Gửi',
         phone_lookup_title: 'Tra Cứu Thông Tin Số Điện Thoại Zalo',
         phone_lookup_input_placeholder: 'Nhập số điện thoại (VD: 0912345678)...',
-        phone_lookup_submit_btn: 'Tra Cứu Hồ Sơ'
+        phone_lookup_submit_btn: 'Tra Cứu Hồ Sơ',
+        donate_title: 'Ủng Hộ Phát Triển Zalo-Flow',
+        donate_desc: 'Zalo-Flow là dự án mã nguồn mở miễn phí 100%. Mọi sự đồng hành và ủng hộ của bạn đều là nguồn động lực to lớn giúp duy trì và liên tục cập nhật tính năng mới! Cảm ơn bạn rất nhiều! ❤️',
+        donate_kofi_sub: 'Buy me a coffee — quốc tế',
+        donate_paypal_sub: 'Chuyển qua PayPal.Me',
+        donate_momo_sub: 'Quét mã MoMo (Việt Nam)',
+        donate_open: 'Mở',
+        donate_copy_phone: 'Sao chép SĐT',
+        donate_copy_email: 'Sao chép',
+        donate_copied_phone: 'Đã sao chép SĐT MoMo vào bộ nhớ tạm!',
+        donate_copied_email: 'Đã sao chép Email PayPal vào bộ nhớ tạm!'
       },
       toast: {
         copy_success: 'Đã sao chép vào bộ nhớ tạm!',
@@ -200,7 +212,9 @@
         theme_toggle_title_light: 'Click to switch to Dark Mode',
         theme_label_dark: 'Dark Mode',
         theme_label_light: 'Light Mode',
-        lang_toggle_title: 'Switch Language / Chuyển đổi ngôn ngữ (EN / VI)'
+        lang_toggle_title: 'Switch Language / Chuyển đổi ngôn ngữ (EN / VI)',
+        donate_btn: 'Donate',
+        donate_title: 'Support Zalo-Flow development'
       },
       rail: {
         chat_tooltip: '💬 Conversations',
@@ -294,7 +308,17 @@
         schedule_save_btn: 'Save Schedule',
         phone_lookup_title: 'Lookup Zalo Profile by Phone',
         phone_lookup_input_placeholder: 'Enter phone number (e.g. 0912345678)...',
-        phone_lookup_submit_btn: 'Lookup Profile'
+        phone_lookup_submit_btn: 'Lookup Profile',
+        donate_title: 'Support Zalo-Flow Development',
+        donate_desc: 'Zalo-Flow is 100% free and open-source. Every contribution keeps the project alive, well-maintained, and growing with new features. Thank you so much! ❤️',
+        donate_kofi_sub: 'Buy me a coffee — international friendly',
+        donate_paypal_sub: 'Direct transfer via PayPal.Me',
+        donate_momo_sub: 'Scan QR with MoMo app (Vietnam)',
+        donate_open: 'Open',
+        donate_copy_phone: 'Copy Phone',
+        donate_copy_email: 'Copy',
+        donate_copied_phone: 'Copied MoMo phone number to clipboard!',
+        donate_copied_email: 'Copied PayPal email to clipboard!'
       },
       toast: {
         copy_success: 'Copied to clipboard!',

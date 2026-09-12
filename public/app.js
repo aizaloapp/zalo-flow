@@ -156,6 +156,35 @@ function switchMainView(view) {
 }
 
 // -----------------------------------------------------------------------------
+// Donate / Support Handlers
+// -----------------------------------------------------------------------------
+async function copyDonateInfo(text, type = 'phone') {
+  const successMsgKey = type === 'email' ? 'modals.donate_copied_email' : 'modals.donate_copied_phone';
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+    } else {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.left = '-999999px';
+      ta.style.top = '-999999px';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      if (!ok) throw new Error('execCommand failed');
+    }
+    const msg = window.i18n ? window.i18n.t(successMsgKey) : 'Đã sao chép vào bộ nhớ tạm!';
+    showToast(msg, 'success');
+  } catch (err) {
+    console.warn('Copy failed, fallback:', err);
+    showToast(text, 'info');
+  }
+}
+
+// -----------------------------------------------------------------------------
 // Tags Management (Module 2)
 // -----------------------------------------------------------------------------
 function renderColorSwatches() {

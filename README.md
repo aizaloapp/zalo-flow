@@ -15,7 +15,7 @@
 [![CI Quality Gate](https://github.com/aizaloapp/zalo-flow/actions/workflows/ci.yml/badge.svg)](https://github.com/aizaloapp/zalo-flow/actions/workflows/ci.yml)
 [![Anti-Leak & Secret Scan](https://github.com/aizaloapp/zalo-flow/actions/workflows/secret-scan.yml/badge.svg)](https://github.com/aizaloapp/zalo-flow/actions/workflows/secret-scan.yml)
 [![Memory Footprint](https://img.shields.io/badge/RAM-%3C%20100MB-success.svg)](test/test-all.js)
-[![Tests Passing](https://img.shields.io/badge/Tests-41%2F41%20Passing-brightgreen.svg)](test/test-all.js)
+[![Tests Passing](https://img.shields.io/badge/Tests-43%2F43%20Passing-brightgreen.svg)](test/test-all.js)
 [![Docker Ready](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](docker-compose.yml)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
@@ -33,15 +33,15 @@
 
 Không cần biết Git, không cần cài Node.js, không cần mở màn hình đen Terminal:
 
-[![Tải Bản Cài Đặt Windows](https://img.shields.io/badge/Windows-Download%20Setup%20v1.1.0%20(.exe)-0068FF?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/aizaloapp/zalo-flow/releases/latest)
+[![Tải Bản Cài Đặt Windows](https://img.shields.io/badge/Windows-Download%20Setup%20v1.2.0%20(.exe)-0068FF?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/aizaloapp/zalo-flow/releases/latest)
 
-> 💡 **Tải về chạy ngay:** Bấm nút ở trên để tải file **`ZaloFlow-Setup-v1.1.0.exe`** (Chỉ **24.5MB**). Cài đặt trong 30 giây là có ngay icon Zalo-Flow ngoài Desktop!
+> 💡 **Tải về chạy ngay:** Bấm nút ở trên để tải file **`ZaloFlow-Setup-v1.2.0.exe`** (Chỉ **24.5MB**). Cài đặt trong 30 giây là có ngay icon Zalo-Flow ngoài Desktop!
 
-> 🚀 **Điểm mới trong v1.1.0:**
-> - 🖼️ **Khay Chờ Đính Kèm & Gộp Caption Ảnh (Pending Attachment Staging):** Tải hoặc dán ảnh (`Ctrl + V`) không còn bị gửi tức thì; người dùng có thể xem trước ảnh, gõ nội dung văn bản chú thích và gửi đồng thời cả Ảnh + Chữ dính liền trong 1 tin nhắn duy nhất.
-> - ⏰ **Lên Lịch Hẹn Tin Nhắn 1-1 (In-Thread Scheduling):** Lên lịch hẹn gửi tin kèm ảnh cho từng hội thoại cụ thể, thanh ghim đếm ngược trực quan và tự động tạm dừng an toàn khi khách phản hồi.
-> - 🌐 **Universal Wiki URL Ingestion & AI Knowledge Ops:** Nạp tài liệu Markdown trực tiếp từ URL bên ngoài (`aizalo.com/guide.md`) với lá chắn SSRF Guard và Golden Template 5 phần.
-> - 🔍 **Tự Động Định Danh Khách Hàng:** Tự động phân giải tên và avatar thật từ Zalo khi nhắn tin với người lạ, loại bỏ hoàn toàn hiển thị dãy số UID.
+> 🚀 **Điểm mới trong v1.2.0:**
+> - 🌐 **Hệ Thống Đa Ngôn Ngữ Song Ngữ (Zero-Dependency i18n):** Chuyển đổi tức thì Tiếng Việt (VI) ↔ Tiếng Anh (EN) tại chỗ với 148 translation keys chuẩn 1:1, bảo toàn 100% dữ liệu biểu mẫu đang nhập dở (Zero Form Reset Invariant).
+> - 💖 **Nút & Modal Ủng Hộ Zalo-Flow (Support / Donate Modal):** Giao diện thẻ trực quan 3 kênh (Ko-fi, PayPal, MoMo) với mã QR vector SVG tĩnh lưu cục bộ (Zero Network Overhead), nút sao chép 1-Click với fallback an toàn 2 tầng trên mạng LAN, chuẩn CSS Semantic Tokens WCAG AA.
+> - 🛡️ **Multer Safe Error Middleware & Dual-Field Tolerance:** Bọc an toàn các endpoint upload tệp bắt trọn lỗi trả về JSON 400 thay vì Express HTML 500, dung nạp linh hoạt cả 2 tên trường `file` và `image`.
+> - 🧩 **Khắc Phục Lỗi Cấu Trúc DOM Modal:** Rà soát và đóng kín toàn bộ 100% thẻ HTML popup, loại bỏ hiện tượng nuốt modal giữa các tính năng.
 
 </div>
 

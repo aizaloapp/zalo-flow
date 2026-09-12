@@ -4,6 +4,30 @@ Mọi thay đổi đáng chú ý của dự án **Zalo-Flow** sẽ được ghi 
 
 Định dạng dựa trên [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/), và dự án này tuân thủ [Semantic Versioning](https://semver.org/lang/vi/).
 
+## [1.2.0] - 2026-09-12
+
+### Added
+- **Kiến Trúc Đa Ngôn Ngữ Song Ngữ (Zero-Dependency i18n):**
+  - Động cơ chuyển ngữ thuần không phụ thuộc thư viện ngoài với 148 khóa dịch chuẩn 1:1 giữa Tiếng Việt (VI) và Tiếng Anh (EN).
+  - Áp dụng cơ chế *In-Place DOM Walk* cập nhật tức thì thuộc tính hiển thị `<50ms` mà không tải lại trang, bảo toàn 100% dữ liệu biểu mẫu đang nhập dở (*Zero Form Reset Invariant*).
+  - Tích hợp bộ kiểm thử tự động Test Suite #43 (`test/test-i18n.js`) bảo đảm 100% tính toàn vẹn từ điển.
+- **Tính Năng Ủng Hộ Zalo-Flow (Support / Donate Modal):**
+  - Nút viền hồng thanh lịch dạng viên thuốc trên Top Header với hiệu ứng nhịp đập tim và hỗ trợ co giãn responsive trên màn hình nhỏ `< 960px`.
+  - Modal 3 thẻ trực quan hỗ trợ các kênh: Ko-fi (`https://ko-fi.com/aizalo`), PayPal (`https://paypal.me/lekhoa288`) và MoMo (`0973947264`).
+  - Mã QR vector SVG tĩnh lưu trữ cục bộ tại `public/assets/qr/` (Zero Network Overhead), sinh qua script tái sử dụng `scripts/generate-donate-qr.mjs`.
+  - Nút sao chép thông tin 1-Click với cơ chế Fallback an toàn 2 tầng qua `document.execCommand('copy')` khi truy cập qua mạng LAN HTTP (`isSecureContext === false`).
+  - Chuẩn hóa CSS Semantic Tokens riêng biệt cho Light Theme (`#e11d48` trên `#fff1f2`) và Dark Theme (`#fb7185`) đạt chuẩn tương phản cao WCAG AA.
+- **Multer Safe Error Handling Middleware & Dual-Field Tolerance:**
+  - Bọc an toàn các endpoint upload tệp (`src/routes/scheduled-messages.js`) bắt trọn `MulterError` trả về JSON 400 thay vì để Express trả HTML 500.
+  - Phía backend dung nạp linh hoạt cả 2 tên trường `file` và `image`; phía frontend upload kiểm tra an toàn bằng `res.text() ➔ JSON.parse()`.
+
+### Fixed
+- **Khắc Phục Lỗi Cấu Trúc Lồng Thẻ Modal (Gstack Investigate):**
+  - Đóng kín các thẻ `</div>` bị thiếu tại `modal-app-update` và `modal-zalo-login`, triệt tiêu hoàn toàn hiện tượng nuốt nhầm modal con vào modal cha.
+  - Thiết lập `z-index: 10000;` cho các modal cấp cao nhất và hỗ trợ click ra ngoài backdrop để đóng nhanh.
+
+---
+
 ## [1.1.0] - 2026-09-11
 
 ### Added

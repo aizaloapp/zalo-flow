@@ -28,7 +28,7 @@
       document.documentElement.setAttribute('data-theme', 'dark');
     }
   </script>
-  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/styles.css?v=1.0.6">
   <script src="/i18n.js"></script>
 </head>
 <body>
@@ -62,6 +62,10 @@
       </div>
       <button class="filter-btn" id="sync-all-btn" onclick="syncAllHistoryWithProgress()" title="Đồng bộ toàn bộ danh bạ và tin nhắn lịch sử Zalo" data-i18n-title="header.sync_all_title">
         <span data-i18n="header.sync_all_btn">🔄 Đồng Bộ Lịch Sử</span>
+      </button>
+      <button class="donate-btn" id="donate-btn" onclick="openModal('modal-donate')" title="Ủng hộ dự án Zalo-Flow" data-i18n-title="header.donate_title">
+        <span class="donate-heart-icon">💖</span>
+        <span data-i18n="header.donate_btn">Ủng Hộ</span>
       </button>
       <button class="lang-toggle-btn" id="lang-toggle-btn" onclick="toggleAppLanguage()" title="Chuyển đổi ngôn ngữ / Switch Language (VI / EN)" data-i18n-title="header.lang_toggle_title">
         <span id="lang-icon">🇻🇳</span>
@@ -1737,6 +1741,8 @@
 
       </div>
     </div>
+  </div>
+
   <!-- Modal: Cập Nhật Hệ Thống Zalo-Flow (1-Click In-App Update) -->
   <div class="modal-backdrop" id="modal-app-update" style="display: none;">
     <div class="modal-box" style="max-width: 560px;">
@@ -1802,6 +1808,9 @@
         </div>
 
       </div>
+    </div>
+  </div>
+
   <!-- Modal: Xác Nhận Chuyển Tài Khoản / Đăng Xuất Thông Minh -->
   <div class="modal-backdrop" id="modal-clean-switch" style="display: none;">
     <div class="modal-box" style="max-width: 490px; border-radius: 16px;">
@@ -1850,6 +1859,80 @@
     </div>
   </div>
 
-  <script src="/app.js?v=1.0.4"></script>
+  <!-- 💖 MODAL: ỦNG HỘ PHÁT TRIỂN ZALO-FLOW (SUPPORT / DONATE) -->
+  <div class="modal-overlay" id="modal-donate" onclick="if (event.target === this) closeModal('modal-donate')">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h2 class="modal-title">
+          <span class="donate-heart-icon">💖</span>
+          <span data-i18n="modals.donate_title">Ủng Hộ Phát Triển Zalo-Flow</span>
+        </h2>
+        <button class="modal-close-btn" onclick="closeModal('modal-donate')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="donate-desc-text" data-i18n="modals.donate_desc">
+          Zalo-Flow là dự án mã nguồn mở miễn phí 100%. Mọi sự đồng hành và ủng hộ của bạn đều là nguồn động lực to lớn giúp duy trì và liên tục cập nhật tính năng mới! Cảm ơn bạn rất nhiều! ❤️
+        </div>
+
+        <div class="donate-card-grid">
+          <!-- Card 1: Ko-fi -->
+          <div class="donate-card">
+            <div class="donate-card-icon-wrap icon-kofi">☕</div>
+            <div class="donate-card-title">Ko-fi</div>
+            <div class="donate-card-sub" data-i18n="modals.donate_kofi_sub">Buy me a coffee — quốc tế</div>
+            <div class="donate-qr-box">
+              <img src="/assets/qr/qr-kofi.svg" alt="Ko-fi QR" class="donate-qr-img">
+            </div>
+            <div class="donate-info-badge">ko-fi.com/aizalo</div>
+            <div class="donate-actions-row">
+              <a href="https://ko-fi.com/aizalo" target="_blank" rel="noopener noreferrer" class="donate-action-btn primary">
+                <span data-i18n="modals.donate_open">Mở</span> ↗
+              </a>
+            </div>
+          </div>
+
+          <!-- Card 2: PayPal -->
+          <div class="donate-card">
+            <div class="donate-card-icon-wrap icon-paypal">💳</div>
+            <div class="donate-card-title">PayPal</div>
+            <div class="donate-card-sub" data-i18n="modals.donate_paypal_sub">Chuyển qua PayPal.Me</div>
+            <div class="donate-qr-box">
+              <img src="/assets/qr/qr-paypal.svg" alt="PayPal QR" class="donate-qr-img">
+            </div>
+            <div class="donate-info-badge">lekhoa288@gmail.com</div>
+            <div class="donate-actions-row">
+              <button type="button" class="donate-action-btn" onclick="copyDonateInfo('lekhoa288@gmail.com', 'email')">
+                📋 <span data-i18n="modals.donate_copy_email">Sao chép</span>
+              </button>
+              <a href="https://paypal.me/lekhoa288" target="_blank" rel="noopener noreferrer" class="donate-action-btn primary">
+                <span data-i18n="modals.donate_open">Mở</span> ↗
+              </a>
+            </div>
+          </div>
+
+          <!-- Card 3: MoMo -->
+          <div class="donate-card">
+            <div class="donate-card-icon-wrap icon-momo">📱</div>
+            <div class="donate-card-title">Ví MoMo</div>
+            <div class="donate-card-sub" data-i18n="modals.donate_momo_sub">Quét mã MoMo (Việt Nam)</div>
+            <div class="donate-qr-box">
+              <img src="/assets/qr/qr-momo.svg" alt="MoMo QR" class="donate-qr-img">
+            </div>
+            <div class="donate-info-badge">0973 947 264</div>
+            <div class="donate-actions-row">
+              <button type="button" class="donate-action-btn primary" onclick="copyDonateInfo('0973947264', 'phone')">
+                📋 <span data-i18n="modals.donate_copy_phone">Sao chép SĐT</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="filter-btn" onclick="closeModal('modal-donate')" data-i18n="common.close">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/app.js?v=1.0.6"></script>
 </body>
 </html>
