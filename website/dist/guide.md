@@ -33,7 +33,7 @@
 1. **Yêu cầu hệ thống:** Windows 10 hoặc Windows 11 (64-bit), ổ cứng trống tối thiểu 500MB, kết nối mạng ổn định.
 2. **Quy trình cài đặt 1-Click (Chỉ mất 3 phút):**
    - **Bước 1:** Tải bộ cài đặt Windows `.exe` mới nhất tại: `https://aizalo.com/#download` hoặc GitHub Releases: `https://github.com/aizaloapp/zalo-flow/releases`.
-   - **Bước 2:** Nhấp đúp vào file `ZaloFlow-Setup-v1.1.0.exe` để cài đặt tự động (đã tích hợp sẵn Node.js Portable và SQLite, không cần cài thêm công cụ lập trình).
+   - **Bước 2:** Nhấp đúp vào file `ZaloFlow-Setup-v1.2.0.exe` để cài đặt tự động (đã tích hợp sẵn Node.js Portable và SQLite, không cần cài thêm công cụ lập trình).
    - **Bước 3:** Nhấp đúp vào biểu tượng **Zalo-Flow** ngoài Desktop để khởi động. Ứng dụng chạy ngầm và tự động mở giao diện tại `http://localhost:3000`.
    - **Xem bài viết chi tiết có ảnh minh họa:** `https://aizalo.com/blog/huong-dan-cach-tao-chatbot-zalo-ca-nhan.html`
 
@@ -174,11 +174,17 @@
   👉 Anh/chị xem bài viết hướng dẫn chi tiết có bảng giá mẫu tại đây nhé: https://aizalo.com/blog/cach-huan-luyen-ai-ban-hang-zalo-bang-bang-gia-rieng.html
 
 - **Khách:** Bạn ơi Zalo Flow có cách nào hẹn giờ gửi tin nhắn và bảng giá cho khách vào sáng mai không?
-- **Bot:** Dạ hoàn toàn được anh/chị {name} nhé! Zalo-Flow v1.1.0 hỗ trợ hẹn giờ tin nhắn 1-1 cực kỳ tiện lợi:
+- **Bot:** Dạ hoàn toàn được anh/chị {name} nhé! Zalo-Flow v1.2.0 hỗ trợ hẹn giờ tin nhắn 1-1 cực kỳ tiện lợi:
   🔹 Bước 1: Mở khung chat với khách, bấm biểu tượng Hẹn giờ ⏰.
   🔹 Bước 2: Nhập nội dung, đính kèm file ảnh/PDF báo giá và chọn giờ gửi (ví dụ: 9h sáng mai).
   🔹 Bước 3: Bấm "Lên Lịch Ngay". Hệ thống có thanh đếm ngược và lá chắn Auto-Pause tự hủy lịch nếu khách nhắn tin trước giờ hẹn để đảm bảo an toàn tuyệt đối ạ!
   👉 Anh/chị xem bài viết hướng dẫn có ảnh chụp màn hình chi tiết tại đây nhé: https://aizalo.com/blog/cach-hen-gio-gui-tin-nhan-zalo-ca-nhan-tu-dong.html
+
+- **Khách:** Zalo-Flow có hỗ trợ giao diện tiếng Anh (English) không?
+- **Bot:** Dạ có anh/chị {name} nhé! Từ bản v1.2.0, Zalo-Flow hỗ trợ song ngữ Tiếng Việt ↔ Tiếng Anh. Anh/chị chỉ cần bấm vào nút cờ `🇻🇳 VI` ở góc phải thanh Header để chuyển sang `🇬🇧 EN` tức thì mà không bị mất dữ liệu form đang nhập dở ạ!
+
+- **Khách:** Mình thấy phần mềm Zalo-Flow rất hữu ích, mình muốn ủng hộ / mời cà phê tác giả thì làm thế nào?
+- **Bot:** Dạ em cảm ơn tấm lòng của anh/chị {name} rất nhiều ạ! Anh/chị có thể bấm vào nút **💖 Ủng Hộ** ở góc trên thanh Header để mời tác giả ly cà phê qua Ko-fi (https://ko-fi.com/aizalo), PayPal (https://paypal.me/lekhoa288) hoặc quét mã MoMo (0973 947 264) nhé!
 
 ---
 
