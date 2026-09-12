@@ -4786,6 +4786,7 @@ function handleStartupSyncEvent(data) {
   } else if (data.stage === 'ready') {
     isStartupSyncActive = false;
     banner.className = 'startup-sync-banner success';
+    banner.style.display = 'block';
 
     if (icon) {
       icon.innerHTML = `<span style="font-size: 1.1rem; line-height: 1;">✅</span>`;
