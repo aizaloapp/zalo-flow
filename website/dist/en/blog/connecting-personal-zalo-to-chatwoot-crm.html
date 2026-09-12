@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  
+  <title>How to Connect Personal Zalo to Chatwoot CRM — AIzalo.com</title>
+  <meta name="title" content="How to Connect Personal Zalo to Chatwoot CRM — AIzalo.com">
+  <meta name="description" content="Learn how to connect personal Zalo to open-source Chatwoot CRM with Zalo-Flow. Enable multi-agent support, local-first AI, and anti-ban rate limiting.">
+  <meta name="keywords" content="connect personal zalo to chatwoot, zalo chatwoot integration, zalo crm, multi-agent zalo, personal zalo api, open-source zalo chatbot">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <link rel="canonical" href="https://aizalo.com/en/blog/connecting-personal-zalo-to-chatwoot-crm.html">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://aizalo.com/en/blog/connecting-personal-zalo-to-chatwoot-crm.html">
+  <meta property="og:title" content="How to Connect Personal Zalo to Chatwoot CRM for Multi-Agent Support &amp; AI Automation">
+  <meta property="og:description" content="A complete technical guide to integrating personal Zalo with open-source Chatwoot CRM using Zalo-Flow, webhook event synchronization, multi-agent dispatch, and zero-ban protection.">
+  <meta property="og:image" content="https://aizalo.com/assets/og-image.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg?v=2">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon.png?v=2">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico?v=2">
+  <link rel="shortcut icon" href="/favicon.ico?v=2">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png?v=2">
+  <link rel="stylesheet" href="/style.css">
+
+  <!-- Schema Article, FAQPage & Breadcrumb -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "BlogPosting",
+        "headline": "How to Connect Personal Zalo to Chatwoot CRM for Multi-Agent Support & AI Automation",
+        "description": "A complete technical guide to integrating personal Zalo with open-source Chatwoot CRM using Zalo-Flow, webhook event synchronization, multi-agent dispatch, and zero-ban protection.",
+        "inLanguage": "en",
+        "author": {
+          "@type": "Organization",
+          "name": "AIzalo Engineering Team",
+          "url": "https://github.com/aizaloapp/zalo-flow"
+        },
+        "publisher": {
+          "@type": "Organization",
+          "name": "AIzalo Community",
+          "url": "https://aizalo.com/en/"
+        },
+        "datePublished": "2026-09-12",
+        "dateModified": "2026-09-12",
+        "mainEntityOfPage": "https://aizalo.com/en/blog/connecting-personal-zalo-to-chatwoot-crm.html"
+      },
+      {
+        "@type": "FAQPage",
+        "inLanguage": "en",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Does connecting personal Zalo to Chatwoot require a business Zalo OA account?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Zalo-Flow is designed specifically for personal Zalo accounts, bridging local WebSocket events directly into Chatwoot inboxes without needing a verified Official Account (OA) or expensive monthly enterprise fees."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can multiple support agents reply to the same Zalo customer simultaneously?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. By routing personal Zalo conversations through Chatwoot inboxes, your entire customer support team can assign tickets, leave internal private notes, and reply concurrently from a unified dashboard."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How does Zalo-Flow protect my personal Zalo account from being banned when dispatching messages?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Zalo-Flow enforces an invariant 3-layer anti-ban protection: a strict RateLimiter maintaining a minimum 3-second spacing (maximum 20 messages/minute), a 30-second SelfEchoShield to prevent reflection loops, and an automated FloodDetector that temporarily mutes abusive inbound spikes."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is customer chat data sent to third-party cloud servers during the Chatwoot sync?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Zalo-Flow follows a strict Local-First architecture. All session credentials, message queues, and API tokens are encrypted with AES-256-CBC locally on your machine and routed directly to your self-hosted Chatwoot instance via standard webhooks."
+            }
+          }
+        ]
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "https://aizalo.com/en/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Tech Blog",
+            "item": "https://aizalo.com/en/blog/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Connect Personal Zalo to Chatwoot",
+            "item": "https://aizalo.com/en/blog/connecting-personal-zalo-to-chatwoot-crm.html"
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <!-- Traks Web Analytics -->
+  <script>window.traks=window.traks||function(){(window.traks.q=window.traks.q||[]).push(arguments)}</script><script defer data-site="pb_live_jbrwzdo04plqmz8u15gnrvjq" src="https://traks-collect.dragonfarm2509.workers.dev/t.js"></script>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <header class="navbar">
+    <div class="container nav-container">
+      <a href="/en/" class="brand">
+        <img src="/assets/logo.png" alt="Zalo-Flow Logo" class="brand-icon">
+        <span>Zalo-Flow</span>
+      </a>
+
+      <ul class="nav-menu" id="navMenu">
+        <li class="mobile-only-action">
+          <div class="lang-switcher-drawer" aria-label="Language selector">
+            <a href="/blog/" class="lang-btn" title="Tiếng Việt">🇻🇳 Tiếng Việt</a>
+            <span class="lang-divider">|</span>
+            <a href="/en/blog/" class="lang-btn active" title="English">🇬🇧 English</a>
+          </div>
+        </li>
+        <li><a href="/en/#features" class="nav-link">Features</a></li>
+        <li><a href="/en/#smartscreen" class="nav-link">Quick Start</a></li>
+        <li><a href="/en/#faq" class="nav-link">FAQ</a></li>
+        <li><a href="/en/blog/" class="nav-link" style="color: var(--cyan);">Blog</a></li>
+        <li><a href="/en/#community" class="nav-link">Community</a></li>
+        <li class="mobile-only-action">
+          <a href="https://zalo.me/0373315784" target="_blank" rel="noopener" class="btn btn-zalo">
+            🤖 Try Zalo AI Bot
+          </a>
+        </li>
+        <li class="mobile-only-action">
+          <a href="https://github.com/aizaloapp/zalo-flow/releases/latest" target="_blank" rel="noopener" class="btn btn-primary">
+            🪟 Download .exe
+          </a>
+        </li>
+      </ul>
+
+      <div class="nav-actions">
+        <div class="lang-switcher" aria-label="Language selector">
+          <a href="/blog/" class="lang-btn" title="Tiếng Việt">🇻🇳 VI</a>
+          <span class="lang-divider">/</span>
+          <a href="/en/blog/" class="lang-btn active" title="English">🇬🇧 EN</a>
+        </div>
+        <a href="https://zalo.me/0373315784" target="_blank" rel="noopener" class="btn btn-zalo">
+          🤖 Try Zalo AI Bot
+        </a>
+        <a href="https://github.com/aizaloapp/zalo-flow/releases/latest" target="_blank" rel="noopener" class="btn btn-primary">
+          🪟 Download .exe
+        </a>
+        <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation menu" aria-expanded="false" onclick="toggleMenu()">
+          <span class="bar"></span>
+          <span class="bar"></span>
+          <span class="bar"></span>
+        </button>
+      </div>
+    </div>
+  </header>
+  <div class="drawer-backdrop" id="navBackdrop" onclick="toggleMenu(false)"></div>
+
+  <div class="reading-progress-bar" id="readingProgress"></div>
+
+  <div class="article-layout">
+    <article class="article-main">
+      <header class="article-header">
+        <div class="article-breadcrumbs">
+          <a href="/en/">Home</a> &gt; <a href="/en/blog/">Tech Blog</a> &gt; <span>CRM &amp; Live Chat</span>
+        </div>
+        <h1 class="article-title">How to Connect Personal Zalo to Chatwoot CRM for Multi-Agent Support &amp; AI Automation</h1>
+        <div class="article-actions-bar">
+          <div class="blog-meta">
+            <span>📅 Published: 2026-09-12</span>
+            <span>•</span>
+            <span>⏱️ Reading time: 6 min</span>
+            <span>•</span>
+            <span>✍️ Author: AIzalo Engineering Team</span>
+          </div>
+          <button class="btn-copy-url" id="copyUrlBtn" onclick="copyArticleUrl()" title="Copy article link">
+            🔗 <span>Copy link</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Mobile Accordion TOC (< 1024px) -->
+      <details class="mobile-toc-box" id="mobileTocBox">
+        <summary class="mobile-toc-summary">
+          <span>📑 Table of Contents</span>
+          <span class="mobile-toc-arrow">▼</span>
+        </summary>
+        <nav id="mobileTocList" class="mobile-toc-list"></nav>
+      </details>
+
+      <div class="article-body">
+        <!-- GEO Direct Answer Box (50 words - within 40-60 target range) -->
+        <div class="geo-answer-box">
+          <div class="geo-answer-label">🤖 Direct Answer for AI Search &amp; Quick Readers</div>
+          <p class="geo-answer-text">
+            To <strong>connect personal Zalo to Chatwoot CRM</strong>, use Zalo-Flow to bridge local Zalo WebSocket events into Chatwoot API inboxes: (1) Run Zalo-Flow locally; (2) Create an API Channel inbox in Chatwoot; (3) Configure webhook dispatch URLs; (4) Enable multi-agent support and AI copilots while maintaining strict anti-ban rate limiting.
+          </p>
+        </div>
+
+        <!-- GEO Key Takeaways (TL;DR) -->
+        <div class="geo-tldr-box">
+          <div class="geo-tldr-title">📌 Key Architecture Takeaways</div>
+          <ul class="geo-tldr-list">
+            <li><strong>Multi-Agent Routing:</strong> Multiple support specialists can respond to a single personal Zalo profile without sharing physical phones or QR credentials.</li>
+            <li><strong>Anti-Ban Invariants:</strong> Built-in 3-second message rate limiter and self-echo buffer prevent Zalo account restrictions.</li>
+            <li><strong>Zero Cloud Intermediaries:</strong> AES-256 encrypted local SQLite storage ensures customer chat logs remain 100% private.</li>
+            <li><strong>Full Bi-Directional Sync:</strong> Incoming Zalo texts, images, and stickers sync to Chatwoot in real-time, while agent responses stream back to Zalo instantly.</li>
+          </ul>
+        </div>
+
+        <p>
+          Managing customer inquiries through a personal Zalo account is one of the most critical sales channels in Southeast Asia, especially in Vietnam where Zalo boasts over 77 million active monthly users. However, teams quickly encounter severe operational bottlenecks: only one person can scan the QR code to log into the desktop client at a time, conversation history is scattered, and team members cannot collaborate or hand off customer tickets smoothly.
+        </p>
+        <p>
+          Commercial Zalo Official Accounts (OA) solve some of these challenges, but they require corporate business licenses, incur recurring monthly template fees, and suffer from strict 48-hour customer messaging windows. <strong>Zalo-Flow</strong> bridges this gap by turning your existing personal Zalo profile into a full-featured multi-agent helpdesk connected directly to <strong>Chatwoot</strong> — the leading open-source customer engagement suite.
+        </p>
+
+        <!-- Section 1 -->
+        <h2 id="why-connect-personal-zalo-to-chatwoot">1. Why Bridge Personal Zalo into Chatwoot CRM?</h2>
+        <p>
+          Chatwoot provides an omnichannel customer communication platform that handles live chat, email, WhatsApp, and social channels. Integrating personal Zalo into Chatwoot unlocks four major operational advantages:
+        </p>
+        <ul>
+          <li><strong>Shared Team Inbox:</strong> Distribute customer chats to specific departments (Sales, Technical Support, Billing) with round-robin or manual ticket assignment.</li>
+          <li><strong>Internal Private Notes:</strong> Team members can collaborate and tag teammates inside customer threads without the customer seeing internal discussions.</li>
+          <li><strong>Canned Responses &amp; Macros:</strong> Accelerate repetitive troubleshooting steps with keyboard shortcuts and standardized answer templates.</li>
+          <li><strong>Unified AI Copilot:</strong> Augment support staff with local LLMs (Google Gemini, DeepSeek) to draft intelligent reply suggestions before dispatching.</li>
+        </ul>
+
+        <!-- Section 2: Architecture Overview & Comparison -->
+        <h2 id="architecture-overview">2. Architecture Overview: Local-First Bridge</h2>
+        <p>
+          Unlike legacy cloud scrapers that jeopardize account security by routing plain text passwords through remote servers, Zalo-Flow operates on a zero-trust, local-first topology:
+        </p>
+
+        <div class="geo-table-wrapper">
+          <table class="geo-table">
+            <thead>
+              <tr>
+                <th>Component</th>
+                <th>Standard Cloud Scrapers</th>
+                <th>Zalo-Flow Local-First Architecture</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Credential Storage</strong></td>
+                <td>Plaintext or remote database</td>
+                <td><strong>AES-256-CBC local encrypted storage</strong> (Zero plaintext)</td>
+              </tr>
+              <tr>
+                <td><strong>Protocol Execution</strong></td>
+                <td>Headless Chrome cloud cluster</td>
+                <td><strong>Native Node.js WebSocket engine</strong> (&lt; 100MB RAM)</td>
+              </tr>
+              <tr>
+                <td><strong>Anti-Ban Mechanism</strong></td>
+                <td>None or rudimentary delay</td>
+                <td><strong>Deterministic 3s RateLimiter + SelfEchoShield</strong></td>
+              </tr>
+              <tr>
+                <td><strong>Deployment Model</strong></td>
+                <td>Vendor lock-in SaaS</td>
+                <td><strong>100% Self-Hosted &amp; Open-Source</strong> (Windows .exe / Docker)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>
+          When an incoming message arrives via Zalo's encrypted WebSocket feed, Zalo-Flow decrypts the payload locally, extracts metadata (sender UID, display name, timestamp), and triggers an HTTP POST webhook to your Chatwoot API channel. When an agent clicks "Reply" inside Chatwoot, Chatwoot dispatches a webhook back to Zalo-Flow's local endpoint, which validates the payload against anti-ban rules before transmitting the message back to the customer.
+        </p>
+
+        <!-- Section 3: Step-by-Step Setup -->
+        <h2 id="step-by-step-setup-guide">3. Step-by-Step Integration Guide</h2>
+        <p>
+          Connecting your personal Zalo account to Chatwoot takes less than 10 minutes. Follow these verified installation steps:
+        </p>
+
+        <h3 id="step-1-create-chatwoot-inbox">Step 1: Create an API Channel Inbox in Chatwoot</h3>
+        <p>
+          Log into your self-hosted or managed Chatwoot dashboard as an administrator:
+        </p>
+        <ol>
+          <li>Navigate to <strong>Settings &gt; Inboxes &gt; Add Inbox</strong>.</li>
+          <li>Select the <strong>API Channel</strong> inbox type.</li>
+          <li>Name the channel (e.g., <code>Personal Zalo Support</code>) and set the Webhook Callback URL to your Zalo-Flow endpoint (e.g., <code>https://your-server.com/api/chatwoot/webhook</code>).</li>
+          <li>Add your team members to the inbox and click <strong>Create Inbox</strong>. Chatwoot will generate an <strong>Inbox ID</strong> and an <strong>API Access Token</strong>.</li>
+        </ol>
+
+        <h3 id="step-2-configure-zalo-flow-bridge">Step 2: Configure Zalo-Flow Environment</h3>
+        <p>
+          Open your Zalo-Flow dashboard at <code>http://localhost:3000</code> or edit your local environment configuration:
+        </p>
+        <ul>
+          <li><strong>Chatwoot Base URL:</strong> Enter your instance URL (e.g., <code>https://chatwoot.yourcompany.com</code>).</li>
+          <li><strong>Account ID:</strong> Your numerical Chatwoot account identifier.</li>
+          <li><strong>Inbox ID:</strong> The numerical ID of the API channel created in Step 1.</li>
+          <li><strong>API Access Token:</strong> The user or bot access token authorized to post messages.</li>
+        </ul>
+
+        <h3 id="step-3-test-bi-directional-sync">Step 3: Test Real-Time Bi-Directional Message Sync</h3>
+        <p>
+          Once credentials are saved, launch a test conversation:
+        </p>
+        <ol>
+          <li>Send a test message from an external Zalo account to your connected personal profile.</li>
+          <li>Within 500ms, confirm that a new conversation card appears in Chatwoot with the sender's real avatar and display name.</li>
+          <li>Type a response inside Chatwoot and hit Send. Observe that Zalo-Flow routes the message through its rate limiter and delivers it seamlessly to the mobile device.</li>
+        </ol>
+
+        <!-- Section 4: Anti-Ban & Security -->
+        <h2 id="anti-ban-and-operational-security">4. Anti-Ban Invariants &amp; Operational Security</h2>
+        <p>
+          Automating personal messaging accounts carries inherent risks if traffic patterns violate provider guidelines. Zalo-Flow enforces three non-negotiable safety guardrails:
+        </p>
+        <ul>
+          <li><strong>Deterministic Rate Limiter:</strong> Enforces a strict minimum of 3 seconds between outbound messages, capping total volume at 20 messages per minute.</li>
+          <li><strong>SelfEchoShield Protection:</strong> Maintains a 30-second ring buffer of recent outgoing message IDs to prevent infinite feedback loops caused by multi-device message reflections.</li>
+          <li><strong>Inbound Flood Detection:</strong> If an external contact sends more than 5 messages within 3 seconds, the listener activates a 60-second mute buffer to safeguard application memory and prevent server crashes.</li>
+        </ul>
+
+        <!-- Section 5: FAQ -->
+        <h2 id="frequently-asked-questions">5. Frequently Asked Questions (FAQ)</h2>
+        <p>
+          Common architectural questions regarding personal Zalo CRM synchronization:
+        </p>
+        <div class="faq-item">
+          <p><strong>Q: Does this require running my computer 24/7?</strong></p>
+          <p>A: Yes, or you can deploy Zalo-Flow on any affordable Linux/Docker VPS (1 CPU core, 512MB RAM is more than sufficient). The system runs silently in the background.</p>
+        </div>
+        <div class="faq-item">
+          <p><strong>Q: Can I connect multiple personal Zalo accounts to one Chatwoot instance?</strong></p>
+          <p>A: Yes. You can run multiple lightweight Zalo-Flow instances (each assigned its own port and SQLite database), pointing to separate API channel inboxes within the same Chatwoot workspace.</p>
+        </div>
+
+        <!-- Conversion CTA Box (Semantic Isolation: NO H2/H3 tags) -->
+        <div class="cta-box" style="margin-top: 3rem; text-align: center; padding: 2.5rem 1.5rem; background: radial-gradient(circle at 50% 0%, rgba(0, 210, 255, 0.12), transparent 70%), var(--bg-card); border: 1px solid rgba(0, 210, 255, 0.3); border-radius: 16px;">
+          <div class="cta-title" style="font-size: 1.5rem; font-weight: 700; color: #fff; margin-bottom: 0.75rem;">
+            Ready to Scale Your Zalo Customer Support?
+          </div>
+          <p style="color: var(--text-muted); max-width: 580px; margin: 0 auto 1.5rem; font-size: 0.95rem; line-height: 1.6;">
+            Download Zalo-Flow for Windows or run it self-hosted in Docker. Free, open-source, and engineered for high reliability.
+          </p>
+          <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+            <a href="https://github.com/aizaloapp/zalo-flow/releases/latest" target="_blank" rel="noopener" class="btn btn-primary">
+              🪟 Download Installer (.exe)
+            </a>
+            <a href="https://zalo.me/0373315784" target="_blank" rel="noopener" class="btn btn-zalo">
+              🤖 Try Live Zalo AI Bot
+            </a>
+          </div>
+        </div>
+
+      </div>
+    </article>
+
+    <!-- Desktop Sticky Sidebar TOC (>= 1024px) -->
+    <aside class="article-toc-sidebar">
+      <div class="desktop-toc-container">
+        <div class="desktop-toc-title">ON THIS PAGE</div>
+        <nav id="desktopTocList" class="desktop-toc-list"></nav>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Related Technical Resources (Outside <article> for Semantic Isolation) -->
+  <section class="container related-posts-section" style="margin-top: 4rem; padding-top: 2rem; border-top: 1px solid var(--border);">
+    <h2 id="related-guides" style="font-size: 1.35rem; font-weight: 700; margin-bottom: 1.5rem; color: #fff;">
+      Related Technical Resources &amp; Documentation
+    </h2>
+    <div class="grid-3">
+      <a href="/en/#features" class="card" style="padding: 1.25rem;">
+        <span class="blog-tag" style="background: rgba(0, 210, 255, 0.1); color: var(--cyan); margin-bottom: 0.5rem; display: inline-block;">Feature Suite</span>
+        <div style="font-weight: 600; color: #fff; margin-bottom: 0.5rem;">Zalo-Flow Core Capabilities</div>
+        <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">Explore local AI copilots, schedule campaigns, and tag management features.</p>
+      </a>
+      <a href="/llms.txt" class="card" style="padding: 1.25rem;">
+        <span class="blog-tag" style="background: rgba(16, 185, 129, 0.1); color: #34d399; margin-bottom: 0.5rem; display: inline-block;">AI Spec</span>
+        <div style="font-weight: 600; color: #fff; margin-bottom: 0.5rem;">Machine-Readable llms.txt</div>
+        <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">Structured summary specifications designed for AI crawlers and LLM indexing.</p>
+      </a>
+      <a href="https://github.com/aizaloapp/zalo-flow" target="_blank" rel="noopener" class="card" style="padding: 1.25rem;">
+        <span class="blog-tag" style="background: rgba(234, 179, 8, 0.1); color: #facc15; margin-bottom: 0.5rem; display: inline-block;">Open Source</span>
+        <div style="font-weight: 600; color: #fff; margin-bottom: 0.5rem;">GitHub Source Code</div>
+        <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">Audit the codebase, report issues, and participate in community discussions.</p>
+      </a>
+    </div>
+  </section>
+
+  <!-- Floating Bot Demo Badge -->
+  <a href="https://zalo.me/0373315784" target="_blank" rel="noopener" class="floating-badge" aria-label="Experience Live Zalo AI Bot Demo">
+    <span>🤖</span>
+    <span>Try Live Zalo AI Bot</span>
+  </a>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-bottom">
+        <div>
+          © 2026 AIzalo Community. Software provided strictly for educational, research, and personal automation purposes. Not affiliated with VNG Corporation.
+        </div>
+        <div>
+          <a href="/en/blog/" style="color: var(--cyan); text-decoration: none;">Back to Tech Blog</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Mobile Navigation Controller -->
+  <script>
+    function toggleMenu(force) {
+      const menu = document.getElementById('navMenu');
+      const toggle = document.getElementById('navToggle');
+      const backdrop = document.getElementById('navBackdrop');
+      if (!menu || !toggle || !backdrop) return;
+      const isOpen = (force !== undefined) ? force : !menu.classList.contains('active');
+      menu.classList.toggle('active', isOpen);
+      backdrop.classList.toggle('active', isOpen);
+      toggle.classList.toggle('active', isOpen);
+      toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      document.body.style.overflow = isOpen ? 'hidden' : '';
+    }
+
+    document.querySelectorAll('#navMenu a').forEach(function(link) {
+      link.addEventListener('click', function() {
+        toggleMenu(false);
+      });
+    });
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') toggleMenu(false);
+    });
+  </script>
+  <script src="/blog-toc.js"></script>
+</body>
+</html>

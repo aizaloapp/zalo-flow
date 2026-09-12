@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  
+  <title>Zalo Automation &amp; AI Chatbot Engineering Blog — AIzalo.com</title>
+  <meta name="title" content="Zalo Automation &amp; AI Chatbot Engineering Blog — AIzalo.com">
+  <meta name="description" content="In-depth technical guides on personal Zalo automation, anti-ban protocols, Chatwoot CRM integration, and local-first AI customer service workflows.">
+  <link rel="canonical" href="https://aizalo.com/en/blog/">
+  <link rel="alternate" hreflang="vi" href="https://aizalo.com/blog/">
+  <link rel="alternate" hreflang="en" href="https://aizalo.com/en/blog/">
+  <link rel="alternate" hreflang="x-default" href="https://aizalo.com/blog/">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://aizalo.com/en/blog/">
+  <meta property="og:title" content="Zalo Automation &amp; AI Chatbot Engineering Blog — AIzalo.com">
+  <meta property="og:description" content="In-depth technical guides on personal Zalo automation, anti-ban protocols, Chatwoot CRM integration, and local-first AI customer service workflows.">
+  <meta property="og:image" content="https://aizalo.com/assets/og-image.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg?v=2">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon.png?v=2">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico?v=2">
+  <link rel="shortcut icon" href="/favicon.ico?v=2">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png?v=2">
+  <link rel="stylesheet" href="/style.css">
+
+  <!-- Schema CollectionPage & BreadcrumbList -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "CollectionPage",
+        "@id": "https://aizalo.com/en/blog/#webpage",
+        "url": "https://aizalo.com/en/blog/",
+        "name": "Zalo Automation & AI Chatbot Engineering Blog — AIzalo.com",
+        "description": "In-depth technical guides on personal Zalo automation, anti-ban protocols, Chatwoot CRM integration, and local-first AI customer service workflows.",
+        "inLanguage": "en",
+        "isPartOf": {
+          "@type": "WebSite",
+          "@id": "https://aizalo.com/en/#website",
+          "name": "AIzalo.com",
+          "url": "https://aizalo.com/en/"
+        }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": "https://aizalo.com/en/blog/#breadcrumb",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "https://aizalo.com/en/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Tech Blog",
+            "item": "https://aizalo.com/en/blog/"
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <!-- Traks Web Analytics -->
+  <script>window.traks=window.traks||function(){(window.traks.q=window.traks.q||[]).push(arguments)}</script><script defer data-site="pb_live_jbrwzdo04plqmz8u15gnrvjq" src="https://traks-collect.dragonfarm2509.workers.dev/t.js"></script>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <header class="navbar">
+    <div class="container nav-container">
+      <a href="/en/" class="brand">
+        <img src="/assets/logo.png" alt="Zalo-Flow Logo" class="brand-icon">
+        <span>Zalo-Flow</span>
+      </a>
+
+      <ul class="nav-menu" id="navMenu">
+        <li class="mobile-only-action">
+          <div class="lang-switcher-drawer" aria-label="Language selector">
+            <a href="/blog/" class="lang-btn" title="Tiếng Việt">🇻🇳 Tiếng Việt</a>
+            <span class="lang-divider">|</span>
+            <a href="/en/blog/" class="lang-btn active" title="English">🇬🇧 English</a>
+          </div>
+        </li>
+        <li><a href="/en/#features" class="nav-link">Features</a></li>
+        <li><a href="/en/#smartscreen" class="nav-link">Quick Start</a></li>
+        <li><a href="/en/#faq" class="nav-link">FAQ</a></li>
+        <li><a href="/en/blog/" class="nav-link" style="color: var(--cyan);">Blog</a></li>
+        <li><a href="/en/#community" class="nav-link">Community</a></li>
+        <li class="mobile-only-action">
+          <a href="https://zalo.me/0373315784" target="_blank" rel="noopener" class="btn btn-zalo">
+            🤖 Try Zalo AI Bot
+          </a>
+        </li>
+        <li class="mobile-only-action">
+          <a href="https://github.com/aizaloapp/zalo-flow/releases/latest" target="_blank" rel="noopener" class="btn btn-primary">
+            🪟 Download .exe
+          </a>
+        </li>
+      </ul>
+
+      <div class="nav-actions">
+        <div class="lang-switcher" aria-label="Language selector">
+          <a href="/blog/" class="lang-btn" title="Tiếng Việt">🇻🇳 VI</a>
+          <span class="lang-divider">/</span>
+          <a href="/en/blog/" class="lang-btn active" title="English">🇬🇧 EN</a>
+        </div>
+        <a href="https://zalo.me/0373315784" target="_blank" rel="noopener" class="btn btn-zalo">
+          🤖 Try Zalo AI Bot
+        </a>
+        <a href="https://github.com/aizaloapp/zalo-flow/releases/latest" target="_blank" rel="noopener" class="btn btn-primary">
+          🪟 Download .exe
+        </a>
+        <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation menu" aria-expanded="false" onclick="toggleMenu()">
+          <span class="bar"></span>
+          <span class="bar"></span>
+          <span class="bar"></span>
+        </button>
+      </div>
+    </div>
+  </header>
+  <div class="drawer-backdrop" id="navBackdrop" onclick="toggleMenu(false)"></div>
+
+  <main class="container section">
+    <div class="section-header">
+      <div class="section-tag">Technical Knowledge &amp; Guides</div>
+      <h1 class="section-title">Zalo Automation &amp; AI Engineering Blog</h1>
+      <p class="section-desc">In-depth technical tutorials on personal Zalo integration, anti-ban protection, multi-agent CRM dispatch, and local-first AI customer support.</p>
+    </div>
+
+    <div class="grid-2">
+      <!-- Post Flagship: Connect Personal Zalo to Chatwoot CRM -->
+      <a href="/en/blog/connecting-personal-zalo-to-chatwoot-crm.html" class="card blog-card" style="border-color: rgba(0, 210, 255, 0.4); box-shadow: 0 4px 20px rgba(0, 210, 255, 0.15);">
+        <span class="blog-tag" style="background: rgba(0, 210, 255, 0.15); color: #00d2ff; border: 1px solid rgba(0, 210, 255, 0.3);">⚡ Flagship Integration</span>
+        <h2 class="card-title" id="post-connect-zalo-chatwoot">How to Connect Personal Zalo to Chatwoot CRM for Multi-Agent Support &amp; AI Automation</h2>
+        <p class="card-desc">
+          Step-by-step architecture guide to syncing personal Zalo messages into open-source Chatwoot CRM with webhook dispatch, multi-agent routing, and zero-ban protection.
+        </p>
+        <div class="blog-meta">
+          <span>📅 2026-09-12</span>
+          <span>•</span>
+          <span>⏱️ 6 min read</span>
+          <span>•</span>
+          <span>✍️ AIzalo Engineering Team</span>
+        </div>
+      </a>
+    </div>
+  </main>
+
+  <!-- Floating Bot Demo Badge -->
+  <a href="https://zalo.me/0373315784" target="_blank" rel="noopener" class="floating-badge" aria-label="Experience Live Zalo AI Bot Demo">
+    <span>🤖</span>
+    <span>Try Live Zalo AI Bot</span>
+  </a>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-bottom">
+        <div>
+          © 2026 AIzalo Community. Software provided strictly for educational, research, and personal automation purposes. Not affiliated with VNG Corporation.
+        </div>
+        <div>
+          <a href="/en/" style="color: var(--cyan); text-decoration: none;">Back to Zalo-Flow Home</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Mobile Navigation Controller -->
+  <script>
+    function toggleMenu(force) {
+      const menu = document.getElementById('navMenu');
+      const toggle = document.getElementById('navToggle');
+      const backdrop = document.getElementById('navBackdrop');
+      if (!menu || !toggle || !backdrop) return;
+      const isOpen = (force !== undefined) ? force : !menu.classList.contains('active');
+      menu.classList.toggle('active', isOpen);
+      backdrop.classList.toggle('active', isOpen);
+      toggle.classList.toggle('active', isOpen);
+      toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      document.body.style.overflow = isOpen ? 'hidden' : '';
+    }
+
+    document.querySelectorAll('#navMenu a').forEach(function(link) {
+      link.addEventListener('click', function() {
+        toggleMenu(false);
+      });
+    });
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') toggleMenu(false);
+    });
+  </script>
+  <script src="/blog-toc.js"></script>
+</body>
+</html>

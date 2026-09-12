@@ -164,23 +164,24 @@ function setupScrollspy(headings) {
 
 /* 4. Copy Clean Article URL Utility */
 window.copyArticleUrl = function() {
+  const isEn = document.documentElement.lang === 'en';
   const cleanUrl = window.location.origin + window.location.pathname;
   const copyBtn = document.getElementById('btnCopyUrl');
 
   navigator.clipboard.writeText(cleanUrl).then(() => {
     if (copyBtn) {
       const originalText = copyBtn.innerHTML;
-      copyBtn.innerHTML = '✅ Đã chép link!';
+      copyBtn.innerHTML = isEn ? '✅ Link copied!' : '✅ Đã chép link!';
       copyBtn.style.color = 'var(--cyan)';
       setTimeout(() => {
         copyBtn.innerHTML = originalText;
         copyBtn.style.color = '';
       }, 2000);
     } else {
-      alert('Đã sao chép liên kết bài viết!');
+      alert(isEn ? 'Article link copied to clipboard!' : 'Đã sao chép liên kết bài viết!');
     }
   }).catch(() => {
-    prompt('Sao chép liên kết bài viết bên dưới:', cleanUrl);
+    prompt(isEn ? 'Copy article link below:' : 'Sao chép liên kết bài viết bên dưới:', cleanUrl);
   });
 };
 
@@ -198,13 +199,14 @@ function slugifyText(text) {
 
 /* 5. Scroll-to-Top with Circular Reading Progress (Cloudflare-style) */
 function initScrollToTop() {
+  const isEn = document.documentElement.lang === 'en';
   let btn = document.getElementById('scrollTopBtn');
   if (!btn) {
     btn = document.createElement('button');
     btn.id = 'scrollTopBtn';
     btn.className = 'scroll-top-btn';
-    btn.setAttribute('aria-label', 'Cuộn lên đầu trang');
-    btn.setAttribute('title', 'Cuộn lên đầu trang');
+    btn.setAttribute('aria-label', isEn ? 'Scroll to top' : 'Cuộn lên đầu trang');
+    btn.setAttribute('title', isEn ? 'Scroll to top' : 'Cuộn lên đầu trang');
     btn.innerHTML = `
       <svg class="progress-ring" width="46" height="46" viewBox="0 0 46 46" aria-hidden="true">
         <circle class="progress-ring-bg" cx="23" cy="23" r="19" fill="none" stroke="rgba(255, 255, 255, 0.12)" stroke-width="2.5" />

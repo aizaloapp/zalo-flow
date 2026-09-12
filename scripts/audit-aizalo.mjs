@@ -52,16 +52,23 @@ try {
 // 2. Discover HTML files
 const htmlFiles = [];
 if (fs.existsSync(path.join(srcDir, 'index.html'))) {
-  htmlFiles.push({ path: path.join(srcDir, 'index.html'), rel: 'index.html', isHome: true, isEnHome: false });
+  htmlFiles.push({ path: path.join(srcDir, 'index.html'), rel: 'index.html', isHome: true, isEnHome: false, isBlogIndex: false });
 }
 if (fs.existsSync(path.join(srcDir, 'en', 'index.html'))) {
-  htmlFiles.push({ path: path.join(srcDir, 'en', 'index.html'), rel: 'en/index.html', isHome: false, isEnHome: true });
+  htmlFiles.push({ path: path.join(srcDir, 'en', 'index.html'), rel: 'en/index.html', isHome: false, isEnHome: true, isBlogIndex: false });
 }
 const blogDir = path.join(srcDir, 'blog');
 if (fs.existsSync(blogDir)) {
   const files = fs.readdirSync(blogDir).filter(f => f.endsWith('.html'));
   for (const f of files) {
     htmlFiles.push({ path: path.join(blogDir, f), rel: `blog/${f}`, isHome: false, isEnHome: false, isBlogIndex: f === 'index.html' });
+  }
+}
+const enBlogDir = path.join(srcDir, 'en', 'blog');
+if (fs.existsSync(enBlogDir)) {
+  const files = fs.readdirSync(enBlogDir).filter(f => f.endsWith('.html'));
+  for (const f of files) {
+    htmlFiles.push({ path: path.join(enBlogDir, f), rel: `en/blog/${f}`, isHome: false, isEnHome: false, isBlogIndex: f === 'index.html' });
   }
 }
 console.log(`   ✔️ Tìm thấy ${htmlFiles.length} tệp HTML để phân tích cú pháp.`);
@@ -113,14 +120,20 @@ for (const file of htmlFiles) {
   } else {
     const expectedCanonical = file.isHome 
       ? 'https://aizalo.com/' 
-      : (file.isEnHome ? 'https://aizalo.com/en/' : (file.isBlogIndex ? 'https://aizalo.com/blog/' : `https://aizalo.com/${file.rel}`));
+      : (file.isEnHome 
+          ? 'https://aizalo.com/en/' 
+          : (file.rel === 'blog/index.html' 
+              ? 'https://aizalo.com/blog/' 
+              : (file.rel === 'en/blog/index.html' 
+                  ? 'https://aizalo.com/en/blog/' 
+                  : `https://aizalo.com/${file.rel}`)));
     if (canonicalMatch[1] !== expectedCanonical) {
       deduct('onPage', 5, `Thẻ canonical trong ${file.rel} (${canonicalMatch[1]}) không khớp URL chuẩn (${expectedCanonical})`, 'P1');
     }
   }
 
   // D2. Hreflang Tags Audit (International SEO)
-  if (file.isHome || file.isEnHome) {
+  if (file.isHome || file.isEnHome || file.rel === 'blog/index.html' || file.rel === 'en/blog/index.html') {
     if (!content.includes('hreflang="vi"') || !content.includes('hreflang="en"') || !content.includes('hreflang="x-default"')) {
       deduct('technical', 5, `Trang ${file.rel} thiếu bộ thẻ alternate hreflang quốc tế (vi, en, x-default)`, 'P1');
     }
@@ -282,8 +295,15 @@ if (!fs.existsSync(sitemapPath)) {
 } else {
   const sitemapContent = fs.readFileSync(sitemapPath, 'utf8');
   for (const f of htmlFiles) {
-    if (f.isBlogIndex) continue;
-    const urlSegment = f.isHome ? 'https://aizalo.com/' : (f.isEnHome ? 'https://aizalo.com/en/' : `https://aizalo.com/${f.rel}`);
+    const urlSegment = f.isHome 
+      ? 'https://aizalo.com/' 
+      : (f.isEnHome 
+          ? 'https://aizalo.com/en/' 
+          : (f.rel === 'blog/index.html' 
+              ? 'https://aizalo.com/blog/' 
+              : (f.rel === 'en/blog/index.html' 
+                  ? 'https://aizalo.com/en/blog/' 
+                  : `https://aizalo.com/${f.rel}`)));
     if (!sitemapContent.includes(urlSegment)) {
       deduct('technical', 5, `Trang ${f.rel} chưa được khai báo trong sitemap.xml (kỳ vọng: ${urlSegment})`, 'P1');
     }
@@ -411,12 +431,19 @@ async function runPass2() {
   // 3. Check All Sitemap URLs live status
   console.log('   ✔️ Kiểm tra mã trạng thái HTTP 200 cho toàn bộ bài viết...');
   for (const f of htmlFiles) {
-    if (f.isBlogIndex) continue;
-    if (isLocalRun && f.isEnHome) {
-      console.log('   ⏭️ [PRE-DEPLOY] Bỏ qua kiểm tra Live Edge cho trang mới chưa deploy: https://aizalo.com/en/');
+    const testUrl = f.isHome 
+      ? 'https://aizalo.com/' 
+      : (f.isEnHome 
+          ? 'https://aizalo.com/en/' 
+          : (f.rel === 'blog/index.html' 
+              ? 'https://aizalo.com/blog/' 
+              : (f.rel === 'en/blog/index.html' 
+                  ? 'https://aizalo.com/en/blog/' 
+                  : `https://aizalo.com/${f.rel}`)));
+    if (isLocalRun && (f.isEnHome || f.rel.startsWith('en/'))) {
+      console.log(`   ⏭️ [PRE-DEPLOY] Bỏ qua kiểm tra Live Edge cho trang tiếng Anh chưa deploy: ${testUrl}`);
       continue;
     }
-    const testUrl = f.isHome ? 'https://aizalo.com/' : (f.isEnHome ? 'https://aizalo.com/en/' : `https://aizalo.com/${f.rel}`);
     const res = await safeFetch(testUrl, { method: 'HEAD' });
     if (res.status === 200) {
       // Good
