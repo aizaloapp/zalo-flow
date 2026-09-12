@@ -7,9 +7,10 @@ import path from 'path';
 import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 import { logger } from './utils/logger.js';
+import fs from 'fs';
 import { zaloClient } from './zalo-client.js';
 import { localStore } from './utils/local-store.js';
-import { requireAuth } from './middleware/auth.js';
+import { requireAuth, csrfShield } from './middleware/auth.js';
 import { defaultRateLimiter } from './utils/rate-limiter.js';
 
 // Import Route Modules
@@ -40,10 +41,20 @@ app.use(express.urlencoded({ extended: true }));
 // Serve static assets from public/
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
+// CSRF Shield for state-changing endpoints (/api/*)
+app.use('/api', csrfShield);
+
 const isPackaged = process.env.ZALOFLOW_PACKAGED === '1';
+const isDocker = fs.existsSync('/.dockerenv') || process.env.IS_DOCKER === '1';
 const DEFAULT_PORT = Number(process.env.PORT || 3000);
-const HOST = isPackaged ? '127.0.0.1' : (process.env.HOST || '0.0.0.0');
+const HOST = isPackaged 
+  ? '127.0.0.1' 
+  : (process.env.HOST || (isDocker ? '0.0.0.0' : '127.0.0.1'));
 const startTime = Date.now();
+
+if (HOST === '0.0.0.0' && !process.env.ADMIN_API_TOKEN && !isDocker) {
+  logger.warn('⚠️ [SECURITY WARNING] Server is binding to 0.0.0.0 (public LAN) without ADMIN_API_TOKEN! Anyone on your Wi-Fi network can access your Zalo session. Set ADMIN_API_TOKEN in .env to protect your data.');
+}
 
 // Register Inbound Listeners on Zalo Client
 zaloClient.onMessage(async (ctx) => {

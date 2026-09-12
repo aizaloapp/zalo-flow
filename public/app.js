@@ -1,3 +1,19 @@
+// ==============================================================================
+// 🛡️ Global Fetch Interceptor (CSRF Shield & Admin Token)
+// ==============================================================================
+const _originalFetch = window.fetch;
+window.fetch = function (input, init = {}) {
+  const headers = new Headers(init.headers || (input instanceof Request ? input.headers : {}));
+  headers.set('X-ZaloFlow-Client', '1');
+  const token = (typeof state !== 'undefined' && state?.adminToken) || 
+                new URLSearchParams(window.location.search).get('token') || 
+                localStorage.getItem('zalo_admin_token');
+  if (token && !headers.has('x-admin-token')) {
+    headers.set('x-admin-token', token);
+  }
+  return _originalFetch(input, { ...init, headers });
+};
+
 let state = {
   conversations: [],
   activeThreadId: null,

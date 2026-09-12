@@ -10,6 +10,7 @@ import { parseMessage } from '../src/utils/message-parser.js';
 import { resolveSpintax, generateSamplePreviews } from '../src/utils/spintax.js';
 import { normalizeWikiUrl, isSafeEgressUrl, isPrivateOrReservedIp } from '../src/routes/ai-settings.js';
 import { aiAgentAdapter, GOLDEN_WIKI_TEMPLATE } from '../src/adapters/ai-agent.js';
+import { csrfShield } from '../src/middleware/auth.js';
 
 console.log('🧪 Starting Zalo-Flow Integrity Test Suite (Lean Chatwoot CRM + Remarketing)...\n');
 
@@ -1821,13 +1822,166 @@ assert.strictEqual(t('toast.sync_completed', { count: 50 }), 'Đồng bộ hoàn
 
 console.log('   ✅ Internationalization (i18n) Engine & 1:1 Translation Integrity passed!\n');
 
+// -----------------------------------------------------------------------------
+// Test 44: Testing CSRF Shield, Localhost Drive-by Defense & Host Binding Guard
+// -----------------------------------------------------------------------------
+console.log('44. Testing CSRF Shield, Localhost Drive-by Defense & Host Binding...');
+
+function createMockRes() {
+  const res = {
+    statusCode: 200,
+    body: null,
+    status(code) {
+      this.statusCode = code;
+      return this;
+    },
+    json(data) {
+      this.body = data;
+      return this;
+    }
+  };
+  return res;
+}
+
+// Case 1: GET requests bypass CSRF
+{
+  const req = { method: 'GET', path: '/api/conversations', headers: {} };
+  const res = createMockRes();
+  let nextCalled = false;
+  csrfShield(req, res, () => { nextCalled = true; });
+  assert.strictEqual(nextCalled, true, 'GET request should bypass CSRF shield');
+}
+
+// Case 2: OPTIONS requests bypass CSRF
+{
+  const req = { method: 'OPTIONS', path: '/api/messages/send', headers: {} };
+  const res = createMockRes();
+  let nextCalled = false;
+  csrfShield(req, res, () => { nextCalled = true; });
+  assert.strictEqual(nextCalled, true, 'OPTIONS request should bypass CSRF shield');
+}
+
+// Case 3: Inbound Webhook bypass CSRF (Scope Isolation)
+{
+  const req = { method: 'POST', path: '/webhook/chatwoot', originalUrl: '/api/webhook/chatwoot', headers: {} };
+  const res = createMockRes();
+  let nextCalled = false;
+  csrfShield(req, res, () => { nextCalled = true; });
+  assert.strictEqual(nextCalled, true, 'Webhook request should bypass CSRF shield');
+}
+
+// Case 4: Shutdown CLI bypass CSRF (Scope Isolation)
+{
+  const req = { method: 'POST', path: '/system/shutdown', originalUrl: '/api/system/shutdown', headers: {} };
+  const res = createMockRes();
+  let nextCalled = false;
+  csrfShield(req, res, () => { nextCalled = true; });
+  assert.strictEqual(nextCalled, true, 'System shutdown CLI should bypass CSRF shield');
+}
+
+// Case 5: Block Cross-Site request via Sec-Fetch-Site
+{
+  const req = {
+    method: 'POST',
+    path: '/messages/send',
+    originalUrl: '/api/messages/send',
+    headers: {
+      'sec-fetch-site': 'cross-site',
+      'x-zaloflow-client': '1'
+    }
+  };
+  const res = createMockRes();
+  let nextCalled = false;
+  csrfShield(req, res, () => { nextCalled = true; });
+  assert.strictEqual(nextCalled, false, 'Cross-site request must not call next()');
+  assert.strictEqual(res.statusCode, 403, 'Cross-site request must return 403 Forbidden');
+}
+
+// Case 6: Block POST request missing X-ZaloFlow-Client header
+{
+  const req = {
+    method: 'POST',
+    path: '/messages/send',
+    originalUrl: '/api/messages/send',
+    headers: {
+      'sec-fetch-site': 'same-origin'
+    }
+  };
+  const res = createMockRes();
+  let nextCalled = false;
+  csrfShield(req, res, () => { nextCalled = true; });
+  assert.strictEqual(nextCalled, false, 'Missing X-ZaloFlow-Client must not call next()');
+  assert.strictEqual(res.statusCode, 403, 'Missing X-ZaloFlow-Client must return 403');
+}
+
+// Case 7: Block POST request with foreign Origin
+{
+  const req = {
+    method: 'POST',
+    path: '/messages/send',
+    originalUrl: '/api/messages/send',
+    headers: {
+      'sec-fetch-site': 'same-origin',
+      'x-zaloflow-client': '1',
+      'origin': 'https://evil-attacker.com',
+      'host': 'localhost:3000'
+    }
+  };
+  const res = createMockRes();
+  let nextCalled = false;
+  csrfShield(req, res, () => { nextCalled = true; });
+  assert.strictEqual(nextCalled, false, 'Foreign origin must not call next()');
+  assert.strictEqual(res.statusCode, 403, 'Foreign origin must return 403');
+}
+
+// Case 8: Valid local request passes CSRF shield
+{
+  const req = {
+    method: 'POST',
+    path: '/messages/send',
+    originalUrl: '/api/messages/send',
+    headers: {
+      'sec-fetch-site': 'same-origin',
+      'x-zaloflow-client': '1',
+      'origin': 'http://localhost:3000',
+      'host': 'localhost:3000'
+    }
+  };
+  const res = createMockRes();
+  let nextCalled = false;
+  csrfShield(req, res, () => { nextCalled = true; });
+  assert.strictEqual(nextCalled, true, 'Valid local request must pass CSRF shield');
+  assert.strictEqual(res.statusCode, 200);
+}
+
+// Case 9: External API request with valid ADMIN_API_TOKEN bypasses CSRF
+{
+  process.env.ADMIN_API_TOKEN = 'test-admin-token-12345';
+  const req = {
+    method: 'POST',
+    path: '/messages/send',
+    originalUrl: '/api/messages/send',
+    headers: {
+      'x-admin-token': 'test-admin-token-12345'
+    }
+  };
+  const res = createMockRes();
+  let nextCalled = false;
+  csrfShield(req, res, () => { nextCalled = true; });
+  assert.strictEqual(nextCalled, true, 'Valid admin token must bypass CSRF shield');
+  delete process.env.ADMIN_API_TOKEN;
+}
+
+console.log('   ✅ CSRF Shield, Localhost Drive-by Defense & Host Binding passed!\n');
+
 // Clean test db
 store.close();
 if (fs.existsSync(testDbFile)) {
   try { fs.unlinkSync(testDbFile); } catch {}
 }
 
-console.log('🎉 ALL 43 INTEGRITY, SECURITY, CRM, AIZALO REMARKETING, AI SUITE, BULK DEEP-SYNC, QR AUTH, MEMORY GUARD, ZALO SANITIZER, DESKTOP PACKAGED, CLEAN SWITCH, MULTI-DEVICE SYNC, GROUP MENTION, QUICK-MSG, CAMPAIGN TEST DISPATCH, GROUP RECONCILIATION, AUTO-FALLBACK OPENROUTER, MULTIMODAL VISION, STRANGER IDENTITY, SCHEDULED MESSAGES, UNIVERSAL WIKI URL INGESTION, LIVE CHAT MEDIA CAPTION, CHAT AVATAR DYNAMIC & i18n MULTI-LANGUAGE TESTS PASSED 100%!');
+console.log('🎉 ALL 44 INTEGRITY, SECURITY, CRM, AIZALO REMARKETING, AI SUITE, BULK DEEP-SYNC, QR AUTH, MEMORY GUARD, ZALO SANITIZER, DESKTOP PACKAGED, CLEAN SWITCH, MULTI-DEVICE SYNC, GROUP MENTION, QUICK-MSG, CAMPAIGN TEST DISPATCH, GROUP RECONCILIATION, AUTO-FALLBACK OPENROUTER, MULTIMODAL VISION, STRANGER IDENTITY, SCHEDULED MESSAGES, UNIVERSAL WIKI URL INGESTION, LIVE CHAT MEDIA CAPTION, CHAT AVATAR DYNAMIC, i18n MULTI-LANGUAGE & CSRF LOCALHOST SHIELD TESTS PASSED 100%!');
+
 
 
 

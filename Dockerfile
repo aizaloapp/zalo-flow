@@ -7,8 +7,10 @@ WORKDIR /app
 # Install security updates & essentials
 RUN apk update && apk add --no-cache tzdata
 
-# Set timezone
+# Set timezone & environment
 ENV TZ=Asia/Ho_Chi_Minh
+ENV HOST=0.0.0.0
+ENV IS_DOCKER=1
 
 # Copy package files
 COPY package*.json ./

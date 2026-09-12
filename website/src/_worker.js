@@ -1,7 +1,17 @@
 export default {
   async fetch(request, env) {
-    const accept = request.headers.get("Accept") || "";
     const url = new URL(request.url);
+
+    // First-Party Event Tracker Proxy (Hide Traks Worker account & bypass AdBlockers)
+    if (url.pathname === "/api/event" || url.pathname === "/api/event/") {
+      return fetch("https://traks-collect.dragonfarm2509.workers.dev/api/event", {
+        method: request.method,
+        headers: request.headers,
+        body: request.body
+      });
+    }
+
+    const accept = request.headers.get("Accept") || "";
 
     // If client specifically requests text/markdown (Content Negotiation for AI Agents)
     if (accept.includes("text/markdown") && (!url.pathname.includes(".") || url.pathname.endsWith(".html"))) {
