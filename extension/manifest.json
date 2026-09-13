@@ -1,0 +1,41 @@
+{
+  "manifest_version": 3,
+  "name": "AIzalo Flow: Chat Companion (Unofficial)",
+  "short_name": "AIzalo Flow",
+  "version": "1.0.0",
+  "description": "Trợ lý hỗ trợ bán hàng & CSKH: Gõ nhanh tin nhắn mẫu và gợi ý phản hồi AI thông minh trên Zalo Web kết nối Zalo-Flow.",
+  "homepage_url": "https://aizalo.com/",
+  "icons": {
+    "16": "assets/icons/icon-16.png",
+    "32": "assets/icons/icon-32.png",
+    "48": "assets/icons/icon-48.png",
+    "128": "assets/icons/icon-128.png"
+  },
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": "assets/icons/icon-48.png",
+    "default_title": "AIzalo Flow Companion"
+  },
+  "background": {
+    "service_worker": "background/service-worker.js",
+    "type": "module"
+  },
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "http://127.0.0.1:3000/*",
+    "http://localhost:3000/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://chat.zalo.me/*"
+      ],
+      "js": [
+        "content/content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}

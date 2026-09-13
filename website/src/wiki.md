@@ -33,7 +33,7 @@
 1. **Yêu cầu hệ thống:** Windows 10 hoặc Windows 11 (64-bit), ổ cứng trống tối thiểu 500MB, kết nối mạng ổn định.
 2. **Quy trình cài đặt 1-Click (Chỉ mất 3 phút):**
    - **Bước 1:** Tải bộ cài đặt Windows `.exe` mới nhất tại: `https://aizalo.com/#download` hoặc GitHub Releases: `https://github.com/aizaloapp/zalo-flow/releases`.
-   - **Bước 2:** Nhấp đúp vào file `ZaloFlow-Setup-v1.2.0.exe` để cài đặt tự động (đã tích hợp sẵn Node.js Portable và SQLite, không cần cài thêm công cụ lập trình).
+   - **Bước 2:** Nhấp đúp vào file `ZaloFlow-Setup-v1.3.0.exe` để cài đặt tự động (đã tích hợp sẵn Node.js Portable và SQLite, không cần cài thêm công cụ lập trình).
    - **Bước 3:** Nhấp đúp vào biểu tượng **Zalo-Flow** ngoài Desktop để khởi động. Ứng dụng chạy ngầm và tự động mở giao diện tại `http://localhost:3000`.
    - **Xem bài viết chi tiết có ảnh minh họa:** `https://aizalo.com/blog/huong-dan-cach-tao-chatbot-zalo-ca-nhan.html`
 
@@ -182,6 +182,12 @@
 
 - **Khách:** Zalo-Flow có hỗ trợ giao diện tiếng Anh (English) không?
 - **Bot:** Dạ có anh/chị {name} nhé! Từ bản v1.2.0, Zalo-Flow hỗ trợ song ngữ Tiếng Việt ↔ Tiếng Anh. Anh/chị chỉ cần bấm vào nút cờ `🇻🇳 VI` ở góc phải thanh Header để chuyển sang `🇬🇧 EN` tức thì mà không bị mất dữ liệu form đang nhập dở ạ!
+
+- **Khách:** Zalo-Flow có ghim hội thoại lên đầu giống Zalo Web / Zalo PC được không?
+- **Bot:** Dạ có anh/chị {name} nhé! Từ bản v1.3.0, Zalo-Flow hỗ trợ ghim tối đa 5 hội thoại quan trọng lên đỉnh danh sách với icon 📌 rõ nét. Anh/chị chỉ cần nhấp chuột phải vào cuộc trò chuyện (hoặc bấm nút `...` khi rê chuột) rồi chọn "Ghim hội thoại" là xong ngay ạ!
+
+- **Khách:** Làm sao để gắn thẻ phân loại nhanh cho khách trên Zalo-Flow?
+- **Bot:** Dạ anh/chị chỉ cần nhấp chuột phải vào thẻ chat của khách trên danh sách bên trái ➔ di chuột vào mục "Phân loại" ➔ tích chọn thẻ màu tương ứng (ví dụ: Khách VIP, Đối tác...). Thẻ sẽ được gắn ngay và hiển thị chấm màu trực tiếp trên sidebar mà không cần mở modal cài đặt ạ!
 
 - **Khách:** Mình thấy phần mềm Zalo-Flow rất hữu ích, mình muốn ủng hộ / mời cà phê tác giả thì làm thế nào?
 - **Bot:** Dạ em cảm ơn tấm lòng của anh/chị {name} rất nhiều ạ! Anh/chị có thể bấm vào nút **💖 Ủng Hộ** ở góc trên thanh Header để mời tác giả ly cà phê qua Ko-fi (https://ko-fi.com/aizalo), PayPal (https://paypal.me/lekhoa288) hoặc quét mã MoMo (0973 947 264) nhé!

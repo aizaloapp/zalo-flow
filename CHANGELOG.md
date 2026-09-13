@@ -4,6 +4,28 @@ Mọi thay đổi đáng chú ý của dự án **Zalo-Flow** sẽ được ghi 
 
 Định dạng dựa trên [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/), và dự án này tuân thủ [Semantic Versioning](https://semver.org/lang/vi/).
 
+## [1.3.0] - 2026-09-13
+
+### Added
+- **Ghim Hội Thoại Lên Đỉnh (Pin to Top) & Giới Hạn Tối Đa 5 Cuộc Trò Chuyện:**
+  - Cố định tối đa 5 cuộc trò chuyện quan trọng trên đỉnh sidebar với biểu tượng 📌 rõ nét theo đúng quy chuẩn Zalo PC / Zalo Web.
+  - Cơ chế `Realtime Prepend Guard`: Tự động giữ vững thứ tự ghim khi có tin nhắn mới đến trong thời gian thực, không để tin nhắn từ hội thoại thông thường chèn đè lên các thẻ đã ghim.
+- **Menu Ngữ Cảnh Chuột Phải & Nút Ba Chấm `...` (Context Menu):**
+  - Hỗ trợ chuột phải vào bất kỳ thẻ hội thoại nào để mở ngay menu ngữ cảnh tại tọa độ con trỏ chuột.
+  - Nút ba chấm `...` tự động hiển thị khi hover hoặc khi thẻ đang kích hoạt, ngăn chặn hoàn toàn xung đột click (`stopPropagation`).
+  - Hệ thống tự động đóng menu an toàn khi cuộn danh sách (`scroll`), nhấn phím `Escape` hoặc nhấp chuột ra ngoài.
+- **Phân Loại Thẻ Màu Trực Tiếp & Dãy Chấm Màu (Tag Dots):**
+  - Submenu "Phân loại" cho phép gán/gỡ thẻ khách hàng 1-Click trực tiếp từ menu chuột phải mà không cần mở modal quản lý.
+  - Tích hợp hiệu ứng lật chiều thông minh (`flip-left`) chống tràn mép màn hình.
+  - Hiển thị trực quan tối đa 4 chấm màu thẻ phân loại ngay trên dòng tin nhắn xem trước ở sidebar.
+- **Đánh Dấu Chưa Đọc / Đã Đọc & Xóa Hội Thoại Cục Bộ:**
+  - Đánh dấu lại tin nhắn chưa đọc (badge 1) để nhắc nhở xử lý và theo dõi khách hàng.
+  - Xóa hội thoại và tin nhắn cục bộ trong CSDL SQLite của Zalo-Flow an toàn mà không ảnh hưởng tới ứng dụng Zalo trên điện thoại.
+- **Bộ Kiểm Thử & An Toàn Tuyệt Đối:**
+  - Bổ sung Test Suite #45 (`test/test-pin-and-context-actions.js`), 100% 45/45 test suites pass.
+
+---
+
 ## [1.2.0] - 2026-09-12
 
 ### Added

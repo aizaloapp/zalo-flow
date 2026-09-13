@@ -1974,13 +1974,99 @@ function createMockRes() {
 
 console.log('   ✅ CSRF Shield, Localhost Drive-by Defense & Host Binding passed!\n');
 
+// -----------------------------------------------------------------------------
+// Test 45: Pin to Top, Limit 5, Mark Unread, Tag Dots & Context Actions
+// -----------------------------------------------------------------------------
+console.log('45. Testing Pin to Top, Limit 5, Mark Unread, Tag Dots & Context Actions...');
+{
+  const pinTestDb = 'data/test_pin_actions.db';
+  if (fs.existsSync(pinTestDb)) fs.unlinkSync(pinTestDb);
+  const pStore = new LocalStore(pinTestDb);
+
+  try {
+    for (let i = 1; i <= 7; i++) {
+      pStore.upsertConversation({
+        id: `u_${i}`,
+        name: `User ${i}`,
+        isGroup: false,
+        unreadCount: 0,
+        lastMessage: `Message ${i}`,
+        lastTime: new Date(Date.now() - (10 - i) * 1000).toISOString()
+      });
+    }
+
+    const t1 = pStore.upsertTag({ name: 'VIP', color: '#ef4444' });
+    pStore.addConversationTag('u_1', t1.id);
+
+    // Initial check
+    let convs = pStore.getConversations();
+    assert.strictEqual(convs[0].id, 'u_7');
+    assert.strictEqual(convs[0].isPinned, false);
+    const u1 = convs.find(c => c.id === 'u_1');
+    assert.strictEqual(u1.tags.length, 1);
+    assert.strictEqual(u1.tags[0].name, 'VIP');
+
+    // Pin u_1
+    const resPin1 = pStore.setConversationPinned('u_1', true);
+    assert.strictEqual(resPin1.success, true);
+    assert.strictEqual(resPin1.isPinned, true);
+
+    convs = pStore.getConversations();
+    assert.strictEqual(convs[0].id, 'u_1', 'Pinned conversation must be sorted on top');
+    assert.strictEqual(convs[0].isPinned, true);
+
+    // Pin up to 5
+    assert.strictEqual(pStore.setConversationPinned('u_2', true).success, true);
+    assert.strictEqual(pStore.setConversationPinned('u_3', true).success, true);
+    assert.strictEqual(pStore.setConversationPinned('u_4', true).success, true);
+    assert.strictEqual(pStore.setConversationPinned('u_5', true).success, true);
+
+    // 6th pin must fail
+    const resPin6 = pStore.setConversationPinned('u_6', true);
+    assert.strictEqual(resPin6.success, false);
+    assert.strictEqual(resPin6.error, 'limit_reached');
+
+    // Unpin u_1
+    assert.strictEqual(pStore.setConversationPinned('u_1', false).success, true);
+    convs = pStore.getConversations();
+    assert.notStrictEqual(convs[0].id, 'u_1');
+
+    // Mark unread
+    pStore.markAsUnread('u_7');
+    assert.strictEqual(pStore.getConversation('u_7').unreadCount, 1);
+
+    // Delete conversation
+    pStore.addMessage({
+      msgId: 'm_del',
+      cliMsgId: 'c_del',
+      threadId: 'u_7',
+      senderId: 'u_7',
+      senderName: 'User 7',
+      text: 'To be deleted',
+      time: Date.now()
+    });
+    pStore.deleteConversation('u_7');
+    assert.strictEqual(pStore.getConversation('u_7'), null);
+    assert.strictEqual(pStore.getMessages('u_7').length, 0);
+
+    console.log('   ✅ Pin to Top, Limit 5, Mark Unread, Tag Dots & Context Actions passed!\n');
+  } finally {
+    pStore.close();
+    if (fs.existsSync(pinTestDb)) fs.unlinkSync(pinTestDb);
+    const wal = `${pinTestDb}-wal`;
+    const shm = `${pinTestDb}-shm`;
+    if (fs.existsSync(wal)) fs.unlinkSync(wal);
+    if (fs.existsSync(shm)) fs.unlinkSync(shm);
+  }
+}
+
 // Clean test db
 store.close();
 if (fs.existsSync(testDbFile)) {
   try { fs.unlinkSync(testDbFile); } catch {}
 }
 
-console.log('🎉 ALL 44 INTEGRITY, SECURITY, CRM, AIZALO REMARKETING, AI SUITE, BULK DEEP-SYNC, QR AUTH, MEMORY GUARD, ZALO SANITIZER, DESKTOP PACKAGED, CLEAN SWITCH, MULTI-DEVICE SYNC, GROUP MENTION, QUICK-MSG, CAMPAIGN TEST DISPATCH, GROUP RECONCILIATION, AUTO-FALLBACK OPENROUTER, MULTIMODAL VISION, STRANGER IDENTITY, SCHEDULED MESSAGES, UNIVERSAL WIKI URL INGESTION, LIVE CHAT MEDIA CAPTION, CHAT AVATAR DYNAMIC, i18n MULTI-LANGUAGE & CSRF LOCALHOST SHIELD TESTS PASSED 100%!');
+console.log('🎉 ALL 45 INTEGRITY, SECURITY, CRM, AIZALO REMARKETING, AI SUITE, BULK DEEP-SYNC, QR AUTH, MEMORY GUARD, ZALO SANITIZER, DESKTOP PACKAGED, CLEAN SWITCH, MULTI-DEVICE SYNC, GROUP MENTION, QUICK-MSG, CAMPAIGN TEST DISPATCH, GROUP RECONCILIATION, AUTO-FALLBACK OPENROUTER, MULTIMODAL VISION, STRANGER IDENTITY, SCHEDULED MESSAGES, UNIVERSAL WIKI URL INGESTION, LIVE CHAT MEDIA CAPTION, CHAT AVATAR DYNAMIC, i18n MULTI-LANGUAGE, CSRF LOCALHOST SHIELD & PIN/CONTEXT ACTIONS TESTS PASSED 100%!');
 
 
 

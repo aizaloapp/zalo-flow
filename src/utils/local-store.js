@@ -46,6 +46,7 @@ export class LocalStore extends EventEmitter {
         lastMessage TEXT DEFAULT '',
         lastTime    TEXT DEFAULT '',
         unreadCount INTEGER DEFAULT 0,
+        isPinned    INTEGER DEFAULT 0,
         updatedAt   TEXT DEFAULT (datetime('now'))
       );
 
@@ -260,6 +261,7 @@ export class LocalStore extends EventEmitter {
       if (!convColumns.includes('address')) this.db.exec("ALTER TABLE conversations ADD COLUMN address TEXT DEFAULT '';");
       if (!convColumns.includes('needs'))   this.db.exec("ALTER TABLE conversations ADD COLUMN needs TEXT DEFAULT '';");
       if (!convColumns.includes('notes'))   this.db.exec("ALTER TABLE conversations ADD COLUMN notes TEXT DEFAULT '';");
+      if (!convColumns.includes('isPinned')) this.db.exec("ALTER TABLE conversations ADD COLUMN isPinned INTEGER DEFAULT 0;");
 
       const msgColumns = this.db.prepare("PRAGMA table_info('messages');").all().map(c => c.name);
       if (!msgColumns.includes('reactions')) {
@@ -354,6 +356,9 @@ export class LocalStore extends EventEmitter {
       if (!schedCols.includes('mediaUrl'))  this.db.exec("ALTER TABLE scheduled_messages ADD COLUMN mediaUrl TEXT DEFAULT '';");
       if (!schedCols.includes('mediaName')) this.db.exec("ALTER TABLE scheduled_messages ADD COLUMN mediaName TEXT DEFAULT '';");
 
+      // Cleanup: Sửa tận gốc các hội thoại rỗng bị gán timestamp giả khi khởi tạo
+      this.db.exec("UPDATE conversations SET lastTime = NULL WHERE (lastMessage = '' OR lastMessage IS NULL) AND lastTime IS NOT NULL;");
+
     } catch (err) {
       logger.warn(`Migration notice: ${err.message}`);
     }
@@ -395,13 +400,16 @@ export class LocalStore extends EventEmitter {
     
     // Protect lastTime & lastMessage from being overwritten backwards by older historical messages
     let lastMessage = conv.lastMessage !== undefined ? String(conv.lastMessage) : (existing?.lastMessage || '');
-    let lastTime = conv.lastTime !== undefined ? String(conv.lastTime) : (existing?.lastTime || new Date().toISOString());
+    let lastTime = conv.lastTime !== undefined ? (conv.lastTime ? String(conv.lastTime) : null) : (existing?.lastTime || null);
 
     if (existing?.lastTime && conv.lastTime) {
-      if (new Date(conv.lastTime) < new Date(existing.lastTime)) {
-        // Keep existing newer lastTime and lastMessage
-        lastTime = existing.lastTime;
-        lastMessage = existing.lastMessage || lastMessage;
+      // Chỉ bảo vệ giữ tin cũ hơn nếu hội thoại hiện tại ĐÃ CÓ tin nhắn thực tế
+      if (existing.lastMessage && String(existing.lastMessage).trim()) {
+        if (new Date(conv.lastTime) < new Date(existing.lastTime)) {
+          // Keep existing newer lastTime and lastMessage
+          lastTime = existing.lastTime;
+          lastMessage = existing.lastMessage || lastMessage;
+        }
       }
     }
 
@@ -416,7 +424,7 @@ export class LocalStore extends EventEmitter {
         avatar = CASE WHEN excluded.avatar != '' THEN excluded.avatar ELSE conversations.avatar END,
         isGroup = CASE WHEN conversations.isGroup = 1 THEN 1 ELSE excluded.isGroup END,
         lastMessage = CASE WHEN excluded.lastMessage != '' THEN excluded.lastMessage ELSE conversations.lastMessage END,
-        lastTime = excluded.lastTime,
+        lastTime = CASE WHEN excluded.lastTime IS NOT NULL THEN excluded.lastTime ELSE conversations.lastTime END,
         unreadCount = excluded.unreadCount,
         updatedAt = excluded.updatedAt
     `);
@@ -484,7 +492,8 @@ export class LocalStore extends EventEmitter {
     if (!result) return null;
     return {
       ...result,
-      isGroup: Boolean(result.isGroup)
+      isGroup: Boolean(result.isGroup),
+      isPinned: Boolean(result.isPinned)
     };
   }
 
@@ -492,7 +501,7 @@ export class LocalStore extends EventEmitter {
     return this.getConversation(id);
   }
 
-  getConversations({ search = '', filter = 'all', tagId = '' } = {}) {
+  getConversations({ search = '', filter = 'all', status = 'all', tagId = '', limit = 50, offset = 0 } = {}) {
     let sql = `
       SELECT DISTINCT c.* FROM conversations c
     `;
@@ -515,17 +524,48 @@ export class LocalStore extends EventEmitter {
       sql += ` AND c.isGroup = 0`;
     } else if (filter === 'group') {
       sql += ` AND c.isGroup = 1`;
-    } else if (filter === 'unread') {
+    }
+
+    if (status === 'unread' || filter === 'unread') {
       sql += ` AND c.unreadCount > 0`;
     }
 
-    sql += ` ORDER BY c.updatedAt DESC`;
+    // Pinned first, then active conversations with real messages, then sorted by lastTime DESC, then updatedAt DESC
+    sql += ` ORDER BY c.isPinned DESC, (CASE WHEN c.lastTime IS NOT NULL AND c.lastMessage != '' AND c.lastMessage IS NOT NULL THEN 1 ELSE 0 END) DESC, c.lastTime DESC, c.updatedAt DESC`;
+
+    const safeLimit = Math.max(1, Math.min(Number(limit) || 50, 100));
+    const safeOffset = Math.max(0, Number(offset) || 0);
+
+    sql += ` LIMIT ? OFFSET ?`;
+    params.push(safeLimit, safeOffset);
 
     const stmt = this.db.prepare(sql);
     const rows = stmt.all(...params);
+
+    if (rows.length === 0) return [];
+
+    // Two-step Batch Fetching for Tag Dots (Zero N+1 Query Invariant)
+    const threadIds = rows.map(r => r.id);
+    const placeholders = threadIds.map(() => '?').join(',');
+    const tagRows = this.db.prepare(`
+      SELECT ct.threadId, t.id, t.name, t.color
+      FROM conversation_tags ct
+      INNER JOIN tags t ON t.id = ct.tagId
+      WHERE ct.threadId IN (${placeholders})
+      ORDER BY t.name ASC
+    `).all(...threadIds);
+
+    const tagMap = new Map();
+    for (const tr of tagRows) {
+      if (!tagMap.has(tr.threadId)) tagMap.set(tr.threadId, []);
+      tagMap.get(tr.threadId).push({ id: tr.id, name: tr.name, color: tr.color });
+    }
+
     return rows.map(r => ({
       ...r,
-      isGroup: Boolean(r.isGroup)
+      isGroup: Boolean(r.isGroup),
+      isPinned: Boolean(r.isPinned),
+      tags: tagMap.get(r.id) || []
     }));
   }
 
@@ -533,6 +573,42 @@ export class LocalStore extends EventEmitter {
     if (!threadId) return;
     const stmt = this.db.prepare('UPDATE conversations SET unreadCount = 0 WHERE id = ?');
     stmt.run(threadId);
+  }
+
+  markAsUnread(threadId) {
+    if (!threadId) return;
+    const stmt = this.db.prepare('UPDATE conversations SET unreadCount = 1 WHERE id = ?');
+    stmt.run(threadId);
+  }
+
+  setConversationPinned(threadId, isPinned) {
+    if (!threadId) return { success: false, error: 'missing_thread_id' };
+    const shouldPin = Boolean(isPinned);
+    if (shouldPin) {
+      const checkStmt = this.db.prepare('SELECT COUNT(*) as count FROM conversations WHERE isPinned = 1');
+      const { count } = checkStmt.get() || { count: 0 };
+      if (count >= 5) {
+        return { success: false, error: 'limit_reached' };
+      }
+    }
+    const stmt = this.db.prepare('UPDATE conversations SET isPinned = ? WHERE id = ?');
+    stmt.run(shouldPin ? 1 : 0, threadId);
+    return { success: true, isPinned: shouldPin };
+  }
+
+  deleteConversation(threadId) {
+    if (!threadId) return;
+    this.db.exec('BEGIN IMMEDIATE;');
+    try {
+      this.db.prepare('DELETE FROM conversation_tags WHERE threadId = ?').run(threadId);
+      this.db.prepare('DELETE FROM messages WHERE threadId = ?').run(threadId);
+      this.db.prepare("DELETE FROM campaign_queue WHERE threadId = ? AND status = 'pending'").run(threadId);
+      this.db.prepare('DELETE FROM conversations WHERE id = ?').run(threadId);
+      this.db.exec('COMMIT;');
+    } catch (err) {
+      this.db.exec('ROLLBACK;');
+      throw err;
+    }
   }
 
   addMessage(msg, { silent = false, isHistory = false, countUnread = null } = {}) {
@@ -613,6 +689,70 @@ export class LocalStore extends EventEmitter {
     }
 
     return savedMsg;
+  }
+
+  addMessagesBatch(messages) {
+    if (!Array.isArray(messages) || messages.length === 0) return [];
+
+    const insertStmt = this.db.prepare(`
+      INSERT OR REPLACE INTO messages 
+        (id, threadId, senderId, senderName, text, isSelf, isBot, timestamp, mediaType, mediaUrl, quoteText, quoteSender, reactions, cliMsgId, status, isRecalled)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    const savedMessages = [];
+    const threadUpdates = new Map();
+
+    this.db.exec('BEGIN IMMEDIATE;');
+    try {
+      for (const msg of messages) {
+        if (!msg || !msg.threadId) continue;
+        const id = String(msg.id || crypto.randomUUID());
+        const threadId = String(msg.threadId);
+        const senderId = String(msg.senderId || '');
+        const senderName = String(msg.senderName || '');
+        const text = String(msg.text || '').trim();
+        const isSelf = msg.isSelf ? 1 : 0;
+        const isBot = msg.isBot ? 1 : 0;
+        const timestamp = msg.timestamp || new Date().toISOString();
+        const mediaType = String(msg.mediaType || 'text');
+        const mediaUrl = String(msg.mediaUrl || '');
+        const quoteText = String(msg.quoteText || '');
+        const quoteSender = String(msg.quoteSender || '');
+        const reactions = String(msg.reactions || '');
+        const cliMsgId = String(msg.cliMsgId || '');
+        const status = String(msg.status || 'sent');
+        const isRecalled = msg.isRecalled ? 1 : 0;
+
+        insertStmt.run(id, threadId, senderId, senderName, text, isSelf, isBot, timestamp, mediaType, mediaUrl, quoteText, quoteSender, reactions, cliMsgId, status, isRecalled);
+
+        savedMessages.push({
+          id, threadId, senderId, senderName, text, isSelf: Boolean(isSelf), isBot: Boolean(isBot),
+          timestamp, mediaType, mediaUrl, quoteText, quoteSender, reactions, cliMsgId, status, isRecalled: Boolean(isRecalled)
+        });
+
+        const currentLatest = threadUpdates.get(threadId);
+        if (!currentLatest || new Date(timestamp) > new Date(currentLatest.lastTime || 0)) {
+          threadUpdates.set(threadId, {
+            id: threadId,
+            lastMessage: text || (mediaType === 'image' ? '[Hình ảnh]' : (mediaType === 'sticker' ? '[Sticker]' : (mediaType === 'contact' ? '[Danh thiếp]' : '[Tin nhắn]'))),
+            lastTime: timestamp,
+            isGroup: Boolean(msg.isGroup)
+          });
+        }
+      }
+
+      for (const [tId, update] of threadUpdates.entries()) {
+        this.upsertConversation(update);
+      }
+
+      this.db.exec('COMMIT;');
+    } catch (err) {
+      try { this.db.exec('ROLLBACK;'); } catch {}
+      throw err;
+    }
+
+    return savedMessages;
   }
 
   getMessages(threadId, { limit = 50, before = null } = {}) {

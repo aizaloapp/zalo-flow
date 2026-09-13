@@ -41,6 +41,20 @@ app.use(express.urlencoded({ extended: true }));
 // Serve static assets from public/
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
+// Lightweight CORS for Chrome Extension & Localhost Clients
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin && (origin.startsWith('chrome-extension://') || origin.includes('localhost') || origin.includes('127.0.0.1'))) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-ZaloFlow-Client, X-Admin-Token, Authorization');
+  }
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204);
+  }
+  next();
+});
+
 // CSRF Shield for state-changing endpoints (/api/*)
 app.use('/api', csrfShield);
 
@@ -184,8 +198,8 @@ app.use('/api', updaterRouter);
 
 // GET /api/conversations
 app.get('/api/conversations', requireAuth, (req, res) => {
-  const { search = '', filter = 'all', tagId = '' } = req.query;
-  const conversations = localStore.getConversations({ search, filter, tagId });
+  const { search = '', filter = 'all', status = 'all', tagId = '', limit = 50, offset = 0 } = req.query;
+  const conversations = localStore.getConversations({ search, filter, status, tagId, limit, offset });
   res.json({
     status: 'success',
     data: conversations

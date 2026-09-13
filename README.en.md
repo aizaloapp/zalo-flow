@@ -15,7 +15,7 @@
 [![CI Quality Gate](https://github.com/aizaloapp/zalo-flow/actions/workflows/ci.yml/badge.svg)](https://github.com/aizaloapp/zalo-flow/actions/workflows/ci.yml)
 [![Anti-Leak & Secret Scan](https://github.com/aizaloapp/zalo-flow/actions/workflows/secret-scan.yml/badge.svg)](https://github.com/aizaloapp/zalo-flow/actions/workflows/secret-scan.yml)
 [![Memory Footprint](https://img.shields.io/badge/RAM-%3C%20100MB-success.svg)](test/test-all.js)
-[![Tests Passing](https://img.shields.io/badge/Tests-43%2F43%20Passing-brightgreen.svg)](test/test-all.js)
+[![Tests Passing](https://img.shields.io/badge/Tests-45%2F45%20Passing-brightgreen.svg)](test/test-all.js)
 [![Docker Ready](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](docker-compose.yml)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
@@ -33,15 +33,16 @@
 
 No Git, no Node.js installation, no command line terminals required:
 
-[![Download Windows Setup](https://img.shields.io/badge/Windows-Download%20Setup%20v1.2.0%20(.exe)-0068FF?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/aizaloapp/zalo-flow/releases/latest)
+[![Download Windows Setup](https://img.shields.io/badge/Windows-Download%20Setup%20v1.3.0%20(.exe)-0068FF?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/aizaloapp/zalo-flow/releases/latest)
 
-> 💡 **Download & Run:** Click the button above to download **`ZaloFlow-Setup-v1.2.0.exe`** (Only **24.5MB**). Run the installer in 30 seconds to get your Zalo-Flow desktop assistant ready!
+> 💡 **Download & Run:** Click the button above to download **`ZaloFlow-Setup-v1.3.0.exe`** (Only **24.5MB**). Run the installer in 30 seconds to get your Zalo-Flow desktop assistant ready!
 
-> 🚀 **What's New in v1.2.0:**
-> - 🌐 **Zero-Dependency Bilingual i18n Architecture:** Instant In-Place DOM Walk language switching (English ↔ Vietnamese) with 148 1:1 translation keys and zero form reset (Zero Form Reset Invariant).
-> - 💖 **Zalo-Flow Support & Donation Hub:** Visual modal supporting 3 channels (Ko-fi, PayPal, MoMo) with locally generated static vector SVG QR codes (Zero Network Overhead), 1-click clipboard copy with 2-tier LAN fallback, and WCAG AA dual-theme semantic tokens.
-> - 🛡️ **Multer Safe Error Middleware & Dual-Field Tolerance:** Safely traps all file upload errors into JSON 400 responses instead of Express HTML 500, with tolerant extraction for both `file` and `image` field names.
-> - 🧩 **Modal DOM Nesting AST Reconciliation:** Audited and resolved missing closing tags in HTML popups, preventing accidental modal containment across features.
+> 🚀 **What's New in v1.3.0:**
+> - 📌 **Pin Conversations to Top:** Pin up to 5 vital conversations at the top with a 📌 badge, powered by `Realtime Prepend Guard` to preserve pin order during inbound realtime messages.
+> - 🖱️ **Context Menu & Three-Dot Hover Action:** Quick actions directly on conversation cards matching Zalo Web/PC ergonomics, smart flip positioning, and smooth dismissal on scroll/Escape.
+> - 🏷️ **Direct Tag Classification & Tag Dots:** 1-Click tag toggling directly from the context menu; visual tag color dots right on sidebar conversation cards.
+> - ✉️ **Mark as Unread / Read & Local Conversation Deletion:** Mark messages as unread for reminder tracking, and safely purge local conversation history without touching mobile data.
+> - 🧪 **100% Quality Assurance:** Added Test Suite #45, passing all 45/45 test suites.
 
 </div>
 

@@ -61,3 +61,5 @@ Thumbs.db
 installer/tools/
 installer/output/
 *.exe
+*.zip
+website/dist/

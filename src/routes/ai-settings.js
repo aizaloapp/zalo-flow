@@ -793,4 +793,82 @@ router.post('/conversations/:threadId/toggle-ai', requireAuth, (req, res) => {
   }
 });
 
+// -----------------------------------------------------------------------------
+// POST /api/ai/suggest — Generate Contextual Reply Suggestions for Extension & Chat
+// -----------------------------------------------------------------------------
+router.post('/ai/suggest', requireAuth, async (req, res) => {
+  try {
+    const { lastMessage = '', customerName = '', context = '' } = req.body || {};
+    if (!lastMessage || typeof lastMessage !== 'string' || !lastMessage.trim()) {
+      return res.status(400).json({ error: 'Nội dung tin nhắn khách hàng (lastMessage) không được để trống.' });
+    }
+
+    const settings = localStore.getAiSettings();
+    if (!settings) {
+      return res.status(400).json({ error: 'Chưa cấu hình AI Settings trong Zalo-Flow.' });
+    }
+
+    const soul = settings.soulPrompt || 'Bạn là chuyên viên tư vấn bán hàng & CSKH Zalo chuyên nghiệp, thân thiện, trả lời tự nhiên bằng tiếng Việt.';
+    const memory = settings.memoryPrompt || '';
+    const nameStr = customerName ? `Khách hàng tên là: "${customerName}".` : '';
+
+    const systemPrompt = `### [BỐI CẢNH & NHÂN CÁCH]:
+${soul}
+
+### [TRI THỨC & SẢN PHẨM]:
+${memory || 'Tư vấn thông tin dịch vụ, giải đáp thắc mắc của khách hàng.'}
+
+### [NHIỆM VỤ CỦA BẠN]:
+${nameStr}
+Hãy đọc tin nhắn của khách hàng và đưa ra chính xác 3 gợi ý câu trả lời ngắn gọn (1-3 câu) theo 3 phong cách:
+1. "Lịch sự": Lịch sự, nhã nhặn, tôn trọng khách hàng.
+2. "Thân thiện": Tươi vui, gần gũi, khéo léo gợi mở tư vấn hoặc hỗ trợ chốt đơn.
+3. "Ngắn gọn": Rõ ràng, trực diện, xác nhận nhanh thông tin.
+
+BẮT BUỘC ĐỊNH DẠNG:
+Chỉ trả về JSON thuần túy theo đúng cấu trúc sau (không kèm markdown \`\`\`json, không kèm giải thích):
+{
+  "suggestions": [
+    { "style": "Lịch sự", "text": "Nội dung phản hồi lịch sự..." },
+    { "style": "Thân thiện", "text": "Nội dung phản hồi thân thiện..." },
+    { "style": "Ngắn gọn", "text": "Nội dung phản hồi ngắn gọn..." }
+  ]
+}`;
+
+    const userMessage = `${context ? `[Ngữ cảnh gần nhất]: ${context}\n` : ''}[Khách hàng vừa nhắn]: ${lastMessage.trim()}`;
+
+    const rawResponse = await aiAgentAdapter.callModelWithFallback(
+      systemPrompt,
+      [],
+      userMessage,
+      settings
+    );
+
+    let suggestions = [];
+    try {
+      const cleaned = (rawResponse || '').replace(/```(?:json)?/gi, '').replace(/```/g, '').trim();
+      const parsed = JSON.parse(cleaned);
+      if (Array.isArray(parsed.suggestions)) {
+        suggestions = parsed.suggestions.map(s => ({
+          style: s.style || 'Gợi ý',
+          text: aiAgentAdapter.cleanForZalo(s.text || '')
+        }));
+      }
+    } catch {
+      // Fallback nếu model trả về văn bản thường
+      suggestions = [
+        { style: 'Gợi ý', text: aiAgentAdapter.cleanForZalo(rawResponse || '') }
+      ];
+    }
+
+    res.json({
+      status: 'success',
+      data: { suggestions }
+    });
+  } catch (err) {
+    logger.error(`[AI Suggest] Failed to generate suggestions: ${err.message}`);
+    res.status(500).json({ error: `Lỗi sinh gợi ý AI: ${err.message}` });
+  }
+});
+
 export default router;

@@ -338,13 +338,33 @@ function extractPlainText(msg) {
   try {
     const data = msg?.data || msg;
     const content = data?.content;
-    if (typeof content === 'string') return content.trim();
-    if (content && typeof content === 'object') {
-      if (typeof content.title === 'string') return content.title.trim();
-      if (typeof content.description === 'string') return content.description.trim();
-      if (typeof content.msg === 'string') return content.msg.trim();
+    if (typeof content === 'string') {
+      const trimmed = content.trim();
+      if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+        try {
+          const parsed = JSON.parse(trimmed);
+          if (parsed && typeof parsed === 'object') {
+            if (typeof parsed.title === 'string' && parsed.title.trim() && !parsed.title.startsWith('{')) return parsed.title.trim();
+            if (typeof parsed.description === 'string' && parsed.description.trim() && !parsed.description.startsWith('{')) return parsed.description.trim();
+            if (typeof parsed.msg === 'string' && parsed.msg.trim() && !parsed.msg.startsWith('{')) return parsed.msg.trim();
+            // Nếu là payload thuần hình ảnh / sticker không có text
+            if (parsed.href || parsed.thumb || parsed.hdUrl || parsed.url || parsed.catId) return '';
+          }
+        } catch {}
+      } else {
+        return trimmed;
+      }
     }
-    return String(data?.body || data?.text || '').trim();
+    if (content && typeof content === 'object') {
+      if (typeof content.title === 'string' && !content.title.trim().startsWith('{')) return content.title.trim();
+      if (typeof content.description === 'string' && !content.description.trim().startsWith('{')) return content.description.trim();
+      if (typeof content.msg === 'string' && !content.msg.trim().startsWith('{')) return content.msg.trim();
+    }
+    const bodyStr = String(data?.body || data?.text || '').trim();
+    if (bodyStr.startsWith('{') && (bodyStr.includes('hdUrl') || bodyStr.includes('thumb') || bodyStr.includes('href'))) {
+      return '';
+    }
+    return bodyStr;
   } catch {
     return '';
   }
@@ -352,11 +372,43 @@ function extractPlainText(msg) {
 
 function extractImageUrl(content, data) {
   if (!content && !data) return '';
-  if (typeof content === 'string' && isImageUrl(content)) return content;
-  if (typeof content === 'object') {
-    return content.href || content.url || content.thumb || content.fileUrl || '';
+
+  let cObj = null;
+  if (typeof content === 'object' && content !== null) {
+    cObj = content;
+  } else if (typeof content === 'string') {
+    const trimmed = content.trim();
+    if (trimmed.startsWith('{')) {
+      try {
+        cObj = JSON.parse(trimmed);
+      } catch {}
+    } else if (isImageUrl(trimmed)) {
+      return trimmed;
+    }
   }
-  return data?.url || data?.thumb || '';
+
+  const dObj = (typeof data === 'object' && data !== null) ? data : null;
+
+  // Thứ tự ưu tiên chất lượng ảnh: hdUrl (ảnh gốc HD) -> normalUrl -> url -> href -> thumb -> fileUrl
+  const candidateUrl = (
+    cObj?.hdUrl ||
+    cObj?.normalUrl ||
+    cObj?.url ||
+    cObj?.href ||
+    cObj?.thumb ||
+    cObj?.fileUrl ||
+    dObj?.hdUrl ||
+    dObj?.normalUrl ||
+    dObj?.url ||
+    dObj?.thumb ||
+    ''
+  );
+
+  if (typeof candidateUrl === 'string' && candidateUrl.trim() && !candidateUrl.trim().startsWith('{')) {
+    return candidateUrl.trim();
+  }
+
+  return '';
 }
 
 function extractFileUrl(content, data, text) {
@@ -404,5 +456,7 @@ function extractStickerUrl(content, data) {
 
 function isImageUrl(url) {
   if (!url || typeof url !== 'string') return false;
-  return /\.(jpg|jpeg|png|webp|gif|bmp)(\?.*)?$/i.test(url) || url.includes('zadn.vn');
+  const trimmed = url.trim();
+  if (trimmed.startsWith('{') || trimmed.startsWith('[')) return false;
+  return /\.(jpg|jpeg|png|webp|gif|bmp)(\?.*)?$/i.test(trimmed) || trimmed.includes('zadn.vn') || trimmed.includes('zdn.vn');
 }

@@ -67,9 +67,26 @@
         filter_group: 'Nhóm',
         tag_filter_label: '📌 Lọc theo Thẻ:',
         tag_filter_all: 'Tất cả Thẻ',
+        classify_btn: 'Phân loại',
+        classify_by_status: 'THEO TRẠNG THÁI',
+        classify_by_tag: 'THEO THẺ PHÂN LOẠI',
+        classify_all_tags: 'Tất cả thẻ',
+        classify_no_tags: 'Chưa có thẻ nào',
+        classify_clear_filter: 'Xóa bộ lọc',
+        manage_tags_btn: '⚙️ Quản lý thẻ khách hàng',
         sync_banner_title: 'Đang đồng bộ dữ liệu Zalo...',
         sync_banner_desc: 'Đang nạp danh bạ & nhóm. Bạn có thể xem tin cũ bình thường.',
         empty_conversations: 'Không tìm thấy cuộc trò chuyện nào phù hợp'
+      },
+      ctx: {
+        pin_conv: 'Ghim hội thoại',
+        unpin_conv: 'Bỏ ghim hội thoại',
+        mark_unread: 'Đánh dấu chưa đọc',
+        mark_read: 'Đánh dấu đã đọc',
+        tags_menu: 'Phân loại',
+        delete_conv: 'Xóa hội thoại',
+        confirm_delete: 'Bạn có chắc chắn muốn xóa hội thoại này và toàn bộ tin nhắn cục bộ không?',
+        pin_limit_reached: 'Chỉ được ghim tối đa 5 cuộc trò chuyện!'
       },
       chat: {
         empty_title: 'Chọn khách hàng để xem lịch sử',
@@ -236,9 +253,26 @@
         filter_group: 'Groups',
         tag_filter_label: '📌 Filter by Tag:',
         tag_filter_all: 'All Tags',
+        classify_btn: 'Filter',
+        classify_by_status: 'BY STATUS',
+        classify_by_tag: 'BY LABEL',
+        classify_all_tags: 'All Labels',
+        classify_no_tags: 'No labels yet',
+        classify_clear_filter: 'Clear filter',
+        manage_tags_btn: '⚙️ Manage Labels',
         sync_banner_title: 'Syncing Zalo Data...',
         sync_banner_desc: 'Loading contacts & groups. You can browse chat history normally.',
         empty_conversations: 'No matching conversations found'
+      },
+      ctx: {
+        pin_conv: 'Pin to top',
+        unpin_conv: 'Unpin conversation',
+        mark_unread: 'Mark as unread',
+        mark_read: 'Mark as read',
+        tags_menu: 'Labels',
+        delete_conv: 'Delete conversation',
+        confirm_delete: 'Are you sure you want to delete this conversation and its local messages?',
+        pin_limit_reached: 'You can only pin up to 5 conversations!'
       },
       chat: {
         empty_title: 'Select a conversation to start',

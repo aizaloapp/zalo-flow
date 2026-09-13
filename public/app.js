@@ -19,6 +19,8 @@ let state = {
   activeThreadId: null,
   activeThread: null,
   currentFilter: 'all',
+  quickFilter: 'all',
+  statusFilter: 'all',
   currentTagId: '',
   searchQuery: '',
   adminToken: new URLSearchParams(window.location.search).get('token') || localStorage.getItem('zalo_admin_token') || '',
@@ -224,6 +226,8 @@ async function loadTags() {
     const result = await res.json();
     state.tags = result.data || [];
     renderTagFilterDropdown();
+    renderClassifyTagList();
+    updateFilterUIState();
   } catch (err) {
     console.error('Failed to load tags:', err);
   }
@@ -240,9 +244,147 @@ function renderTagFilterDropdown() {
   tagFilterSelectEl.value = currentVal;
 }
 
+function renderClassifyTagList() {
+  const container = document.getElementById('popover-tag-list');
+  if (!container) return;
+
+  const noTagsText = window.t ? window.t('sidebar.classify_no_tags') : 'Chưa có thẻ nào';
+
+  if (!state.tags || state.tags.length === 0) {
+    container.innerHTML = `<div style="padding: 6px 14px; font-size: 0.78rem; color: var(--text-muted); font-style: italic;">${noTagsText}</div>`;
+    return;
+  }
+
+  container.innerHTML = state.tags.map(t => {
+    const isSelected = state.currentTagId === t.id;
+    return `
+      <div class="popover-tag-item ${isSelected ? 'active' : ''}" onclick="selectTagFilter('${t.id}')">
+        <div class="tag-item-left">
+          <span class="custom-radio ${isSelected ? 'checked' : ''}"></span>
+          <span class="tag-dot" style="background: ${t.color || '#38bdf8'};"></span>
+          <span class="tag-name-text" title="${escapeHtml(t.name)}">${escapeHtml(t.name)}</span>
+        </div>
+        <span class="tag-count-text">(${t.customerCount || 0})</span>
+      </div>
+    `;
+  }).join('');
+}
+
 function handleTagFilterChange(tagId) {
-  state.currentTagId = tagId;
+  selectTagFilter(tagId);
+}
+
+function setQuickFilter(type) {
+  state.quickFilter = type;
+  state.currentFilter = type;
+
+  // Khi người dùng bấm "Tất cả", đặt lại toàn bộ bộ lọc con về mặc định để xem trọn vẹn danh sách
+  if (type === 'all') {
+    state.statusFilter = 'all';
+    state.currentTagId = '';
+  }
+
+  updateFilterUIState();
   loadConversations();
+}
+
+function selectStatusFilter(status) {
+  state.statusFilter = status;
+  updateFilterUIState();
+  closeClassifyDropdown();
+  loadConversations();
+}
+
+function selectTagFilter(tagId) {
+  state.currentTagId = tagId;
+  updateFilterUIState();
+  closeClassifyDropdown();
+  loadConversations();
+}
+
+function resetClassifyFilters(e) {
+  if (e) e.stopPropagation();
+  state.statusFilter = 'all';
+  state.currentTagId = '';
+  updateFilterUIState();
+  loadConversations();
+}
+
+function toggleClassifyDropdown(e) {
+  if (e) e.stopPropagation();
+  const menu = document.getElementById('classify-popover-menu');
+  const btn = document.getElementById('classify-dropdown-btn');
+  if (!menu) return;
+
+  const isOpen = menu.style.display === 'flex';
+  if (isOpen) {
+    closeClassifyDropdown();
+  } else {
+    menu.style.display = 'flex';
+    if (btn) btn.classList.add('active');
+    renderClassifyTagList();
+  }
+}
+
+function closeClassifyDropdown() {
+  const menu = document.getElementById('classify-popover-menu');
+  const btn = document.getElementById('classify-dropdown-btn');
+  if (menu) menu.style.display = 'none';
+  if (btn) btn.classList.remove('active');
+}
+
+function updateFilterUIState() {
+  // 1. Cập nhật 3 tab nhanh
+  document.querySelectorAll('.quick-tab[data-quick-filter]').forEach(tab => {
+    tab.classList.toggle('active', tab.getAttribute('data-quick-filter') === (state.quickFilter || 'all'));
+  });
+
+  // 2. Cập nhật radio trạng thái
+  const radioStatusAll = document.getElementById('radio-status-all');
+  const radioStatusUnread = document.getElementById('radio-status-unread');
+  if (radioStatusAll) radioStatusAll.classList.toggle('checked', (state.statusFilter || 'all') === 'all');
+  if (radioStatusUnread) radioStatusUnread.classList.toggle('checked', state.statusFilter === 'unread');
+
+  // 3. Cập nhật radio "Tất cả thẻ"
+  const radioTagAll = document.getElementById('radio-tag-all');
+  if (radioTagAll) radioTagAll.classList.toggle('checked', !state.currentTagId);
+
+  // 4. Cập nhật nhãn nút Dropdown & Badge chỉ báo
+  const btn = document.getElementById('classify-dropdown-btn');
+  const labelEl = document.getElementById('classify-btn-label');
+  const badgeEl = document.getElementById('classify-active-badge');
+  const clearBtn = document.getElementById('classify-clear-btn');
+
+  const isFiltered = (state.statusFilter === 'unread') || Boolean(state.currentTagId);
+
+  if (btn) btn.classList.toggle('filtered', isFiltered);
+  if (badgeEl) badgeEl.style.display = isFiltered ? 'inline-block' : 'none';
+  if (clearBtn) clearBtn.style.display = isFiltered ? 'inline-block' : 'none';
+
+  if (labelEl) {
+    const defaultText = window.t ? window.t('sidebar.classify_btn') : 'Phân loại';
+    if (state.currentTagId) {
+      const tag = (state.tags || []).find(t => t.id === state.currentTagId);
+      if (tag) {
+        labelEl.innerText = tag.name;
+        if (badgeEl) badgeEl.style.background = tag.color || 'var(--primary)';
+      } else {
+        labelEl.innerText = defaultText;
+      }
+    } else if (state.statusFilter === 'unread') {
+      labelEl.innerText = window.t ? window.t('sidebar.filter_unread') : 'Chưa đọc';
+      if (badgeEl) badgeEl.style.background = 'var(--primary)';
+    } else {
+      labelEl.innerText = defaultText;
+    }
+  }
+
+  // Cập nhật thẻ hidden select cho tương thích ngược
+  if (tagFilterSelectEl) {
+    tagFilterSelectEl.value = state.currentTagId || '';
+  }
+
+  renderClassifyTagList();
 }
 
 async function createTag() {
@@ -1955,7 +2097,11 @@ function closeCampaignLogs() {
 // -----------------------------------------------------------------------------
 async function loadConversations() {
   try {
-    const url = `/api/conversations?filter=${encodeURIComponent(state.currentFilter)}&search=${encodeURIComponent(state.searchQuery)}&tagId=${encodeURIComponent(state.currentTagId)}`;
+    const quickFilter = state.quickFilter || state.currentFilter || 'all';
+    const statusFilter = state.statusFilter || 'all';
+    const tagId = state.currentTagId || '';
+    const search = state.searchQuery || '';
+    const url = `/api/conversations?filter=${encodeURIComponent(quickFilter)}&status=${encodeURIComponent(statusFilter)}&search=${encodeURIComponent(search)}&tagId=${encodeURIComponent(tagId)}`;
     const res = await fetch(url, { headers: getHeaders() });
     if (res.status === 401) {
       promptAuthToken();
@@ -1978,6 +2124,161 @@ function promptAuthToken() {
   }
 }
 
+function createConversationCard(conv) {
+  const card = document.createElement('div');
+  card.className = `conv-card ${conv.isPinned ? 'pinned' : ''} ${state.activeThreadId === conv.id ? 'active' : ''}`;
+  card.id = `conv-card-${conv.id}`;
+  card.onclick = () => selectConversation(conv.id);
+  card.oncontextmenu = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    openConvContextMenu(e, conv.id);
+  };
+
+  const initials = (conv.name || conv.id).substring(0, 2).toUpperCase();
+  const timeFormatted = conv.lastTime ? formatTime(conv.lastTime) : '';
+  const tagDotsHtml = (conv.tags && conv.tags.length > 0)
+    ? `<div class="conv-tag-dot-list">${conv.tags.slice(0, 4).map(t => `<span class="conv-tag-dot" style="background-color: ${escapeHtml(t.color || '#38bdf8')};" title="${escapeHtml(t.name)}"></span>`).join('')}</div>`
+    : '';
+
+  card.innerHTML = `
+    <div class="conv-avatar-box">
+      ${conv.avatar ? 
+        `<img class="conv-avatar" src="${conv.avatar}" alt="${escapeHtml(conv.name)}" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.outerHTML='<div class=\\'conv-avatar\\'>${initials}</div>'">` : 
+        `<div class="conv-avatar">${initials}</div>`
+      }
+      ${conv.isGroup ? `<div class="group-badge-icon">👥</div>` : ''}
+    </div>
+    <div class="conv-details">
+      <div class="conv-header-row">
+        <span class="conv-name">${escapeHtml(conv.name || conv.id)}</span>
+        <div class="conv-header-meta" style="display:inline-flex; align-items:center; gap: 4px;">
+          ${conv.isPinned ? `<span class="conv-pin-badge" title="Đã ghim">📌</span>` : ''}
+          <span class="conv-time">${timeFormatted}</span>
+          <button class="conv-more-btn" onclick="openConvContextMenu(event, '${conv.id}')" title="Tùy chọn">⋯</button>
+        </div>
+      </div>
+      <div class="conv-preview-row">
+        <span class="conv-last-msg">${escapeHtml(conv.lastMessage || '')}</span>
+        ${tagDotsHtml}
+        ${conv.unreadCount > 0 ? `<span class="unread-pill">${conv.unreadCount}</span>` : ''}
+      </div>
+    </div>
+  `;
+  return card;
+}
+
+function updateConversationCardInPlace(conv) {
+  if (!conv || !conv.id) return;
+  const existingCard = document.getElementById(`conv-card-${conv.id}`);
+  if (existingCard) {
+    existingCard.classList.toggle('active', state.activeThreadId === conv.id);
+    if (conv.isPinned !== undefined) {
+      existingCard.classList.toggle('pinned', Boolean(conv.isPinned));
+    }
+    const nameEl = existingCard.querySelector('.conv-name');
+    if (nameEl && conv.name) nameEl.innerText = conv.name;
+
+    const timeEl = existingCard.querySelector('.conv-time');
+    if (timeEl) timeEl.innerText = conv.lastTime ? formatTime(conv.lastTime) : '';
+
+    const lastMsgEl = existingCard.querySelector('.conv-last-msg');
+    if (lastMsgEl) lastMsgEl.innerText = conv.lastMessage || '';
+
+    // Cập nhật pin badge
+    const metaContainer = existingCard.querySelector('.conv-header-meta');
+    let pinBadge = existingCard.querySelector('.conv-pin-badge');
+    const isPinned = conv.isPinned !== undefined ? Boolean(conv.isPinned) : existingCard.classList.contains('pinned');
+    if (isPinned) {
+      if (!pinBadge && metaContainer) {
+        pinBadge = document.createElement('span');
+        pinBadge.className = 'conv-pin-badge';
+        pinBadge.title = 'Đã ghim';
+        pinBadge.innerText = '📌';
+        metaContainer.prepend(pinBadge);
+      }
+    } else if (pinBadge) {
+      pinBadge.remove();
+    }
+
+    // Cập nhật unread pill
+    const previewRow = existingCard.querySelector('.conv-preview-row');
+    let unreadPill = existingCard.querySelector('.unread-pill');
+    if (conv.unreadCount > 0) {
+      if (!unreadPill) {
+        unreadPill = document.createElement('span');
+        unreadPill.className = 'unread-pill';
+        if (previewRow) previewRow.appendChild(unreadPill);
+      }
+      unreadPill.innerText = conv.unreadCount;
+    } else if (unreadPill) {
+      unreadPill.remove();
+    }
+
+    // Cập nhật tag dots nếu có
+    if (conv.tags !== undefined) {
+      let tagDotList = existingCard.querySelector('.conv-tag-dot-list');
+      if (conv.tags && conv.tags.length > 0) {
+        if (!tagDotList && previewRow) {
+          tagDotList = document.createElement('div');
+          tagDotList.className = 'conv-tag-dot-list';
+          if (unreadPill) {
+            previewRow.insertBefore(tagDotList, unreadPill);
+          } else {
+            previewRow.appendChild(tagDotList);
+          }
+        }
+        if (tagDotList) {
+          tagDotList.innerHTML = conv.tags.slice(0, 4).map(t => 
+            `<span class="conv-tag-dot" style="background-color: ${escapeHtml(t.color || '#38bdf8')};" title="${escapeHtml(t.name)}"></span>`
+          ).join('');
+        }
+      } else if (tagDotList) {
+        tagDotList.remove();
+      }
+    }
+
+    // Realtime Prepend Guard:
+    // Nếu thẻ được ghim: chuyển lên đỉnh đầu danh sách
+    // Nếu thẻ KHÔNG ghim: chèn sau thẻ ghim cuối cùng (nếu có), hoặc prepend nếu không có thẻ ghim nào
+    if (convListEl) {
+      const isPinnedCard = existingCard.classList.contains('pinned');
+      if (isPinnedCard) {
+        if (convListEl.firstChild !== existingCard) {
+          convListEl.prepend(existingCard);
+        }
+      } else {
+        const lastPinned = convListEl.querySelector('.conv-card.pinned:last-of-type');
+        if (lastPinned) {
+          if (lastPinned.nextElementSibling !== existingCard && lastPinned !== existingCard) {
+            lastPinned.after(existingCard);
+          }
+        } else if (convListEl.firstChild !== existingCard) {
+          convListEl.prepend(existingCard);
+        }
+      }
+    }
+  } else {
+    // Nếu chưa có trong DOM, tạo mới và chèn vào vị trí thích hợp
+    const newCard = createConversationCard(conv);
+    if (convListEl) {
+      if (conv.isPinned) {
+        convListEl.prepend(newCard);
+      } else {
+        const lastPinned = convListEl.querySelector('.conv-card.pinned:last-of-type');
+        if (lastPinned) {
+          lastPinned.after(newCard);
+        } else {
+          convListEl.prepend(newCard);
+        }
+      }
+      if (convListEl.children.length > 60) {
+        convListEl.lastElementChild.remove();
+      }
+    }
+  }
+}
+
 function renderConversations() {
   convListEl.innerHTML = '';
 
@@ -1990,37 +2291,246 @@ function renderConversations() {
     return;
   }
 
-  state.conversations.forEach(conv => {
-    const card = document.createElement('div');
-    card.className = `conv-card ${state.activeThreadId === conv.id ? 'active' : ''}`;
-    card.onclick = () => selectConversation(conv.id);
+  const fragment = document.createDocumentFragment();
+  state.conversations.slice(0, 60).forEach(conv => {
+    fragment.appendChild(createConversationCard(conv));
+  });
+  convListEl.appendChild(fragment);
+}
 
-    const initials = (conv.name || conv.id).substring(0, 2).toUpperCase();
-    const timeFormatted = formatTime(conv.lastTime || conv.updatedAt);
+// -----------------------------------------------------------------------------
+// Conversation Context Menu Controller (Pin, Unread, Tagging, Local Delete)
+// -----------------------------------------------------------------------------
+let currentContextThreadId = null;
 
-    card.innerHTML = `
-      <div class="conv-avatar-box">
-        ${conv.avatar ? 
-          `<img class="conv-avatar" src="${conv.avatar}" alt="${escapeHtml(conv.name)}" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.outerHTML='<div class=\\'conv-avatar\\'>${initials}</div>'">` : 
-          `<div class="conv-avatar">${initials}</div>`
-        }
-        ${conv.isGroup ? `<div class="group-badge-icon">👥</div>` : ''}
-      </div>
-      <div class="conv-details">
-        <div class="conv-header-row">
-          <span class="conv-name">${escapeHtml(conv.name || conv.id)}</span>
-          <span class="conv-time">${timeFormatted}</span>
+function openConvContextMenu(e, threadId) {
+  if (e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+  currentContextThreadId = threadId;
+
+  const conv = state.conversations.find(c => String(c.id) === String(threadId));
+  const menu = document.getElementById('conv-context-menu');
+  if (!menu) return;
+
+  // 1. Cập nhật nhãn Ghim / Bỏ ghim
+  const pinIcon = document.getElementById('ctx-pin-icon');
+  const pinText = document.getElementById('ctx-pin-text');
+  const isPinned = Boolean(conv?.isPinned);
+  if (pinIcon) pinIcon.innerText = isPinned ? '📌' : '📌';
+  if (pinText) {
+    const key = isPinned ? 'ctx.unpin_conv' : 'ctx.pin_conv';
+    pinText.innerText = window.t ? window.t(key) : (isPinned ? 'Bỏ ghim' : 'Ghim hội thoại');
+    pinText.setAttribute('data-i18n', key);
+  }
+
+  // 2. Cập nhật nhãn Đánh dấu chưa đọc / Đã đọc
+  const unreadIcon = document.getElementById('ctx-unread-icon');
+  const unreadText = document.getElementById('ctx-unread-text');
+  const isUnread = Boolean(conv && conv.unreadCount > 0);
+  if (unreadIcon) unreadIcon.innerText = isUnread ? '📖' : '✉️';
+  if (unreadText) {
+    const key = isUnread ? 'ctx.mark_read' : 'ctx.mark_unread';
+    unreadText.innerText = window.t ? window.t(key) : (isUnread ? 'Đánh dấu đã đọc' : 'Đánh dấu chưa đọc');
+    unreadText.setAttribute('data-i18n', key);
+  }
+
+  // 3. Render danh sách thẻ cho submenu
+  renderContextTagsSubmenu(conv);
+
+  // 4. Hiển thị menu & tính vị trí chống tràn màn hình
+  menu.style.display = 'block';
+  hideTagSubmenu();
+
+  const menuWidth = 204;
+  const menuHeight = menu.offsetHeight || 190;
+  let posX = e.clientX || 100;
+  let posY = e.clientY || 100;
+
+  if (posX + menuWidth > window.innerWidth) {
+    posX = window.innerWidth - menuWidth - 10;
+  }
+  if (posY + menuHeight > window.innerHeight) {
+    posY = window.innerHeight - menuHeight - 10;
+  }
+
+  menu.style.left = `${Math.max(10, posX)}px`;
+  menu.style.top = `${Math.max(10, posY)}px`;
+}
+
+function closeConvContextMenu() {
+  const menu = document.getElementById('conv-context-menu');
+  if (menu) menu.style.display = 'none';
+  hideTagSubmenu();
+  currentContextThreadId = null;
+}
+
+function renderContextTagsSubmenu(conv) {
+  const container = document.getElementById('ctx-tags-list');
+  if (!container) return;
+  if (!state.tags || state.tags.length === 0) {
+    container.innerHTML = `<div style="padding: 6px 14px; font-size: 0.78rem; color: var(--text-dim); font-style: italic;">${window.t ? window.t('sidebar.classify_no_tags') : 'Chưa có thẻ nào'}</div>`;
+    return;
+  }
+  const convTags = conv?.tags || [];
+  container.innerHTML = state.tags.map(tag => {
+    const isChecked = convTags.some(t => String(t.id) === String(tag.id));
+    return `
+      <div class="ctx-tag-item" onclick="toggleContextTag('${tag.id}', ${!isChecked})">
+        <div class="ctx-tag-left">
+          <span class="tag-dot" style="background: ${tag.color || '#38bdf8'};"></span>
+          <span class="ctx-tag-name" title="${escapeHtml(tag.name)}">${escapeHtml(tag.name)}</span>
         </div>
-        <div class="conv-preview-row">
-          <span class="conv-last-msg">${escapeHtml(conv.lastMessage || 'Chưa có tin nhắn')}</span>
-          ${conv.unreadCount > 0 ? `<span class="unread-pill">${conv.unreadCount}</span>` : ''}
-        </div>
+        ${isChecked ? '<span class="ctx-tag-check">✓</span>' : ''}
       </div>
     `;
-
-    convListEl.appendChild(card);
-  });
+  }).join('');
 }
+
+function showTagSubmenu() {
+  const sub = document.getElementById('ctx-tags-submenu');
+  if (!sub) return;
+  sub.style.display = 'block';
+  sub.classList.remove('flip-left');
+  const rect = sub.getBoundingClientRect();
+  if (rect.right > window.innerWidth - 8) {
+    sub.classList.add('flip-left');
+  }
+}
+
+function hideTagSubmenu() {
+  const sub = document.getElementById('ctx-tags-submenu');
+  if (sub) {
+    sub.style.display = 'none';
+    sub.classList.remove('flip-left');
+  }
+}
+
+async function execContextPin(e) {
+  if (e) e.stopPropagation();
+  if (!currentContextThreadId) return;
+  const threadId = currentContextThreadId;
+  const conv = state.conversations.find(c => String(c.id) === String(threadId));
+  const newPinned = conv && conv.isPinned ? 0 : 1;
+  closeConvContextMenu();
+
+  try {
+    const res = await fetch(`/api/conversations/${threadId}/pin`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ isPinned: newPinned })
+    });
+    const result = await res.json();
+    if (!res.ok) {
+      alert(result.error || (window.t ? window.t('ctx.pin_limit_reached') : 'Không thể ghim quá 5 cuộc trò chuyện.'));
+      return;
+    }
+    await loadConversations();
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+async function execContextToggleUnread(e) {
+  if (e) e.stopPropagation();
+  if (!currentContextThreadId) return;
+  const threadId = currentContextThreadId;
+  const conv = state.conversations.find(c => String(c.id) === String(threadId));
+  const isCurrentlyUnread = Boolean(conv && conv.unreadCount > 0);
+  closeConvContextMenu();
+
+  try {
+    const endpoint = isCurrentlyUnread ? `/api/conversations/${threadId}/read` : `/api/conversations/${threadId}/mark-unread`;
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: getHeaders()
+    });
+    if (res.ok) {
+      await loadConversations();
+    }
+  } catch (err) {
+    console.error('Failed to toggle unread:', err);
+  }
+}
+
+async function execContextDelete(e) {
+  if (e) e.stopPropagation();
+  if (!currentContextThreadId) return;
+  const threadId = currentContextThreadId;
+  const conv = state.conversations.find(c => String(c.id) === String(threadId));
+  const convName = conv?.name || threadId;
+  const confirmMsg = (window.t ? window.t('ctx.confirm_delete') : 'Bạn có chắc chắn muốn xóa hội thoại với "{name}" khỏi Zalo-Flow?').replace('{name}', convName);
+
+  if (!confirm(confirmMsg)) {
+    return;
+  }
+  closeConvContextMenu();
+
+  try {
+    const res = await fetch(`/api/conversations/${threadId}`, {
+      method: 'DELETE',
+      headers: getHeaders()
+    });
+    const result = await res.json();
+    if (!res.ok) {
+      alert(result.error || 'Không thể xóa hội thoại.');
+      return;
+    }
+
+    if (String(state.activeThreadId) === String(threadId)) {
+      state.activeThreadId = null;
+      state.activeThread = null;
+      if (chatContentEl) chatContentEl.style.display = 'none';
+      if (emptyStateEl) emptyStateEl.style.display = 'flex';
+      if (window.innerWidth <= 768 && appLayoutEl) {
+        appLayoutEl.classList.remove('in-chat');
+      }
+    }
+    await loadConversations();
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+async function toggleContextTag(tagId, shouldAdd) {
+  if (!currentContextThreadId) return;
+  const threadId = currentContextThreadId;
+  try {
+    if (shouldAdd) {
+      await fetch(`/api/conversations/${threadId}/tags`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ tagId })
+      });
+    } else {
+      await fetch(`/api/conversations/${threadId}/tags/${tagId}`, {
+        method: 'DELETE',
+        headers: getHeaders()
+      });
+    }
+    await loadTags();
+    await loadConversations();
+    if (String(state.activeThreadId) === String(threadId)) {
+      await renderActiveChatTags();
+    }
+    const updatedConv = state.conversations.find(c => String(c.id) === String(threadId));
+    if (updatedConv) {
+      renderContextTagsSubmenu(updatedConv);
+    }
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+window.openConvContextMenu = openConvContextMenu;
+window.closeConvContextMenu = closeConvContextMenu;
+window.showTagSubmenu = showTagSubmenu;
+window.hideTagSubmenu = hideTagSubmenu;
+window.execContextPin = execContextPin;
+window.execContextToggleUnread = execContextToggleUnread;
+window.execContextDelete = execContextDelete;
+window.toggleContextTag = toggleContextTag;
 
 async function selectConversation(threadId) {
   state.activeThreadId = threadId;
@@ -2031,7 +2541,10 @@ async function selectConversation(threadId) {
   cancelQuote();
   cancelAttachment();
 
-  renderConversations();
+  // In-Place toggle active state without wiping out DOM
+  document.querySelectorAll('.conv-card').forEach(c => {
+    c.classList.toggle('active', c.id === `conv-card-${threadId}`);
+  });
 
   emptyStateEl.style.display = 'none';
   chatContentEl.style.display = 'flex';
@@ -2188,20 +2701,51 @@ async function syncCurrentThread() {
   }
 }
 
+let silentSyncDebounceTimer = null;
+const threadSyncCooldownMap = new Map(); // threadId -> timestamp
+
 async function triggerSilentSync(threadId) {
-  try {
-    const isGroup = Boolean(state.activeThread?.isGroup);
-    await fetch(`/api/conversations/${threadId}/sync?isGroup=${isGroup}`, {
-      method: 'POST',
-      headers: getHeaders()
-    });
-    const res = await fetch(`/api/conversations/${threadId}/messages?limit=50`, { headers: getHeaders() });
-    const result = await res.json();
-    if (result.data && result.data.length > state.messages.length) {
-      state.messages = result.data;
-      renderMessages(state.messages);
+  if (!threadId) return;
+  const isGroup = Boolean(state.activeThread?.isGroup);
+  if (!isGroup) return;
+
+  clearTimeout(silentSyncDebounceTimer);
+  silentSyncDebounceTimer = setTimeout(async () => {
+    const lastSync = threadSyncCooldownMap.get(threadId);
+    if (lastSync && Date.now() - lastSync < 30000) {
+      return; // Cooldown 30s active, protect from anti-ban
     }
-  } catch {}
+    threadSyncCooldownMap.set(threadId, Date.now());
+
+    try {
+      const syncWarnEl = document.getElementById('chat-sync-soft-warning');
+      if (syncWarnEl && state.activeThreadId === threadId) {
+        syncWarnEl.style.display = 'flex';
+        syncWarnEl.innerText = '🔄 Đang đồng bộ 50 tin nhắn mới nhất từ Zalo...';
+      }
+
+      await fetch(`/api/conversations/${threadId}/sync?isGroup=true`, {
+        method: 'POST',
+        headers: getHeaders()
+      });
+
+      if (state.activeThreadId === threadId) {
+        const res = await fetch(`/api/conversations/${threadId}/messages?limit=50`, { headers: getHeaders() });
+        const result = await res.json();
+        if (result.data && result.data.length > 0) {
+          state.messages = result.data;
+          renderMessages(state.messages);
+        }
+      }
+    } catch (err) {
+      console.warn('Auto-sync note:', err);
+    } finally {
+      const syncWarnEl = document.getElementById('chat-sync-soft-warning');
+      if (syncWarnEl && state.activeThreadId === threadId) {
+        syncWarnEl.style.display = 'none';
+      }
+    }
+  }, 350);
 }
 
 function renderMessages(messages) {
@@ -3238,18 +3782,19 @@ function handleStreamEvent(eventType, rawData) {
           conv.unreadCount = (conv.unreadCount || 0) + 1;
         }
         state.conversations = [conv, ...state.conversations.filter(c => String(c.id) !== String(msg.threadId))];
+        updateConversationCardInPlace(conv);
       } else {
         const newConv = {
           id: msg.threadId,
           name: msg.senderName || msg.threadId,
           isGroup: Boolean(msg.isGroup),
-          lastMessage: msg.text || '[Tin nhắn]',
+          lastMessage: msg.text || (msg.mediaType === 'image' ? '[Hình ảnh]' : '[Tin nhắn]'),
           lastTime: msg.timestamp,
           unreadCount: (String(state.activeThreadId) === String(msg.threadId)) ? 0 : 1
         };
         state.conversations.unshift(newConv);
+        updateConversationCardInPlace(newConv);
       }
-      renderConversations();
     } else if (eventType === 'message_reaction') {
       if (data.msgId && data.reaction) {
         updateMessageReactionDOM(data.msgId, data.reaction);
@@ -3276,7 +3821,12 @@ function handleStreamEvent(eventType, rawData) {
         if (found) {
           if (convData.name) found.name = convData.name;
           if (convData.avatar) found.avatar = convData.avatar;
-          renderConversations();
+          if (convData.lastMessage) found.lastMessage = convData.lastMessage;
+          if (convData.lastTime) found.lastTime = convData.lastTime;
+          updateConversationCardInPlace(found);
+        } else {
+          state.conversations.unshift(convData);
+          updateConversationCardInPlace(convData);
         }
         if (String(state.activeThreadId) === String(convData.id)) {
           const chatNameEl = document.getElementById('active-chat-name');
@@ -3555,22 +4105,150 @@ async function syncContacts() {
   }
 }
 
+let currentLightboxUrl = '';
+let currentLightboxZoom = 1;
+let currentLightboxRotation = 0;
+let lightboxImagesInThread = [];
+let currentLightboxIndex = -1;
+
 function openImagePreview(url) {
   if (!url) return;
-  lightboxImgEl.src = url;
-  lightboxEl.style.display = 'flex';
+  currentLightboxUrl = url;
+  currentLightboxZoom = 1;
+  currentLightboxRotation = 0;
+
+  // Thu thập danh sách ảnh trong cuộc trò chuyện hiện tại để duyệt Next / Prev
+  lightboxImagesInThread = (state.messages || [])
+    .filter(m => m.mediaType === 'image' && m.mediaUrl)
+    .map(m => m.mediaUrl.startsWith('http') ? m.mediaUrl : (m.mediaUrl + (state.adminToken ? `?token=${encodeURIComponent(state.adminToken)}` : '')));
+
+  currentLightboxIndex = lightboxImagesInThread.indexOf(url);
+
+  updateLightboxView();
+  if (lightboxEl) lightboxEl.style.display = 'flex';
+}
+
+function updateLightboxView() {
+  if (!lightboxImgEl) return;
+  lightboxImgEl.src = currentLightboxUrl;
+  applyLightboxTransform();
+
+  const zoomLevelEl = document.getElementById('lightbox-zoom-level');
+  if (zoomLevelEl) {
+    zoomLevelEl.innerText = `${Math.round(currentLightboxZoom * 100)}%`;
+  }
+
+  const prevBtn = document.getElementById('lightbox-prev-btn');
+  const nextBtn = document.getElementById('lightbox-next-btn');
+  if (prevBtn) prevBtn.style.display = (lightboxImagesInThread.length > 1) ? 'flex' : 'none';
+  if (nextBtn) nextBtn.style.display = (lightboxImagesInThread.length > 1) ? 'flex' : 'none';
+}
+
+function applyLightboxTransform() {
+  if (!lightboxImgEl) return;
+  lightboxImgEl.style.transform = `scale(${currentLightboxZoom}) rotate(${currentLightboxRotation}deg)`;
+}
+
+function zoomLightbox(delta) {
+  currentLightboxZoom = Math.max(0.5, Math.min(currentLightboxZoom + delta, 3.0));
+  const zoomLevelEl = document.getElementById('lightbox-zoom-level');
+  if (zoomLevelEl) zoomLevelEl.innerText = `${Math.round(currentLightboxZoom * 100)}%`;
+  applyLightboxTransform();
+}
+
+function rotateLightbox() {
+  currentLightboxRotation = (currentLightboxRotation + 90) % 360;
+  applyLightboxTransform();
+}
+
+function navigateLightbox(step) {
+  if (lightboxImagesInThread.length <= 1) return;
+  if (currentLightboxIndex === -1) {
+    currentLightboxIndex = 0;
+  }
+  currentLightboxIndex = (currentLightboxIndex + step + lightboxImagesInThread.length) % lightboxImagesInThread.length;
+  currentLightboxUrl = lightboxImagesInThread[currentLightboxIndex];
+  currentLightboxZoom = 1;
+  currentLightboxRotation = 0;
+  updateLightboxView();
+}
+
+function downloadCurrentLightboxImage() {
+  if (!currentLightboxUrl) return;
+  if (currentLightboxUrl.startsWith('http')) {
+    const authParam = state.adminToken ? `&token=${encodeURIComponent(state.adminToken)}` : '';
+    const proxyUrl = `/api/media/download-proxy?url=${encodeURIComponent(currentLightboxUrl)}${authParam}`;
+    const a = document.createElement('a');
+    a.href = proxyUrl;
+    a.download = 'zalo_image.jpg';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  } else {
+    window.open(currentLightboxUrl, '_blank');
+  }
 }
 
 function closeImagePreview() {
-  lightboxEl.style.display = 'none';
-  lightboxImgEl.src = '';
+  if (lightboxEl) lightboxEl.style.display = 'none';
+  if (lightboxImgEl) lightboxImgEl.src = '';
+  currentLightboxUrl = '';
+  currentLightboxZoom = 1;
+  currentLightboxRotation = 0;
+}
+
+// Bắt phím tắt bàn phím cho Lightbox & Popover
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    closeClassifyDropdown();
+    closeConvContextMenu();
+  }
+  if (lightboxEl && lightboxEl.style.display === 'flex') {
+    if (e.key === 'Escape') {
+      closeImagePreview();
+    } else if (e.key === 'ArrowLeft') {
+      navigateLightbox(-1);
+    } else if (e.key === 'ArrowRight') {
+      navigateLightbox(1);
+    } else if (e.key === '+' || e.key === '=') {
+      zoomLightbox(0.25);
+    } else if (e.key === '-') {
+      zoomLightbox(-0.25);
+    }
+  }
+});
+
+// Đóng Popover menu khi click ra ngoài
+document.addEventListener('click', (e) => {
+  const menu = document.getElementById('classify-popover-menu');
+  const btn = document.getElementById('classify-dropdown-btn');
+  if (menu && menu.style.display === 'flex') {
+    if (!menu.contains(e.target) && (!btn || !btn.contains(e.target))) {
+      closeClassifyDropdown();
+    }
+  }
+
+  const ctxMenu = document.getElementById('conv-context-menu');
+  if (ctxMenu && ctxMenu.style.display !== 'none') {
+    if (!ctxMenu.contains(e.target) && !e.target.closest('.conv-more-btn')) {
+      closeConvContextMenu();
+    }
+  }
+});
+
+if (convListEl) {
+  convListEl.addEventListener('scroll', closeConvContextMenu, { passive: true });
 }
 
 function setFilter(filter) {
+  if (filter === 'unread') {
+    state.statusFilter = 'unread';
+  } else {
+    state.quickFilter = filter;
+    state.statusFilter = 'all';
+  }
   state.currentFilter = filter;
-  document.querySelectorAll('.segmented-tab[data-filter]').forEach(btn => {
-    btn.classList.toggle('active', btn.getAttribute('data-filter') === filter);
-  });
+  updateFilterUIState();
   loadConversations();
 }
 
@@ -6655,6 +7333,8 @@ window.addEventListener('zaloflow:langchange', () => {
   const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
   applyTheme(currentTheme, false);
   renderTagFilterDropdown();
+  renderClassifyTagList();
+  updateFilterUIState();
   if (typeof currentZaloProfile !== 'undefined' && currentZaloProfile) {
     updateZaloHeaderStatus(currentZaloProfile);
   }

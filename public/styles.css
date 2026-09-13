@@ -3,6 +3,7 @@
   --bg-dark: #090d16;
   --bg-rail: #070a12;
   --bg-sidebar: #0f172a;
+  --bg-popover: #182234;
   --bg-card: rgba(30, 41, 59, 0.7);
   --bg-card-hover: rgba(51, 65, 85, 0.8);
   --bg-active: rgba(56, 189, 248, 0.15);
@@ -65,6 +66,7 @@
   --bg-dark: #f4f5f7;        /* Nền canvas khung chat chuẩn Zalo Desktop */
   --bg-rail: #eaedf0;        /* Thanh điều hướng rail 52px */
   --bg-sidebar: #ffffff;     /* Cột danh sách hội thoại và Header trắng tinh */
+  --bg-popover: #ffffff;     /* Nền Popover dropdown đục 100% */
   --bg-card: #ffffff;        /* Nền thẻ hội thoại, thẻ CRM */
   --bg-card-hover: #f1f5f9;  /* Hover thẻ */
   --bg-active: #e0f2fe;      /* Hội thoại đang chọn */
@@ -529,9 +531,49 @@ body {
   color: var(--text-muted);
 }
 
-[data-theme="light"] .filter-segmented-bar {
+[data-theme="light"] .filter-segmented-bar,
+[data-theme="light"] .filter-quick-tabs,
+[data-theme="light"] .classify-dropdown-btn {
   background: #e2e8f0;
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .quick-tab.active {
+  background: #ffffff;
+  color: var(--primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .classify-popover-menu {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.16), 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .popover-section-header {
+  color: #64748b;
+}
+
+[data-theme="light"] .popover-item {
+  color: #0f172a;
+}
+
+[data-theme="light"] .popover-item:hover,
+[data-theme="light"] .popover-tag-item:hover {
+  background: #f1f5f9;
+}
+
+[data-theme="light"] .custom-radio {
+  border-color: #94a3b8;
+}
+
+[data-theme="light"] .popover-divider {
+  background: #e2e8f0;
+}
+
+[data-theme="light"] .popover-footer {
+  background: #f8fafc;
+  border-top-color: #e2e8f0;
 }
 
 [data-theme="light"] .message-bubble-wrap.inbound .quote-block {
@@ -559,26 +601,37 @@ body {
   background: rgba(148, 163, 184, 0.5);
 }
 
-/* 2-Tier Filter Layout */
-.filter-segmented-bar {
+/* Streamlined 1-Tier Filter Toolbar & Classification Popover */
+.sidebar-filter-toolbar {
   display: flex;
-  background: rgba(0, 0, 0, 0.45);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 3px;
-  gap: 2px;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  position: relative;
+  margin-top: 4px;
 }
 
-.segmented-tab {
+.filter-quick-tabs {
+  display: flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 2px;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.quick-tab {
   flex: 1;
   background: transparent;
   border: 1px solid transparent;
   color: var(--text-muted);
   font-size: 0.76rem;
   font-weight: 700;
-  padding: 7px 0;
-  border-radius: 9px;
+  padding: 5px 0;
+  border-radius: 7px;
   cursor: pointer;
   font-family: var(--font-main);
   text-align: center;
@@ -586,57 +639,252 @@ body {
   white-space: nowrap;
 }
 
-.segmented-tab:hover {
+.quick-tab:hover {
   color: #fff;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.06);
 }
 
-.segmented-tab.active {
+.quick-tab.active {
   background: rgba(56, 189, 248, 0.2);
   border-color: rgba(56, 189, 248, 0.4);
   color: var(--primary);
-  box-shadow: 0 2px 8px rgba(56, 189, 248, 0.25);
+  box-shadow: 0 1px 6px rgba(56, 189, 248, 0.2);
 }
 
-.tag-filter-row {
-  display: flex;
+.filter-dropdown-wrapper {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.classify-dropdown-btn {
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  background: rgba(0, 0, 0, 0.25);
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.4);
   border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 7px 12px;
-  transition: border-color 0.2s;
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 5px 9px;
+  border-radius: 9px;
+  cursor: pointer;
+  font-family: var(--font-main);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  user-select: none;
 }
 
-.tag-filter-row:focus-within {
+.classify-dropdown-btn:hover {
+  color: #fff;
   border-color: var(--border-focus);
 }
 
-.tag-filter-label {
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: var(--text-muted);
-  white-space: nowrap;
+.classify-dropdown-btn.filtered {
+  background: rgba(56, 189, 248, 0.18);
+  border-color: rgba(56, 189, 248, 0.5);
+  color: var(--primary);
 }
 
-.tag-filter-select {
-  flex: 1;
-  background: transparent;
-  border: none;
+.dropdown-arrow {
+  font-size: 0.65rem;
+  transition: transform 0.2s ease;
+  display: inline-block;
+}
+
+.classify-dropdown-btn.active .dropdown-arrow {
+  transform: rotate(180deg);
+}
+
+.classify-active-badge {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--primary);
+  flex-shrink: 0;
+}
+
+.classify-clear-btn {
+  margin-left: 2px;
+  font-size: 0.95rem;
+  line-height: 1;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0 3px;
+  border-radius: 50%;
+  transition: all 0.15s;
+}
+
+.classify-clear-btn:hover {
+  color: var(--danger);
+  transform: scale(1.2);
+}
+
+/* Popover Menu Dropdown (100% Opaque, High Contrast) */
+.classify-popover-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  width: 228px;
+  max-height: 380px;
+  background: var(--bg-popover, #182234);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 11px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.75), 0 2px 8px rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  padding: 6px 0;
+  backdrop-filter: blur(20px);
+  animation: popoverFadeIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes popoverFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.popover-section-header {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  padding: 8px 14px 4px;
+  letter-spacing: 0.6px;
+  user-select: none;
+}
+
+.popover-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  color: var(--text-main);
+  font-size: 0.84rem;
+  font-weight: 600;
+  user-select: none;
+}
+
+.popover-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.popover-item.active {
   color: var(--primary);
+  font-weight: 700;
+}
+
+.popover-tag-list {
+  max-height: 180px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.popover-tag-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  user-select: none;
+}
+
+.popover-tag-item:hover {
+  background: var(--bg-card-hover);
+}
+
+.popover-tag-item.active {
+  background: rgba(56, 189, 248, 0.12);
+}
+
+.tag-item-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.tag-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.tag-name-text {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.82rem;
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+.tag-count-text {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-left: 4px;
+  flex-shrink: 0;
+}
+
+/* Custom CSS Radio Button */
+.custom-radio {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+  background: transparent;
+}
+
+.custom-radio.checked {
+  border-color: var(--primary);
+}
+
+.custom-radio.checked::after {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--primary);
+  display: block;
+}
+
+.popover-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 5px 0;
+}
+
+.popover-footer {
+  padding: 9px 14px;
+  cursor: pointer;
+  transition: all 0.15s;
   font-size: 0.8rem;
   font-weight: 700;
-  font-family: var(--font-main);
-  outline: none;
-  cursor: pointer;
-  padding: 0;
+  color: var(--primary);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: 2px;
+  background: rgba(0, 0, 0, 0.25);
+  text-align: left;
+  user-select: none;
 }
 
-.tag-filter-select option {
-  background: var(--bg-sidebar);
-  color: var(--text-main);
-  padding: 8px;
+.popover-footer:hover {
+  background: rgba(56, 189, 248, 0.15);
+  color: #fff;
+}
+
+/* Legacy Support & Hidden Select */
+.tag-filter-select {
+  display: none;
 }
 
 /* Conversation List */
@@ -774,6 +1022,232 @@ body {
   border-radius: 10px;
   min-width: 18px;
   text-align: center;
+}
+
+/* Pinned Conversation Card & Action Buttons */
+.conv-card.pinned {
+  background: rgba(56, 189, 248, 0.05);
+}
+
+[data-theme="light"] .conv-card.pinned {
+  background: #f8fafc;
+}
+
+.conv-pin-badge {
+  font-size: 0.72rem;
+  margin-left: 4px;
+  opacity: 0.9;
+  display: inline-flex;
+  align-items: center;
+}
+
+.conv-more-btn {
+  opacity: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--text-main);
+  font-size: 0.92rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  padding: 0;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.conv-card:hover .conv-more-btn,
+.conv-card.active .conv-more-btn {
+  opacity: 1;
+}
+
+.conv-more-btn:hover {
+  background: rgba(56, 189, 248, 0.25);
+  color: var(--primary);
+  transform: scale(1.1);
+}
+
+[data-theme="light"] .conv-more-btn {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+[data-theme="light"] .conv-more-btn:hover {
+  background: #cbd5e1;
+  color: var(--primary);
+}
+
+.conv-tag-dot-list {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 6px;
+}
+
+.conv-tag-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 1px var(--bg-card);
+}
+
+/* Floating Context Menu */
+.conv-context-menu {
+  position: fixed;
+  width: 204px;
+  background: var(--bg-popover, #182234);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 11px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.75), 0 2px 8px rgba(0, 0, 0, 0.4);
+  z-index: 2000;
+  padding: 5px 0;
+  user-select: none;
+  animation: popoverFadeIn 0.12s ease-out;
+}
+
+.ctx-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-main);
+  cursor: pointer;
+  transition: background 0.12s ease;
+  position: relative;
+}
+
+.ctx-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.ctx-item.danger {
+  color: var(--danger);
+}
+
+.ctx-item.danger:hover {
+  background: rgba(244, 63, 94, 0.15);
+}
+
+.ctx-item-left {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.ctx-icon {
+  font-size: 0.88rem;
+  width: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ctx-arrow {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+}
+
+.ctx-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 4px 0;
+}
+
+/* Submenu Thẻ Màu */
+.ctx-submenu {
+  position: absolute;
+  left: calc(100% + 4px);
+  top: -5px;
+  width: 216px;
+  background: var(--bg-popover, #182234);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 11px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.75), 0 2px 8px rgba(0, 0, 0, 0.4);
+  z-index: 2001;
+  padding: 5px 0;
+  animation: popoverFadeIn 0.12s ease-out;
+}
+
+.ctx-submenu.flip-left {
+  left: auto;
+  right: calc(100% + 4px);
+}
+
+.ctx-submenu-header {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  padding: 6px 14px 4px;
+  letter-spacing: 0.5px;
+}
+
+.ctx-submenu-list {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.ctx-tag-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.ctx-tag-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.ctx-tag-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.ctx-tag-name {
+  max-width: 125px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.82rem;
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+.ctx-tag-check {
+  color: var(--primary);
+  font-weight: bold;
+  font-size: 0.85rem;
+}
+
+/* Light Theme overrides for Context Menu */
+[data-theme="light"] .conv-context-menu,
+[data-theme="light"] .ctx-submenu {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.16), 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .ctx-item {
+  color: #0f172a;
+}
+
+[data-theme="light"] .ctx-item:hover,
+[data-theme="light"] .ctx-tag-item:hover {
+  background: #f1f5f9;
+}
+
+[data-theme="light"] .ctx-divider {
+  background: #e2e8f0;
 }
 
 /* Chat Pane */
@@ -1131,20 +1605,22 @@ body {
 
 /* Rich Media */
 .media-img {
-  max-width: 280px;
-  max-height: 320px;
+  max-width: 380px;
+  max-height: 420px;
   width: auto;
   height: auto;
-  border-radius: 8px;
+  border-radius: 12px;
   display: block;
   margin-bottom: 4px;
   cursor: pointer;
-  transition: transform 0.2s;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
+  image-rendering: auto;
 }
 
 .media-img:hover {
-  transform: scale(1.01);
+  transform: scale(1.015);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
 }
 
 .sticker-img {
@@ -1523,19 +1999,120 @@ body {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(0, 0, 0, 0.88);
-  backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.92);
+  backdrop-filter: blur(12px);
   z-index: 9999;
   align-items: center;
   justify-content: center;
+  flex-direction: column;
+}
+
+.lightbox-toolbar {
+  position: absolute;
+  top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(30, 41, 59, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 30px;
+  padding: 6px 14px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  z-index: 10001;
+}
+
+.lightbox-btn {
+  background: transparent;
+  border: none;
+  color: #f1f5f9;
+  font-size: 0.95rem;
+  padding: 6px 10px;
+  border-radius: 20px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+  transition: background 0.15s, transform 0.15s;
+}
+
+.lightbox-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: scale(1.05);
+}
+
+.lightbox-btn.download {
+  background: #2563eb;
+  color: #fff;
+  padding: 6px 14px;
+}
+.lightbox-btn.download:hover {
+  background: #1d4ed8;
+}
+
+.lightbox-btn.close {
+  color: #ef4444;
+  font-size: 1.1rem;
+}
+
+.lightbox-zoom-level {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #94a3b8;
+  min-width: 42px;
+  text-align: center;
+}
+
+.lightbox-img-wrapper {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
   cursor: zoom-out;
 }
 
 .image-lightbox img {
-  max-width: 90vw;
-  max-height: 90vh;
-  border-radius: 12px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+  max-width: 88vw;
+  max-height: 84vh;
+  border-radius: 10px;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.85);
+  transition: transform 0.2s ease-out;
+  cursor: default;
+}
+
+.lightbox-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  cursor: pointer;
+  z-index: 10001;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.lightbox-nav-btn:hover {
+  background: rgba(59, 130, 246, 0.8);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.lightbox-nav-btn.prev {
+  left: 24px;
+}
+
+.lightbox-nav-btn.next {
+  right: 24px;
 }
 
 /* =============================================================================

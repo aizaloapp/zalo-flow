@@ -200,7 +200,8 @@ export class ZaloClient {
               id,
               name: f.displayName || f.zaloName || f.name || id,
               avatar: f.avatar || f.avatarUrl || '',
-              isGroup: false
+              isGroup: false,
+              lastTime: null
             });
           }
           logger.info(`📇 Initial contact sync: Synced ${friends.length} friends into LocalStore and in-memory cache.`);
@@ -236,7 +237,8 @@ export class ZaloClient {
             id: gid,
             name: groupName,
             avatar: groupAvatar,
-            isGroup: true
+            isGroup: true,
+            lastTime: null
           });
         }
         if (groupIds.length > 0) {
@@ -373,25 +375,35 @@ export class ZaloClient {
       try {
         const hist = await this.api.getGroupChatHistory(threadId, count);
         const msgs = hist?.groupMsgs || [];
-        for (const gm of msgs) {
-          const parsed = parseMessage(gm);
-          localStore.addMessage({
-            id: String(gm.msgId || crypto.randomUUID()),
-            threadId,
-            senderId: String(gm.uidFrom || 'unknown'),
-            senderName: gm.dName || gm.displayName || '',
-            text: parsed.text,
-            mediaType: parsed.type,
-            mediaUrl: parsed.mediaUrl || '',
-            quoteText: parsed.quoteText || '',
-            quoteSender: parsed.quoteSender || '',
-            isGroup: true,
-            isSelf: Boolean(gm.isSelf),
-            isBot: false,
-            timestamp: gm.ts ? new Date(Number(gm.ts)).toISOString() : new Date().toISOString()
-          }, { silent: true });
+        if (msgs.length > 0) {
+          const messagesToBatch = [];
+          for (const gm of msgs) {
+            const parsed = parseMessage(gm);
+            messagesToBatch.push({
+              id: String(gm.msgId || crypto.randomUUID()),
+              threadId,
+              senderId: String(gm.uidFrom || 'unknown'),
+              senderName: gm.dName || gm.displayName || '',
+              text: parsed.text,
+              mediaType: parsed.type,
+              mediaUrl: parsed.mediaUrl || '',
+              quoteText: parsed.quoteText || '',
+              quoteSender: parsed.quoteSender || '',
+              isGroup: true,
+              isSelf: Boolean(gm.isSelf),
+              isBot: false,
+              timestamp: gm.ts ? new Date(Number(gm.ts)).toISOString() : new Date().toISOString()
+            });
+          }
+          localStore.addMessagesBatch(messagesToBatch);
+          syncedCount = msgs.length;
+
+          // Emit updated conversation to SSE
+          const updatedConv = localStore.getConversation(threadId);
+          if (updatedConv) {
+            localStore.emit('conversationUpdated', updatedConv);
+          }
         }
-        syncedCount = msgs.length;
       } catch (err) {
         logger.warn(`Group history API note for ${threadId}: ${err.message}`);
       }

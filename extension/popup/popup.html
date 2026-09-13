@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AIzalo Flow Companion</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <!-- Header -->
+    <header class="popup-header">
+      <div class="header-brand">
+        <div class="brand-badge">⚡</div>
+        <div class="brand-text">
+          <h1>AIzalo Flow</h1>
+          <span class="version-tag">Companion v1.0</span>
+        </div>
+      </div>
+      <div id="connectionDot" class="status-indicator offline" title="Trạng thái kết nối"></div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="popup-body">
+      <!-- Status Card -->
+      <div class="status-card">
+        <div class="status-title" id="statusTitle">Đang kiểm tra kết nối...</div>
+        <div class="status-desc" id="statusDesc">Đang liên hệ máy chủ Zalo-Flow...</div>
+      </div>
+
+      <!-- Settings Section -->
+      <div class="settings-group">
+        <label for="serverUrlInput">Địa chỉ Zalo-Flow:</label>
+        <div class="input-with-action">
+          <input type="text" id="serverUrlInput" placeholder="http://127.0.0.1:3000" spellcheck="false">
+        </div>
+
+        <label for="adminTokenInput">Mã bảo mật (Admin Token / Tùy chọn):</label>
+        <div class="input-with-action">
+          <input type="password" id="adminTokenInput" placeholder="Bỏ trống nếu không đặt trong .env" spellcheck="false">
+        </div>
+
+        <button id="btnSaveConnect" class="btn-primary">
+          <span class="btn-icon">🔄</span> Lưu & Thử Kết Nối
+        </button>
+      </div>
+
+      <!-- Quick Stats -->
+      <div class="stats-row">
+        <div class="stat-item">
+          <div class="stat-value" id="statTemplatesCount">-</div>
+          <div class="stat-label">Mẫu tin nhanh</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="statAiStatus">-</div>
+          <div class="stat-label">Trợ lý AI</div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer Links -->
+    <footer class="popup-footer">
+      <a href="https://aizalo.com/" target="_blank" rel="noopener noreferrer" class="footer-link">
+        🌐 aizalo.com
+      </a>
+      <span class="dot-separator">•</span>
+      <a href="https://aizalo.com/guide" target="_blank" rel="noopener noreferrer" class="footer-link">
+        📖 Hướng dẫn
+      </a>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

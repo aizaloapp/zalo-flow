@@ -119,16 +119,53 @@
             </button>
           </div>
 
-          <div class="filter-segmented-bar">
-            <button class="segmented-tab active" data-filter="all" data-i18n="sidebar.filter_all" onclick="setFilter('all')">Tất cả</button>
-            <button class="segmented-tab" data-filter="unread" data-i18n="sidebar.filter_unread" onclick="setFilter('unread')">Chưa đọc</button>
-            <button class="segmented-tab" data-filter="personal" data-i18n="sidebar.filter_personal" onclick="setFilter('personal')">Cá nhân</button>
-            <button class="segmented-tab" data-filter="group" data-i18n="sidebar.filter_group" onclick="setFilter('group')">Nhóm</button>
-          </div>
+          <div class="sidebar-filter-toolbar">
+            <div class="filter-quick-tabs">
+              <button class="quick-tab active" data-quick-filter="all" data-i18n="sidebar.filter_all" onclick="setQuickFilter('all')">Tất cả</button>
+              <button class="quick-tab" data-quick-filter="personal" data-i18n="sidebar.filter_personal" onclick="setQuickFilter('personal')">Cá nhân</button>
+              <button class="quick-tab" data-quick-filter="group" data-i18n="sidebar.filter_group" onclick="setQuickFilter('group')">Nhóm</button>
+            </div>
 
-          <div class="tag-filter-row">
-            <span class="tag-filter-label" data-i18n="sidebar.tag_filter_label">📌 Lọc theo Thẻ:</span>
-            <select class="tag-filter-select" id="tag-filter-select" onchange="handleTagFilterChange(this.value)">
+            <div class="filter-dropdown-wrapper">
+              <button class="classify-dropdown-btn" id="classify-dropdown-btn" onclick="toggleClassifyDropdown(event)" title="Lọc theo trạng thái hoặc thẻ phân loại">
+                <span class="classify-active-badge" id="classify-active-badge" style="display: none;"></span>
+                <span id="classify-btn-label" data-i18n="sidebar.classify_btn">Phân loại</span>
+                <span class="dropdown-arrow">⌵</span>
+                <span class="classify-clear-btn" id="classify-clear-btn" style="display: none;" onclick="resetClassifyFilters(event)" title="Xóa bộ lọc">&times;</span>
+              </button>
+
+              <div class="classify-popover-menu" id="classify-popover-menu" style="display: none;">
+                <div class="popover-section-header" data-i18n="sidebar.classify_by_status">THEO TRẠNG THÁI</div>
+                <div class="popover-item" onclick="selectStatusFilter('all')">
+                  <span class="custom-radio checked" id="radio-status-all"></span>
+                  <span class="popover-label" data-i18n="sidebar.filter_all">Tất cả</span>
+                </div>
+                <div class="popover-item" onclick="selectStatusFilter('unread')">
+                  <span class="custom-radio" id="radio-status-unread"></span>
+                  <span class="popover-label" data-i18n="sidebar.filter_unread">Chưa đọc</span>
+                </div>
+
+                <div class="popover-divider"></div>
+
+                <div class="popover-section-header" data-i18n="sidebar.classify_by_tag">THEO THẺ PHÂN LOẠI</div>
+                <div class="popover-item" onclick="selectTagFilter('')">
+                  <span class="custom-radio checked" id="radio-tag-all"></span>
+                  <span class="popover-label" data-i18n="sidebar.classify_all_tags">Tất cả thẻ</span>
+                </div>
+                <div class="popover-tag-list" id="popover-tag-list">
+                  <!-- Tag list rendered dynamically -->
+                </div>
+
+                <div class="popover-divider"></div>
+
+                <div class="popover-footer" onclick="openModal('modal-tags'); closeClassifyDropdown();">
+                  <span class="popover-footer-btn" data-i18n="sidebar.manage_tags_btn">⚙️ Quản lý thẻ khách hàng</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Fallback hidden element for backward compatibility -->
+            <select class="tag-filter-select" id="tag-filter-select" style="display: none;" onchange="handleTagFilterChange(this.value)">
               <option value="" data-i18n="sidebar.tag_filter_all">Tất cả Thẻ</option>
             </select>
           </div>
@@ -976,8 +1013,20 @@
   </div>
 
   <!-- Image Lightbox Modal -->
-  <div class="image-lightbox" id="image-lightbox" onclick="closeImagePreview()">
-    <img id="lightbox-img" src="" alt="Preview">
+  <div class="image-lightbox" id="image-lightbox">
+    <div class="lightbox-toolbar" onclick="event.stopPropagation()">
+      <button class="lightbox-btn" onclick="zoomLightbox(-0.25)" title="Thu nhỏ (-)">➖</button>
+      <span class="lightbox-zoom-level" id="lightbox-zoom-level">100%</span>
+      <button class="lightbox-btn" onclick="zoomLightbox(0.25)" title="Phóng to (+)">➕</button>
+      <button class="lightbox-btn" onclick="rotateLightbox()" title="Xoay 90°">🔄</button>
+      <button class="lightbox-btn download" onclick="downloadCurrentLightboxImage()" title="Tải ảnh gốc HD">⬇ Tải HD</button>
+      <button class="lightbox-btn close" onclick="closeImagePreview()" title="Đóng (Esc)">✕</button>
+    </div>
+    <button class="lightbox-nav-btn prev" id="lightbox-prev-btn" onclick="event.stopPropagation(); navigateLightbox(-1)" title="Ảnh trước (←)">❮</button>
+    <div class="lightbox-img-wrapper" onclick="closeImagePreview()">
+      <img id="lightbox-img" src="" alt="Preview" onclick="event.stopPropagation()">
+    </div>
+    <button class="lightbox-nav-btn next" id="lightbox-next-btn" onclick="event.stopPropagation(); navigateLightbox(1)" title="Ảnh sau (→)">❯</button>
   </div>
 
   <!-- 👤 CRM DRAWER BACKDROP & SIDEBAR -->
@@ -1927,6 +1976,45 @@
       <div class="modal-footer">
         <button class="filter-btn" onclick="closeModal('modal-donate')" data-i18n="common.close">Đóng</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Floating Context Menu for Conversation Cards -->
+  <div id="conv-context-menu" class="conv-context-menu" style="display: none;">
+    <div class="ctx-item" id="ctx-pin-item" onclick="execContextPin(event)">
+      <span class="ctx-icon" id="ctx-pin-icon">📌</span>
+      <span id="ctx-pin-text" data-i18n="ctx.pin_conv">Ghim hội thoại</span>
+    </div>
+
+    <div class="ctx-item ctx-has-submenu" id="ctx-tag-parent" onmouseenter="showTagSubmenu()" onmouseleave="hideTagSubmenu()">
+      <div class="ctx-item-left">
+        <span class="ctx-icon">🏷️</span>
+        <span data-i18n="ctx.tags_menu">Phân loại</span>
+      </div>
+      <span class="ctx-arrow">›</span>
+
+      <!-- Submenu Thẻ Màu -->
+      <div class="ctx-submenu" id="ctx-tags-submenu" style="display: none;">
+        <div class="ctx-submenu-header" data-i18n="sidebar.classify_by_tag">THEO THẺ PHÂN LOẠI</div>
+        <div class="ctx-submenu-list" id="ctx-tags-list"></div>
+        <div class="ctx-divider"></div>
+        <div class="ctx-item" onclick="openModal('modal-tags'); closeConvContextMenu();">
+          <span class="ctx-icon">⚙️</span>
+          <span data-i18n="sidebar.manage_tags_btn">Quản lý thẻ khách hàng</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="ctx-item" id="ctx-unread-item" onclick="execContextToggleUnread(event)">
+      <span class="ctx-icon" id="ctx-unread-icon">✉️</span>
+      <span id="ctx-unread-text" data-i18n="ctx.mark_unread">Đánh dấu chưa đọc</span>
+    </div>
+
+    <div class="ctx-divider"></div>
+
+    <div class="ctx-item danger" onclick="execContextDelete(event)">
+      <span class="ctx-icon">🗑️</span>
+      <span data-i18n="ctx.delete_conv">Xóa hội thoại</span>
     </div>
   </div>
 

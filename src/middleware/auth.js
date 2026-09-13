@@ -62,9 +62,10 @@ export function csrfShield(req, res, next) {
     return next();
   }
 
-  // 4. Layer 1: Block browser cross-site requests via Fetch Metadata
+  // 4. Layer 1: Block browser cross-site requests via Fetch Metadata (exempt trusted extensions)
   const secFetchSite = headers['sec-fetch-site'];
-  if (secFetchSite === 'cross-site') {
+  const origin = headers['origin'] || '';
+  if (secFetchSite === 'cross-site' && !origin.startsWith('chrome-extension://')) {
     return res.status(403).json({
       error: 'Forbidden: Cross-Site request blocked by CSRF Shield',
       status: 403
@@ -79,9 +80,11 @@ export function csrfShield(req, res, next) {
     });
   }
 
-  // 6. Layer 3: Origin validation (supports localhost, LAN IP, and Tunnel host)
-  const origin = headers['origin'];
+  // 6. Layer 3: Origin validation (supports localhost, LAN IP, Tunnel host, and Chrome Extensions)
   if (origin) {
+    if (origin.startsWith('chrome-extension://')) {
+      return next();
+    }
     try {
       const originHost = new URL(origin).host;
       const reqHost = headers['x-forwarded-host'] || headers['host'];

@@ -217,6 +217,39 @@ router.get('/chat-media/:filename', requireAuth, (req, res) => {
   res.sendFile(filePath);
 });
 
+// GET /media/download-proxy - Stream Zalo CDN Image with proper Content-Disposition
+router.get('/media/download-proxy', requireAuth, async (req, res) => {
+  const { url } = req.query;
+  if (!url || typeof url !== 'string') {
+    return res.status(400).json({ error: 'URL không hợp lệ.' });
+  }
+
+  try {
+    const parsedUrl = new URL(url);
+    const allowedHosts = ['zdn.vn', 'zadn.vn', 'zalo.me'];
+    const isAllowed = allowedHosts.some(host => parsedUrl.hostname.endsWith(host));
+    if (!isAllowed) {
+      return res.status(403).json({ error: 'Chỉ hỗ trợ tải ảnh từ Zalo CDN.' });
+    }
+
+    const { default: axios } = await import('axios');
+    const response = await axios.get(url, {
+      responseType: 'stream',
+      timeout: 15000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      }
+    });
+
+    const contentType = response.headers['content-type'] || 'image/jpeg';
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Disposition', 'attachment; filename="zalo_image.jpg"');
+    response.data.pipe(res);
+  } catch (err) {
+    res.status(500).json({ error: `Không thể tải ảnh: ${err.message}` });
+  }
+});
+
 // =============================================================================
 // 4. POST /conversations/:threadId/forward - Chuyển tiếp tin nhắn
 // =============================================================================
@@ -358,6 +391,53 @@ router.post('/conversations/:threadId/resolve-stranger', requireAuth, async (req
     logger.warn(`[Resolve Stranger Error] ${err.message}`);
     res.status(500).json({ error: err.message });
   }
+});
+
+// =============================================================================
+// 9. POST /conversations/:threadId/pin - Ghim / Bỏ ghim hội thoại
+// =============================================================================
+router.post('/conversations/:threadId/pin', requireAuth, (req, res) => {
+  const { threadId } = req.params;
+  const { isPinned } = req.body;
+  const result = localStore.setConversationPinned(threadId, isPinned);
+  if (!result.success) {
+    if (result.error === 'limit_reached') {
+      return res.status(400).json({ error: 'Chỉ được ghim tối đa 5 cuộc trò chuyện!' });
+    }
+    return res.status(400).json({ error: 'Không thể ghim hội thoại!' });
+  }
+  res.json({
+    status: 'success',
+    isPinned: result.isPinned,
+    message: result.isPinned ? 'Đã ghim hội thoại lên đầu danh sách' : 'Đã bỏ ghim hội thoại'
+  });
+});
+
+// =============================================================================
+// 10. POST /conversations/:threadId/mark-unread - Đánh dấu chưa đọc
+// =============================================================================
+router.post('/conversations/:threadId/mark-unread', requireAuth, (req, res) => {
+  const { threadId } = req.params;
+  localStore.markAsUnread(threadId);
+  res.json({ status: 'success', message: 'Đã đánh dấu chưa đọc' });
+});
+
+// =============================================================================
+// 11. POST /conversations/:threadId/mark-read - Đánh dấu đã đọc
+// =============================================================================
+router.post('/conversations/:threadId/mark-read', requireAuth, (req, res) => {
+  const { threadId } = req.params;
+  localStore.markAsRead(threadId);
+  res.json({ status: 'success', message: 'Đã đánh dấu đã đọc' });
+});
+
+// =============================================================================
+// 12. DELETE /conversations/:threadId - Xóa hội thoại và tin nhắn cục bộ
+// =============================================================================
+router.delete('/conversations/:threadId', requireAuth, (req, res) => {
+  const { threadId } = req.params;
+  localStore.deleteConversation(threadId);
+  res.json({ status: 'success', message: 'Đã xóa hội thoại thành công' });
 });
 
 export default router;
