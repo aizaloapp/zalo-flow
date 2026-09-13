@@ -1,5 +1,7 @@
 import { BaseAdapter } from './base-adapter.js';
 import { logger } from '../utils/logger.js';
+import { localStore } from '../utils/local-store.js';
+import { oaDispatcher } from '../utils/oa-dispatcher.js';
 
 export class ChatwootOutboundAdapter extends BaseAdapter {
   constructor() {
@@ -39,9 +41,23 @@ export class ChatwootOutboundAdapter extends BaseAdapter {
     }
 
     try {
-      logger.info(`[Chatwoot -> Zalo] Agent reply to Zalo User ${zaloUid}: "${content.substring(0, 30)}..."`);
+      const conv = localStore.getConversation(zaloUid);
+      const isOa = conv?.channel === 'oa' || zaloUid.startsWith('oa_');
+
+      if (isOa) {
+        logger.info(`[Chatwoot -> Zalo OA] Agent reply to OA User ${zaloUid}: "${content.substring(0, 30)}..."`);
+        const parts = zaloUid.split('_');
+        const userId = parts[2] || parts[parts.length - 1];
+        const sendRes = await oaDispatcher.sendMessage(userId, content.trim(), { threadId: zaloUid });
+        if (!sendRes.success) {
+          return res.status(500).json({ error: sendRes.error, message: sendRes.message });
+        }
+        return res.json({ success: true, zaloUid, channel: 'oa', status: 'sent' });
+      }
+
+      logger.info(`[Chatwoot -> Zalo Personal] Agent reply to Zalo User ${zaloUid}: "${content.substring(0, 30)}..."`);
       await client.sendMessage(zaloUid, content.trim(), false);
-      return res.json({ success: true, zaloUid, status: 'sent' });
+      return res.json({ success: true, zaloUid, channel: 'personal', status: 'sent' });
     } catch (err) {
       logger.error(`[Chatwoot -> Zalo] Send failed: ${err.message}`);
       return res.status(500).json({ error: err.message });

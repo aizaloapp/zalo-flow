@@ -123,6 +123,7 @@ function initApp() {
   fetchMemoryHealth();
   setInterval(fetchMemoryHealth, 30000);
   checkAppVersion();
+  checkSmartOnboarding();
 }
 
 if (document.readyState === 'loading') {
@@ -2147,11 +2148,11 @@ function createConversationCard(conv) {
         `<img class="conv-avatar" src="${conv.avatar}" alt="${escapeHtml(conv.name)}" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.outerHTML='<div class=\\'conv-avatar\\'>${initials}</div>'">` : 
         `<div class="conv-avatar">${initials}</div>`
       }
-      ${conv.isGroup ? `<div class="group-badge-icon">👥</div>` : ''}
+      ${conv.channel === 'oa' ? `<div class="oa-badge-icon" style="position:absolute; bottom:-2px; right:-2px; background:#2563eb; color:#fff; font-size:9px; font-weight:700; border-radius:4px; padding:1px 3px; line-height:1; border:1px solid #fff;">OA</div>` : (conv.isGroup ? `<div class="group-badge-icon">👥</div>` : '')}
     </div>
     <div class="conv-details">
       <div class="conv-header-row">
-        <span class="conv-name">${escapeHtml(conv.name || conv.id)}</span>
+        <span class="conv-name">${escapeHtml(conv.name || conv.id)}${conv.channel === 'oa' ? `<span class="badge-oa" style="display:inline-block; font-size:0.68rem; font-weight:700; color:#2563eb; background:rgba(37,99,235,0.1); border:1px solid rgba(37,99,235,0.25); border-radius:4px; padding:1px 4px; margin-left:5px; vertical-align:middle;">OA</span>` : ''}</span>
         <div class="conv-header-meta" style="display:inline-flex; align-items:center; gap: 4px;">
           ${conv.isPinned ? `<span class="conv-pin-badge" title="Đã ghim">📌</span>` : ''}
           <span class="conv-time">${timeFormatted}</span>
@@ -2566,15 +2567,53 @@ async function selectConversation(threadId) {
     fetch(`/api/conversations/${threadId}/read`, { method: 'POST', headers: getHeaders() }).catch(() => {});
   }
 
-  // Unfriended Guard: Cảnh báo nếu là chat cá nhân mà nick hiện tại chưa kết bạn
+  // Unfriended Guard: Cảnh báo nếu là chat cá nhân mà nick hiện tại chưa kết bạn (không áp dụng cho OA)
   const unfriendedBar = document.getElementById('unfriended-warning-bar');
   if (unfriendedBar) {
     const isGroupResolved = Boolean(conv.isGroup || state.conversations?.find(c => String(c.id) === String(threadId))?.isGroup);
-    if (!isGroupResolved && currentZaloProfile?.isLoggedIn && Array.isArray(currentZaloProfile.friendUids) && currentZaloProfile.friendUids.length > 0) {
+    if (conv.channel !== 'oa' && !isGroupResolved && currentZaloProfile?.isLoggedIn && Array.isArray(currentZaloProfile.friendUids) && currentZaloProfile.friendUids.length > 0) {
       const isFriend = currentZaloProfile.friendUids.includes(String(threadId));
       unfriendedBar.style.display = isFriend ? 'none' : 'flex';
     } else {
       unfriendedBar.style.display = 'none';
+    }
+  }
+
+  // Zalo OA 48-Hour Interaction Window Watcher
+  const oaBanner = document.getElementById('oa-window-banner');
+  const oaText = document.getElementById('oa-window-text');
+  const oaIcon = document.getElementById('oa-window-icon');
+  if (oaBanner) {
+    if (conv.channel === 'oa') {
+      oaBanner.style.display = 'flex';
+      if (conv.lastUserMessageTime) {
+        const timeElapsed = Date.now() - Number(conv.lastUserMessageTime);
+        const maxWindow = 48 * 3600 * 1000;
+        const remainingMs = Math.max(0, maxWindow - timeElapsed);
+        if (remainingMs > 0) {
+          const hours = Math.floor(remainingMs / (3600 * 1000));
+          const mins = Math.floor((remainingMs % (3600 * 1000)) / (60 * 1000));
+          oaBanner.style.background = '#eff6ff';
+          oaBanner.style.borderColor = '#bfdbfe';
+          oaBanner.style.color = '#1e40af';
+          if (oaIcon) oaIcon.innerText = '⏳';
+          if (oaText) oaText.innerText = `Cửa sổ tương tác Zalo OA còn lại: ${hours}h ${mins}m`;
+        } else {
+          oaBanner.style.background = '#fef2f2';
+          oaBanner.style.borderColor = '#fecaca';
+          oaBanner.style.color = '#b91c1c';
+          if (oaIcon) oaIcon.innerText = '⚠️';
+          if (oaText) oaText.innerText = 'Đã hết hạn 48h tương tác Zalo OA (Zalo chặn tin nhắn thường)';
+        }
+      } else {
+        oaBanner.style.background = '#eff6ff';
+        oaBanner.style.borderColor = '#bfdbfe';
+        oaBanner.style.color = '#1e40af';
+        if (oaIcon) oaIcon.innerText = '⏳';
+        if (oaText) oaText.innerText = 'Cửa sổ tương tác Zalo OA: Sẵn sàng';
+      }
+    } else {
+      oaBanner.style.display = 'none';
     }
   }
 
@@ -2992,9 +3031,14 @@ function appendMessageElement(msg, autoScroll = true) {
   const senderForAttr = encodeURIComponent(senderLabel);
 
   const msgAge = Date.now() - new Date(msg.timestamp).getTime();
-  const canUndo = Boolean(msg.isSelf && !msg.isBot && !isRecalled && msgAge < 2 * 60 * 1000);
-
-  const hoverActionsHtml = isRecalled ? '' : `
+  const isOaThread = Boolean(state.activeThread?.channel === 'oa' || msg.channel === 'oa');
+  const hoverActionsHtml = (isRecalled || isOaThread) ? (isRecalled ? '' : `
+    <div class="msg-hover-actions">
+      <button class="action-text-btn" onclick="openForwardModal('${msg.id}', decodeURIComponent('${rawTextForAttr}'))" title="Chuyển tiếp tin nhắn">
+        <span>↪️</span><span>Chuyển tiếp</span>
+      </button>
+    </div>
+  `) : `
     <div class="msg-hover-actions">
       <button class="reaction-btn" onclick="reactToMessage('${msg.id}', '❤️')" title="Thả tim">❤️</button>
       <button class="reaction-btn" onclick="reactToMessage('${msg.id}', '👍')" title="Thích">👍</button>
@@ -3334,22 +3378,38 @@ async function sendMessage() {
       });
     } else {
       // Send Normal Message (Chỉ có chữ)
-      res = await fetch('/api/send-message', {
-        method: 'POST',
-        headers: getHeaders(),
-        body: JSON.stringify({
-          recipientId: state.activeThreadId,
-          message: text,
-          isGroup: Boolean(state.activeThread?.isGroup)
-        })
-      });
+      if (state.activeThread?.channel === 'oa') {
+        res = await fetch('/api/oa/send', {
+          method: 'POST',
+          headers: getHeaders(),
+          body: JSON.stringify({
+            threadId: state.activeThreadId,
+            userId: state.activeThread.oaId || state.activeThreadId.replace(/^oa_[^_]+_/, ''),
+            text: text
+          })
+        });
+      } else {
+        res = await fetch('/api/send-message', {
+          method: 'POST',
+          headers: getHeaders(),
+          body: JSON.stringify({
+            recipientId: state.activeThreadId,
+            message: text,
+            isGroup: Boolean(state.activeThread?.isGroup)
+          })
+        });
+      }
     }
 
     const data = await res.json();
     if (!res.ok || data.error) {
       const failedBubble = document.getElementById(`msg-${tempId}`);
       if (failedBubble) failedBubble.style.opacity = '0.5';
-      alert('Lỗi gửi tin: ' + (data.error || 'Vui lòng kiểm tra lại kết nối Zalo.'));
+      if (data.error === 'window_48h_expired') {
+        alert('⚠️ ' + (data.message || 'Cuộc trò chuyện đã quá 48h. Zalo OA chặn gửi tin CS thường. Hãy mời khách kết bạn cá nhân hoặc gửi tin ZNS.'));
+      } else {
+        alert('Lỗi gửi tin: ' + (data.error || data.message || 'Vui lòng kiểm tra lại kết nối Zalo.'));
+      }
       return;
     }
 
@@ -7345,3 +7405,219 @@ window.addEventListener('zaloflow:langchange', () => {
     renderScheduledMsgPinBar(state.activeSchedule);
   }
 });
+
+// ==============================================================================
+// 🏢 Zalo OA Official Account & Smart Onboarding Handlers
+// ==============================================================================
+
+async function checkSmartOnboarding() {
+  try {
+    const res = await fetch('/api/system/onboarding', { headers: getHeaders() });
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data.success && data.data && data.data.status === 'pending') {
+      openModal('modal-onboarding');
+    }
+  } catch (err) {
+    console.warn('[Onboarding] Error checking onboarding status:', err.message);
+  }
+}
+
+async function submitOnboardingChoice() {
+  const selectedRadio = document.querySelector('input[name="onboarding_choice"]:checked');
+  const choice = selectedRadio ? selectedRadio.value : 'personal_only';
+
+  try {
+    const res = await fetch('/api/system/onboarding', {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({
+        choice: choice,
+        status: 'completed'
+      })
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      closeModal('modal-onboarding');
+      if (choice === 'hybrid') {
+        setTimeout(() => {
+          openOaModal();
+        }, 300);
+      }
+    }
+  } catch (err) {
+    alert('Lỗi lưu lựa chọn: ' + err.message);
+  }
+}
+
+async function openOaModal() {
+  openModal('modal-oa-settings');
+  await loadOaSettings();
+}
+
+async function loadOaSettings() {
+  try {
+    const res = await fetch('/api/oa/settings', { headers: getHeaders() });
+    if (!res.ok) return;
+    const data = await res.json();
+    const settings = data.data || {};
+
+    const appIdInput = document.getElementById('oa-input-app-id');
+    const oaIdInput = document.getElementById('oa-input-oa-id');
+    const nameInput = document.getElementById('oa-input-name');
+    const isEnabledCheckbox = document.getElementById('oa-input-is-enabled');
+    const webhookDisplay = document.getElementById('oa-display-webhook-url');
+    const statusDot = document.getElementById('oa-status-dot');
+    const statusName = document.getElementById('oa-status-name');
+    const statusId = document.getElementById('oa-status-id');
+    const disconnectBtn = document.getElementById('btn-oa-disconnect');
+
+    if (appIdInput) appIdInput.value = settings.appId || '';
+    if (oaIdInput) oaIdInput.value = settings.oaId || '';
+    if (nameInput) nameInput.value = settings.name || '';
+    if (isEnabledCheckbox) isEnabledCheckbox.checked = settings.isEnabled !== 0;
+
+    // Hiển thị Webhook URL chính xác theo origin hiện tại
+    if (webhookDisplay) {
+      webhookDisplay.value = `${window.location.origin}/api/webhook/zalo-oa`;
+    }
+
+    if (settings.oaId && settings.isEnabled) {
+      if (statusDot) statusDot.style.background = '#22c55e';
+      if (statusName) statusName.innerText = settings.name || 'Zalo Official Account';
+      if (statusId) statusId.innerText = `OA ID: ${settings.oaId} (Đang hoạt động)`;
+      if (disconnectBtn) disconnectBtn.style.display = 'block';
+    } else {
+      if (statusDot) statusDot.style.background = '#94a3b8';
+      if (statusName) statusName.innerText = 'Chưa Kết Nối OA';
+      if (statusId) statusId.innerText = 'OA ID: --';
+      if (disconnectBtn) disconnectBtn.style.display = 'none';
+    }
+  } catch (err) {
+    console.error('Failed to load OA settings:', err);
+  }
+}
+
+async function saveOaSettings(e) {
+  if (e) e.preventDefault();
+  const appId = document.getElementById('oa-input-app-id')?.value.trim();
+  const secretKey = document.getElementById('oa-input-secret-key')?.value.trim();
+  const oaId = document.getElementById('oa-input-oa-id')?.value.trim();
+  const name = document.getElementById('oa-input-name')?.value.trim();
+  const accessToken = document.getElementById('oa-input-access-token')?.value.trim();
+  const refreshToken = document.getElementById('oa-input-refresh-token')?.value.trim();
+  const webhookSecret = document.getElementById('oa-input-webhook-secret')?.value.trim();
+  const isEnabled = document.getElementById('oa-input-is-enabled')?.checked ? 1 : 0;
+
+  if (!appId || !oaId) {
+    alert('Vui lòng nhập App ID và OA ID!');
+    return;
+  }
+
+  const payload = { appId, oaId, name, isEnabled };
+  if (secretKey) payload.secretKey = secretKey;
+  if (accessToken) payload.accessToken = accessToken;
+  if (refreshToken) payload.refreshToken = refreshToken;
+  if (webhookSecret) payload.webhookSecret = webhookSecret;
+
+  try {
+    const res = await fetch('/api/oa/settings', {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(payload)
+    });
+    const result = await res.json();
+    if (!res.ok || !result.success) {
+      throw new Error(result.error || 'Lỗi lưu cấu hình OA');
+    }
+    showToast(window.t ? window.t('toast.oa_saved_success') : 'Đã lưu cấu hình Zalo OA thành công!', 'success');
+    closeModal('modal-oa-settings');
+    loadConversations();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+async function disconnectOa() {
+  if (!confirm('Bạn có chắc muốn ngắt kết nối Zalo OA không? Toàn bộ dữ liệu hội thoại cũ vẫn được bảo tồn.')) return;
+  try {
+    const res = await fetch('/api/oa/disconnect', {
+      method: 'POST',
+      headers: getHeaders()
+    });
+    const result = await res.json();
+    if (!res.ok || !result.success) throw new Error(result.error || 'Lỗi ngắt kết nối');
+    showToast(window.t ? window.t('toast.oa_disconnected') : 'Đã ngắt kết nối Zalo OA!', 'info');
+    await loadOaSettings();
+    loadConversations();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+function copyOaWebhookUrl() {
+  const webhookDisplay = document.getElementById('oa-display-webhook-url');
+  if (webhookDisplay && webhookDisplay.value) {
+    navigator.clipboard.writeText(webhookDisplay.value).then(() => {
+      showToast(window.t ? window.t('toast.copy_success') : 'Đã sao chép Webhook URL!', 'success');
+    }).catch(() => {
+      alert('Webhook URL: ' + webhookDisplay.value);
+    });
+  }
+}
+
+function openOaInviteModal() {
+  const conv = state.activeThread;
+  if (!conv) return;
+
+  const phone = currentZaloProfile?.phone || currentZaloProfile?.userId || '';
+  const cleanPhone = String(phone).replace(/[^\d]/g, '');
+  const zaloMeLink = cleanPhone ? `https://zalo.me/${cleanPhone}` : 'https://zalo.me';
+
+  const linkInput = document.getElementById('oa-invite-link-input');
+  if (linkInput) linkInput.value = zaloMeLink;
+
+  const msgTextarea = document.getElementById('oa-invite-msg-textarea');
+  if (msgTextarea) {
+    msgTextarea.value = `Dạ chào bạn, để tiện trao đổi và hỗ trợ 24/7 không bị gián đoạn, bạn kết bạn Zalo cá nhân với mình qua link: ${zaloMeLink} nhé! Cảm ơn bạn rất nhiều.`;
+  }
+
+  openModal('modal-oa-invite');
+}
+
+function copyOaInviteLink() {
+  const linkInput = document.getElementById('oa-invite-link-input');
+  if (linkInput && linkInput.value) {
+    navigator.clipboard.writeText(linkInput.value).then(() => {
+      showToast(window.t ? window.t('toast.copy_success') : 'Đã sao chép link kết bạn Zalo!', 'success');
+    });
+  }
+}
+
+async function sendOaInviteMessage() {
+  const msgTextarea = document.getElementById('oa-invite-msg-textarea');
+  const text = msgTextarea ? msgTextarea.value.trim() : '';
+  if (!text || !state.activeThreadId) return;
+
+  try {
+    const res = await fetch('/api/oa/send', {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({
+        threadId: state.activeThreadId,
+        userId: state.activeThread?.oaId || state.activeThreadId.replace(/^oa_[^_]+_/, ''),
+        text: text
+      })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.message || data.error || 'Lỗi gửi tin nhắn');
+    }
+    closeModal('modal-oa-invite');
+    showToast(window.t ? window.t('chat.oa_invite_sent') : 'Đã gửi lời mời kết bạn kèm số điện thoại cá nhân! 👤', 'success');
+    selectConversation(state.activeThreadId);
+  } catch (err) {
+    alert(err.message);
+  }
+}
+

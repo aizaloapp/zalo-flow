@@ -101,6 +101,9 @@
       <button class="rail-btn" data-tooltip="💾 Sao Lưu & Phục Hồi" data-i18n-tooltip="rail.backup_tooltip" onclick="openModal('modal-backup')">
         💾
       </button>
+      <button class="rail-btn" id="rail-btn-oa" data-tooltip="🏢 Cấu Hình Zalo OA" data-i18n-tooltip="rail.oa_tooltip" onclick="openOaModal()">
+        🏢
+      </button>
     </nav>
 
     <!-- Main Layout: 2 Columns (Sidebar + Chat) -->
@@ -124,6 +127,7 @@
               <button class="quick-tab active" data-quick-filter="all" data-i18n="sidebar.filter_all" onclick="setQuickFilter('all')">Tất cả</button>
               <button class="quick-tab" data-quick-filter="personal" data-i18n="sidebar.filter_personal" onclick="setQuickFilter('personal')">Cá nhân</button>
               <button class="quick-tab" data-quick-filter="group" data-i18n="sidebar.filter_group" onclick="setQuickFilter('group')">Nhóm</button>
+              <button class="quick-tab" data-quick-filter="oa" data-i18n="sidebar.filter_oa" onclick="setQuickFilter('oa')">🏢 OA</button>
             </div>
 
             <div class="filter-dropdown-wrapper">
@@ -273,6 +277,21 @@
               <button type="button" class="pin-btn pin-btn-sendnow" id="btn-pin-sendnow" style="display: none;" onclick="sendNowActiveSchedule()" title="Gửi tin nhắn này ngay bây giờ" data-i18n="chat.pin_btn_sendnow">Gửi ngay</button>
               <button type="button" class="pin-btn pin-btn-edit" id="btn-pin-edit" onclick="editActiveSchedule()" title="Sửa nội dung hoặc dời giờ" data-i18n="chat.pin_btn_edit">Sửa</button>
               <button type="button" class="pin-btn pin-btn-cancel" id="btn-pin-cancel" onclick="cancelActiveSchedule()" title="Hủy lịch hẹn" data-i18n="chat.pin_btn_cancel">Hủy</button>
+            </div>
+          </div>
+
+          <!-- Zalo OA 48-Hour Interaction Window & Personal Add-Friend Banner -->
+          <div id="oa-window-banner" style="display: none; background: #eff6ff; border-bottom: 1px solid #bfdbfe; padding: 8px 16px; font-size: 0.82rem; color: #1e40af; align-items: center; justify-content: space-between; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
+              <span id="oa-window-icon" style="font-size: 1.1rem; line-height: 1;">⏳</span>
+              <span id="oa-window-text" style="font-weight: 500;">
+                <span data-i18n="chat.oa_window_remaining">Cửa sổ tương tác Zalo OA còn lại: 48h 00m</span>
+              </span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <button class="filter-btn" id="btn-oa-invite-friend" onclick="openOaInviteModal()" style="padding: 4px 10px; font-size: 0.78rem; background: #2563eb; color: #fff; border-color: #1d4ed8; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                <span data-i18n="chat.oa_invite_friend">Mời kết bạn Zalo Cá nhân 👤</span>
+              </button>
             </div>
           </div>
 
@@ -1975,6 +1994,203 @@
       </div>
       <div class="modal-footer">
         <button class="filter-btn" onclick="closeModal('modal-donate')" data-i18n="common.close">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 12: Smart Onboarding (Zalo Personal & OA Selection) -->
+  <div class="modal-backdrop" id="modal-onboarding" style="display: none; z-index: 10000;">
+    <div class="modal-box" style="max-width: 580px;">
+      <div class="modal-header">
+        <div class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+          <span>🚀</span>
+          <span data-i18n="modals.onboarding_title">Chào Mừng Đến Với Zalo-Flow Hybrid</span>
+        </div>
+      </div>
+      <div class="modal-body" style="padding: 20px;">
+        <p style="margin-top: 0; margin-bottom: 18px; font-size: 0.9rem; color: var(--text-muted); line-height: 1.5;" data-i18n="modals.onboarding_subtitle">
+          Tối ưu hóa quản lý hội thoại Zalo Cá nhân & Zalo OA trên cùng một nền tảng
+        </p>
+
+        <div class="onboarding-options-list" style="display: flex; flex-direction: column; gap: 12px;">
+          <!-- Option 1: Personal Only -->
+          <label class="onboarding-card-option" style="display: flex; gap: 12px; padding: 14px; border: 1.5px solid var(--border); border-radius: 10px; cursor: pointer; transition: all 0.2s; background: var(--bg-card);">
+            <input type="radio" name="onboarding_choice" value="personal_only" style="margin-top: 3px;">
+            <div style="flex: 1;">
+              <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 4px; color: var(--text-main);" data-i18n="modals.onboarding_opt_personal">
+                1. Chỉ Dùng Zalo Cá Nhân
+              </div>
+              <div style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.4;" data-i18n="modals.onboarding_opt_personal_desc">
+                Quản lý 1 tài khoản Zalo cá nhân, AI Bot tự động, chiến dịch remarketing tinh gọn.
+              </div>
+            </div>
+          </label>
+
+          <!-- Option 2: Hybrid (Recommended) -->
+          <label class="onboarding-card-option selected" style="display: flex; gap: 12px; padding: 14px; border: 2px solid #2563eb; border-radius: 10px; cursor: pointer; transition: all 0.2s; background: rgba(37, 99, 235, 0.05);">
+            <input type="radio" name="onboarding_choice" value="hybrid" checked style="margin-top: 3px;">
+            <div style="flex: 1;">
+              <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 4px; color: #2563eb;" data-i18n="modals.onboarding_opt_hybrid">
+                2. Kết Hợp Zalo Cá Nhân & Zalo OA (Khuyên Dùng)
+              </div>
+              <div style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.4;" data-i18n="modals.onboarding_opt_hybrid_desc">
+                Hợp nhất Live Chat, chung một Second-Brain AI Wiki và tin nhắn nhanh giữa 2 kênh.
+              </div>
+            </div>
+          </label>
+
+          <!-- Option 3: No OA Yet -->
+          <label class="onboarding-card-option" style="display: flex; gap: 12px; padding: 14px; border: 1.5px solid var(--border); border-radius: 10px; cursor: pointer; transition: all 0.2s; background: var(--bg-card);">
+            <input type="radio" name="onboarding_choice" value="no_oa_yet" style="margin-top: 3px;">
+            <div style="flex: 1;">
+              <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 4px; color: var(--text-main);" data-i18n="modals.onboarding_opt_no_oa">
+                3. Tôi Chưa Có Zalo OA
+              </div>
+              <div style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.4;" data-i18n="modals.onboarding_opt_no_oa_desc">
+                Bắt đầu ngay với Zalo Cá nhân. Bạn luôn có thể kết nối Zalo OA bất cứ lúc nào trong Cài Đặt.
+              </div>
+            </div>
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer" style="padding: 14px 20px; display: flex; justify-content: flex-end; gap: 10px;">
+        <button class="filter-btn primary" onclick="submitOnboardingChoice()" style="padding: 8px 18px; font-weight: 600;" data-i18n="modals.onboarding_btn_confirm">
+          Bắt Đầu Sử Dụng
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 13: Zalo OA Settings -->
+  <div class="modal-backdrop" id="modal-oa-settings" style="display: none;">
+    <div class="modal-box" style="max-width: 640px;">
+      <div class="modal-header">
+        <div class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+          <span>🏢</span>
+          <span data-i18n="modals.oa_settings_title">Cấu Hình Kết Nối Zalo OA (Official Account)</span>
+        </div>
+        <button class="modal-close-btn" onclick="closeModal('modal-oa-settings')">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 18px 20px; max-height: 70vh; overflow-y: auto;">
+        <p style="margin-top: 0; margin-bottom: 16px; font-size: 0.85rem; color: var(--text-muted); line-height: 1.45;" data-i18n="modals.oa_settings_desc">
+          Kết nối Zalo OA qua OpenAPI v3.0 để nhận và gửi tin nhắn Chăm sóc khách hàng tập trung.
+        </p>
+
+        <!-- Status Card -->
+        <div id="oa-status-badge-card" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: var(--bg-sidebar); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 16px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div id="oa-status-dot" style="width: 10px; height: 10px; border-radius: 50%; background: #94a3b8;"></div>
+            <div>
+              <div id="oa-status-name" style="font-weight: 600; font-size: 0.9rem;">Chưa Kết Nối OA</div>
+              <div id="oa-status-id" style="font-size: 0.78rem; color: var(--text-muted);">OA ID: --</div>
+            </div>
+          </div>
+          <button class="filter-btn danger" id="btn-oa-disconnect" onclick="disconnectOa()" style="display: none; padding: 4px 10px; font-size: 0.8rem;" data-i18n="modals.oa_btn_disconnect">
+            Ngắt Kết Nối OA
+          </button>
+        </div>
+
+        <form id="oa-settings-form" onsubmit="saveOaSettings(event)" style="display: flex; flex-direction: column; gap: 14px;">
+          <div class="form-group">
+            <label style="font-weight: 600; font-size: 0.84rem; display: block; margin-bottom: 5px;" data-i18n="modals.oa_app_id">App ID (Zalo Developer):</label>
+            <input type="text" id="oa-input-app-id" class="search-input" placeholder="VD: 123456789012345" required style="width: 100%; border: 1px solid var(--border);">
+          </div>
+
+          <div class="form-group">
+            <label style="font-weight: 600; font-size: 0.84rem; display: block; margin-bottom: 5px;" data-i18n="modals.oa_secret_key">Secret Key (Khóa bí mật):</label>
+            <input type="password" id="oa-input-secret-key" class="search-input" placeholder="Nhập Secret Key của Zalo App" style="width: 100%; border: 1px solid var(--border);">
+          </div>
+
+          <div class="form-group">
+            <label style="font-weight: 600; font-size: 0.84rem; display: block; margin-bottom: 5px;" data-i18n="modals.oa_oa_id">OA ID:</label>
+            <input type="text" id="oa-input-oa-id" class="search-input" placeholder="VD: 987654321098765" required style="width: 100%; border: 1px solid var(--border);">
+          </div>
+
+          <div class="form-group">
+            <label style="font-weight: 600; font-size: 0.84rem; display: block; margin-bottom: 5px;">Tên Official Account (Tùy chọn):</label>
+            <input type="text" id="oa-input-name" class="search-input" placeholder="VD: Cửa Hàng Demo" style="width: 100%; border: 1px solid var(--border);">
+          </div>
+
+          <div class="form-group">
+            <label style="font-weight: 600; font-size: 0.84rem; display: block; margin-bottom: 5px;" data-i18n="modals.oa_access_token">Access Token:</label>
+            <textarea id="oa-input-access-token" class="search-input" rows="2" placeholder="Dán Access Token (OA OpenAPI v3.0)" style="width: 100%; border: 1px solid var(--border); font-family: monospace; font-size: 0.8rem;"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label style="font-weight: 600; font-size: 0.84rem; display: block; margin-bottom: 5px;" data-i18n="modals.oa_refresh_token">Refresh Token:</label>
+            <input type="text" id="oa-input-refresh-token" class="search-input" placeholder="Dán Refresh Token để tự động gia hạn token" style="width: 100%; border: 1px solid var(--border); font-family: monospace; font-size: 0.8rem;">
+          </div>
+
+          <div class="form-group">
+            <label style="font-weight: 600; font-size: 0.84rem; display: block; margin-bottom: 5px;" data-i18n="modals.oa_webhook_secret">Webhook Secret Token (Xác thực chữ ký):</label>
+            <input type="text" id="oa-input-webhook-secret" class="search-input" placeholder="Secret Token cấu hình trên Zalo App Webhook" style="width: 100%; border: 1px solid var(--border);">
+          </div>
+
+          <!-- Webhook Inbound URL for Zalo Developer Portal -->
+          <div style="padding: 12px; background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 8px;">
+            <label style="font-weight: 600; font-size: 0.82rem; color: #0284c7; display: block; margin-bottom: 4px;" data-i18n="modals.oa_webhook_url">
+              Webhook URL (Nhận tin nhắn đến từ OA):
+            </label>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <input type="text" id="oa-display-webhook-url" readonly style="flex: 1; padding: 6px 8px; font-size: 0.8rem; font-family: monospace; background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px;">
+              <button type="button" class="filter-btn" onclick="copyOaWebhookUrl()" style="padding: 6px 10px; font-size: 0.8rem;" data-i18n="common.copy">
+                Sao chép
+              </button>
+            </div>
+            <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 4px;">
+              Copy URL này dán vào cấu hình Webhook trên trang quản lý Zalo Developer.
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+            <input type="checkbox" id="oa-input-is-enabled" checked style="width: 16px; height: 16px;">
+            <label for="oa-input-is-enabled" style="font-size: 0.85rem; font-weight: 500; cursor: pointer;">
+              Kích hoạt kênh Zalo OA trong hệ thống
+            </label>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
+            <button type="button" class="filter-btn" onclick="closeModal('modal-oa-settings')" data-i18n="common.cancel">Hủy</button>
+            <button type="submit" class="filter-btn primary" id="btn-save-oa" data-i18n="modals.oa_btn_save">Lưu Cấu Hình OA</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 14: Invite OA User to Personal Zalo -->
+  <div class="modal-backdrop" id="modal-oa-invite" style="display: none;">
+    <div class="modal-box" style="max-width: 480px;">
+      <div class="modal-header">
+        <div class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+          <span>👤</span>
+          <span data-i18n="chat.oa_invite_modal_title">Mời Khách Hàng Kết Bạn Zalo Cá Nhân</span>
+        </div>
+        <button class="modal-close-btn" onclick="closeModal('modal-oa-invite')">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 18px 20px;">
+        <p style="margin-top: 0; margin-bottom: 14px; font-size: 0.85rem; color: var(--text-muted); line-height: 1.45;" data-i18n="chat.oa_invite_modal_desc">
+          Khi kết bạn Zalo cá nhân, bạn có thể nhắn tin chăm sóc khách hàng 24/7 mà không bị giới hạn cửa sổ 48h của Zalo OA.
+        </p>
+
+        <div style="padding: 12px; background: var(--bg-sidebar); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 14px;">
+          <div style="font-weight: 600; font-size: 0.84rem; margin-bottom: 6px;">Link Kết Bạn Zalo:</div>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <input type="text" id="oa-invite-link-input" readonly style="flex: 1; padding: 6px 8px; font-size: 0.82rem; font-family: monospace; background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px;">
+            <button class="filter-btn" onclick="copyOaInviteLink()" style="padding: 6px 10px; font-size: 0.8rem;" data-i18n="chat.oa_copy_invite_link">
+              Sao chép
+            </button>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div style="font-weight: 600; font-size: 0.84rem;">Nội Dung Tin Nhắn Gửi Khách Hàng:</div>
+          <textarea id="oa-invite-msg-textarea" class="search-input" rows="3" style="width: 100%; border: 1px solid var(--border); font-size: 0.85rem;"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer" style="padding: 12px 20px; display: flex; justify-content: flex-end; gap: 10px;">
+        <button class="filter-btn" onclick="closeModal('modal-oa-invite')" data-i18n="common.close">Đóng</button>
+        <button class="filter-btn primary" onclick="sendOaInviteMessage()" data-i18n="chat.oa_send_invite_msg">Gửi Tin Nhắn Mời Kết Bạn</button>
       </div>
     </div>
   </div>

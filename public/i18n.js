@@ -55,7 +55,8 @@
         quick_msg_tooltip: '⚡ Tin Nhắn Nhanh',
         campaigns_tooltip: '📢 Chiến Dịch Remarketing',
         ai_tooltip: '🧠 Trung Tâm AI (5 Tabs)',
-        backup_tooltip: '💾 Sao Lưu & Phục Hồi'
+        backup_tooltip: '💾 Sao Lưu & Phục Hồi',
+        oa_tooltip: '🏢 Cấu Hình Zalo OA'
       },
       sidebar: {
         search_placeholder: 'Tìm theo tên hoặc ID...',
@@ -65,6 +66,7 @@
         filter_unread: 'Chưa đọc',
         filter_personal: 'Cá nhân',
         filter_group: 'Nhóm',
+        filter_oa: '🏢 OA',
         tag_filter_label: '📌 Lọc theo Thẻ:',
         tag_filter_all: 'Tất cả Thẻ',
         classify_btn: 'Phân loại',
@@ -121,7 +123,16 @@
         recall_tooltip: 'Thu hồi tin nhắn này trên cả 2 phía',
         recalled_message: 'Tin nhắn đã được thu hồi',
         date_today: 'Hôm nay',
-        date_yesterday: 'Hôm qua'
+        date_yesterday: 'Hôm qua',
+        oa_badge: 'Zalo OA',
+        oa_window_remaining: 'Cửa sổ tương tác Zalo OA còn lại: {time}',
+        oa_window_expired: 'Đã hết hạn 48h tương tác Zalo OA (chỉ gửi được ZNS hoặc mời kết bạn cá nhân)',
+        oa_invite_friend: 'Mời kết bạn Zalo Cá nhân 👤',
+        oa_invite_modal_title: 'Mời Khách Hàng Kết Bạn Zalo Cá Nhân',
+        oa_invite_modal_desc: 'Khi kết bạn Zalo cá nhân, bạn có thể nhắn tin chăm sóc khách hàng 24/7 mà không bị giới hạn cửa sổ 48h của Zalo OA.',
+        oa_copy_invite_link: 'Sao Chép Link Kết Bạn',
+        oa_send_invite_msg: 'Gửi Tin Nhắn Mời Kết Bạn',
+        oa_invite_sent: 'Đã gửi lời mời kết bạn kèm số điện thoại cá nhân!'
       },
       modals: {
         zalo_login_title: 'Đăng Nhập & Kết Nối Tài Khoản Zalo',
@@ -170,7 +181,29 @@
         donate_copy_phone: 'Sao chép SĐT',
         donate_copy_email: 'Sao chép',
         donate_copied_phone: 'Đã sao chép SĐT MoMo vào bộ nhớ tạm!',
-        donate_copied_email: 'Đã sao chép Email PayPal vào bộ nhớ tạm!'
+        donate_copied_email: 'Đã sao chép Email PayPal vào bộ nhớ tạm!',
+        onboarding_title: 'Chào Mừng Đến Với Zalo-Flow Hybrid',
+        onboarding_subtitle: 'Tối ưu hóa quản lý hội thoại Zalo Cá nhân & Zalo OA trên cùng một nền tảng',
+        onboarding_opt_personal: '1. Chỉ Dùng Zalo Cá Nhân',
+        onboarding_opt_personal_desc: 'Quản lý 1 tài khoản Zalo cá nhân, AI Bot tự động, chiến dịch remarketing tinh gọn.',
+        onboarding_opt_hybrid: '2. Kết Hợp Zalo Cá Nhân & Zalo OA (Khuyên Dùng)',
+        onboarding_opt_hybrid_desc: 'Hợp nhất Live Chat, chung một Second-Brain AI Wiki và tin nhắn nhanh giữa 2 kênh.',
+        onboarding_opt_no_oa: '3. Tôi Chưa Có Zalo OA',
+        onboarding_opt_no_oa_desc: 'Bắt đầu ngay với Zalo Cá nhân. Bạn luôn có thể kết nối Zalo OA bất cứ lúc nào trong Cài Đặt.',
+        onboarding_btn_confirm: 'Bắt Đầu Sử Dụng',
+        oa_settings_title: 'Cấu Hình Kết Nối Zalo OA (Official Account)',
+        oa_settings_desc: 'Kết nối Zalo OA qua OpenAPI v3.0 để nhận và gửi tin nhắn Chăm sóc khách hàng tập trung.',
+        oa_app_id: 'App ID (Zalo Developer):',
+        oa_secret_key: 'Secret Key (Khóa bí mật):',
+        oa_oa_id: 'OA ID:',
+        oa_access_token: 'Access Token:',
+        oa_refresh_token: 'Refresh Token:',
+        oa_webhook_url: 'Webhook URL (Nhận tin nhắn đến từ OA):',
+        oa_webhook_secret: 'Webhook Secret Token (Xác thực chữ ký):',
+        oa_status_connected: 'Đã Kết Nối OA',
+        oa_status_disconnected: 'Chưa Kết Nối',
+        oa_btn_save: 'Lưu Cấu Hình OA',
+        oa_btn_disconnect: 'Ngắt Kết Nối OA'
       },
       toast: {
         copy_success: 'Đã sao chép vào bộ nhớ tạm!',
@@ -183,7 +216,9 @@
         backup_exported: 'Đã xuất file sao lưu thành công!',
         backup_imported: 'Đã phục hồi dữ liệu thành công!',
         network_error: 'Lỗi kết nối mạng, vui lòng kiểm tra lại!',
-        empty_field: 'Vui lòng điền đầy đủ các thông tin bắt buộc!'
+        empty_field: 'Vui lòng điền đầy đủ các thông tin bắt buộc!',
+        oa_saved_success: 'Đã lưu cấu hình Zalo OA thành công!',
+        oa_disconnected: 'Đã ngắt kết nối Zalo OA!'
       },
       confirm: {
         delete_tag: 'Bạn có chắc chắn muốn xóa thẻ này? Các hội thoại đang gắn thẻ sẽ bị gỡ bỏ.',
@@ -241,7 +276,8 @@
         quick_msg_tooltip: '⚡ Quick Messages',
         campaigns_tooltip: '📢 Campaigns & CRM',
         ai_tooltip: '🧠 AI Studio (5 Tabs)',
-        backup_tooltip: '💾 Backup & Restore'
+        backup_tooltip: '💾 Backup & Restore',
+        oa_tooltip: '🏢 Zalo OA Settings'
       },
       sidebar: {
         search_placeholder: 'Search by name or ID...',
@@ -251,6 +287,7 @@
         filter_unread: 'Unread',
         filter_personal: 'Direct',
         filter_group: 'Groups',
+        filter_oa: '🏢 OA',
         tag_filter_label: '📌 Filter by Tag:',
         tag_filter_all: 'All Tags',
         classify_btn: 'Filter',
@@ -307,7 +344,16 @@
         recall_tooltip: 'Recall this message for both participants',
         recalled_message: 'Message was recalled',
         date_today: 'Today',
-        date_yesterday: 'Yesterday'
+        date_yesterday: 'Yesterday',
+        oa_badge: 'Zalo OA',
+        oa_window_remaining: 'Zalo OA window remaining: {time}',
+        oa_window_expired: 'Zalo OA 48h window expired (ZNS or invite to personal Zalo required)',
+        oa_invite_friend: 'Invite to Personal Zalo 👤',
+        oa_invite_modal_title: 'Invite Customer to Personal Zalo',
+        oa_invite_modal_desc: 'Once connected on personal Zalo, you can chat 24/7 without being constrained by the Zalo OA 48-hour window.',
+        oa_copy_invite_link: 'Copy Add-Friend Link',
+        oa_send_invite_msg: 'Send Invite Message',
+        oa_invite_sent: 'Add-friend invitation sent with personal phone number!'
       },
       modals: {
         zalo_login_title: 'Zalo Account Login & Connection',
@@ -356,7 +402,29 @@
         donate_copy_phone: 'Copy Phone',
         donate_copy_email: 'Copy',
         donate_copied_phone: 'Copied MoMo phone number to clipboard!',
-        donate_copied_email: 'Copied PayPal email to clipboard!'
+        donate_copied_email: 'Copied PayPal email to clipboard!',
+        onboarding_title: 'Welcome to Zalo-Flow Hybrid',
+        onboarding_subtitle: 'Unified inbox for Zalo Personal and Zalo OA on a single platform',
+        onboarding_opt_personal: '1. Personal Zalo Only',
+        onboarding_opt_personal_desc: 'Manage single personal Zalo profile, automated AI bot, lean remarketing campaigns.',
+        onboarding_opt_hybrid: '2. Combine Personal & Zalo OA (Recommended)',
+        onboarding_opt_hybrid_desc: 'Unified Live Chat, shared Second-Brain AI Wiki and quick messages across both channels.',
+        onboarding_opt_no_oa: '3. I Do Not Have Zalo OA Yet',
+        onboarding_opt_no_oa_desc: 'Start with Personal Zalo. You can connect Zalo OA anytime in Settings.',
+        onboarding_btn_confirm: 'Get Started',
+        oa_settings_title: 'Zalo Official Account (OA) Settings',
+        oa_settings_desc: 'Connect Zalo OA via OpenAPI v3.0 for centralized customer service messaging.',
+        oa_app_id: 'App ID (Zalo Developer):',
+        oa_secret_key: 'Secret Key:',
+        oa_oa_id: 'OA ID:',
+        oa_access_token: 'Access Token:',
+        oa_refresh_token: 'Refresh Token:',
+        oa_webhook_url: 'Webhook URL (Inbound messages from OA):',
+        oa_webhook_secret: 'Webhook Secret Token (Signature verification):',
+        oa_status_connected: 'OA Connected',
+        oa_status_disconnected: 'Disconnected',
+        oa_btn_save: 'Save OA Settings',
+        oa_btn_disconnect: 'Disconnect OA'
       },
       toast: {
         copy_success: 'Copied to clipboard!',
@@ -369,7 +437,9 @@
         backup_exported: 'Backup file exported successfully!',
         backup_imported: 'Data imported and merged successfully!',
         network_error: 'Network error, please verify your connection!',
-        empty_field: 'Please fill in all required fields!'
+        empty_field: 'Please fill in all required fields!',
+        oa_saved_success: 'Zalo OA settings saved successfully!',
+        oa_disconnected: 'Zalo OA disconnected successfully!'
       },
       confirm: {
         delete_tag: 'Are you sure you want to delete this tag? All assigned conversations will be untagged.',

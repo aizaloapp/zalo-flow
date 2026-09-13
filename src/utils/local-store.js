@@ -262,6 +262,11 @@ export class LocalStore extends EventEmitter {
       if (!convColumns.includes('needs'))   this.db.exec("ALTER TABLE conversations ADD COLUMN needs TEXT DEFAULT '';");
       if (!convColumns.includes('notes'))   this.db.exec("ALTER TABLE conversations ADD COLUMN notes TEXT DEFAULT '';");
       if (!convColumns.includes('isPinned')) this.db.exec("ALTER TABLE conversations ADD COLUMN isPinned INTEGER DEFAULT 0;");
+      if (!convColumns.includes('channel')) this.db.exec("ALTER TABLE conversations ADD COLUMN channel TEXT DEFAULT 'personal';");
+      if (!convColumns.includes('oaId')) this.db.exec("ALTER TABLE conversations ADD COLUMN oaId TEXT DEFAULT '';");
+      if (!convColumns.includes('isFollower')) this.db.exec("ALTER TABLE conversations ADD COLUMN isFollower INTEGER DEFAULT 0;");
+      if (!convColumns.includes('lastUserMessageTime')) this.db.exec("ALTER TABLE conversations ADD COLUMN lastUserMessageTime INTEGER DEFAULT NULL;");
+      if (!convColumns.includes('customerPhone')) this.db.exec("ALTER TABLE conversations ADD COLUMN customerPhone TEXT DEFAULT '';");
 
       const msgColumns = this.db.prepare("PRAGMA table_info('messages');").all().map(c => c.name);
       if (!msgColumns.includes('reactions')) {
@@ -272,6 +277,12 @@ export class LocalStore extends EventEmitter {
       }
       if (!msgColumns.includes('status')) {
         this.db.exec("ALTER TABLE messages ADD COLUMN status TEXT DEFAULT 'sent';");
+      }
+      if (!msgColumns.includes('channel')) {
+        this.db.exec("ALTER TABLE messages ADD COLUMN channel TEXT DEFAULT 'personal';");
+      }
+      if (!msgColumns.includes('oaMsgId')) {
+        this.db.exec("ALTER TABLE messages ADD COLUMN oaMsgId TEXT DEFAULT '';");
       }
       const campColumns = this.db.prepare("PRAGMA table_info('campaigns');").all().map(c => c.name);
       if (!campColumns.includes('description'))  this.db.exec("ALTER TABLE campaigns ADD COLUMN description TEXT DEFAULT '';");
@@ -356,6 +367,32 @@ export class LocalStore extends EventEmitter {
       if (!schedCols.includes('mediaUrl'))  this.db.exec("ALTER TABLE scheduled_messages ADD COLUMN mediaUrl TEXT DEFAULT '';");
       if (!schedCols.includes('mediaName')) this.db.exec("ALTER TABLE scheduled_messages ADD COLUMN mediaName TEXT DEFAULT '';");
 
+      // Zalo Official Account (OA) Settings Table & System Configs
+      this.db.exec(`
+        CREATE TABLE IF NOT EXISTS oa_settings (
+          id                      TEXT PRIMARY KEY DEFAULT 'default',
+          oaId                    TEXT DEFAULT '',
+          name                    TEXT DEFAULT '',
+          avatar                  TEXT DEFAULT '',
+          appId                   TEXT DEFAULT '',
+          secretKeyEncrypted      TEXT DEFAULT '',
+          accessTokenEncrypted    TEXT DEFAULT '',
+          refreshTokenEncrypted   TEXT DEFAULT '',
+          expiresAt               INTEGER DEFAULT 0,
+          isEnabled               INTEGER DEFAULT 1,
+          isAiAutoReply           INTEGER DEFAULT 0,
+          updatedAt               TEXT DEFAULT (datetime('now'))
+        );
+        INSERT OR IGNORE INTO oa_settings (id) VALUES ('default');
+
+        CREATE TABLE IF NOT EXISTS system_configs (
+          key       TEXT PRIMARY KEY,
+          value     TEXT DEFAULT '',
+          updatedAt TEXT DEFAULT (datetime('now'))
+        );
+        INSERT OR IGNORE INTO system_configs (key, value) VALUES ('onboarding_status', 'pending');
+      `);
+
       // Cleanup: Sửa tận gốc các hội thoại rỗng bị gán timestamp giả khi khởi tạo
       this.db.exec("UPDATE conversations SET lastTime = NULL WHERE (lastMessage = '' OR lastMessage IS NULL) AND lastTime IS NOT NULL;");
 
@@ -414,11 +451,16 @@ export class LocalStore extends EventEmitter {
     }
 
     const unreadCount = Number(conv.unreadCount !== undefined ? conv.unreadCount : (existing?.unreadCount ?? 0));
+    const channel = conv.channel !== undefined ? conv.channel : (existing?.channel || 'personal');
+    const oaId = conv.oaId !== undefined ? conv.oaId : (existing?.oaId || '');
+    const isFollower = conv.isFollower !== undefined ? (conv.isFollower ? 1 : 0) : (existing?.isFollower ?? 0);
+    const lastUserMessageTime = conv.lastUserMessageTime !== undefined ? conv.lastUserMessageTime : (existing?.lastUserMessageTime ?? null);
+    const customerPhone = conv.customerPhone !== undefined ? conv.customerPhone : (existing?.customerPhone || '');
     const updatedAt = new Date().toISOString();
 
     const stmt = this.db.prepare(`
-      INSERT INTO conversations (id, name, avatar, isGroup, lastMessage, lastTime, unreadCount, updatedAt)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO conversations (id, name, avatar, isGroup, lastMessage, lastTime, unreadCount, channel, oaId, isFollower, lastUserMessageTime, customerPhone, updatedAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(id) DO UPDATE SET
         name = excluded.name,
         avatar = CASE WHEN excluded.avatar != '' THEN excluded.avatar ELSE conversations.avatar END,
@@ -426,10 +468,15 @@ export class LocalStore extends EventEmitter {
         lastMessage = CASE WHEN excluded.lastMessage != '' THEN excluded.lastMessage ELSE conversations.lastMessage END,
         lastTime = CASE WHEN excluded.lastTime IS NOT NULL THEN excluded.lastTime ELSE conversations.lastTime END,
         unreadCount = excluded.unreadCount,
+        channel = CASE WHEN excluded.channel != '' THEN excluded.channel ELSE conversations.channel END,
+        oaId = CASE WHEN excluded.oaId != '' THEN excluded.oaId ELSE conversations.oaId END,
+        isFollower = excluded.isFollower,
+        lastUserMessageTime = CASE WHEN excluded.lastUserMessageTime IS NOT NULL THEN excluded.lastUserMessageTime ELSE conversations.lastUserMessageTime END,
+        customerPhone = CASE WHEN excluded.customerPhone != '' THEN excluded.customerPhone ELSE conversations.customerPhone END,
         updatedAt = excluded.updatedAt
     `);
 
-    stmt.run(conv.id, name, avatar, isGroup, lastMessage, lastTime, unreadCount, updatedAt);
+    stmt.run(conv.id, name, avatar, isGroup, lastMessage, lastTime, unreadCount, channel, oaId, isFollower, lastUserMessageTime, customerPhone, updatedAt);
   }
 
   setConversationGroupState(threadId, isGroup) {
@@ -521,9 +568,11 @@ export class LocalStore extends EventEmitter {
     }
 
     if (filter === 'personal') {
-      sql += ` AND c.isGroup = 0`;
+      sql += ` AND (c.channel = 'personal' OR c.channel IS NULL) AND c.isGroup = 0`;
     } else if (filter === 'group') {
-      sql += ` AND c.isGroup = 1`;
+      sql += ` AND (c.channel = 'personal' OR c.channel IS NULL) AND c.isGroup = 1`;
+    } else if (filter === 'oa') {
+      sql += ` AND c.channel = 'oa'`;
     }
 
     if (status === 'unread' || filter === 'unread') {
@@ -648,6 +697,10 @@ export class LocalStore extends EventEmitter {
       newUnread = (existing?.unreadCount || 0) + 1;
     }
 
+    const channel = msg.channel || existing?.channel || 'personal';
+    const oaMsgId = String(msg.oaMsgId || '');
+    const isCustomerOaMsg = !isSelf && channel === 'oa';
+
     // Ensure parent conversation record exists before inserting message for FOREIGN KEY constraints
     this.upsertConversation({
       id: threadId,
@@ -655,15 +708,20 @@ export class LocalStore extends EventEmitter {
       isGroup: Boolean(existing?.isGroup || msg.isGroup),
       lastMessage: text || (mediaType === 'image' ? '[Hình ảnh]' : (mediaType === 'sticker' ? '[Sticker]' : (mediaType === 'contact' ? '[Danh thiếp]' : '[Tin nhắn]'))),
       lastTime: timestamp,
-      unreadCount: newUnread
+      unreadCount: newUnread,
+      channel: channel,
+      oaId: msg.oaId || existing?.oaId || '',
+      isFollower: msg.isFollower !== undefined ? msg.isFollower : existing?.isFollower,
+      lastUserMessageTime: isCustomerOaMsg ? Date.now() : existing?.lastUserMessageTime,
+      customerPhone: msg.customerPhone || existing?.customerPhone || ''
     });
 
     const insertStmt = this.db.prepare(`
       INSERT OR REPLACE INTO messages 
-        (id, threadId, senderId, senderName, text, isSelf, isBot, timestamp, mediaType, mediaUrl, quoteText, quoteSender, reactions, cliMsgId, status, isRecalled)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (id, threadId, senderId, senderName, text, isSelf, isBot, timestamp, mediaType, mediaUrl, quoteText, quoteSender, reactions, cliMsgId, status, isRecalled, channel, oaMsgId)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
-    insertStmt.run(id, threadId, senderId, senderName, text, isSelf, finalIsBot, timestamp, mediaType, mediaUrl, quoteText, quoteSender, reactions, cliMsgId, status, isRecalled);
+    insertStmt.run(id, threadId, senderId, senderName, text, isSelf, finalIsBot, timestamp, mediaType, mediaUrl, quoteText, quoteSender, reactions, cliMsgId, status, isRecalled, channel, oaMsgId);
 
     const savedMsg = {
       id,
@@ -681,7 +739,9 @@ export class LocalStore extends EventEmitter {
       reactions,
       cliMsgId,
       status,
-      isRecalled: Boolean(isRecalled)
+      isRecalled: Boolean(isRecalled),
+      channel,
+      oaMsgId
     };
 
     if (!silent) {
@@ -1656,10 +1716,10 @@ export class LocalStore extends EventEmitter {
       // Hủy lịch hẹn 1-1 đang chờ để tránh gửi nhầm khách từ tài khoản mới
       this.db.prepare("DELETE FROM scheduled_messages WHERE status IN ('pending', 'processing', 'paused_by_reply')").run();
       
-      // 2. Xóa các bảng hội thoại cá nhân
-      this.db.prepare("DELETE FROM conversation_tags").run();
-      this.db.prepare("DELETE FROM messages").run();
-      this.db.prepare("DELETE FROM conversations").run();
+      // 2. Xóa các bảng hội thoại cá nhân (CÔ LẬP TUYỆT ĐỐI channel = 'personal', BẢO TOÀN DỮ LIỆU OA V4.1)
+      this.db.prepare("DELETE FROM conversation_tags WHERE threadId IN (SELECT id FROM conversations WHERE channel = 'personal' OR channel IS NULL)").run();
+      this.db.prepare("DELETE FROM messages WHERE channel = 'personal' OR channel IS NULL").run();
+      this.db.prepare("DELETE FROM conversations WHERE channel = 'personal' OR channel IS NULL").run();
       
       this.db.exec('COMMIT;');
       
@@ -1668,7 +1728,7 @@ export class LocalStore extends EventEmitter {
         this.db.exec('PRAGMA wal_checkpoint(TRUNCATE);');
       } catch {}
 
-      logger.info('[LocalStore] Clean switch account completed safely. AI settings, tags, campaigns are preserved.');
+      logger.info('[LocalStore] Clean switch account completed safely. AI settings, tags, campaigns and OA channels are preserved.');
       this.emit('data_cleaned');
       return true;
     } catch (err) {
@@ -1676,6 +1736,106 @@ export class LocalStore extends EventEmitter {
       logger.error(`[LocalStore] Failed to clean switch account data: ${err.message}`);
       throw err;
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Zalo Official Account (OA) Settings Suite
+  // ---------------------------------------------------------------------------
+  getOaSettings(id = 'default') {
+    let row = this.db.prepare('SELECT * FROM oa_settings WHERE id = ?').get(id);
+    if (!row) {
+      this.db.prepare("INSERT OR IGNORE INTO oa_settings (id) VALUES (?)").run(id);
+      row = this.db.prepare('SELECT * FROM oa_settings WHERE id = ?').get(id);
+    }
+    return row || {
+      id: 'default',
+      oaId: '',
+      name: '',
+      avatar: '',
+      appId: '',
+      secretKeyEncrypted: '',
+      accessTokenEncrypted: '',
+      refreshTokenEncrypted: '',
+      expiresAt: 0,
+      isEnabled: 0,
+      isAiAutoReply: 0
+    };
+  }
+
+  saveOaSettings(data, id = 'default') {
+    const current = this.getOaSettings(id);
+    const updated = { ...current, ...data };
+    const stmt = this.db.prepare(`
+      INSERT INTO oa_settings (
+        id, oaId, name, avatar, appId, secretKeyEncrypted,
+        accessTokenEncrypted, refreshTokenEncrypted, expiresAt,
+        isEnabled, isAiAutoReply, updatedAt
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+      ON CONFLICT(id) DO UPDATE SET
+        oaId = excluded.oaId,
+        name = excluded.name,
+        avatar = excluded.avatar,
+        appId = excluded.appId,
+        secretKeyEncrypted = excluded.secretKeyEncrypted,
+        accessTokenEncrypted = excluded.accessTokenEncrypted,
+        refreshTokenEncrypted = excluded.refreshTokenEncrypted,
+        expiresAt = excluded.expiresAt,
+        isEnabled = excluded.isEnabled,
+        isAiAutoReply = excluded.isAiAutoReply,
+        updatedAt = excluded.updatedAt
+    `);
+    stmt.run(
+      id,
+      updated.oaId || '',
+      updated.name || '',
+      updated.avatar || '',
+      updated.appId || '',
+      updated.secretKeyEncrypted || '',
+      updated.accessTokenEncrypted || '',
+      updated.refreshTokenEncrypted || '',
+      Number(updated.expiresAt || 0),
+      updated.isEnabled ? 1 : 0,
+      updated.isAiAutoReply ? 1 : 0
+    );
+    return this.getOaSettings(id);
+  }
+
+  updateOaTokens({ accessTokenEncrypted, refreshTokenEncrypted, expiresAt }, id = 'default') {
+    const stmt = this.db.prepare(`
+      UPDATE oa_settings
+      SET accessTokenEncrypted = ?, refreshTokenEncrypted = ?, expiresAt = ?, updatedAt = datetime('now')
+      WHERE id = ?
+    `);
+    stmt.run(accessTokenEncrypted || '', refreshTokenEncrypted || '', Number(expiresAt || 0), id);
+    return this.getOaSettings(id);
+  }
+
+  deleteOaSettings(id = 'default') {
+    this.db.prepare('DELETE FROM oa_settings WHERE id = ?').run(id);
+    this.db.prepare("INSERT OR IGNORE INTO oa_settings (id) VALUES (?)").run(id);
+    return true;
+  }
+
+  // ---------------------------------------------------------------------------
+  // System Configs Suite
+  // ---------------------------------------------------------------------------
+  getSystemConfig(key, defaultValue = '') {
+    if (!key) return defaultValue;
+    const row = this.db.prepare('SELECT value FROM system_configs WHERE key = ?').get(key);
+    return row ? row.value : defaultValue;
+  }
+
+  setSystemConfig(key, value) {
+    if (!key) return false;
+    const stmt = this.db.prepare(`
+      INSERT INTO system_configs (key, value, updatedAt)
+      VALUES (?, ?, datetime('now'))
+      ON CONFLICT(key) DO UPDATE SET
+        value = excluded.value,
+        updatedAt = excluded.updatedAt
+    `);
+    stmt.run(String(key), String(value));
+    return true;
   }
 }
 

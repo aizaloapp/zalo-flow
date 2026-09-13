@@ -22,7 +22,9 @@ import aiSettingsRoutes from './routes/ai-settings.js';
 import backupRoutes from './routes/backup.js';
 import { updaterRouter } from './routes/updater.js';
 import scheduledMsgRoutes from './routes/scheduled-messages.js';
+import oaRoutes from './routes/oa-routes.js';
 import { scheduledDispatcher } from './utils/scheduled-dispatcher.js';
+import { oaTokenManager } from './utils/oa-token-manager.js';
 
 // Import Adapters & Utilities
 import { chatwootInboundAdapter } from './adapters/chatwoot-inbound.js';
@@ -35,7 +37,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-app.use(express.json());
+app.use(express.json({
+  verify: (req, res, buf) => {
+    req.rawBody = buf ? buf.toString('utf8') : '';
+  }
+}));
 app.use(express.urlencoded({ extended: true }));
 
 // Serve static assets from public/
@@ -191,6 +197,10 @@ app.use('/api', scheduledMsgRoutes);
 app.use('/api', aiSettingsRoutes);
 app.use('/api', backupRoutes);
 app.use('/api', updaterRouter);
+app.use('/api', oaRoutes);
+
+// Start OA Token auto-refresh watchdog
+oaTokenManager.startWatchdog();
 
 // -----------------------------------------------------------------------------
 // Core Conversation & Sync REST APIs

@@ -11,6 +11,10 @@ import { resolveSpintax, generateSamplePreviews } from '../src/utils/spintax.js'
 import { normalizeWikiUrl, isSafeEgressUrl, isPrivateOrReservedIp } from '../src/routes/ai-settings.js';
 import { aiAgentAdapter, GOLDEN_WIKI_TEMPLATE } from '../src/adapters/ai-agent.js';
 import { csrfShield } from '../src/middleware/auth.js';
+import { oaTokenManager, AsyncMutex } from '../src/utils/oa-token-manager.js';
+import { oaDispatcher } from '../src/utils/oa-dispatcher.js';
+import { chatwootOutboundAdapter } from '../src/adapters/chatwoot-outbound.js';
+import crypto from 'crypto';
 
 console.log('🧪 Starting Zalo-Flow Integrity Test Suite (Lean Chatwoot CRM + Remarketing)...\n');
 
@@ -2060,13 +2064,195 @@ console.log('45. Testing Pin to Top, Limit 5, Mark Unread, Tag Dots & Context Ac
   }
 }
 
+// -----------------------------------------------------------------------------
+// Test 46: OA Data Isolation in cleanSwitchAccountData & OA Settings
+// -----------------------------------------------------------------------------
+console.log('46. Testing OA Data Isolation in cleanSwitchAccountData & OA Settings...');
+const personalThreadId = 'user_personal_iso_1';
+const oaThreadId = 'oa_123456_user_iso_999';
+
+store.upsertConversation({
+  id: personalThreadId,
+  name: 'Personal Contact',
+  channel: 'personal'
+});
+store.addMessage({
+  id: 'msg_personal_iso_1',
+  threadId: personalThreadId,
+  senderId: personalThreadId,
+  senderName: 'Personal Contact',
+  text: 'Hello from personal Zalo',
+  channel: 'personal'
+});
+
+store.upsertConversation({
+  id: oaThreadId,
+  name: 'OA Customer',
+  channel: 'oa',
+  oaId: '123456',
+  customerPhone: '84901234567',
+  isFollower: 1,
+  lastUserMessageTime: Date.now()
+});
+store.addMessage({
+  id: 'msg_oa_iso_1',
+  threadId: oaThreadId,
+  senderId: 'user_iso_999',
+  senderName: 'OA Customer',
+  text: 'Hello from Zalo OA',
+  channel: 'oa',
+  oaMsgId: 'oa_msg_uuid_1'
+});
+
+assert.strictEqual(Boolean(store.getConversation(personalThreadId)), true);
+assert.strictEqual(Boolean(store.getConversation(oaThreadId)), true);
+
+store.cleanSwitchAccountData();
+
+assert.strictEqual(store.getConversation(personalThreadId), null, 'Personal conversation MUST be wiped on clean switch');
+assert.strictEqual(store.getMessages(personalThreadId).length, 0, 'Personal messages MUST be wiped on clean switch');
+assert.notStrictEqual(store.getConversation(oaThreadId), null, 'OA conversation MUST be preserved 100% on clean switch');
+assert.strictEqual(store.getConversation(oaThreadId).channel, 'oa');
+assert.strictEqual(store.getMessages(oaThreadId).length, 1, 'OA messages MUST be preserved 100% on clean switch');
+
+store.deleteConversation(oaThreadId);
+console.log('   ✅ OA Data Isolation in cleanSwitchAccountData passed!\n');
+
+// -----------------------------------------------------------------------------
+// Test 47: OA Token Manager & AsyncMutex Concurrency Guard
+// -----------------------------------------------------------------------------
+console.log('47. Testing OA Token Manager & AsyncMutex Concurrency Guard...');
+const testMutex = new AsyncMutex();
+let mCounter = 0;
+let mMaxConcurrent = 0;
+let mCurrentConcurrent = 0;
+
+const mTasks = Array.from({ length: 5 }, async () => {
+  return await testMutex.runExclusive(async () => {
+    mCurrentConcurrent++;
+    if (mCurrentConcurrent > mMaxConcurrent) mMaxConcurrent = mCurrentConcurrent;
+    await new Promise(r => setTimeout(r, 10));
+    mCounter++;
+    mCurrentConcurrent--;
+    return mCounter;
+  });
+});
+await Promise.all(mTasks);
+assert.strictEqual(mCounter, 5);
+assert.strictEqual(mMaxConcurrent, 1, 'Mutex MUST serialize executions to max 1');
+
+// Signature verification
+const testAppId = 'app_test_mutex';
+const testSecret = 'secret_test_mutex';
+const testRaw = '{"event_name":"user_send_text"}';
+const testTs = String(Date.now());
+const testSig = crypto.createHash('sha256').update(`${testAppId}${testRaw}${testTs}${testSecret}`, 'utf8').digest('hex');
+
+assert.strictEqual(oaTokenManager.verifyWebhookSignature({
+  signature: testSig,
+  rawBody: testRaw,
+  timestamp: testTs,
+  appId: testAppId,
+  secretKey: testSecret
+}), true);
+console.log('   ✅ OA Token Manager & AsyncMutex Guard passed!\n');
+
+// -----------------------------------------------------------------------------
+// Test 48: Zalo OA 48h Window Guard & Chatwoot Routing
+// -----------------------------------------------------------------------------
+console.log('48. Testing Zalo OA 48h Window Guard & Chatwoot Routing...');
+oaTokenManager.setCredentials({
+  oaId: 'test_oa',
+  name: 'Test OA',
+  appId: 'app_test',
+  accessToken: 'valid_token',
+  refreshToken: 'refresh_token',
+  expiresIn: 7200,
+  isEnabled: 1
+});
+
+const testOaThread = 'oa_test_oa_user_1';
+store.upsertConversation({
+  id: testOaThread,
+  name: 'Khách Hàng Quá 48h',
+  channel: 'oa',
+  lastUserMessageTime: Date.now() - (49 * 3600 * 1000)
+});
+
+const sendRes48h = await oaDispatcher.sendMessage('user_1', 'Tin nhắn test', { threadId: testOaThread, store });
+assert.strictEqual(sendRes48h.success, false);
+assert.strictEqual(sendRes48h.error, 'window_48h_expired');
+
+// Chatwoot routing test
+let cwPersonalCalled = false;
+let cwOaCalled = false;
+const mockClientCw = { sendMessage: async () => { cwPersonalCalled = true; } };
+const originalOaSend = oaDispatcher.sendMessage;
+oaDispatcher.sendMessage = async () => { cwOaCalled = true; return { success: true }; };
+
+await chatwootOutboundAdapter.handleOutbound({
+  body: {
+    event: 'message_created',
+    message_type: 'outgoing',
+    content: 'Test personal',
+    conversation: { custom_attributes: { zalo_uid: 'personal_user_123' } }
+  }
+}, { json: () => {}, status: () => ({ json: () => {} }) }, mockClientCw);
+assert.strictEqual(cwPersonalCalled, true);
+
+await chatwootOutboundAdapter.handleOutbound({
+  body: {
+    event: 'message_created',
+    message_type: 'outgoing',
+    content: 'Test OA',
+    conversation: { custom_attributes: { zalo_uid: testOaThread } }
+  }
+}, { json: () => {}, status: () => ({ json: () => {} }) }, mockClientCw);
+assert.strictEqual(cwOaCalled, true);
+oaDispatcher.sendMessage = originalOaSend;
+store.deleteConversation(testOaThread);
+console.log('   ✅ Zalo OA 48h Window Guard & Chatwoot Routing passed!\n');
+
 // Clean test db
 store.close();
 if (fs.existsSync(testDbFile)) {
   try { fs.unlinkSync(testDbFile); } catch {}
 }
 
-console.log('🎉 ALL 45 INTEGRITY, SECURITY, CRM, AIZALO REMARKETING, AI SUITE, BULK DEEP-SYNC, QR AUTH, MEMORY GUARD, ZALO SANITIZER, DESKTOP PACKAGED, CLEAN SWITCH, MULTI-DEVICE SYNC, GROUP MENTION, QUICK-MSG, CAMPAIGN TEST DISPATCH, GROUP RECONCILIATION, AUTO-FALLBACK OPENROUTER, MULTIMODAL VISION, STRANGER IDENTITY, SCHEDULED MESSAGES, UNIVERSAL WIKI URL INGESTION, LIVE CHAT MEDIA CAPTION, CHAT AVATAR DYNAMIC, i18n MULTI-LANGUAGE, CSRF LOCALHOST SHIELD & PIN/CONTEXT ACTIONS TESTS PASSED 100%!');
+// -----------------------------------------------------------------------------
+// Test 49: Website Static Assets UTF-8 Integrity & Anti-Mojibake Guard
+// -----------------------------------------------------------------------------
+console.log('49. Testing Website Static Assets UTF-8 Integrity & Anti-Mojibake Guard...');
+{
+  function getWebFiles(dir) {
+    let results = [];
+    if (!fs.existsSync(dir)) return results;
+    const list = fs.readdirSync(dir);
+    list.forEach(file => {
+      const fullPath = path.join(dir, file);
+      const stat = fs.statSync(fullPath);
+      if (stat && stat.isDirectory()) {
+        results = results.concat(getWebFiles(fullPath));
+      } else if (/\.(html|md|txt)$/i.test(file)) {
+        results.push(fullPath);
+      }
+    });
+    return results;
+  }
+
+  const mojibakePattern = /(?:â€[“”—’™]|áº[¡-¿]|á»[^-¿]|Ä‘|Ă¡|Ă¢|đŸ|Â©|Ã[¡-¿])/;
+  const webSrcFiles = getWebFiles(path.join(import.meta.dirname, '..', 'website', 'src'));
+  assert(webSrcFiles.length > 0, 'website/src must contain HTML/MD/TXT files');
+
+  for (const file of webSrcFiles) {
+    const content = fs.readFileSync(file, 'utf8');
+    const match = content.match(mojibakePattern);
+    assert.strictEqual(match, null, `Mojibake character detected in ${file}: ${match ? match[0] : ''}`);
+  }
+  console.log(`   ✅ 100% UTF-8 Integrity verified across ${webSrcFiles.length} website source files!\n`);
+}
+
+console.log('🎉 ALL 49 INTEGRITY, SECURITY, CRM, AIZALO REMARKETING, AI SUITE, BULK DEEP-SYNC, QR AUTH, MEMORY GUARD, ZALO SANITIZER, DESKTOP PACKAGED, CLEAN SWITCH, MULTI-DEVICE SYNC, GROUP MENTION, QUICK-MSG, CAMPAIGN TEST DISPATCH, GROUP RECONCILIATION, AUTO-FALLBACK OPENROUTER, MULTIMODAL VISION, STRANGER IDENTITY, SCHEDULED MESSAGES, UNIVERSAL WIKI URL INGESTION, LIVE CHAT MEDIA CAPTION, CHAT AVATAR DYNAMIC, i18n MULTI-LANGUAGE, CSRF LOCALHOST SHIELD, PIN/CONTEXT ACTIONS, OA ISOLATION, OA MUTEX, OA ROUTING & ANTI-MOJIBAKE TESTS PASSED 100%!');
 
 
 

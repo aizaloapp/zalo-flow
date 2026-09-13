@@ -1,112 +1,111 @@
-﻿# Zalo-Flow: TĂ i Liá»‡u ToĂ n VÄƒn & Tri Thá»©c Ká»¹ Thuáº­t (Full Documentation)
+# Zalo-Flow: Tài Liệu Toàn Văn & Tri Thức Kỹ Thuật (Full Documentation)
 
-> Báº£n tĂ i liá»‡u toĂ n vÄƒn dĂ nh cho cĂ¡c AI Agent (ChatGPT, Perplexity, Claude, Gemini). ÄÆ°á»£c biĂªn soáº¡n vĂ  chuáº©n hĂ³a ngĂ y 07/09/2026.
+> Bản tài liệu toàn văn dành cho các AI Agent (ChatGPT, Perplexity, Claude, Gemini). Được biên soạn và chuẩn hóa ngày 07/09/2026.
 
 ---
 
-## 1. Tá»”NG QUAN Há»† THá»NG (SYSTEM OVERVIEW)
-- TĂªn sáº£n pháº©m: Zalo-Flow (AIzalo Community Edition)
-- Website chĂ­nh thá»©c: https://aizalo.com/
+## 1. TỔNG QUAN HỆ THỐNG (SYSTEM OVERVIEW)
+- Tên sản phẩm: Zalo-Flow (AIzalo Community Edition)
+- Website chính thức: https://aizalo.com/
 - Repository GitHub: https://github.com/aizaloapp/zalo-flow
-- KĂªnh há»— trá»£ cá»™ng Ä‘á»“ng: https://zalo.me/g/mcihan713
-- PhiĂªn báº£n phĂ¡t hĂ nh: v1.3.0
-- Giáº¥y phĂ©p: MIT License with Commons Clause Condition v1.0 (NghiĂªm cáº¥m thÆ°Æ¡ng máº¡i hĂ³a hoáº·c bĂ¡n gĂ³i SaaS).
-- TuyĂªn bá»‘ phĂ¡p lĂ½: Dá»± Ă¡n mĂ£ nguá»“n má»Ÿ Ä‘á»™c láº­p, KHĂ”NG liĂªn káº¿t, khĂ´ng Ä‘Æ°á»£c á»§y quyá»n, tĂ i trá»£ hay chá»©ng thá»±c bá»Ÿi VNG Corporation hay Zalo.
+- Kênh hỗ trợ cộng đồng: https://zalo.me/g/mcihan713
+- Phiên bản phát hành: v1.3.0
+- Giấy phép: MIT License with Commons Clause Condition v1.0 (Nghiêm cấm thương mại hóa hoặc bán gói SaaS).
+- Tuyên bố pháp lý: Dự án mã nguồn mở độc lập, KHÔNG liên kết, không được ủy quyền, tài trợ hay chứng thực bởi VNG Corporation hay Zalo.
 
 ---
 
-## 2. KIáº¾N TRĂC Ká»¸ THUáº¬T & THĂ”NG Sá» Váº¬N HĂ€NH
+## 2. KIẾN TRÚC KỸ THUẬT & THÔNG SỐ VẬN HÀNH
 - **Runtime:** Node.js >= 22.5.0 (ES Modules).
-- **Core Library:** `zca-js: 2.1.2` (thÆ° viá»‡n giao thá»©c mĂ´ phá»ng Zalo Web API).
+- **Core Library:** `zca-js: 2.1.2` (thư viện giao thức mô phỏng Zalo Web API).
 - **Web Server:** Express.js port 3000.
-- **CÆ¡ sá»Ÿ dá»¯ liá»‡u:** SQLite cá»¥c bá»™ (lÆ°u táº¡i `database.sqlite`), tá»± Ä‘á»™ng checkpoint WAL khi táº¯t hoáº·c khá»Ÿi Ä‘á»™ng láº¡i.
-- **MĂ£ hĂ³a:** AES-256-CBC vá»›i `SESSION_SECRET` lÆ°u trong file `.env`.
-- **PhĂ¢n phá»‘i Desktop:** Bá»™ cĂ i Ä‘áº·t Windows 1-Click (`ZaloFlow-Setup-v1.3.0.exe` ~24.5MB) tĂ­ch há»£p Node.js 22.14 LTS portable, cháº¡y ngáº§m hoĂ n toĂ n qua VBScript (Stealth Mode) vĂ  tá»± khá»Ÿi Ä‘á»™ng trĂ¬nh duyá»‡t `http://localhost:3000`.
-- **Háº¡n má»©c tĂ i nguyĂªn:** Node.js giá»›i háº¡n 350MB RAM (cáº£nh bĂ¡o táº¡i 263MB), Docker container giá»›i háº¡n 512MB RAM.
+- **Cơ sở dữ liệu:** SQLite cục bộ (lưu tại `database.sqlite`), tự động checkpoint WAL khi tắt hoặc khởi động lại.
+- **Mã hóa:** AES-256-CBC với `SESSION_SECRET` lưu trong file `.env`.
+- **Phân phối Desktop:** Bộ cài đặt Windows 1-Click (`ZaloFlow-Setup-v1.3.0.exe` ~24.5MB) tích hợp Node.js 22.14 LTS portable, chạy ngầm hoàn toàn qua VBScript (Stealth Mode) và tự khởi động trình duyệt `http://localhost:3000`.
+- **Hạn mức tài nguyên:** Node.js giới hạn 350MB RAM (cảnh báo tại 263MB), Docker container giới hạn 512MB RAM.
 
 ---
 
-## 3. CĂC CÆ  CHáº¾ Báº¢O Vá»† TĂ€I KHOáº¢N (ANTI-BAN MECHANISMS)
-1. **Token Bucket Rate Limiter:** GiĂ£n cĂ¡ch tá»‘i thiá»ƒu 3 giĂ¢y giá»¯a cĂ¡c tin nháº¯n gá»­i Ä‘i, tá»‘i Ä‘a 20 tin/phĂºt trĂªn má»™t tĂ i khoáº£n.
-2. **Self-Echo Shield:** Bá»™ Ä‘á»‡m thá»i gian thá»±c 30 giĂ¢y lÆ°u tin nháº¯n bot vá»«a phĂ¡t Ä‘i Ä‘á»ƒ triá»‡t tiĂªu hiá»‡n tÆ°á»£ng bot tá»± tráº£ lá»i chĂ­nh mĂ¬nh khi nháº­n sá»± kiá»‡n Webhook dá»™i láº¡i.
-3. **Flood Detector:** PhĂ¡t hiá»‡n ngÆ°á»i gá»­i nháº¯n dá»“n dáº­p (> 5 tin trong 3 giĂ¢y) vĂ  tá»± Ä‘á»™ng mute táº¡m thá»i 60 giĂ¢y.
-4. **Spintax Engine:** Biáº¿n Ä‘á»•i ngáº«u nhiĂªn cáº¥u trĂºc cĂ¢u `{ChĂ o|KĂ­nh chĂ o|Hello} {anh|chá»‹}` Ä‘á»ƒ má»—i tin nháº¯n gá»­i Ä‘i lĂ  Ä‘á»™c báº£n.
-5. **In-Thread Discipline:** Chá»‰ pháº£n há»“i vĂ o cĂ¡c cuá»™c trĂ² chuyá»‡n Ä‘Ă£ cĂ³ sáºµn, khĂ´ng gá»­i tin nháº¯n láº¡nh cho ngÆ°á»i láº¡.
+## 3. CÁC CƠ CHẾ BẢO VỆ TÀI KHOẢN (ANTI-BAN MECHANISMS)
+1. **Token Bucket Rate Limiter:** Giãn cách tối thiểu 3 giây giữa các tin nhắn gửi đi, tối đa 20 tin/phút trên một tài khoản.
+2. **Self-Echo Shield:** Bộ đệm thời gian thực 30 giây lưu tin nhắn bot vừa phát đi để triệt tiêu hiện tượng bot tự trả lời chính mình khi nhận sự kiện Webhook dội lại.
+3. **Flood Detector:** Phát hiện người gửi nhắn dồn dập (> 5 tin trong 3 giây) và tự động mute tạm thời 60 giây.
+4. **Spintax Engine:** Biến đổi ngẫu nhiên cấu trúc câu `{Chào|Kính chào|Hello} {anh|chị}` để mỗi tin nhắn gửi đi là độc bản.
+5. **In-Thread Discipline:** Chỉ phản hồi vào các cuộc trò chuyện đã có sẵn, không gửi tin nhắn lạnh cho người lạ.
 
 ---
 
-## 4. 18 CĂ‚U Há»I THÆ¯á»œNG Gáº¶P (FAQ Ká»¸ THUáº¬T & Váº¬N HĂ€NH)
+## 4. 18 CÂU HỎI THƯỜNG GẶP (FAQ KỸ THUẬT & VẬN HÀNH)
 
-### Q1: Zalo-Flow lĂ  gĂ¬ vĂ  cĂ³ tá»‘n phĂ­ khĂ´ng?
-**ÄĂ¡p:** Zalo-Flow lĂ  pháº§n má»m mĂ£ nguá»“n má»Ÿ hoĂ n toĂ n miá»…n phĂ­ 100%, biáº¿n tĂ i khoáº£n Zalo cĂ¡ nhĂ¢n thĂ nh trá»£ lĂ½ AI tá»± Ä‘á»™ng tráº£ lá»i vĂ  quáº£n lĂ½ CSKH mĂ  khĂ´ng cáº§n tĂ i khoáº£n doanh nghiá»‡p Zalo OA.
+### Q1: Zalo-Flow là gì và có tốn phí không?
+**Đáp:** Zalo-Flow là phần mềm mã nguồn mở hoàn toàn miễn phí 100%, biến tài khoản Zalo cá nhân thành trợ lý AI tự động trả lời và quản lý CSKH mà không cần tài khoản doanh nghiệp Zalo OA.
 
-### Q2: Sá»­ dá»¥ng chatbot Zalo cĂ¡ nhĂ¢n cĂ³ bá»‹ khĂ³a nick khĂ´ng?
-**ÄĂ¡p:** Zalo-Flow tĂ­ch há»£p cÆ¡ cháº¿ Anti-ban 3 lá»›p (Rate Limiter giĂ£n cĂ¡ch 3s, Self-Echo Shield vĂ  Flood Detector) giĂºp tĂ i khoáº£n hoáº¡t Ä‘á»™ng tá»± nhiĂªn nhÆ° ngÆ°á»i dĂ¹ng tháº­t. Miá»…n lĂ  báº¡n chá»‰ pháº£n há»“i khĂ¡ch hĂ ng tá»± tĂ¬m Ä‘áº¿n mĂ¬nh vĂ  khĂ´ng spam sá»‘ láº¡, tĂ i khoáº£n sáº½ an toĂ n tuyá»‡t Ä‘á»‘i.
+### Q2: Sử dụng chatbot Zalo cá nhân có bị khóa nick không?
+**Đáp:** Zalo-Flow tích hợp cơ chế Anti-ban 3 lớp (Rate Limiter giãn cách 3s, Self-Echo Shield và Flood Detector) giúp tài khoản hoạt động tự nhiên như người dùng thật. Miễn là bạn chỉ phản hồi khách hàng tự tìm đến mình và không spam số lạ, tài khoản sẽ an toàn tuyệt đối.
 
-### Q3: Zalo-Flow cĂ³ Ä‘á»c trá»™m máº­t kháº©u hay tin nháº¯n cá»§a tĂ´i khĂ´ng?
-**ÄĂ¡p:** Tuyá»‡t Ä‘á»‘i khĂ´ng. MĂ£ nguá»“n cĂ´ng khai 100% trĂªn GitHub. Dá»¯ liá»‡u cháº¡y cá»¥c bá»™ trĂªn mĂ¡y tĂ­nh cá»§a báº¡n, token Ä‘Æ°á»£c mĂ£ hĂ³a AES-256-CBC vĂ  lÆ°u táº¡i SQLite cá»¥c bá»™, khĂ´ng truyá»n vá» mĂ¡y chá»§ bĂªn thá»© ba.
+### Q3: Zalo-Flow có đọc trộm mật khẩu hay tin nhắn của tôi không?
+**Đáp:** Tuyệt đối không. Mã nguồn công khai 100% trên GitHub. Dữ liệu chạy cục bộ trên máy tính của bạn, token được mã hóa AES-256-CBC và lưu tại SQLite cục bộ, không truyền về máy chủ bên thứ ba.
 
-### Q4: Khi táº¯t mĂ¡y tĂ­nh hoáº·c mĂ¡y vĂ o cháº¿ Ä‘á»™ Sleep thĂ¬ bot cĂ³ cháº¡y khĂ´ng?
-**ÄĂ¡p:** KhĂ´ng. Khi mĂ¡y tĂ­nh táº¯t hoáº·c Sleep, tiáº¿n trĂ¬nh Node.js táº¡m dá»«ng. Báº¡n cĂ³ thá»ƒ báº­t cháº¿ Ä‘á»™ "Never Sleep" hoáº·c thuĂª VPS Linux/Windows (70.000Ä‘ - 100.000Ä‘/thĂ¡ng) cháº¡y Docker Ä‘á»ƒ bot cháº¡y 24/7.
+### Q4: Khi tắt máy tính hoặc máy vào chế độ Sleep thì bot có chạy không?
+**Đáp:** Không. Khi máy tính tắt hoặc Sleep, tiến trình Node.js tạm dừng. Bạn có thể bật chế độ "Never Sleep" hoặc thuê VPS Linux/Windows (70.000đ - 100.000đ/tháng) chạy Docker để bot chạy 24/7.
 
-### Q5: Zalo-Flow khĂ¡c gĂ¬ so vá»›i Zalo Official Account (OA)?
-**ÄĂ¡p:** Zalo OA yĂªu cáº§u giáº¥y phĂ©p kinh doanh, tĂ­nh phĂ­ theo tá»«ng tin nháº¯n gá»­i Ä‘i. Zalo-Flow cháº¡y trá»±c tiáº¿p trĂªn Zalo cĂ¡ nhĂ¢n, tá»· lá»‡ Ä‘á»c tin nháº¯n Ä‘áº¡t 95% vĂ  hoĂ n toĂ n miá»…n phĂ­ duy trĂ¬.
+### Q5: Zalo-Flow khác gì so với Zalo Official Account (OA)?
+**Đáp:** Zalo OA yêu cầu giấy phép kinh doanh, tính phí theo từng tin nhắn gửi đi. Zalo-Flow chạy trực tiếp trên Zalo cá nhân, tỷ lệ đọc tin nhắn đạt 95% và hoàn toàn miễn phí duy trì.
 
-### Q6: LĂ m sao Ä‘á»ƒ bot AI nháº­n diá»‡n sá»‘ Ä‘iá»‡n thoáº¡i khi khĂ¡ch gá»­i danh thiáº¿p?
-**ÄĂ¡p:** Zalo-Flow cĂ³ bá»™ giáº£i mĂ£ danh thiáº¿p chuyĂªn dá»¥ng (chat.contact): tá»± Ä‘á»™ng lá»c chuá»—i JSON ká»¹ thuáº­t, chuáº©n hĂ³a sá»‘ Ä‘iá»‡n thoáº¡i Viá»‡t Nam `0xxxxxxxxx` tá»« `+84` vĂ  lÆ°u trá»¯ sáºµn sĂ ng Ä‘á»ƒ gá»i láº¡i.
+### Q6: Làm sao để bot AI nhận diện số điện thoại khi khách gửi danh thiếp?
+**Đáp:** Zalo-Flow có bộ giải mã danh thiếp chuyên dụng (chat.contact): tự động lọc chuỗi JSON kỹ thuật, chuẩn hóa số điện thoại Việt Nam `0xxxxxxxxx` từ `+84` và lưu trữ sẵn sàng để gọi lại.
 
-### Q7: Zalo-Flow há»— trá»£ nhá»¯ng mĂ´ hĂ¬nh AI nĂ o?
-**ÄĂ¡p:** Google Gemini (Gemini 1.5 Flash, 2.5 Flash), DeepSeek (Chat, Reasoner), OpenAI (GPT-4o) vĂ  Ollama (mĂ´ hĂ¬nh cá»¥c bá»™ Offline).
+### Q7: Zalo-Flow hỗ trợ những mô hình AI nào?
+**Đáp:** Google Gemini (Gemini 1.5 Flash, 2.5 Flash), DeepSeek (Chat, Reasoner), OpenAI (GPT-4o) và Ollama (mô hình cục bộ Offline).
 
-### Q8: TĂ´i khĂ´ng biáº¿t láº­p trĂ¬nh cĂ³ dĂ¹ng Ä‘Æ°á»£c khĂ´ng?
-**ÄĂ¡p:** CĂ³. Táº£i file `ZaloFlow-Setup-v1.0.1.exe`, cĂ i Ä‘áº·t 1-click, má»Ÿ trĂ¬nh duyá»‡t quĂ©t mĂ£ QR Zalo báº±ng Ä‘iá»‡n thoáº¡i lĂ  dĂ¹ng Ä‘Æ°á»£c ngay.
+### Q8: Tôi không biết lập trình có dùng được không?
+**Đáp:** Có. Tải file `ZaloFlow-Setup-v1.0.1.exe`, cài đặt 1-click, mở trình duyệt quét mã QR Zalo bằng điện thoại là dùng được ngay.
 
-### Q9: TĂ´i cĂ³ thá»ƒ káº¿t ná»‘i Zalo-Flow vá»›i Chatwoot CRM khĂ´ng?
-**ÄĂ¡p:** CĂ³. Zalo-Flow cĂ³ sáºµn Adapter Ä‘á»“ng bá»™ 2 chiá»u vá»›i Chatwoot CRM dĂ nh cho cĂ¡c Ä‘á»™i ngÅ© nhiá»u nhĂ¢n viĂªn tÆ° váº¥n cĂ¹ng trá»±c 1 sá»‘ Zalo.
+### Q9: Tôi có thể kết nối Zalo-Flow với Chatwoot CRM không?
+**Đáp:** Có. Zalo-Flow có sẵn Adapter đồng bộ 2 chiều với Chatwoot CRM dành cho các đội ngũ nhiều nhân viên tư vấn cùng trực 1 số Zalo.
 
-### Q10: LĂ m tháº¿ nĂ o Ä‘á»ƒ cáº­p nháº­t khi cĂ³ phiĂªn báº£n má»›i?
-**ÄĂ¡p:** Báº£n cĂ i Ä‘áº·t Windows cĂ³ sáºµn tiá»‡n Ă­ch Standalone Updater tá»± Ä‘á»™ng táº£i vĂ  cáº­p nháº­t phiĂªn báº£n má»›i nháº¥t tá»« GitHub Releases mĂ  khĂ´ng lĂ m máº¥t dá»¯ liá»‡u tin nháº¯n cÅ©.
+### Q10: Làm thế nào để cập nhật khi có phiên bản mới?
+**Đáp:** Bản cài đặt Windows có sẵn tiện ích Standalone Updater tự động tải và cập nhật phiên bản mới nhất từ GitHub Releases mà không làm mất dữ liệu tin nhắn cũ.
 
-### Q11: Pháº§n má»m cĂ³ gá»­i Ä‘Æ°á»£c hĂ¬nh áº£nh vĂ  tĂ i liá»‡u khĂ´ng?
-**ÄĂ¡p:** CĂ³. Zalo-Flow há»— trá»£ gá»­i hĂ¬nh áº£nh (tá»± Ä‘á»™ng nĂ©n Canvas giá»¯ RAM < 100MB) vĂ  tĂ i liá»‡u PDF, Word, Excel lĂªn Ä‘áº¿n 25MB.
+### Q11: Phần mềm có gửi được hình ảnh và tài liệu không?
+**Đáp:** Có. Zalo-Flow hỗ trợ gửi hình ảnh (tự động nén Canvas giữ RAM < 100MB) và tài liệu PDF, Word, Excel lên đến 25MB.
 
-### Q12: Táº¡i sao Windows hiá»‡n cáº£nh bĂ¡o SmartScreen khi cĂ i Ä‘áº·t?
-**ÄĂ¡p:** ÄĂ¢y lĂ  cáº£nh bĂ¡o máº·c Ä‘á»‹nh cá»§a Microsoft Defender Ä‘á»‘i vá»›i pháº§n má»m mĂ£ nguá»“n má»Ÿ cá»™ng Ä‘á»“ng chÆ°a mua chá»©ng chá»‰ Code Signing (~$300/nÄƒm). Báº¡n chá»‰ cáº§n báº¥m "More info" -> "Run anyway" Ä‘á»ƒ cĂ i Ä‘áº·t. File sáº¡ch 0/70 trĂªn VirusTotal.
+### Q12: Tại sao Windows hiện cảnh báo SmartScreen khi cài đặt?
+**Đáp:** Đây là cảnh báo mặc định của Microsoft Defender đối với phần mềm mã nguồn mở cộng đồng chưa mua chứng chỉ Code Signing (~$300/năm). Bạn chỉ cần bấm "More info" -> "Run anyway" để cài đặt. File sạch 0/70 trên VirusTotal.
 
-### Q13: TĂ´i cĂ³ thá»ƒ dĂ¹ng nhiá»u tĂ i khoáº£n Zalo cĂ¹ng lĂºc khĂ´ng?
-**ÄĂ¡p:** PhiĂªn báº£n Zalo-Flow Community hiá»‡n táº¡i thiáº¿t káº¿ chuáº©n Single-Tenant (1 phiĂªn lĂ m viá»‡c/1 tĂ i khoáº£n). Äá»ƒ cháº¡y nhiá»u tĂ i khoáº£n, báº¡n cĂ³ thá»ƒ nhĂ¢n báº£n thÆ° má»¥c hoáº·c khá»Ÿi cháº¡y nhiá»u container Docker Ä‘á»™c láº­p.
+### Q13: Tôi có thể dùng nhiều tài khoản Zalo cùng lúc không?
+**Đáp:** Phiên bản Zalo-Flow Community hiện tại thiết kế chuẩn Single-Tenant (1 phiên làm việc/1 tài khoản). Để chạy nhiều tài khoản, bạn có thể nhân bản thư mục hoặc khởi chạy nhiều container Docker độc lập.
 
-### Q14: Dá»¯ liá»‡u tin nháº¯n Ä‘Æ°á»£c lÆ°u trá»¯ trong bao lĂ¢u?
-**ÄĂ¡p:** LÆ°u trá»¯ vÄ©nh viá»…n trĂªn á»• cá»©ng mĂ¡y tĂ­nh cá»§a báº¡n thĂ´ng qua SQLite cho Ä‘áº¿n khi báº¡n chá»§ Ä‘á»™ng báº¥m nĂºt XĂ³a dá»¯ liá»‡u.
+### Q14: Dữ liệu tin nhắn được lưu trữ trong bao lâu?
+**Đáp:** Lưu trữ vĩnh viễn trên ổ cứng máy tính của bạn thông qua SQLite cho đến khi bạn chủ động bấm nút Xóa dữ liệu.
 
-### Q15: Zalo-Flow cĂ³ há»— trá»£ tin nháº¯n thoáº¡i (Voice Message) khĂ´ng?
-**ÄĂ¡p:** PhiĂªn báº£n v1.0.1 tiáº¿p nháº­n tin nháº¯n thoáº¡i dÆ°á»›i dáº¡ng tá»‡p Ă¢m thanh vĂ  cĂ³ thá»ƒ chuyá»ƒn tiáº¿p sang Chatwoot.
+### Q15: Zalo-Flow có hỗ trợ tin nhắn thoại (Voice Message) không?
+**Đáp:** Phiên bản v1.0.1 tiếp nhận tin nhắn thoại dưới dạng tệp âm thanh và có thể chuyển tiếp sang Chatwoot.
 
-### Q16: LĂ m sao Ä‘á»ƒ bot AI tráº£ lá»i Ä‘Ăºng thĂ´ng tin sáº£n pháº©m cá»§a tĂ´i?
-**ÄĂ¡p:** Báº¡n vĂ o tab CĂ i Ä‘áº·t AI trĂªn giao diá»‡n web, Ä‘iá»n System Prompt mĂ´ táº£ báº£ng giĂ¡, chĂ­nh sĂ¡ch báº£o hĂ nh vĂ  thĂ´ng tin chi tiáº¿t sáº£n pháº©m. AI sáº½ Ä‘á»c prompt nĂ y Ä‘á»ƒ tÆ° váº¥n chuáº©n xĂ¡c.
+### Q16: Làm sao để bot AI trả lời đúng thông tin sản phẩm của tôi?
+**Đáp:** Bạn vào tab Cài đặt AI trên giao diện web, điền System Prompt mô tả bảng giá, chính sách bảo hành và thông tin chi tiết sản phẩm. AI sẽ đọc prompt này để tư vấn chuẩn xác.
 
-### Q17: CĂ³ giá»›i háº¡n sá»‘ lÆ°á»£ng tin nháº¯n gá»­i má»—i ngĂ y khĂ´ng?
-**ÄĂ¡p:** Zalo-Flow khĂ´ng giá»›i háº¡n. Giá»›i háº¡n duy nháº¥t lĂ  chĂ­nh sĂ¡ch tá»± nhiĂªn cá»§a Zalo dĂ nh cho tĂ i khoáº£n cĂ¡ nhĂ¢n (khuyĂªn dĂ¹ng dÆ°á»›i 500 tin nháº¯n má»—i ngĂ y Ä‘á»ƒ an toĂ n tuyá»‡t Ä‘á»‘i).
+### Q17: Có giới hạn số lượng tin nhắn gửi mỗi ngày không?
+**Đáp:** Zalo-Flow không giới hạn. Giới hạn duy nhất là chính sách tự nhiên của Zalo dành cho tài khoản cá nhân (khuyên dùng dưới 500 tin nhắn mỗi ngày để an toàn tuyệt đối).
 
-### Q18: Tham gia cá»™ng Ä‘á»“ng há»— trá»£ á»Ÿ Ä‘Ă¢u?
-**ÄĂ¡p:** Báº¡n cĂ³ thá»ƒ tham gia nhĂ³m Zalo há»— trá»£ ká»¹ thuáº­t chĂ­nh thá»©c táº¡i: https://zalo.me/g/mcihan713 hoáº·c trao Ä‘á»•i trĂªn GitHub Discussions.
+### Q18: Tham gia cộng đồng hỗ trợ ở đâu?
+**Đáp:** Bạn có thể tham gia nhóm Zalo hỗ trợ kỹ thuật chính thức tại: https://zalo.me/g/mcihan713 hoặc trao đổi trên GitHub Discussions.
 
-### Q19: Zalo-Flow cĂ³ há»— trá»£ háº¹n giá» gá»­i tin nháº¯n cho Zalo cĂ¡ nhĂ¢n khĂ´ng?
-**ÄĂ¡p:** CĂ³. Tá»« phiĂªn báº£n v1.1.0, Zalo-Flow há»— trá»£ tĂ­nh nÄƒng Háº¹n Giá» Gá»­i Tin Nháº¯n 1-1 trá»±c tiáº¿p trong tá»«ng cuá»™c trĂ² chuyá»‡n trĂªn mĂ¡y tĂ­nh Windows. Báº¡n cĂ³ thá»ƒ lĂªn lá»‹ch gá»­i tin kĂ¨m hĂ¬nh áº£nh, tĂ i liá»‡u vĂ  theo dĂµi thá»i gian Ä‘áº¿m ngÆ°á»£c trá»±c quan. Chi tiáº¿t xem táº¡i: https://aizalo.com/blog/cach-hen-gio-gui-tin-nhan-zalo-ca-nhan-tu-dong.html
+### Q19: Zalo-Flow có hỗ trợ hẹn giờ gửi tin nhắn cho Zalo cá nhân không?
+**Đáp:** Có. Từ phiên bản v1.1.0, Zalo-Flow hỗ trợ tính năng Hẹn Giờ Gửi Tin Nhắn 1-1 trực tiếp trong từng cuộc trò chuyện trên máy tính Windows. Bạn có thể lên lịch gửi tin kèm hình ảnh, tài liệu và theo dõi thời gian đếm ngược trực quan. Chi tiết xem tại: https://aizalo.com/blog/cach-hen-gio-gui-tin-nhan-zalo-ca-nhan-tu-dong.html
 
-### Q20: CÆ¡ cháº¿ Auto-Pause khi háº¹n giá» hoáº¡t Ä‘á»™ng ra sao?
-**ÄĂ¡p:** Auto-Pause lĂ  lĂ¡ cháº¯n an toĂ n Ä‘á»™c quyá»n trĂªn Zalo-Flow: Náº¿u báº¡n Ä‘Ă£ lĂªn lá»‹ch gá»­i tin nháº¯n cho khĂ¡ch hĂ ng, nhÆ°ng trÆ°á»›c thá»i Ä‘iá»ƒm phĂ¡t tin khĂ¡ch hĂ ng chá»§ Ä‘á»™ng gá»­i tin nháº¯n má»›i vĂ o khung chat, Zalo-Flow sáº½ tá»± Ä‘á»™ng há»§y lá»‹ch gá»­i Ä‘á»ƒ báº¡n khĂ´ng bá»‹ rÆ¡i vĂ o tĂ¬nh huá»‘ng gá»­i thĂ´ng Ä‘iá»‡p lá»‡ch ngá»¯ cáº£nh.
+### Q20: Cơ chế Auto-Pause khi hẹn giờ hoạt động ra sao?
+**Đáp:** Auto-Pause là lá chắn an toàn độc quyền trên Zalo-Flow: Nếu bạn đã lên lịch gửi tin nhắn cho khách hàng, nhưng trước thời điểm phát tin khách hàng chủ động gửi tin nhắn mới vào khung chat, Zalo-Flow sẽ tự động hủy lịch gửi để bạn không bị rơi vào tình huống gửi thông điệp lệch ngữ cảnh.
 
-### Q21: LĂ m tháº¿ nĂ o Ä‘á»ƒ huáº¥n luyá»‡n AI bĂ¡n hĂ ng Zalo báº±ng báº£ng giĂ¡ riĂªng mĂ  khĂ´ng bá»‹ áº£o giĂ¡c giĂ¡?
-**ÄĂ¡p:** Báº¡n chuáº©n hĂ³a báº£ng giĂ¡ sáº£n pháº©m dáº¡ng Markdown, náº¡p vĂ o má»¥c CĂ i Ä‘áº·t AI cá»§a Zalo-Flow, thiáº¿t láº­p thĂ´ng sá»‘ Nhiá»‡t Ä‘á»™ (Temperature) á»Ÿ má»©c 0.2 vĂ  bá»• sung chá»‰ thá»‹ Zero-Hallucination. á» má»©c nhiá»‡t Ä‘á»™ nĂ y, bot sáº½ bĂ¡o giĂ¡ chuáº©n 100% theo tĂ i liá»‡u vĂ  biáº¿t tá»± Ä‘á»™ng gá»£i Ă½ combo giáº£m giĂ¡ kĂ¨m xin sá»‘ Ä‘iá»‡n thoáº¡i giao hĂ ng. Chi tiáº¿t xem táº¡i: https://aizalo.com/blog/cach-huan-luyen-ai-ban-hang-zalo-bang-bang-gia-rieng.html
+### Q21: Làm thế nào để huấn luyện AI bán hàng Zalo bằng bảng giá riêng mà không bị ảo giác giá?
+**Đáp:** Bạn chuẩn hóa bảng giá sản phẩm dạng Markdown, nạp vào mục Cài đặt AI của Zalo-Flow, thiết lập thông số Nhiệt độ (Temperature) ở mức 0.2 và bổ sung chỉ thị Zero-Hallucination. Ở mức nhiệt độ này, bot sẽ báo giá chuẩn 100% theo tài liệu và biết tự động gợi ý combo giảm giá kèm xin số điện thoại giao hàng. Chi tiết xem tại: https://aizalo.com/blog/cach-huan-luyen-ai-ban-hang-zalo-bang-bang-gia-rieng.html
 
-### Q22: AI bĂ¡n hĂ ng Zalo-Flow cĂ³ Ä‘á»c Ä‘Æ°á»£c hĂ¬nh áº£nh sáº£n pháº©m vĂ  bill chuyá»ƒn khoáº£n cá»§a khĂ¡ch khĂ´ng?
-**ÄĂ¡p:** CĂ³. Vá»›i mĂ´ hĂ¬nh Gemini Multimodal Vision, Zalo-Flow cho phĂ©p bot phĂ¢n tĂ­ch áº£nh chá»¥p sáº£n pháº©m cá»§a khĂ¡ch Ä‘á»ƒ tra cá»©u báº£ng giĂ¡, Ä‘á»“ng thá»i Ä‘á»c áº£nh bill ngĂ¢n hĂ ng Ä‘á»ƒ xĂ¡c nháº­n giao dá»‹ch tá»± Ä‘á»™ng.
+### Q22: AI bán hàng Zalo-Flow có đọc được hình ảnh sản phẩm và bill chuyển khoản của khách không?
+**Đáp:** Có. Với mô hình Gemini Multimodal Vision, Zalo-Flow cho phép bot phân tích ảnh chụp sản phẩm của khách để tra cứu bảng giá, đồng thời đọc ảnh bill ngân hàng để xác nhận giao dịch tự động.
 
-### Q23: Zalo-Flow cĂ³ há»— trá»£ giao diá»‡n tiáº¿ng Anh (English) khĂ´ng?
-**ÄĂ¡p:** CĂ³. Tá»« phiĂªn báº£n v1.3.0, Zalo-Flow tĂ­ch há»£p engine Ä‘a ngĂ´n ngá»¯ Zero-Dependency vá»›i 148 khĂ³a dá»‹ch chuáº©n 1:1 giá»¯a Tiáº¿ng Viá»‡t (VI) vĂ  Tiáº¿ng Anh (EN). NgÆ°á»i dĂ¹ng cĂ³ thá»ƒ chuyá»ƒn Ä‘á»•i ngĂ´n ngá»¯ tá»©c thĂ¬ chá»‰ vá»›i 1 click mĂ  khĂ´ng lĂ m máº¥t dá»¯ liá»‡u biá»ƒu máº«u Ä‘ang nháº­p dá»Ÿ (Zero Form Reset Invariant).
+### Q23: Zalo-Flow có hỗ trợ giao diện tiếng Anh (English) không?
+**Đáp:** Có. Từ phiên bản v1.3.0, Zalo-Flow tích hợp engine đa ngôn ngữ Zero-Dependency với 148 khóa dịch chuẩn 1:1 giữa Tiếng Việt (VI) và Tiếng Anh (EN). Người dùng có thể chuyển đổi ngôn ngữ tức thì chỉ với 1 click mà không làm mất dữ liệu biểu mẫu đang nhập dở (Zero Form Reset Invariant).
 
-### Q24: Dá»± Ă¡n Zalo-Flow cĂ³ kĂªnh á»§ng há»™ (Donate) nĂ o cho tĂ¡c giáº£ khĂ´ng?
-**ÄĂ¡p:** CĂ³. Báº¡n cĂ³ thá»ƒ báº¥m vĂ o nĂºt "đŸ’– á»¦ng Há»™" ngay trĂªn thanh Header cá»§a á»©ng dá»¥ng Ä‘á»ƒ má»i tĂ¡c giáº£ má»™t ly cĂ  phĂª qua 3 kĂªnh: Ko-fi (https://ko-fi.com/aizalo), PayPal (https://paypal.me/lekhoa288) hoáº·c quĂ©t mĂ£ MoMo (0973 947 264).
-
+### Q24: Dự án Zalo-Flow có kênh ủng hộ (Donate) nào cho tác giả không?
+**Đáp:** Có. Bạn có thể bấm vào nút "💖 Ủng Hộ" ngay trên thanh Header của ứng dụng để mời tác giả một ly cà phê qua 3 kênh: Ko-fi (https://ko-fi.com/aizalo), PayPal (https://paypal.me/lekhoa288) hoặc quét mã MoMo (0973 947 264).
 
