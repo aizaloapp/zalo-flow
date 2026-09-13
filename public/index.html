@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="referrer" content="no-referrer">
+  <meta name="zalo-platform-site-verification" content="Rz7aE-NuOpO5-Sejr-viTHFGmNp_fXihCpKo">
   <title>Zalo-Flow — Trung Tâm Điều Khiển Zalo (Local-First)</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
@@ -101,7 +102,7 @@
       <button class="rail-btn" data-tooltip="💾 Sao Lưu & Phục Hồi" data-i18n-tooltip="rail.backup_tooltip" onclick="openModal('modal-backup')">
         💾
       </button>
-      <button class="rail-btn" id="rail-btn-oa" data-tooltip="🏢 Cấu Hình Zalo OA" data-i18n-tooltip="rail.oa_tooltip" onclick="openOaModal()">
+      <button class="rail-btn" id="rail-btn-oa" style="display: none;" data-tooltip="🏢 Cấu Hình Zalo OA" data-i18n-tooltip="rail.oa_tooltip" onclick="openOaModal()">
         🏢
       </button>
     </nav>
@@ -331,7 +332,7 @@
               <input type="file" id="chat-image-input" accept="image/*" multiple style="display: none;" onchange="handleFileInputChange(event, 'image')">
               <input type="file" id="chat-file-input" accept=".pdf,.doc,.docx,.xls,.xlsx,.zip,.rar,.txt" multiple style="display: none;" onchange="handleFileInputChange(event, 'document')">
               <div class="toolbar-divider"></div>
-              <div class="toolbar-hint">Gõ <b style="color: #38bdf8;">/</b> gửi nhanh • Dán ảnh (<b style="color: #38bdf8;">Ctrl + V</b>)</div>
+              <div class="toolbar-hint">Gõ <b style="color: #38bdf8;">/</b> gửi nhanh • <b style="color: #38bdf8;">Shift + Enter</b> xuống dòng • Dán ảnh (<b style="color: #38bdf8;">Ctrl + V</b>)</div>
             </div>
 
             <!-- Quote Preview Bar -->
@@ -351,7 +352,7 @@
             </div>
             
             <div class="chat-input-bar">
-              <input type="text" class="chat-input" id="chat-input" placeholder="Nhập tin nhắn đến khách hàng (Gõ / để chọn tin nhanh, Enter để gửi)..." data-i18n-placeholder="chat.input_placeholder" onkeydown="handleInputKey(event)" oninput="handleChatInput(this.value)">
+              <textarea class="chat-input" id="chat-input" rows="1" placeholder="Nhập tin nhắn... (Shift + Enter để xuống dòng, Enter để gửi)" data-i18n-placeholder="chat.input_placeholder" onkeydown="handleInputKey(event)" oninput="handleChatInput(this.value); autoResizeChatInput(this)"></textarea>
               <button class="btn-quick-like" onclick="sendQuickLike()" title="Gửi nhanh Like 👍">👍</button>
               <button class="send-btn" id="send-btn" onclick="sendMessage()" data-i18n-title="chat.btn_send_title">
                 <span data-i18n="chat.send_btn_text">Gửi</span>
@@ -1067,6 +1068,11 @@
           <input type="text" id="crm-uid-input" class="crm-input" readonly style="color: #94a3b8; background: rgba(0,0,0,0.6); font-family: monospace; font-size: 0.78rem;">
           <button class="filter-btn" onclick="copyUidToClipboard()" title="Sao chép ID" style="padding: 6px 10px; font-size: 0.75rem; flex-shrink: 0;">📋</button>
         </div>
+      </div>
+
+      <div>
+        <label class="crm-field-label">👤 Tên Khách Hàng / Gợi Nhớ:</label>
+        <input type="text" id="crm-name-input" class="crm-input" placeholder="Ví dụ: Phan Lê Khoa">
       </div>
 
       <div>
@@ -2098,7 +2104,7 @@
 
           <div class="form-group">
             <label style="font-weight: 600; font-size: 0.84rem; display: block; margin-bottom: 5px;" data-i18n="modals.oa_secret_key">Secret Key (Khóa bí mật):</label>
-            <input type="password" id="oa-input-secret-key" class="search-input" placeholder="Nhập Secret Key của Zalo App" style="width: 100%; border: 1px solid var(--border);">
+            <input type="password" id="oa-input-secret-key" class="search-input" placeholder="Nhập Secret Key của Zalo App" autocomplete="new-password" style="width: 100%; border: 1px solid var(--border);">
           </div>
 
           <div class="form-group">

@@ -127,6 +127,14 @@
      - Nếu cuộc trò chuyện **đang ghim**: Đưa lên đỉnh đầu danh sách (`convListEl.prepend`).
      - Nếu cuộc trò chuyện **KHÔNG ghim**: BẮT BUỘC chèn ngay sau thẻ ghim cuối cùng (`lastPinned.after(existingCard)`). Tuyệt đối KHÔNG gọi `prepend` làm thẻ thường nhảy đè lên các thẻ đã ghim.
    - **Context Menu Event Isolation:** Nút ba chấm `...` và sự kiện `oncontextmenu` trên thẻ hội thoại BẮT BUỘC gọi `e.stopPropagation()` và `e.preventDefault()`, không kích hoạt `selectConversation()`. Menu BẮT BUỘC tự động đóng khi cuộn danh sách (`scroll`), nhấn phím `Escape`, hoặc nhấp chuột ra ngoài.
+11. **Zalo OA Tier Package Policy & Error -224 Local Name Immunity Contract:**
+    - **Cơ chế Zalo Cloud OpenAPI:** Zalo Cloud áp dụng mã lỗi `-224` (`The OA needs to upgrade OA Tier Package`) chặn toàn bộ các endpoint OpenAPI (`user/detail`, `getprofile`, `conversation`, `listrecentchat`, `message/cs`) đối với các tài khoản Official Account ở Gói Cơ bản (0đ), dù giao diện web chính chủ `oa.zalo.me/chat` vẫn hiển thị tên người dùng. Webhook của Zalo chỉ gửi `sender.id` mà không đính kèm profile.
+    - **Local Name Immunity:** Hệ thống BẮT BUỘC cung cấp ô nhập Tên gợi nhớ trong CRM Drawer (`#crm-name-input`) lưu trực tiếp vào cột `name` của bảng `conversations`. Khi cuộc trò chuyện đã có tên người dùng tùy biến hoặc tên khác tiền tố `Khách OA`, hệ thống TUYỆT ĐỐI KHÔNG được ghi đè tên tạm bợ lên giao diện.
+12. **Zero-Residue OA Clean Disconnect & Channel Isolation Invariant:**
+    - Khi người dùng thực hiện ngắt kết nối Zalo OA (`POST /api/oa/disconnect`) hoặc chuyển chế độ app sang `personal_only`:
+      - **Kill Background Tunnel:** Tự động phát hiện và chấm dứt mọi tiến trình tunnel nền (`cloudflared`) để giải phóng tài nguyên.
+      - **UI Suppression:** Tự động ẩn cả nút biểu tượng trên thanh điều hướng Navigation Rail (`#rail-btn-oa`) lẫn nút lọc nhanh (`.quick-tab[data-quick-filter="oa"]`).
+      - **Data Isolation & Purge:** Làm sạch triệt để các hội thoại và tin nhắn mẫu kênh OA (`channel = 'oa'` hoặc `id LIKE 'oa_%'`) để trả lại 100% giao diện Zalo cá nhân thuần túy, không để sót bất kỳ dấu vết rác nào làm phiền người dùng.
 
 ---
 

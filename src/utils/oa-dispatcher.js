@@ -86,9 +86,9 @@ export class OaDispatcher {
    * Fetch customer user details from Zalo OA API
    * GET https://openapi.zalo.me/v3.0/oa/user/detail?data={"user_id":"..."}
    */
-  async getUserDetail(userId) {
+  async getUserDetail(userId, retryCount = 0) {
     if (!userId) return null;
-    const token = await oaTokenManager.getValidAccessToken();
+    const token = await oaTokenManager.getValidAccessToken('default', retryCount > 0);
     if (!token) return null;
 
     try {
@@ -101,6 +101,11 @@ export class OaDispatcher {
       });
 
       const data = response.data;
+      if (data && data.error === -216 && retryCount === 0) {
+        logger.warn(`[OaDispatcher] Access token invalid (-216). Triggering force refresh and retrying getUserDetail for ${userId}...`);
+        return await this.getUserDetail(userId, 1);
+      }
+
       if (data && data.error === 0 && data.data) {
         return {
           userId: data.data.user_id,

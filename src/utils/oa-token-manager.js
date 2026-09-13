@@ -81,7 +81,7 @@ export class OaTokenManager {
    * Get valid access token for OA dispatching
    * Automatically refreshes via Mutex when expired or expiring within 1 hour
    */
-  async getValidAccessToken(id = 'default') {
+  async getValidAccessToken(id = 'default', force = false) {
     const settings = localStore.getOaSettings(id);
     if (!settings || !settings.isEnabled) {
       return null;
@@ -90,8 +90,8 @@ export class OaTokenManager {
     const currentToken = decryptSecret(settings.accessTokenEncrypted);
     const now = Date.now();
 
-    // If token is still valid with > 1 hour headroom, return immediately
-    if (currentToken && settings.expiresAt && now < (settings.expiresAt - 3600000)) {
+    // If token is still valid with > 1 hour headroom, return immediately (unless forced)
+    if (!force && currentToken && settings.expiresAt && now < (settings.expiresAt - 3600000)) {
       return currentToken;
     }
 
@@ -100,7 +100,7 @@ export class OaTokenManager {
       // Re-read settings in case another thread just finished refreshing
       const freshSettings = localStore.getOaSettings(id);
       const freshToken = decryptSecret(freshSettings.accessTokenEncrypted);
-      if (freshToken && freshSettings.expiresAt && Date.now() < (freshSettings.expiresAt - 3600000)) {
+      if (!force && freshToken && freshSettings.expiresAt && Date.now() < (freshSettings.expiresAt - 3600000)) {
         return freshToken;
       }
 

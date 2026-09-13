@@ -406,20 +406,22 @@ export class LocalStore extends EventEmitter {
   // ---------------------------------------------------------------------------
   getCrmInfo(threadId) {
     if (!threadId) return {};
-    const stmt = this.db.prepare('SELECT phone, email, address, needs, notes FROM conversations WHERE id = ?');
+    const stmt = this.db.prepare('SELECT name, phone, email, address, needs, notes FROM conversations WHERE id = ?');
     const res = stmt.get(threadId);
-    return res || { phone: '', email: '', address: '', needs: '', notes: '' };
+    return res || { name: '', phone: '', email: '', address: '', needs: '', notes: '' };
   }
 
-  saveCrmInfo(threadId, { phone = '', email = '', address = '', needs = '', notes = '' } = {}) {
+  saveCrmInfo(threadId, { name = '', phone = '', email = '', address = '', needs = '', notes = '' } = {}) {
     if (!threadId) return;
     this.upsertConversation({ id: threadId, name: threadId });
+    const current = this.getConversation(threadId);
+    const finalName = name && name.trim() ? name.trim() : (current?.name || threadId);
     const stmt = this.db.prepare(`
       UPDATE conversations 
-      SET phone = ?, email = ?, address = ?, needs = ?, notes = ?, updatedAt = datetime('now')
+      SET name = ?, phone = ?, email = ?, address = ?, needs = ?, notes = ?, updatedAt = datetime('now')
       WHERE id = ?
     `);
-    stmt.run(phone.trim(), email.trim(), address.trim(), needs.trim(), notes.trim(), threadId);
+    stmt.run(finalName, phone.trim(), email.trim(), address.trim(), needs.trim(), notes.trim(), threadId);
     return this.getCrmInfo(threadId);
   }
 
@@ -1764,7 +1766,11 @@ export class LocalStore extends EventEmitter {
 
   saveOaSettings(data, id = 'default') {
     const current = this.getOaSettings(id);
-    const updated = { ...current, ...data };
+    const cleanData = {};
+    for (const [k, v] of Object.entries(data || {})) {
+      if (v !== undefined && v !== '') cleanData[k] = v;
+    }
+    const updated = { ...current, ...cleanData };
     const stmt = this.db.prepare(`
       INSERT INTO oa_settings (
         id, oaId, name, avatar, appId, secretKeyEncrypted,

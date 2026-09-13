@@ -124,6 +124,7 @@ function initApp() {
   setInterval(fetchMemoryHealth, 30000);
   checkAppVersion();
   checkSmartOnboarding();
+  updateOaTabVisibility();
 }
 
 if (document.readyState === 'loading') {
@@ -968,6 +969,7 @@ function insertQuickMessage(id) {
   const qm = state.quickMessages.find(q => q.id === id);
   if (qm) {
     chatInputEl.value = qm.content;
+    autoResizeChatInput(chatInputEl);
     quickPopupEl.style.display = 'none';
 
     const atts = getQuickMessageAttachments(qm);
@@ -2702,6 +2704,7 @@ async function loadMessages(threadId) {
       triggerSilentSync(threadId);
     }
   } catch (err) {
+    console.error('loadMessages error:', err);
     messagesStreamEl.innerHTML = `
       <div style="padding: 20px; text-align: center; color: var(--danger);">
         Không thể tải tin nhắn.
@@ -3032,6 +3035,7 @@ function appendMessageElement(msg, autoScroll = true) {
 
   const msgAge = Date.now() - new Date(msg.timestamp).getTime();
   const isOaThread = Boolean(state.activeThread?.channel === 'oa' || msg.channel === 'oa');
+  const canUndo = Boolean(msg.isSelf && !isRecalled && !isNaN(msgAge) && msgAge <= 120000);
   const hoverActionsHtml = (isRecalled || isOaThread) ? (isRecalled ? '' : `
     <div class="msg-hover-actions">
       <button class="action-text-btn" onclick="openForwardModal('${msg.id}', decodeURIComponent('${rawTextForAttr}'))" title="Chuyển tiếp tin nhắn">
@@ -3264,6 +3268,7 @@ async function sendMessage() {
   // Clear pending state & preview bar immediately
   cancelAttachment();
   chatInputEl.value = '';
+  autoResizeChatInput(chatInputEl);
 
   // 1. Optimistic UI insertion for instant feedback
   const tempId = 'temp_' + Date.now();
@@ -3674,6 +3679,7 @@ function closeCustomerInfoDrawer() {
 async function loadCustomerCrmInfo() {
   if (!state.activeThreadId) return;
   const uidInput = document.getElementById('crm-uid-input');
+  const nameInput = document.getElementById('crm-name-input');
   const phoneInput = document.getElementById('crm-phone-input');
   const emailInput = document.getElementById('crm-email-input');
   const addrInput = document.getElementById('crm-address-input');
@@ -3681,12 +3687,14 @@ async function loadCustomerCrmInfo() {
   const notesInput = document.getElementById('crm-notes-input');
 
   if (uidInput) uidInput.value = state.activeThreadId;
+  const currentChatName = document.getElementById('active-chat-name')?.textContent || '';
 
   try {
     const res = await fetch(`/api/conversations/${state.activeThreadId}/crm`, { headers: getHeaders() });
     const result = await res.json();
     const data = result.data || {};
 
+    if (nameInput) nameInput.value = data.name || currentChatName || '';
     if (phoneInput) phoneInput.value = data.phone || '';
     if (emailInput) emailInput.value = data.email || '';
     if (addrInput) addrInput.value = data.address || '';
@@ -3699,6 +3707,7 @@ async function loadCustomerCrmInfo() {
 
 async function saveCurrentCrmInfo() {
   if (!state.activeThreadId) return;
+  const name = document.getElementById('crm-name-input')?.value.trim();
   const phone = document.getElementById('crm-phone-input')?.value.trim();
   const email = document.getElementById('crm-email-input')?.value.trim();
   const address = document.getElementById('crm-address-input')?.value.trim();
@@ -3709,10 +3718,16 @@ async function saveCurrentCrmInfo() {
     const res = await fetch(`/api/conversations/${state.activeThreadId}/crm`, {
       method: 'POST',
       headers: getHeaders(),
-      body: JSON.stringify({ phone, email, address, needs, notes })
+      body: JSON.stringify({ name, phone, email, address, needs, notes })
     });
     const data = await res.json();
     if (res.ok) {
+      if (name) {
+        const activeChatNameEl = document.getElementById('active-chat-name');
+        if (activeChatNameEl) activeChatNameEl.textContent = name;
+        const activeCard = document.querySelector(`.conv-card[data-id="${state.activeThreadId}"] .conv-name`);
+        if (activeCard) activeCard.textContent = name;
+      }
       alert('✅ Đã lưu thông tin khách hàng thành công!');
     } else {
       alert('Lỗi lưu CRM: ' + (data.error || 'Vui lòng thử lại.'));
@@ -3794,10 +3809,35 @@ async function submitForwardMessage() {
   }
 }
 
+function autoResizeChatInput(el) {
+  if (!el) el = chatInputEl || document.getElementById('chat-input');
+  if (!el) return;
+  el.style.height = 'auto';
+  const scrollHeight = el.scrollHeight;
+  const newHeight = Math.min(Math.max(scrollHeight, 44), 140);
+  el.style.height = newHeight + 'px';
+  el.style.overflowY = scrollHeight > 140 ? 'auto' : 'hidden';
+}
+
 function handleInputKey(event) {
-  if (event.key === 'Enter' && !event.shiftKey) {
-    event.preventDefault();
-    sendMessage();
+  if (event.isComposing || event.keyCode === 229) return;
+  if (event.key === 'Enter') {
+    if (event.shiftKey || event.ctrlKey) {
+      // Shift + Enter hoặc Ctrl + Enter: Cho phép xuống dòng
+      if (event.ctrlKey && !event.shiftKey) {
+        event.preventDefault();
+        const start = chatInputEl.selectionStart;
+        const end = chatInputEl.selectionEnd;
+        const val = chatInputEl.value;
+        chatInputEl.value = val.substring(0, start) + '\n' + val.substring(end);
+        chatInputEl.selectionStart = chatInputEl.selectionEnd = start + 1;
+      }
+      setTimeout(() => autoResizeChatInput(chatInputEl), 0);
+    } else {
+      // Enter đơn thuần: Gửi tin nhắn
+      event.preventDefault();
+      sendMessage();
+    }
   }
 }
 
@@ -7306,6 +7346,7 @@ async function saveScheduledMessage() {
     const chatInput = document.getElementById('chat-input');
     if (chatInput && !schedId) {
       chatInput.value = '';
+      autoResizeChatInput(chatInput);
     }
 
     closeModal('modal-schedule-msg');
@@ -7527,14 +7568,38 @@ async function saveOaSettings(e) {
       body: JSON.stringify(payload)
     });
     const result = await res.json();
-    if (!res.ok || !result.success) {
+    if (!res.ok || (result.status !== 'success' && !result.success)) {
       throw new Error(result.error || 'Lỗi lưu cấu hình OA');
     }
     showToast(window.t ? window.t('toast.oa_saved_success') : 'Đã lưu cấu hình Zalo OA thành công!', 'success');
     closeModal('modal-oa-settings');
+    updateOaTabVisibility();
     loadConversations();
   } catch (err) {
     showToast(err.message, 'error');
+  }
+}
+
+async function updateOaTabVisibility() {
+  try {
+    const res = await fetch('/api/oa/settings', { headers: getHeaders() });
+    if (!res.ok) return;
+    const data = await res.json();
+    const isOaActive = !!(data.data && data.data.isEnabled);
+    const oaTab = document.querySelector('.quick-tab[data-quick-filter="oa"]');
+    const railOaBtn = document.getElementById('rail-btn-oa');
+
+    if (oaTab) {
+      oaTab.style.display = isOaActive ? '' : 'none';
+      if (!isOaActive && state.quickFilter === 'oa') {
+        setQuickFilter('all');
+      }
+    }
+    if (railOaBtn) {
+      railOaBtn.style.display = isOaActive ? '' : 'none';
+    }
+  } catch (err) {
+    console.warn('[OA] Error updating OA tab visibility:', err);
   }
 }
 
@@ -7546,9 +7611,10 @@ async function disconnectOa() {
       headers: getHeaders()
     });
     const result = await res.json();
-    if (!res.ok || !result.success) throw new Error(result.error || 'Lỗi ngắt kết nối');
+    if (!res.ok || (result.status !== 'success' && !result.success)) throw new Error(result.error || 'Lỗi ngắt kết nối');
     showToast(window.t ? window.t('toast.oa_disconnected') : 'Đã ngắt kết nối Zalo OA!', 'info');
     await loadOaSettings();
+    updateOaTabVisibility();
     loadConversations();
   } catch (err) {
     showToast(err.message, 'error');

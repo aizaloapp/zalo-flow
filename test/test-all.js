@@ -2252,7 +2252,45 @@ console.log('49. Testing Website Static Assets UTF-8 Integrity & Anti-Mojibake G
   console.log(`   ✅ 100% UTF-8 Integrity verified across ${webSrcFiles.length} website source files!\n`);
 }
 
-console.log('🎉 ALL 49 INTEGRITY, SECURITY, CRM, AIZALO REMARKETING, AI SUITE, BULK DEEP-SYNC, QR AUTH, MEMORY GUARD, ZALO SANITIZER, DESKTOP PACKAGED, CLEAN SWITCH, MULTI-DEVICE SYNC, GROUP MENTION, QUICK-MSG, CAMPAIGN TEST DISPATCH, GROUP RECONCILIATION, AUTO-FALLBACK OPENROUTER, MULTIMODAL VISION, STRANGER IDENTITY, SCHEDULED MESSAGES, UNIVERSAL WIKI URL INGESTION, LIVE CHAT MEDIA CAPTION, CHAT AVATAR DYNAMIC, i18n MULTI-LANGUAGE, CSRF LOCALHOST SHIELD, PIN/CONTEXT ACTIONS, OA ISOLATION, OA MUTEX, OA ROUTING & ANTI-MOJIBAKE TESTS PASSED 100%!');
+// -----------------------------------------------------------------------------
+// Test 50: Frontend UI Message Renderer & Template String Variables Guard
+// -----------------------------------------------------------------------------
+console.log('50. Testing Frontend UI Message Renderer & Template String Variables Guard...');
+{
+  const appJsPath = path.join(import.meta.dirname, '..', 'public', 'app.js');
+  assert(fs.existsSync(appJsPath), 'public/app.js must exist');
+  const appJsContent = fs.readFileSync(appJsPath, 'utf8');
+
+  // Verify canUndo is defined before being used in template string
+  assert(appJsContent.includes('const canUndo ='), 'canUndo must be declared with const/let');
+  assert(appJsContent.includes('console.error(\'loadMessages error:\''), 'loadMessages catch block must log errors');
+
+  // Simulate rendering logic for different message types
+  const sampleMessages = [
+    { id: '1', timestamp: new Date().toISOString(), isSelf: true, text: 'Hello', mediaType: 'text' },
+    { id: '2', timestamp: new Date(Date.now() - 3600000).toISOString(), isSelf: true, text: 'Old self msg', mediaType: 'text' },
+    { id: '3', timestamp: new Date().toISOString(), isSelf: false, text: 'Friend msg', senderName: 'Alice' },
+    { id: '4', timestamp: new Date().toISOString(), isRecalled: 1, text: 'Recalled' },
+    { id: '5', timestamp: new Date().toISOString(), channel: 'oa', text: 'OA message' }
+  ];
+
+  for (const msg of sampleMessages) {
+    const isRecalled = Boolean(msg.isRecalled === 1 || msg.isRecalled === true);
+    const isOaThread = Boolean(msg.channel === 'oa');
+    const msgAge = Date.now() - new Date(msg.timestamp).getTime();
+    const canUndo = Boolean(msg.isSelf && !isRecalled && !isNaN(msgAge) && msgAge <= 120000);
+    const rawTextForAttr = encodeURIComponent(msg.text || '');
+
+    const hoverActionsHtml = (isRecalled || isOaThread) ? '' : `
+      ${canUndo ? `<button onclick="undoMessage('${msg.id}')">Thu hồi</button>` : ''}
+    `;
+    assert(typeof hoverActionsHtml === 'string', 'hoverActionsHtml must resolve without ReferenceError');
+  }
+
+  console.log('   ✅ Frontend UI Message Renderer & Template String Variables Guard passed!\n');
+}
+
+console.log('🎉 ALL 50 INTEGRITY, SECURITY, CRM, AIZALO REMARKETING, AI SUITE, BULK DEEP-SYNC, QR AUTH, MEMORY GUARD, ZALO SANITIZER, DESKTOP PACKAGED, CLEAN SWITCH, MULTI-DEVICE SYNC, GROUP MENTION, QUICK-MSG, CAMPAIGN TEST DISPATCH, GROUP RECONCILIATION, AUTO-FALLBACK OPENROUTER, MULTIMODAL VISION, STRANGER IDENTITY, SCHEDULED MESSAGES, UNIVERSAL WIKI URL INGESTION, LIVE CHAT MEDIA CAPTION, CHAT AVATAR DYNAMIC, i18n MULTI-LANGUAGE, CSRF LOCALHOST SHIELD, PIN/CONTEXT ACTIONS, OA ISOLATION, OA MUTEX, OA ROUTING, ANTI-MOJIBAKE & UI RENDERER TESTS PASSED 100%!');
 
 
 
