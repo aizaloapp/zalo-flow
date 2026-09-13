@@ -83,6 +83,11 @@
    - **Ground-Truth tuyệt đối từ Zalo API:** Trạng thái nhóm BẮT BUỘC lấy từ `this.api.getAllGroups()` (`this.groupUids`) làm chân lý. Tuyệt đối KHÔNG dùng giải pháp phỏng đoán (heuristic) đếm số lượng `senderId` trong SQLite để gán nhóm, tránh nhận nhầm chat 1-1 thành nhóm khi đồng bộ tin nhắn đa thiết bị của chính chủ.
    - **Tự chữa lành Ground-Truth:** Sau khi đăng nhập và tải xong `getAllGroups()`, hệ thống tự động đối soát: Mọi hội thoại đang mang `isGroup = 1` nhưng KHÔNG nằm trong `this.groupUids` BẮT BUỘC được đưa về `isGroup = 0` qua `localStore.setConversationGroupState(id, false)`.
    - **Khóa cờ bất biến (Anti-Downgrade):** Trong luồng `upsertConversation` realtime, tiếp tục duy trì khóa `ON CONFLICT(id) DO UPDATE SET isGroup = CASE WHEN conversations.isGroup = 1 THEN 1 ELSE excluded.isGroup END` để chống rớt cờ nhóm khi nhận gói tin thiếu metadata.
+8. **Anti-N+1 SQLite Two-Step Batch Fetching Invariant:**
+   - Khi truy vấn danh sách hội thoại kèm thẻ phân loại màu sắc (`getConversations`), TUYỆT ĐỐI KHÔNG thực hiện N câu query con lặp lại cho từng cuộc trò chuyện.
+   - BẮT BUỘC sử dụng kỹ thuật **Two-Step Batch Fetching**:
+     - Bước 1: Lấy danh sách hội thoại theo bộ lọc và phân trang (`LIMIT ? OFFSET ?`).
+     - Bước 2: Dùng 1 câu truy vấn duy nhất `SELECT ... FROM conversation_tags ct JOIN tags t ON ct.tagId = t.id WHERE ct.threadId IN (...)` để lấy toàn bộ thẻ của trang đó, sau đó gom nhóm bằng `Map<threadId, tags>` trong Node.js (`< 0.5ms`), bảo đảm hiệu năng siêu tốc và không nghẽn SQLite.
 
 ---
 
@@ -116,6 +121,12 @@
    - **In-Place DOM Walk:** Khi chuyển đổi ngôn ngữ (`VI` ↔ `EN`), hệ thống BẮT BUỘC cập nhật thuộc tính hiển thị tại chỗ (`applyLanguageToDOM`) qua `data-i18n`, `data-i18n-placeholder`, `data-i18n-title`, `data-i18n-tooltip`. **TUYỆT ĐỐI KHÔNG reload trang hoặc render lại toàn bộ component** để bảo vệ 100% dữ liệu đang nhập dở của người dùng (Zero Form Reset Invariant).
    - **Khóa đối soát 1:1:** Mọi từ khóa thêm mới vào từ điển `DICTIONARY` trong `public/i18n.js` BẮT BUỘC phải tồn tại đồng thời ở cả hai ngôn ngữ `vi` và `en`. Mọi bản build phải vượt qua Test Suite #43 (`npm test` & `test/test-i18n.js`).
    - **Anti-FOUC & Query Params:** Script nạp ngôn ngữ tại `<head>` và engine `i18n.getLanguage()` BẮT BUỘC ưu tiên URL query param `?lang=` trước `localStorage` để phục vụ kiểm thử tự động không phụ thuộc state trình duyệt.
+10. **Conversation Pinning & Realtime Prepend Guard Invariant:**
+   - **Giới hạn cứng chuẩn mực:** Hệ thống khóa cứng tối đa 5 cuộc trò chuyện được ghim (`isPinned = 1`). Thao tác ghim thứ 6 BẮT BUỘC bị chặn đứng ở cả backend SQLite (`limit_reached`) và frontend.
+   - **Realtime Prepend Guard:** Khi nhận tin nhắn mới trong thời gian thực (`updateConversationCardInPlace`):
+     - Nếu cuộc trò chuyện **đang ghim**: Đưa lên đỉnh đầu danh sách (`convListEl.prepend`).
+     - Nếu cuộc trò chuyện **KHÔNG ghim**: BẮT BUỘC chèn ngay sau thẻ ghim cuối cùng (`lastPinned.after(existingCard)`). Tuyệt đối KHÔNG gọi `prepend` làm thẻ thường nhảy đè lên các thẻ đã ghim.
+   - **Context Menu Event Isolation:** Nút ba chấm `...` và sự kiện `oncontextmenu` trên thẻ hội thoại BẮT BUỘC gọi `e.stopPropagation()` và `e.preventDefault()`, không kích hoạt `selectConversation()`. Menu BẮT BUỘC tự động đóng khi cuộn danh sách (`scroll`), nhấn phím `Escape`, hoặc nhấp chuột ra ngoài.
 
 ---
 
