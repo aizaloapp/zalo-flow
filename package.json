@@ -15,6 +15,8 @@
     "test": "node test/test-all.js",
     "build:installer": "powershell -ExecutionPolicy Bypass -File installer/build-local.ps1",
     "index:google": "node scripts/google-index.mjs",
+    "index:bing": "node scripts/indexnow.mjs",
+    "index:all": "node scripts/google-index.mjs --all && node scripts/indexnow.mjs --all",
     "lint": "node -e \"console.log('✅ Lint check passed')\""
   },
   "keywords": [

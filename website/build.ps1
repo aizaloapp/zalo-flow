@@ -39,9 +39,9 @@ if (Test-Path (Join-Path $srcDir "favicon*.*")) {
     Copy-Item -Path (Join-Path $srcDir "favicon*.*") -Destination $distDir -Force
 }
 
-# Copy GEO / AI Crawler & Agent Readiness files
-if (Test-Path (Join-Path $srcDir "llms*.txt")) {
-    Copy-Item -Path (Join-Path $srcDir "llms*.txt") -Destination $distDir -Force
+# Copy GEO / AI Crawler, Agent Readiness & IndexNow Key text files
+if (Test-Path (Join-Path $srcDir "*.txt")) {
+    Copy-Item -Path (Join-Path $srcDir "*.txt") -Destination $distDir -Force
 }
 if (Test-Path (Join-Path $srcDir "_headers")) {
     Copy-Item -Path (Join-Path $srcDir "_headers") -Destination $distDir -Force
