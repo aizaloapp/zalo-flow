@@ -382,12 +382,30 @@ export class AiAgentAdapter extends BaseAdapter {
    */
   async _processAutoReply({ threadId, incomingText, imageUrls = [], isGroup, client, senderName = '', triggerMsg = null }) {
     try {
-      const settings = this.localStore.getAiSettings();
-      if (!settings || !settings.isEnabled) return;
+      const engineSettings = this.localStore.getAiSettings();
+      if (!engineSettings || !engineSettings.isEnabled) return;
+
+      // Phân giải Profile theo ngữ cảnh 3 tầng: Thread Override -> Account Binding -> Global Default
+      const accountUid = client?.accountUid || '';
+      const profile = this.localStore.resolveAiProfileForContext({ threadId, accountUid });
+
+      // Hợp nhất Động Cơ (API Key, Fallback, Provider) với Profile (SOUL, Wiki riêng, Model, Temp)
+      const effectiveModel = profile.model || engineSettings.model;
+      const effectiveSettings = {
+        ...engineSettings,
+        model: effectiveModel,
+        temperature: profile.temperature !== undefined ? profile.temperature : 0.7,
+        soulPrompt: profile.soulPrompt !== undefined ? profile.soulPrompt : (engineSettings.soulPrompt || ''),
+        memoryPrompt: profile.memoryPrompt !== undefined ? profile.memoryPrompt : (engineSettings.memoryPrompt || ''),
+        fewShotPrompt: profile.fewShotPrompt !== undefined ? profile.fewShotPrompt : (engineSettings.fewShotPrompt || ''),
+        exemplarConversation: profile.exemplarConversation !== undefined ? profile.exemplarConversation : (engineSettings.exemplarConversation || ''),
+        scopePrompt: profile.scopePrompt !== undefined ? profile.scopePrompt : (engineSettings.scopePrompt || ''),
+        wikiSourceUrl: profile.wikiSourceUrl !== undefined ? profile.wikiSourceUrl : (engineSettings.wikiSourceUrl || '')
+      };
 
       // Extract Customer CRM Profile & Tags for context awareness
-      const conv = this.localStore.getConversation(threadId);
-      const customer = typeof this.localStore.getCustomer === 'function' ? this.localStore.getCustomer(threadId) : conv;
+      const conv = this.localStore.getConversation(threadId, accountUid);
+      const customer = typeof this.localStore.getCustomer === 'function' ? this.localStore.getCustomer(threadId, accountUid) : conv;
       const tags = (typeof this.localStore.getConversationTags === 'function' ? this.localStore.getConversationTags(threadId) : []) || [];
       const tagNames = tags.map(t => t.name).join(', ');
 
@@ -400,12 +418,12 @@ export class AiAgentAdapter extends BaseAdapter {
       };
 
       // Compile System Prompt with 4 Layers + Customer Context
-      const systemPrompt = this.compilePrompt(settings, customerContext);
+      const systemPrompt = this.compilePrompt(effectiveSettings, customerContext);
 
       // Get recent conversation history (last 10 messages) for Multi-turn context
       // Note: localStore.getMessages already returns chronological order (ASC: oldest -> newest).
       // Filter out the current incoming message to prevent duplicating it in history and userMessage.
-      const rawHistory = this.localStore.getMessages(threadId, { limit: 10 }) || [];
+      const rawHistory = this.localStore.getMessages(threadId, { limit: 10, accountUid }) || [];
       const history = rawHistory.filter(m => m.text !== incomingText);
 
       // Format incoming text for LLM: in groups, prefix member name so AI understands who asked
@@ -413,7 +431,7 @@ export class AiAgentAdapter extends BaseAdapter {
 
       // Tải và mã hóa hình ảnh nếu model hỗ trợ Vision
       let images = [];
-      const visionSupported = isVisionSupported(settings.provider, settings.model);
+      const visionSupported = isVisionSupported(effectiveSettings.provider, effectiveSettings.model);
       if (Array.isArray(imageUrls) && imageUrls.length > 0) {
         if (visionSupported) {
           for (const url of imageUrls.slice(0, 2)) {
@@ -424,7 +442,7 @@ export class AiAgentAdapter extends BaseAdapter {
             logger.info(`🖼️ [AI Vision] Successfully loaded ${images.length} image(s) for ${threadId}`);
           }
         } else {
-          logger.info(`ℹ️ [AI Vision] Provider/Model (${settings.provider}:${settings.model}) does not support vision. Processing text only.`);
+          logger.info(`ℹ️ [AI Vision] Provider/Model (${effectiveSettings.provider}:${effectiveSettings.model}) does not support vision. Processing text only.`);
         }
       }
 
@@ -437,9 +455,9 @@ export class AiAgentAdapter extends BaseAdapter {
         textForModel = `[HỆ THỐNG: Khách hàng vừa gửi ảnh nhưng mô hình AI hiện tại đang cấu hình ở chế độ văn bản thuần túy. Hãy lịch sự thông báo em đã nhận được hình ảnh và chuyển cho chuyên viên tư vấn hỗ trợ kiểm tra trực tiếp]:\n${incomingTextForLLM}`;
       }
 
-      logger.info(`🧠 [AI Engine] Generating reply for ${threadId} (Context: ${history.length} msgs, Images: ${images.length}, Customer: "${customerContext.name || 'Khách'}") via ${settings.provider}:${settings.model}...`);
+      logger.info(`🧠 [AI Engine] Generating reply for ${threadId} using Profile "${profile.name}" (Model: ${effectiveSettings.provider}:${effectiveSettings.model}, Context: ${history.length} msgs)...`);
 
-      const replyText = await this.callModelWithFallback(systemPrompt, history, textForModel, settings, { senderName: customerContext.name, images });
+      const replyText = await this.callModelWithFallback(systemPrompt, history, textForModel, effectiveSettings, { senderName: customerContext.name, images });
 
       // Giải phóng bộ nhớ Base64 ngay lập tức cho V8 GC
       images = null;
@@ -647,8 +665,11 @@ ${formatRules}`;
       }
     }
 
+    const profileDisplayName = settings.name || settings.profileName || (settings.id === 'default' ? 'Trợ Lý Mặc Định' : '');
+    const profileLine = profileDisplayName ? `> **Hồ sơ AI:** \`${profileDisplayName}\` ${settings.isDefault ? '⭐ (Mặc định toàn cục)' : '👤 (Hồ sơ nghiệp vụ)'}  \n` : '';
+
     return `# 🧠 MINI SECOND BRAIN WIKI — HỆ TRI THỨC AI
-> **Trạng thái:** ${settings.isEnabled ? '🟢 Đang Bật Tự Động Trả Lời' : '⚪ Đang Tắt'}  
+${profileLine}> **Trạng thái:** ${settings.isEnabled ? '🟢 Đang Bật Tự Động Trả Lời' : '⚪ Đang Tắt'}  
 > **Mô hình chính:** \`${provider}:${model}\` | **Dự phòng (Fallback):** \`${fallback}\`  
 > **Quy chuẩn:** Markdown Karpathy / Obsidian Local-First Knowledge Base
 

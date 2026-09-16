@@ -15,7 +15,7 @@
 [![CI Quality Gate](https://github.com/aizaloapp/zalo-flow/actions/workflows/ci.yml/badge.svg)](https://github.com/aizaloapp/zalo-flow/actions/workflows/ci.yml)
 [![Anti-Leak & Secret Scan](https://github.com/aizaloapp/zalo-flow/actions/workflows/secret-scan.yml/badge.svg)](https://github.com/aizaloapp/zalo-flow/actions/workflows/secret-scan.yml)
 [![Memory Footprint](https://img.shields.io/badge/RAM-%3C%20100MB-success.svg)](test/test-all.js)
-[![Tests Passing](https://img.shields.io/badge/Tests-45%2F45%20Passing-brightgreen.svg)](test/test-all.js)
+[![Tests Passing](https://img.shields.io/badge/Tests-56%2F56%20Passing-brightgreen.svg)](test/test-all.js)
 [![Docker Ready](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](docker-compose.yml)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
@@ -33,16 +33,17 @@
 
 Không cần biết Git, không cần cài Node.js, không cần mở màn hình đen Terminal:
 
-[![Tải Bản Cài Đặt Windows](https://img.shields.io/badge/Windows-Download%20Setup%20v1.3.0%20(.exe)-0068FF?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/aizaloapp/zalo-flow/releases/latest)
+[![Tải Bản Cài Đặt Windows](https://img.shields.io/badge/Windows-Download%20Setup%20v1.4.0%20(.exe)-0068FF?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/aizaloapp/zalo-flow/releases/latest)
 
-> 💡 **Tải về chạy ngay:** Bấm nút ở trên để tải file **`ZaloFlow-Setup-v1.3.0.exe`** (Chỉ **24.5MB**). Cài đặt trong 30 giây là có ngay icon Zalo-Flow ngoài Desktop!
+> 💡 **Tải về chạy ngay:** Bấm nút ở trên để tải file **`ZaloFlow-Setup-v1.4.0.exe`** (Chỉ **24.5MB**). Cài đặt trong 30 giây là có ngay icon Zalo-Flow ngoài Desktop!
 
-> 🚀 **Điểm mới trong v1.3.0:**
-> - 📌 **Ghim Hội Thoại Lên Đỉnh (Pin to Top):** Cố định tối đa 5 cuộc trò chuyện quan trọng trên đỉnh danh sách kèm icon 📌, tích hợp cơ chế `Realtime Prepend Guard` giữ vững thứ tự ghim khi có tin nhắn mới.
-> - 🖱️ **Menu Chuột Phải & Nút Ba Chấm `...` (Context Menu):** Thao tác nhanh chuẩn mực Zalo Web/PC, tự động lật chiều chống tràn màn hình, đóng menu mượt mà khi lăn chuột hoặc bấm phím Escape.
-> - 🏷️ **Phân Loại Thẻ Màu Trực Tiếp & Dãy Chấm Màu (Tag Dots):** Gán/gỡ thẻ phân loại khách hàng 1-Click từ menu chuột phải; hiển thị trực quan các chấm màu thẻ ngay trên thẻ hội thoại ở sidebar.
-> - ✉️ **Đánh Dấu Chưa Đọc / Đã Đọc & Xóa Hội Thoại Cục Bộ:** Đánh dấu lại tin nhắn chưa đọc để nhắc việc và xóa lịch sử hội thoại cục bộ an toàn trong SQLite mà không ảnh hưởng tới điện thoại.
-> - 🧪 **Chất Lượng Đạt Chuẩn 100%:** Bổ sung Test Suite #45, vượt qua toàn diện 45/45 test suites.
+> 🚀 **Điểm mới trong v1.4.0:**
+> - 🧠 **Đa Hồ Sơ AI Nghiệp Vụ (Multi-Profile AI Suite):** Tách bạch Động cơ toàn cục (Shared LLM Engine: API Key, Auto-Fallback Shield) và Hồ sơ nghiệp vụ. Hỗ trợ tạo không giới hạn Persona với Nhân cách (SOUL), Kho Tri Thức (Memory/Wiki), Mẫu Hội Thoại (Few-Shot), Ranh Giới (Scope) và Model Ghi Đè riêng biệt.
+> - 📋 **4 Bộ Kịch Bản Mẫu Vàng:** Nạp 1-Click mẫu kịch bản tối ưu sẵn cho Bán hàng E-com, B2B, Trợ lý Nội bộ HR/SOP và CSKH Kỹ thuật.
+> - 🎯 **Phân Bổ Bot Zalo & Ghi Đè Hội Thoại (Cascading Resolution):** Gán từng nick Zalo trong Multi-Account Pool phụ trách Profile riêng, kèm khả năng ghi đè Profile trực tiếp cho từng cuộc trò chuyện/Khách hàng VIP ngay trong CRM Drawer.
+> - 🔄 **Đồng Bộ 2 Chiều Mini Second Brain Wiki Độc Lập:** Tự động đồng bộ tri thức Wiki cho từng Profile riêng biệt, hỗ trợ nạp Markdown từ file hoặc liên kết URL/GitHub độc lập.
+> - ⚙️ **Đồng Bộ Model Ghi Đè Thông Minh:** Tự động gom nhóm `<optgroup>` trực quan, hiển thị đầy đủ các model của Nhà cung cấp chính (Z.AI GLM / Gemini...) và phản ứng theo thời gian thực.
+> - 🧪 **Chất Lượng Đạt Chuẩn 100%:** Bổ sung Test Suite #56, vượt qua toàn diện 56/56 test suites.
 
 </div>
 

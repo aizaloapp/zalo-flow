@@ -279,6 +279,7 @@ export class ZaloAccountManager extends EventEmitter {
         avatar: liveProfile?.avatar || acc.avatar || '',
         phone: acc.phone || '',
         isDefault: Boolean(acc.isDefault),
+        aiProfileId: acc.aiProfileId || 'default',
         status: isOnline ? 'online' : 'offline',
         isLoggedIn: isOnline,
         friendCount: liveProfile?.friendCount || 0
@@ -294,6 +295,7 @@ export class ZaloAccountManager extends EventEmitter {
           avatar: client.userProfile.avatar || '',
           phone: '',
           isDefault: false,
+          aiProfileId: 'default',
           status: client.isLoggedIn ? 'online' : 'offline',
           isLoggedIn: client.isLoggedIn,
           friendCount: client.friendUids ? client.friendUids.size : 0

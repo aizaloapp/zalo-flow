@@ -4,6 +4,28 @@ Mọi thay đổi đáng chú ý của dự án **Zalo-Flow** sẽ được ghi 
 
 Định dạng dựa trên [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/), và dự án này tuân thủ [Semantic Versioning](https://semver.org/lang/vi/).
 
+## [1.4.0] - 2026-09-16
+
+### Added
+- **Trung Tâm Điều Hành AI Hub 3 Tầng & Đa Hồ Sơ Nghiệp Vụ (Multi-Profile AI Suite):**
+  - Tách bạch hoàn toàn Động Cơ LLM Toàn Cục (Shared LLM Engine: API Key, Provider, Model chính, Auto-Fallback Shield) khỏi Hồ Sơ Nghiệp Vụ (Business Personas).
+  - Hỗ trợ tạo, chỉnh sửa và quản lý không giới hạn các Hồ sơ AI độc lập: Nhân cách & Giọng điệu (SOUL), Kho Tri Thức Sản Phẩm (Memory/Wiki), Mẫu Hội Thoại Tiêu Biểu (Few-Shot Exemplar), Phạm Vi & Điều Cấm Kỵ (Scope/Rules) và Model Ghi Đè riêng biệt.
+- **4 Bộ Kịch Bản Mẫu Vàng Thực Chiến (Golden Templates):**
+  - Tích hợp sẵn 4 bộ mẫu kịch bản tối ưu hóa cao cho các bài toán kinh doanh: Bán Hàng E-com, Tư Vấn Giải Pháp B2B, Trợ Lý Hỗ Trợ Nội Bộ HR/SOP và CSKH Kỹ Thuật.
+- **Phân Bổ Bot Zalo & Ghi Đè Hội Thoại (Cascading Resolution):**
+  - Bảng ma trận quản trị nick Zalo trong Multi-Account Pool: gán từng nick Zalo phụ trách một Profile AI riêng biệt với cập nhật tức thời 1-Click.
+  - Tích hợp CRM Drawer: Hỗ trợ nhân viên gán hoặc ghi đè Profile trực tiếp cho từng cuộc trò chuyện/Khách hàng VIP (`Thread Override > Account Binding > Default Fallback`).
+- **Đồng Bộ 2 Chiều (2-Way Sync) Mini Second Brain Wiki Độc Lập:**
+  - Tự động nhận diện ngữ cảnh Profile đang chọn để biên dịch tài liệu Wiki Markdown Karpathy tương ứng.
+  - Nạp tài liệu tự do từ file `.md` cục bộ hoặc đường dẫn URL/GitHub riêng biệt cho từng Persona.
+  - Áp dụng thay đổi Markdown trực tiếp vào CSDL SQLite của từng Profile riêng biệt mà không làm ô nhiễm cấu hình mặc định.
+- **Đồng Bộ Danh Sách "Model Ghi Đè" Phản Ứng Thời Gian Thực:**
+  - Gom nhóm thông minh `<optgroup>` theo Nhà cung cấp chính, Nhà cung cấp dự phòng và các hãng chuẩn quốc tế, tự động đồng bộ ngay khi đổi cấu hình tại Tab 1.
+- **Kiểm Thử Hồi Quy Toàn Diện:**
+  - Bổ sung Test Suite #56 (`Multi-Profile AI Suite & Wiki 2-Way Sync`), vượt qua trọn vẹn 56/56 test suites PASS 100%.
+
+---
+
 ## [1.3.0] - 2026-09-13
 
 ### Added

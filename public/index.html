@@ -1111,6 +1111,14 @@
         <textarea id="crm-notes-input" class="crm-input" style="min-height: 60px;" placeholder="Ghi chú nhân viên trực chat..."></textarea>
       </div>
 
+      <div>
+        <label class="crm-field-label">🤖 Hồ Sơ AI Đảm Nhiệm (Ghi đè hội thoại này):</label>
+        <select id="crm-ai-profile-select" class="crm-input" style="background: rgba(15, 23, 42, 0.8);">
+          <option value="">-- Mặc định (Theo tài khoản Zalo) --</option>
+        </select>
+        <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 3px;">Chỉ định Persona hoặc Wiki riêng cho khách hàng VIP / đối tác đặc thù.</div>
+      </div>
+
       <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px;">
         <button class="send-btn" onclick="saveCurrentCrmInfo()" style="padding: 8px 18px; font-size: 0.84rem;">💾 Lưu Thông Tin</button>
       </div>
@@ -1178,16 +1186,16 @@
     </div>
   </div>
 
-  <!-- 🧠 MODAL TRUNG TÂM TRÍ TUỆ & ĐIỀU KHIỂN AI 5 TABS -->
+  <!-- 🧠 MODAL TRUNG TÂM ĐIỀU HÀNH AI HUB & ĐA HỒ SƠ (3 TIER ARCHITECTURE) -->
   <div class="modal-overlay" id="modal-ai-brain">
-    <div class="modal-dialog" style="max-width: 900px; max-height: 92vh; display: flex; flex-direction: column;">
-      <div class="modal-header" style="padding: 14px 20px;">
+    <div class="modal-dialog" style="max-width: 950px; max-height: 94vh; display: flex; flex-direction: column;">
+      <div class="modal-header" style="padding: 12px 20px;">
         <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
           <div style="display: flex; align-items: center; gap: 10px;">
             <span style="font-size: 1.4rem;">🧠</span>
             <div>
-              <h2 class="modal-title" style="font-size: 1.05rem;" data-i18n="modals.ai_brain_title">Trung Tâm Trí Tuệ &amp; Điều Khiển AI (5 Tabs)</h2>
-              <div style="font-size: 0.76rem; color: var(--text-muted);">Hệ thống AI Auto-Reply &amp; Trợ Lý Zalo độc lập (Local-First Engine)</div>
+              <h2 class="modal-title" style="font-size: 1.05rem;" data-i18n="modals.ai_brain_title">Trung Tâm Điều Hành AI Hub &amp; Đa Hồ Sơ</h2>
+              <div style="font-size: 0.74rem; color: var(--text-muted);">Động cơ LLM toàn cục, Đa nhân cách nghiệp vụ &amp; Phân bổ Bot Zalo</div>
             </div>
           </div>
           <div style="display: flex; align-items: center; gap: 12px;">
@@ -1199,96 +1207,30 @@
         </div>
       </div>
 
-      <!-- AI 5 TABS NAVIGATION -->
-      <div class="ai-tabs-nav" style="display: grid; grid-template-columns: repeat(5, 1fr); border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.3);">
-        <button class="ai-tab-btn active" onclick="switchKnowledgeTab('soul')" id="tab-btn-soul" data-i18n="modals.ai_tab_prompt">🎭 1. Giọng điệu</button>
-        <button class="ai-tab-btn" onclick="switchKnowledgeTab('memory')" id="tab-btn-memory" data-i18n="modals.ai_tab_wiki">📚 2. Tri thức</button>
-        <button class="ai-tab-btn" onclick="switchKnowledgeTab('brain')" id="tab-btn-brain" data-i18n="modals.ai_tab_models">🌐 3. Bộ Não AI</button>
-        <button class="ai-tab-btn" onclick="switchKnowledgeTab('scope')" id="tab-btn-scope" data-i18n="modals.ai_tab_settings">🎯 4. Phạm vi</button>
-        <button class="ai-tab-btn" onclick="switchKnowledgeTab('sim')" id="tab-btn-sim" data-i18n="modals.ai_tab_history">🧪 5. Thử nghiệm</button>
+      <!-- MAIN TABS CẤP 1 (3 TẦNG ĐỘC LẬP) -->
+      <div class="ai-main-nav">
+        <button type="button" class="ai-main-tab-btn active" id="main-tab-btn-engine" onclick="switchAiMainTab('engine')">
+          ⚙️ 1. Động Cơ &amp; API (Toàn Cục)
+        </button>
+        <button type="button" class="ai-main-tab-btn" id="main-tab-btn-profiles" onclick="switchAiMainTab('profiles')">
+          👤 2. Hồ Sơ Nghiệp Vụ (Persona &amp; Wiki)
+        </button>
+        <button type="button" class="ai-main-tab-btn" id="main-tab-btn-allocation" onclick="switchAiMainTab('allocation')">
+          🎯 3. Phân Bổ Bot &amp; Tài Khoản
+        </button>
       </div>
 
       <div class="modal-body" style="flex: 1; overflow-y: auto; padding: 16px 20px;">
         
-        <!-- TAB 1: GIỌNG ĐIỆU & NHÂN CÁCH (SOUL & FEW-SHOT) -->
-        <div class="ai-tab-pane" id="pane-soul">
+        <!-- ===================================================================
+             MAIN TAB 1: ĐỘNG CƠ & API (SHARED GLOBAL ENGINE)
+             =================================================================== -->
+        <div class="ai-main-pane" id="pane-main-engine">
           <div style="display: flex; flex-direction: column; gap: 14px;">
-            <div>
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                <label class="form-label" style="font-weight: 700; color: #38bdf8; font-size: 0.82rem; margin: 0;">
-                  🎭 Hướng Dẫn Phong Cách &amp; Nhân Cách (SOUL):
-                </label>
-                <div style="display: flex; gap: 5px;">
-                  <button type="button" class="filter-btn" style="font-size: 0.72rem; padding: 2px 7px;" onclick="applyAiPreset('friendly')">Tươi vui, thân thiện</button>
-                  <button type="button" class="filter-btn" style="font-size: 0.72rem; padding: 2px 7px;" onclick="applyAiPreset('b2b')">Chuyên gia B2B</button>
-                  <button type="button" class="filter-btn" style="font-size: 0.72rem; padding: 2px 7px;" onclick="applyAiPreset('support')">Hỗ trợ kỹ thuật</button>
-                </div>
-              </div>
-              <textarea class="form-textarea" id="ai-soul-input" style="height: 110px; font-size: 0.82rem;" placeholder="Mô tả phong cách xưng hô, tính cách của Bot (Ví dụ: Bạn là trợ lý tư vấn khách hàng của shop thời trang X, xưng Em và gọi Anh/Chị...)..."></textarea>
+            <div style="font-size: 0.76rem; color: var(--text-muted); background: rgba(56, 189, 248, 0.08); border-left: 3px solid #38bdf8; padding: 8px 12px; border-radius: 0 6px 6px 0;">
+              💡 <strong>Động Cơ Toàn Cục (Shared Infrastructure):</strong> Cấu hình API Key, Provider và Fallback dùng chung cho toàn bộ các Bot Zalo. Từng hồ sơ nghiệp vụ bên tab "2. Hồ Sơ" sẽ thừa hưởng động cơ này mà không cần nhập lại key.
             </div>
 
-            <!-- FEW-SHOT EXEMPLAR SECTION -->
-            <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border); border-radius: 10px; padding: 12px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <div>
-                  <div style="font-weight: 700; font-size: 0.82rem; color: #fbbf24; display: flex; align-items: center; gap: 6px;">
-                    <span>⭐ Hội Thoại Mẫu Thực Tế (Few-Shot Exemplar)</span>
-                  </div>
-                  <div style="font-size: 0.74rem; color: var(--text-muted);">AI sẽ học trực tiếp từ cách bạn tư vấn thực tế cho khách để trả lời chuẩn mực nhất.</div>
-                </div>
-                <div style="display: flex; gap: 6px;">
-                  <button type="button" class="filter-btn" style="padding: 4px 10px; font-size: 0.75rem; color: #38bdf8; font-weight: 700;" onclick="openExemplarPickerModal()">
-                    📥 Chọn từ khách hàng
-                  </button>
-                  <button type="button" class="filter-btn" id="btn-edit-exemplar" style="padding: 4px 10px; font-size: 0.75rem;" onclick="editCurrentExemplarDialogue()">
-                    ✏️ Sửa
-                  </button>
-                  <button type="button" class="filter-btn" id="btn-delete-exemplar" style="padding: 4px 10px; font-size: 0.75rem; color: #f87171;" onclick="deleteAiExemplar()">
-                    🗑️ Xóa
-                  </button>
-                </div>
-              </div>
-
-              <div id="ai-exemplar-preview-box" style="background: rgba(0,0,0,0.3); border: 1px dashed rgba(255,255,255,0.12); border-radius: 8px; padding: 10px; font-size: 0.78rem; max-height: 130px; overflow-y: auto; color: #e2e8f0;">
-                <span style="color: var(--text-muted); font-style: italic;">Chưa có hội thoại mẫu. Bấm "Chọn từ khách hàng" hoặc bấm ⭐ trên thanh chat để trích xuất 1-click.</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- TAB 2: TRI THỨC & BẢNG GIÁ (MEMORY) -->
-        <div class="ai-tab-pane" id="pane-memory" style="display: none;">
-          <div style="display: flex; flex-direction: column; gap: 14px;">
-            <div>
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                <label class="form-label" style="font-weight: 700; color: #38bdf8; font-size: 0.82rem; margin: 0;">
-                  📚 Bảng Giá, Sản Phẩm &amp; Quy Định (MEMORY):
-                </label>
-                <button type="button" class="filter-btn" style="font-size: 0.72rem; padding: 2px 8px; color: #34d399;" onclick="showSecondBrainWikiPreview()">
-                  👁️ Xem Full System Prompt
-                </button>
-              </div>
-              <textarea class="form-textarea" id="ai-memory-input" style="height: 140px; font-size: 0.82rem;" placeholder="Nhập thông tin sản phẩm, tính năng, bảng giá, địa chỉ showroom, chính sách đổi trả, phí ship..."></textarea>
-            </div>
-
-            <!-- AUTO-SYNCED Q&A SECTION -->
-            <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border); border-radius: 10px; padding: 12px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                <div>
-                  <div style="font-weight: 700; font-size: 0.82rem; color: #38bdf8;">⚡ Tự Động Tích Hợp Q&amp;A (Hỏi - Đáp Nhanh)</div>
-                  <div style="font-size: 0.74rem; color: var(--text-muted);">Mọi tin nhắn nhanh có điền "Câu hỏi khách hàng" đều được AI tự động nạp làm tri thức phản hồi.</div>
-                </div>
-                <button type="button" class="filter-btn" style="padding: 3px 8px; font-size: 0.74rem;" onclick="openModal('modal-quick-msg')">Quản lý Q&amp;A</button>
-              </div>
-              <div id="ai-memory-qna-count" style="font-size: 0.76rem; color: #a7f3d0;">Đang tải danh sách Q&amp;A...</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- TAB 3: BỘ NÃO AI & REST ENDPOINT (UNIVERSAL REST + FALLBACK) -->
-        <div class="ai-tab-pane" id="pane-brain" style="display: none;">
-          <div style="display: flex; flex-direction: column; gap: 14px;">
-            
             <!-- MODEL CHÍNH -->
             <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border); border-radius: 12px; padding: 14px;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
@@ -1313,7 +1255,7 @@
                 </div>
                 <div class="form-group" style="margin-bottom: 0;">
                   <label class="form-label" style="font-size: 0.74rem;">Model thực thi:</label>
-                  <select class="form-select" id="ai-model-select"></select>
+                  <select class="form-select" id="ai-model-select" onchange="if(window.populateProfileModelOptions) populateProfileModelOptions();"></select>
                 </div>
               </div>
 
@@ -1346,7 +1288,7 @@
             <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border); border-radius: 12px; padding: 14px;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #34d399; font-weight: 800; font-size: 0.84rem; text-transform: uppercase; margin: 0;">
-                  <input type="checkbox" id="ai-fallback-enabled" onchange="toggleFallbackFieldsUI()" style="accent-color: #34d399; width: 16px; height: 16px;">
+                  <input type="checkbox" id="ai-fallback-enabled" onchange="toggleFallbackFieldsUI(); if(window.populateProfileModelOptions) populateProfileModelOptions();" style="accent-color: #34d399; width: 16px; height: 16px;">
                   <span>🛡️ 2. Lá Chắn Dự Phòng Tự Động (Auto-Fallback Shield)</span>
                 </label>
                 <div id="fallback-status-badge" class="ai-hub-badge">Tắt</div>
@@ -1372,7 +1314,7 @@
                   </div>
                   <div class="form-group" style="margin-bottom: 0;">
                     <label class="form-label" style="font-size: 0.74rem;">Model dự phòng:</label>
-                    <select class="form-select" id="ai-fallback-model-select"></select>
+                    <select class="form-select" id="ai-fallback-model-select" onchange="if(window.populateProfileModelOptions) populateProfileModelOptions();"></select>
                   </div>
                 </div>
 
@@ -1396,115 +1338,335 @@
                 </div>
               </div>
             </div>
+
+            <!-- NÚT LƯU ĐỘNG CƠ RIÊNG -->
+            <div style="display: flex; justify-content: flex-end;">
+              <button type="button" class="send-btn" onclick="saveKnowledgeSettings()" style="padding: 8px 20px; font-size: 0.84rem; font-weight: 700;">
+                💾 Lưu Cấu Hình Động Cơ AI
+              </button>
+            </div>
           </div>
         </div>
 
-        <!-- TAB 4: PHẠM VI & GIỚI HẠN (TARGET, COOLDOWN, SCOPE) -->
-        <div class="ai-tab-pane" id="pane-scope" style="display: none;">
-          <div style="display: flex; flex-direction: column; gap: 14px;">
-            
-            <!-- NHÓM VÀ COOLDOWN -->
-            <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px;">
-              <div style="font-weight: 800; font-size: 0.82rem; color: #38bdf8; text-transform: uppercase;">
-                🛡️ Quy Tắc An Toàn &amp; Nhường Quyền Nhân Viên:
-              </div>
-
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                <div class="form-group" style="margin-bottom: 0;">
-                  <label class="form-label" style="font-size: 0.74rem; font-weight: 700;">⏳ Smart Cooldown (Phút):</label>
-                  <input type="number" class="form-input" id="ai-admin-cooldown" value="15" min="0" max="1440" style="font-size: 0.8rem;">
-                  <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 3px;">Khi Admin nhắn tay, Bot AI sẽ tự động nhường quyền trong X phút.</div>
-                </div>
-
-                <div class="form-group" style="margin-bottom: 0;">
-                  <label class="form-label" style="font-size: 0.74rem; font-weight: 700;">📦 Gom Tin Nhắn Dồn Dập (Giây):</label>
-                  <input type="number" class="form-input" id="ai-debounce-sec" value="3" min="1" max="10" style="font-size: 0.8rem;">
-                  <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 3px;">Gom các tin nhắn gửi liên tiếp của khách trước khi gọi AI.</div>
-                </div>
-              </div>
-
-              <div style="display: flex; flex-direction: column; gap: 8px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 8px;">
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #f8fafc; font-size: 0.78rem;">
-                  <input type="checkbox" id="ai-allow-groups" onchange="toggleAiGroupAliasesUI()" style="accent-color: #38bdf8; width: 15px; height: 15px;">
-                  <span>👥 Cho phép Bot AI trả lời trong Nhóm Chat (Chỉ khi được Tag @tên hoặc gọi đích danh)</span>
-                </label>
-
-                <div id="ai-bot-aliases-wrap" style="display: none; padding-left: 24px; margin-top: -2px;">
-                  <label class="form-label" style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 2px;">Biệt danh / Tên gọi khác của Bot (phân cách bằng dấu phẩy):</label>
-                  <input type="text" class="form-input" id="ai-bot-aliases" placeholder="Ví dụ: amon, trợ lý, em tấm" style="font-size: 0.78rem; padding: 4px 8px;">
-                </div>
-
-                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                  <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #f8fafc; font-size: 0.78rem;">
-                    <input type="checkbox" id="ai-auto-tag-lead" style="accent-color: #38bdf8; width: 15px; height: 15px;">
-                    <span>🏷️ Tự động gắn thẻ cho Khách Hàng Mới nhắn tin:</span>
-                  </label>
-                  <select class="form-select" id="ai-default-lead-tag-select" style="font-size: 0.78rem; padding: 4px 8px; width: auto; min-width: 150px;"></select>
-                </div>
-              </div>
-            </div>
-
-            <!-- BỘ LỌC ĐỐI TƯỢNG (WHITELIST / BLACKLIST) -->
-            <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px;">
-              <div style="font-weight: 800; font-size: 0.82rem; color: #38bdf8; text-transform: uppercase;">
-                🎯 Bộ Lọc Thẻ Phân Loại:
-              </div>
-
-              <div style="display: flex; gap: 14px; font-size: 0.78rem;">
-                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
-                  <input type="radio" name="ai-target-mode" value="all" checked onchange="updateAiTagFilterUI()" style="accent-color: #38bdf8;">
-                  <span>Tất cả khách hàng</span>
-                </label>
-                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
-                  <input type="radio" name="ai-target-mode" value="blacklist" onchange="updateAiTagFilterUI()" style="accent-color: #38bdf8;">
-                  <span>🚫 Blacklist (Bỏ qua thẻ chọn)</span>
-                </label>
-                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
-                  <input type="radio" name="ai-target-mode" value="whitelist" onchange="updateAiTagFilterUI()" style="accent-color: #38bdf8;">
-                  <span>✅ Whitelist (Chỉ trả lời thẻ chọn)</span>
-                </label>
-              </div>
-
-              <div id="ai-tags-selector-wrap" style="display: none; flex-direction: column; gap: 5px; margin-top: 4px;">
-                <div id="ai-tags-selector-box" style="display: flex; flex-wrap: wrap; gap: 6px; max-height: 80px; overflow-y: auto;"></div>
-              </div>
-            </div>
-
-            <!-- SCOPE / ĐIỀU CẤM KỴ -->
-            <div>
-              <label class="form-label" style="font-weight: 700; color: #f87171; font-size: 0.82rem; margin-bottom: 4px;">
-                🚫 Ranh Giới &amp; Điều Cấm Kỵ (SCOPE):
+        <!-- ===================================================================
+             MAIN TAB 2: HỒ SƠ NGHIỆP VỤ (MULTI-PROFILE PERSONA & SECOND BRAIN)
+             =================================================================== -->
+        <div class="ai-main-pane" id="pane-main-profiles" style="display: none;">
+          
+          <!-- THANH CÔNG CỤ CHỌN & QUẢN TRỊ PROFILE -->
+          <div class="ai-profile-bar">
+            <div class="ai-profile-select-group">
+              <label class="form-label" style="font-size: 0.78rem; font-weight: 700; color: #38bdf8; margin: 0; white-space: nowrap;">
+                👤 Chọn Hồ Sơ:
               </label>
-              <textarea class="form-textarea" id="ai-scope-input" style="height: 80px; font-size: 0.82rem;" placeholder="Những điều AI TUYỆT ĐỐI không được nói hoặc cam kết (Ví dụ: Không cung cấp số tài khoản cá nhân, không hứa hẹn giảm giá quá 10%)..."></textarea>
+              <select class="form-select" id="ai-profile-selector" onchange="handleAiProfileSelect(this.value)" style="font-weight: 600; font-size: 0.82rem; min-width: 200px;">
+                <option value="default">Trợ Lý Mặc Định (Chung)</option>
+              </select>
+              <span id="ai-profile-badge" class="ai-hub-badge success" style="white-space: nowrap;">Mặc định</span>
             </div>
+
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+              <button type="button" class="filter-btn" id="btn-set-default-profile" onclick="setDefaultActiveProfile()" style="font-size: 0.75rem; padding: 4px 10px; color: #fbbf24;" title="Đặt hồ sơ này làm mặc định toàn hệ thống">
+                ⭐ Đặt Làm Mặc Định
+              </button>
+              <button type="button" class="filter-btn" onclick="openCreateProfilePrompt()" style="font-size: 0.75rem; padding: 4px 10px; color: #38bdf8; font-weight: 700;">
+                ➕ Tạo Mới
+              </button>
+              <div style="position: relative; display: inline-block;">
+                <button type="button" class="filter-btn" onclick="toggleTemplatesMenu(event)" style="font-size: 0.75rem; padding: 4px 10px; color: #a78bfa;">
+                  📋 Dùng Mẫu Vàng ▼
+                </button>
+                <div id="ai-templates-menu" style="display: none; position: absolute; right: 0; top: 100%; z-index: 50; min-width: 250px; background: #0f172a; border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); padding: 6px 0; margin-top: 4px;">
+                  <button type="button" class="dropdown-item" onclick="applyGoldenTemplate('sales')" style="padding: 8px 12px; text-align: left; width: 100%;">
+                    🛍️ Bán Hàng E-com &amp; Khuyến Mãi
+                  </button>
+                  <button type="button" class="dropdown-item" onclick="applyGoldenTemplate('b2b')" style="padding: 8px 12px; text-align: left; width: 100%;">
+                    💼 B2B &amp; Tư Vấn Giải Pháp Doanh Nghiệp
+                  </button>
+                  <button type="button" class="dropdown-item" onclick="applyGoldenTemplate('internal_hr')" style="padding: 8px 12px; text-align: left; width: 100%;">
+                    🏢 Trợ Lý Nội Bộ (HR &amp; SOP Quy Trình)
+                  </button>
+                  <button type="button" class="dropdown-item" onclick="applyGoldenTemplate('tech_support')" style="padding: 8px 12px; text-align: left; width: 100%;">
+                    🛠️ CSKH &amp; Hỗ Trợ Kỹ Thuật
+                  </button>
+                </div>
+              </div>
+              <button type="button" class="filter-btn" id="btn-delete-profile" onclick="deleteActiveProfile()" style="font-size: 0.75rem; padding: 4px 10px; color: #f87171;" title="Xóa hồ sơ này">
+                🗑️ Xóa
+              </button>
+            </div>
+          </div>
+
+          <!-- KHUNG METADATA CỦA PROFILE ĐANG CHỌN -->
+          <div style="background: rgba(15, 23, 42, 0.4); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; display: grid; grid-template-columns: 1.2fr 2fr 1fr; gap: 10px; align-items: center;">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" style="font-size: 0.72rem; margin-bottom: 2px;">Tên Hồ Sơ:</label>
+              <input type="text" class="form-input" id="ai-profile-name-input" placeholder="Ví dụ: Trợ Lý Bán Hàng" style="font-size: 0.8rem; padding: 5px 8px;">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" style="font-size: 0.72rem; margin-bottom: 2px;">Mô Tả Vai Trò:</label>
+              <input type="text" class="form-input" id="ai-profile-desc-input" placeholder="Ví dụ: Chuyên chốt đơn khách lẻ, tư vấn bảng giá" style="font-size: 0.8rem; padding: 5px 8px;">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" style="font-size: 0.72rem; margin-bottom: 2px;">Model Ghi Đè (Tùy chọn):</label>
+              <select class="form-select" id="ai-profile-model-select" style="font-size: 0.78rem; padding: 5px 8px;">
+                <option value="">-- Mặc định theo Động Cơ --</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- 5 SUB-TABS NGHIỆP VỤ -->
+          <div class="ai-profile-sub-nav">
+            <button type="button" class="ai-sub-tab-btn active" id="tab-btn-soul" onclick="switchKnowledgeTab('soul')">
+              🎭 1. Giọng điệu &amp; SOUL
+            </button>
+            <button type="button" class="ai-sub-tab-btn" id="tab-btn-memory" onclick="switchKnowledgeTab('memory')">
+              📚 2. Kho Tri Thức (Wiki)
+            </button>
+            <button type="button" class="ai-sub-tab-btn" id="tab-btn-fewshot" onclick="switchKnowledgeTab('fewshot')">
+              ⭐ 3. Mẫu Hội Thoại
+            </button>
+            <button type="button" class="ai-sub-tab-btn" id="tab-btn-scope" onclick="switchKnowledgeTab('scope')">
+              🎯 4. Phạm Vi &amp; Quy Tắc
+            </button>
+            <button type="button" class="ai-sub-tab-btn" id="tab-btn-sim" onclick="switchKnowledgeTab('sim')">
+              🧪 5. Thử Nghiệm
+            </button>
+          </div>
+
+          <!-- SUB-PANE 1: GIỌNG ĐIỆU & SOUL -->
+          <div class="ai-tab-pane" id="pane-soul">
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <label class="form-label" style="font-weight: 700; color: #38bdf8; font-size: 0.82rem; margin: 0;">
+                  🎭 Hướng Dẫn Phong Cách &amp; Nhân Cách (SOUL Prompt):
+                </label>
+                <div style="display: flex; gap: 5px;">
+                  <button type="button" class="filter-btn" style="font-size: 0.72rem; padding: 2px 7px;" onclick="applyAiPreset('friendly')">Tươi vui, thân thiện</button>
+                  <button type="button" class="filter-btn" style="font-size: 0.72rem; padding: 2px 7px;" onclick="applyAiPreset('b2b')">Chuyên gia B2B</button>
+                  <button type="button" class="filter-btn" style="font-size: 0.72rem; padding: 2px 7px;" onclick="applyAiPreset('support')">Hỗ trợ kỹ thuật</button>
+                </div>
+              </div>
+              <textarea class="form-textarea" id="ai-soul-input" style="height: 140px; font-size: 0.82rem;" placeholder="Mô tả phong cách xưng hô, tính cách của Bot (Ví dụ: Bạn là trợ lý tư vấn khách hàng của shop thời trang X, xưng Em và gọi Anh/Chị...)..."></textarea>
+            </div>
+          </div>
+
+          <!-- SUB-PANE 2: TRI THỨC & MEMORY (SECOND BRAIN WIKI ĐỘC LẬP) -->
+          <div class="ai-tab-pane" id="pane-memory" style="display: none;">
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <label class="form-label" style="font-weight: 700; color: #38bdf8; font-size: 0.82rem; margin: 0;">
+                  📚 Bảng Giá, Sản Phẩm &amp; Quy Định (Kho Tri Thức Riêng Cho Hồ Sơ Này):
+                </label>
+                <button type="button" class="filter-btn" style="font-size: 0.72rem; padding: 2px 8px; color: #34d399;" onclick="showSecondBrainWikiPreview()">
+                  👁️ Xem Full System Prompt
+                </button>
+              </div>
+              <textarea class="form-textarea" id="ai-memory-input" style="height: 160px; font-size: 0.82rem;" placeholder="Nhập thông tin sản phẩm, tính năng, bảng giá, địa chỉ showroom, chính sách đổi trả, phí ship dành riêng cho hồ sơ này..."></textarea>
+
+              <!-- AUTO-SYNCED Q&A SECTION -->
+              <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                  <div>
+                    <div style="font-weight: 700; font-size: 0.8rem; color: #38bdf8;">⚡ Tự Động Tích Hợp Q&amp;A (Hỏi - Đáp Nhanh)</div>
+                    <div style="font-size: 0.72rem; color: var(--text-muted);">Mọi tin nhắn nhanh có điền "Câu hỏi khách hàng" đều được AI tự động nạp làm tri thức phản hồi.</div>
+                  </div>
+                  <button type="button" class="filter-btn" style="padding: 3px 8px; font-size: 0.74rem;" onclick="openModal('modal-quick-msg')">Quản lý Q&amp;A</button>
+                </div>
+                <div id="ai-memory-qna-count" style="font-size: 0.76rem; color: #a7f3d0;">Đang tải danh sách Q&amp;A...</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SUB-PANE 3: FEW-SHOT EXEMPLAR -->
+          <div class="ai-tab-pane" id="pane-fewshot" style="display: none;">
+            <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 10px;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <div style="font-weight: 700; font-size: 0.82rem; color: #fbbf24; display: flex; align-items: center; gap: 6px;">
+                    <span>⭐ Hội Thoại Mẫu Thực Tế (Few-Shot Exemplar)</span>
+                  </div>
+                  <div style="font-size: 0.74rem; color: var(--text-muted);">AI sẽ học trực tiếp từ cách bạn tư vấn thực tế cho khách để phản hồi chuẩn mực theo hồ sơ này.</div>
+                </div>
+                <div style="display: flex; gap: 6px;">
+                  <button type="button" class="filter-btn" style="padding: 4px 10px; font-size: 0.75rem; color: #38bdf8; font-weight: 700;" onclick="openExemplarPickerModal()">
+                    📥 Chọn từ khách hàng
+                  </button>
+                  <button type="button" class="filter-btn" id="btn-edit-exemplar" style="padding: 4px 10px; font-size: 0.75rem;" onclick="editCurrentExemplarDialogue()">
+                    ✏️ Sửa
+                  </button>
+                  <button type="button" class="filter-btn" id="btn-delete-exemplar" style="padding: 4px 10px; font-size: 0.75rem; color: #f87171;" onclick="deleteAiExemplar()">
+                    🗑️ Xóa
+                  </button>
+                </div>
+              </div>
+
+              <div id="ai-exemplar-preview-box" style="background: rgba(0,0,0,0.3); border: 1px dashed rgba(255,255,255,0.12); border-radius: 8px; padding: 10px; font-size: 0.78rem; max-height: 180px; overflow-y: auto; color: #e2e8f0;">
+                <span style="color: var(--text-muted); font-style: italic;">Chưa có hội thoại mẫu. Bấm "Chọn từ khách hàng" hoặc bấm ⭐ trên thanh chat để trích xuất 1-click.</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- SUB-PANE 4: PHẠM VI & QUY TẮC -->
+          <div class="ai-tab-pane" id="pane-scope" style="display: none;">
+            <div style="display: flex; flex-direction: column; gap: 14px;">
+              <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px;">
+                <div style="font-weight: 800; font-size: 0.82rem; color: #38bdf8; text-transform: uppercase;">
+                  🛡️ Quy Tắc An Toàn &amp; Nhường Quyền Nhân Viên:
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                  <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" style="font-size: 0.74rem; font-weight: 700;">⏳ Smart Cooldown (Phút):</label>
+                    <input type="number" class="form-input" id="ai-admin-cooldown" value="15" min="0" max="1440" style="font-size: 0.8rem;">
+                    <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 3px;">Khi Admin nhắn tay, Bot AI sẽ tự động nhường quyền trong X phút.</div>
+                  </div>
+
+                  <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" style="font-size: 0.74rem; font-weight: 700;">📦 Gom Tin Nhắn Dồn Dập (Giây):</label>
+                    <input type="number" class="form-input" id="ai-debounce-sec" value="3" min="1" max="10" style="font-size: 0.8rem;">
+                    <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 3px;">Gom các tin nhắn gửi liên tiếp của khách trước khi gọi AI.</div>
+                  </div>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 8px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 8px;">
+                  <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #f8fafc; font-size: 0.78rem;">
+                    <input type="checkbox" id="ai-allow-groups" onchange="toggleAiGroupAliasesUI()" style="accent-color: #38bdf8; width: 15px; height: 15px;">
+                    <span>👥 Cho phép Bot AI trả lời trong Nhóm Chat (Chỉ khi được Tag @tên hoặc gọi đích danh)</span>
+                  </label>
+
+                  <div id="ai-bot-aliases-wrap" style="display: none; padding-left: 24px; margin-top: -2px;">
+                    <label class="form-label" style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 2px;">Biệt danh / Tên gọi khác của Bot (phân cách bằng dấu phẩy):</label>
+                    <input type="text" class="form-input" id="ai-bot-aliases" placeholder="Ví dụ: amon, trợ lý, em tấm" style="font-size: 0.78rem; padding: 4px 8px;">
+                  </div>
+
+                  <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #f8fafc; font-size: 0.78rem;">
+                      <input type="checkbox" id="ai-auto-tag-lead" style="accent-color: #38bdf8; width: 15px; height: 15px;">
+                      <span>🏷️ Tự động gắn thẻ cho Khách Hàng Mới nhắn tin:</span>
+                    </label>
+                    <select class="form-select" id="ai-default-lead-tag-select" style="font-size: 0.78rem; padding: 4px 8px; width: auto; min-width: 150px;"></select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- BỘ LỌC ĐỐI TƯỢNG (WHITELIST / BLACKLIST) -->
+              <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px;">
+                <div style="font-weight: 800; font-size: 0.82rem; color: #38bdf8; text-transform: uppercase;">
+                  🎯 Bộ Lọc Thẻ Phân Loại:
+                </div>
+
+                <div style="display: flex; gap: 14px; font-size: 0.78rem;">
+                  <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                    <input type="radio" name="ai-target-mode" value="all" checked onchange="updateAiTagFilterUI()" style="accent-color: #38bdf8;">
+                    <span>Tất cả khách hàng</span>
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                    <input type="radio" name="ai-target-mode" value="blacklist" onchange="updateAiTagFilterUI()" style="accent-color: #38bdf8;">
+                    <span>🚫 Blacklist (Bỏ qua thẻ chọn)</span>
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                    <input type="radio" name="ai-target-mode" value="whitelist" onchange="updateAiTagFilterUI()" style="accent-color: #38bdf8;">
+                    <span>✅ Whitelist (Chỉ trả lời thẻ chọn)</span>
+                  </label>
+                </div>
+
+                <div id="ai-tags-selector-wrap" style="display: none; flex-direction: column; gap: 5px; margin-top: 4px;">
+                  <div id="ai-tags-selector-box" style="display: flex; flex-wrap: wrap; gap: 6px; max-height: 80px; overflow-y: auto;"></div>
+                </div>
+              </div>
+
+              <!-- SCOPE / ĐIỀU CẤM KỴ -->
+              <div>
+                <label class="form-label" style="font-weight: 700; color: #f87171; font-size: 0.82rem; margin-bottom: 4px;">
+                  🚫 Ranh Giới &amp; Điều Cấm Kỵ (SCOPE):
+                </label>
+                <textarea class="form-textarea" id="ai-scope-input" style="height: 80px; font-size: 0.82rem;" placeholder="Những điều AI TUYỆT ĐỐI không được nói hoặc cam kết (Ví dụ: Không cung cấp số tài khoản cá nhân, không hứa hẹn giảm giá quá 10%)..."></textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- SUB-PANE 5: THỬ NGHIỆM PLAYGROUND -->
+          <div class="ai-tab-pane" id="pane-sim" style="display: none;">
+            <div style="display: flex; flex-direction: column; gap: 10px; height: 380px;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="font-size: 0.76rem; color: var(--text-muted);">
+                  Trò chuyện trực tiếp với AI theo đúng nhân cách và tri thức của hồ sơ này.
+                </div>
+                <button type="button" class="filter-btn" onclick="clearSimChatHistory()" style="font-size: 0.72rem; padding: 2px 8px;">
+                  🧹 Xóa lịch sử test
+                </button>
+              </div>
+
+              <!-- SIMULATOR CHAT STREAM -->
+              <div id="sim-chat-stream" style="flex: 1; background: rgba(0,0,0,0.4); border: 1px solid var(--border); border-radius: 10px; padding: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
+                <div style="text-align: center; color: var(--text-muted); font-size: 0.78rem; padding: 20px;">
+                  👋 Hãy gõ câu hỏi thử nghiệm để kiểm tra phản xạ của Bot AI...
+                </div>
+              </div>
+
+              <!-- SIMULATOR INPUT BAR -->
+              <div style="display: flex; gap: 8px;">
+                <input type="text" class="form-input" id="sim-chat-input" placeholder="Gõ tin nhắn thử nghiệm (ví dụ: Shop còn hàng không, giá bao nhiêu?)..." onkeydown="if(event.key==='Enter') sendSimMessage()">
+                <button type="button" class="send-btn" id="btn-send-sim" onclick="sendSimMessage()" style="padding: 8px 18px; font-size: 0.84rem; white-space: nowrap;">
+                  Gửi Test 🚀
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- NÚT LƯU PROFILE RIÊNG -->
+          <div style="display: flex; justify-content: flex-end; margin-top: 14px;">
+            <button type="button" class="send-btn" id="btn-save-ai-profile" onclick="saveActiveAiProfile()" style="padding: 8px 22px; font-size: 0.86rem; font-weight: 700;">
+              💾 Lưu Cấu Hình Hồ Sơ Này
+            </button>
           </div>
         </div>
 
-        <!-- TAB 5: PHÒNG THỬ NGHIỆM (SIMULATOR PLAYGROUND) -->
-        <div class="ai-tab-pane" id="pane-sim" style="display: none;">
-          <div style="display: flex; flex-direction: column; gap: 10px; height: 380px;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <div style="font-size: 0.76rem; color: var(--text-muted);">
-                Trò chuyện trực tiếp với AI theo đúng cấu hình SOUL, MEMORY, SCOPE và MODEL đang chọn.
+        <!-- ===================================================================
+             MAIN TAB 3: PHÂN BỔ BOT & TÀI KHOẢN (ACCOUNT ALLOCATION MATRIX)
+             =================================================================== -->
+        <div class="ai-main-pane" id="pane-main-allocation" style="display: none;">
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+            <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px;">
+              <div style="font-weight: 700; font-size: 0.84rem; color: #38bdf8; margin-bottom: 6px;">
+                👑 Nguyên Tắc Phân Giải Hồ Sơ 3 Tầng (Cascading Resolution):
               </div>
-              <button type="button" class="filter-btn" onclick="clearSimChatHistory()" style="font-size: 0.72rem; padding: 2px 8px;">
-                🧹 Xóa lịch sử test
-              </button>
-            </div>
-
-            <!-- SIMULATOR CHAT STREAM -->
-            <div id="sim-chat-stream" style="flex: 1; background: rgba(0,0,0,0.4); border: 1px solid var(--border); border-radius: 10px; padding: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
-              <div style="text-align: center; color: var(--text-muted); font-size: 0.78rem; padding: 20px;">
-                👋 Hãy gõ câu hỏi thử nghiệm để kiểm tra phản xạ của Bot AI...
+              <div style="font-size: 0.76rem; color: var(--text-muted); line-height: 1.5;">
+                <div>1. <strong>Tầng 1 (Ưu tiên cao nhất):</strong> Cuộc trò chuyện có chỉ định Hồ sơ AI riêng (chọn trong Drawer Thông Tin Hội Thoại).</div>
+                <div>2. <strong>Tầng 2 (Tài khoản Zalo):</strong> Nick Zalo được gán phụ trách một Hồ sơ nghiệp vụ nhất định (cấu hình trong bảng bên dưới).</div>
+                <div>3. <strong>Tầng 3 (Dự phòng toàn cục):</strong> Dùng Hồ sơ AI Mặc Định nếu chưa có bất kỳ cấu hình nào ở Tầng 1 và Tầng 2.</div>
               </div>
             </div>
 
-            <!-- SIMULATOR INPUT BAR -->
-            <div style="display: flex; gap: 8px;">
-              <input type="text" class="form-input" id="sim-chat-input" placeholder="Gõ tin nhắn thử nghiệm (ví dụ: Shop còn hàng không, giá bao nhiêu?)..." onkeydown="if(event.key==='Enter') sendSimMessage()">
-              <button type="button" class="send-btn" id="btn-send-sim" onclick="sendSimMessage()" style="padding: 8px 18px; font-size: 0.84rem; white-space: nowrap;">
-                Gửi Test 🚀
-              </button>
+            <div style="background: rgba(15, 23, 42, 0.5); border: 1px solid var(--border); border-radius: 10px; padding: 14px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <div style="font-weight: 800; font-size: 0.84rem; color: #f8fafc; text-transform: uppercase;">
+                  🤖 Ma Trận Phân Bổ Bot Zalo (Multi-Account Pool)
+                </div>
+                <button type="button" class="filter-btn" onclick="renderAiAccountAllocations()" style="font-size: 0.74rem; padding: 3px 8px;">
+                  🔄 Làm Mới
+                </button>
+              </div>
+
+              <div style="overflow-x: auto;">
+                <table class="ai-allocation-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 40%;">Tài Khoản Zalo (Bot)</th>
+                      <th style="width: 40%;">Hồ Sơ AI Phụ Trách</th>
+                      <th style="width: 20%; text-align: center;">Trạng Thái</th>
+                    </tr>
+                  </thead>
+                  <tbody id="ai-allocation-table-body">
+                    <tr>
+                      <td colspan="3" style="text-align: center; color: var(--text-muted); padding: 20px;">
+                        Đang tải danh sách tài khoản Zalo...
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>
@@ -1520,9 +1682,6 @@
         </div>
         <div style="display: flex; gap: 8px;">
           <button class="filter-btn" onclick="closeModal('modal-ai-brain')">Đóng</button>
-          <button class="send-btn" id="btn-save-ai-settings" onclick="saveKnowledgeSettings()" style="padding: 8px 20px; font-size: 0.86rem; font-weight: 700;">
-            💾 Lưu Cấu Hình AI Suite
-          </button>
         </div>
       </div>
     </div>
@@ -1572,13 +1731,14 @@
       <!-- MODAL HEADER -->
       <div class="modal-header" style="padding: 14px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
         <div>
-          <div style="display: flex; align-items: center; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
             <span style="font-size: 1.15rem;">🧠</span>
-            <h2 class="modal-title" style="font-size: 1.05rem; font-weight: 700; color: #f8fafc; margin: 0;">
-              Mini Second Brain Wiki — Toàn Cảnh Bộ Não AI
+            <h2 class="modal-title" style="font-size: 1.05rem; font-weight: 700; color: #f8fafc; margin: 0; display: flex; align-items: center; gap: 8px;">
+              Mini Second Brain Wiki — <span id="wiki-modal-profile-title" style="color: #38bdf8;">Toàn Cảnh Bộ Não AI</span>
             </h2>
+            <span id="wiki-modal-profile-badge" class="ai-hub-badge success" style="font-size: 0.72rem; padding: 2px 8px;">Mặc định</span>
           </div>
-          <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 2px;">
+          <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 2px;" id="wiki-modal-profile-desc">
             Tổng hợp đồng bộ tri thức: SOUL, MEMORY, Q&amp;A chuẩn mực, Few-Shot và Quy tắc ứng xử.
           </div>
         </div>

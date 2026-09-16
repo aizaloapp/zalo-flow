@@ -2496,4 +2496,124 @@ console.log('55. Testing Isolated Account Removal & Destroy Lifecycle...');
   console.log('   ✅ Isolated Account Removal & Destroy Lifecycle passed!\n');
 }
 
-console.log('🎉 ALL 55 INTEGRITY, SECURITY, CRM, AIZALO REMARKETING, AI SUITE, BULK DEEP-SYNC, QR AUTH, MEMORY GUARD, ZALO SANITIZER, DESKTOP PACKAGED, CLEAN SWITCH, MULTI-DEVICE SYNC, GROUP MENTION, QUICK-MSG, CAMPAIGN TEST DISPATCH, GROUP RECONCILIATION, AUTO-FALLBACK OPENROUTER, MULTIMODAL VISION, STRANGER IDENTITY, SCHEDULED MESSAGES, UNIVERSAL WIKI URL INGESTION, LIVE CHAT MEDIA CAPTION, CHAT AVATAR DYNAMIC, i18n MULTI-LANGUAGE, CSRF LOCALHOST SHIELD, PIN/CONTEXT ACTIONS, OA ISOLATION, OA MUTEX, OA ROUTING, ANTI-MOJIBAKE, UI RENDERER & MULTI-ACCOUNT POOL (51-55) TESTS PASSED 100%!');
+// -----------------------------------------------------------------------------
+// Test 56: Multi-Profile AI Suite (Personas, 3-Tier Resolution & Self-Healing Deletion)
+// -----------------------------------------------------------------------------
+console.log('56. Testing Multi-Profile AI Suite (Personas & Contextual Resolution)...');
+{
+  const profileDbPath = path.resolve(process.cwd(), 'data', 'test_multi_profiles.sqlite');
+  if (fs.existsSync(profileDbPath)) {
+    try { fs.unlinkSync(profileDbPath); } catch {}
+  }
+
+  const store = new LocalStore(profileDbPath);
+
+  // 1. Check auto-migration: 'default' profile must exist
+  const profiles = store.getAiProfiles();
+  assert(Array.isArray(profiles), 'Profiles should be an array');
+  assert(profiles.length >= 1, 'Should have at least 1 default profile');
+  const defaultProf = store.getAiProfile('default');
+  assert.strictEqual(defaultProf.id, 'default');
+  assert.strictEqual(defaultProf.isDefault, true);
+
+  // 2. Create custom profile
+  const salesProf = store.saveAiProfile({
+    id: 'prof_sales',
+    name: 'Trợ Lý Bán Hàng',
+    icon: '🛍️',
+    model: 'glm-5.3-flash',
+    temperature: 0.8,
+    soulPrompt: 'Chuyên viên bán hàng xưng em',
+    memoryPrompt: 'Bảng giá sản phẩm A: 500k'
+  });
+  assert.strictEqual(salesProf.id, 'prof_sales');
+  assert.strictEqual(salesProf.temperature, 0.8);
+  assert.strictEqual(store.getAiProfiles().length, 2);
+
+  // 3. Default profile deletion must be blocked
+  let deleteDefaultFailed = false;
+  try {
+    store.deleteAiProfile('default');
+  } catch {
+    deleteDefaultFailed = true;
+  }
+  assert.strictEqual(deleteDefaultFailed, true, 'Deleting default profile must be blocked');
+
+  // 4. Assign account & conversation, then test Self-Healing Deletion
+  store.upsertAccount({ accountUid: 'acc_sales_1', displayName: 'Sales Rep 1', aiProfileId: 'prof_sales' });
+  store.upsertConversation({ id: 'thread_cust_1', name: 'Khách 1', accountUid: 'acc_sales_1' });
+  store.assignConversationAiProfile('acc_sales_1', 'thread_cust_1', 'prof_sales');
+
+  assert.strictEqual(store.getAccount('acc_sales_1').aiProfileId, 'prof_sales');
+  assert.strictEqual(store.getConversation('thread_cust_1', 'acc_sales_1').aiProfileId, 'prof_sales');
+
+  // Delete prof_sales
+  const deleted = store.deleteAiProfile('prof_sales');
+  assert.strictEqual(deleted, true);
+
+  // Re-point check: account -> 'default', conversation -> null
+  assert.strictEqual(store.getAccount('acc_sales_1').aiProfileId, 'default');
+  assert.strictEqual(store.getConversation('thread_cust_1', 'acc_sales_1').aiProfileId, null);
+
+  // 5. 3-Tier Resolution Order
+  store.saveAiProfile({ id: 'prof_vip', name: 'Profile VIP', soulPrompt: 'Tư vấn VIP' });
+  store.saveAiProfile({ id: 'prof_normal', name: 'Profile Normal', soulPrompt: 'Tư vấn thường' });
+  store.upsertAccount({ accountUid: 'acc_tiered_1', displayName: 'Tiered Rep', aiProfileId: 'prof_normal' });
+  store.upsertConversation({ id: 'thread_vip_88', name: 'VIP Customer', accountUid: 'acc_tiered_1' });
+
+  // Tier 2: Account binding
+  assert.strictEqual(store.resolveAiProfileForContext({ threadId: 'thread_vip_88', accountUid: 'acc_tiered_1' }).id, 'prof_normal');
+
+  // Tier 1: Thread override
+  store.assignConversationAiProfile('acc_tiered_1', 'thread_vip_88', 'prof_vip');
+  assert.strictEqual(store.resolveAiProfileForContext({ threadId: 'thread_vip_88', accountUid: 'acc_tiered_1' }).id, 'prof_vip');
+
+  // Dangling pointer recovery: thread invalid -> fallback to account binding
+  store.assignConversationAiProfile('acc_tiered_1', 'thread_vip_88', 'non_existent_profile_id');
+  assert.strictEqual(store.resolveAiProfileForContext({ threadId: 'thread_vip_88', accountUid: 'acc_tiered_1' }).id, 'prof_normal');
+
+  // Both thread and account invalid -> fallback to global default
+  store.assignAccountAiProfile('acc_tiered_1', 'another_non_existent_id');
+  assert.strictEqual(store.resolveAiProfileForContext({ threadId: 'thread_vip_88', accountUid: 'acc_tiered_1' }).id, 'default');
+
+  // 6. Mini Second Brain Wiki Integration per Profile (Regression Guard)
+  const customWikiMarkdown = `# 🧠 MINI SECOND BRAIN WIKI — HỆ TRI THỨC AI
+## 🎭 1. Giọng Điệu & Nhân Cách Cốt Lõi (SOUL)
+Bạn là Trợ Lý Nội Bộ Công Ty, xưng Tôi và gọi Bạn.
+
+## 📚 2. Tri Thức Sản Phẩm & Bảng Giá Dịch Vụ (MEMORY)
+Chính sách nghỉ phép 12 ngày/năm. Hotline IT: 19001234.
+`;
+  const parsedCustom = aiAgentAdapter.parseWikiMarkdown(customWikiMarkdown, store.getAiProfile('prof_vip'));
+  store.saveAiProfile({
+    id: 'prof_vip',
+    soulPrompt: parsedCustom.soul,
+    memoryPrompt: parsedCustom.memory,
+    wikiSourceUrl: 'https://raw.githubusercontent.com/company/wiki/main/internal.md'
+  });
+
+  const updatedProfVip = store.getAiProfile('prof_vip');
+  assert.strictEqual(updatedProfVip.soulPrompt, 'Bạn là Trợ Lý Nội Bộ Công Ty, xưng Tôi và gọi Bạn.');
+  assert.strictEqual(updatedProfVip.memoryPrompt, 'Chính sách nghỉ phép 12 ngày/năm. Hotline IT: 19001234.');
+  assert.strictEqual(updatedProfVip.wikiSourceUrl, 'https://raw.githubusercontent.com/company/wiki/main/internal.md');
+
+  // Verify compiled view reflects the profile
+  const compiledView = aiAgentAdapter.compileWikiView(updatedProfVip);
+  assert.ok(compiledView.includes('Hồ sơ AI'), 'Compiled wiki view must include profile identity');
+  assert.ok(compiledView.includes('Profile VIP'), 'Compiled wiki view must include profile name');
+  assert.ok(compiledView.includes('Chính sách nghỉ phép 12 ngày/năm'), 'Compiled wiki view must include profile-specific memory');
+
+  // 7. Whitelist in cleanSwitchAccountData
+  store.cleanSwitchAccountData();
+  assert(store.getAiProfile('prof_vip') !== null, 'ai_profiles must be preserved on account switch');
+
+  store.close();
+  try { fs.unlinkSync(profileDbPath); } catch {}
+  try { fs.unlinkSync(`${profileDbPath}-wal`); } catch {}
+  try { fs.unlinkSync(`${profileDbPath}-shm`); } catch {}
+
+  console.log('   ✅ Multi-Profile AI Suite passed!\n');
+}
+
+console.log('🎉 ALL 56 INTEGRITY, SECURITY, CRM, AIZALO REMARKETING, AI SUITE, BULK DEEP-SYNC, QR AUTH, MEMORY GUARD, ZALO SANITIZER, DESKTOP PACKAGED, CLEAN SWITCH, MULTI-DEVICE SYNC, GROUP MENTION, QUICK-MSG, CAMPAIGN TEST DISPATCH, GROUP RECONCILIATION, AUTO-FALLBACK OPENROUTER, MULTIMODAL VISION, STRANGER IDENTITY, SCHEDULED MESSAGES, UNIVERSAL WIKI URL INGESTION, LIVE CHAT MEDIA CAPTION, CHAT AVATAR DYNAMIC, i18n MULTI-LANGUAGE, CSRF LOCALHOST SHIELD, PIN/CONTEXT ACTIONS, OA ISOLATION, OA MUTEX, OA ROUTING, ANTI-MOJIBAKE, UI RENDERER, MULTI-ACCOUNT POOL (51-55) & MULTI-PROFILE AI SUITE (56) TESTS PASSED 100%!');
+

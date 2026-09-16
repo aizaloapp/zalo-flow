@@ -15,7 +15,7 @@
 [![CI Quality Gate](https://github.com/aizaloapp/zalo-flow/actions/workflows/ci.yml/badge.svg)](https://github.com/aizaloapp/zalo-flow/actions/workflows/ci.yml)
 [![Anti-Leak & Secret Scan](https://github.com/aizaloapp/zalo-flow/actions/workflows/secret-scan.yml/badge.svg)](https://github.com/aizaloapp/zalo-flow/actions/workflows/secret-scan.yml)
 [![Memory Footprint](https://img.shields.io/badge/RAM-%3C%20100MB-success.svg)](test/test-all.js)
-[![Tests Passing](https://img.shields.io/badge/Tests-45%2F45%20Passing-brightgreen.svg)](test/test-all.js)
+[![Tests Passing](https://img.shields.io/badge/Tests-56%2F56%20Passing-brightgreen.svg)](test/test-all.js)
 [![Docker Ready](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](docker-compose.yml)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
@@ -33,16 +33,17 @@
 
 No Git, no Node.js installation, no command line terminals required:
 
-[![Download Windows Setup](https://img.shields.io/badge/Windows-Download%20Setup%20v1.3.0%20(.exe)-0068FF?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/aizaloapp/zalo-flow/releases/latest)
+[![Download Windows Setup](https://img.shields.io/badge/Windows-Download%20Setup%20v1.4.0%20(.exe)-0068FF?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/aizaloapp/zalo-flow/releases/latest)
 
-> 💡 **Download & Run:** Click the button above to download **`ZaloFlow-Setup-v1.3.0.exe`** (Only **24.5MB**). Run the installer in 30 seconds to get your Zalo-Flow desktop assistant ready!
+> 💡 **Download & Run:** Click the button above to download **`ZaloFlow-Setup-v1.4.0.exe`** (Only **24.5MB**). Run the installer in 30 seconds to get your Zalo-Flow desktop assistant ready!
 
-> 🚀 **What's New in v1.3.0:**
-> - 📌 **Pin Conversations to Top:** Pin up to 5 vital conversations at the top with a 📌 badge, powered by `Realtime Prepend Guard` to preserve pin order during inbound realtime messages.
-> - 🖱️ **Context Menu & Three-Dot Hover Action:** Quick actions directly on conversation cards matching Zalo Web/PC ergonomics, smart flip positioning, and smooth dismissal on scroll/Escape.
-> - 🏷️ **Direct Tag Classification & Tag Dots:** 1-Click tag toggling directly from the context menu; visual tag color dots right on sidebar conversation cards.
-> - ✉️ **Mark as Unread / Read & Local Conversation Deletion:** Mark messages as unread for reminder tracking, and safely purge local conversation history without touching mobile data.
-> - 🧪 **100% Quality Assurance:** Added Test Suite #45, passing all 45/45 test suites.
+> 🚀 **What's New in v1.4.0:**
+> - 🧠 **Multi-Profile AI Suite & 3-Tier Architecture:** Complete decoupling of Shared LLM Engine (API Key, Auto-Fallback Shield) from Business Personas. Create unlimited AI profiles with dedicated SOUL, Knowledge Memory, Few-Shot Exemplars, Scope/Rules, and Model Overrides.
+> - 📋 **4 Built-in Golden Script Templates:** 1-Click apply battle-tested prompt kits for E-com Sales, B2B Consulting, HR/SOP Internal Assistant, and Technical Support.
+> - 🎯 **Bot Account Allocation & Thread Override (Cascading Resolution):** Map multiple Zalo accounts to specific AI personas, plus override personas on individual VIP customer threads directly from the CRM Drawer.
+> - 🔄 **2-Way Mini Second Brain Wiki Synchronization:** Context-aware wiki viewer/editor synced independently for each AI persona with local .md file import and URL ingestion.
+> - ⚙️ **Dynamic Optgroup Model Override Sync:** Organizes models neatly by active Primary & Fallback providers with real-time UI synchronization.
+> - 🧪 **100% Quality Assurance:** Added Test Suite #56, passing all 56/56 test suites.
 
 </div>
 

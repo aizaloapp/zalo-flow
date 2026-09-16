@@ -368,6 +368,50 @@ export class LocalStore extends EventEmitter {
       if (!aiCols.includes('fallbackApiKeyEncrypted')) this.db.exec("ALTER TABLE ai_settings ADD COLUMN fallbackApiKeyEncrypted TEXT DEFAULT '';");
       if (!aiCols.includes('wikiSourceUrl'))        this.db.exec("ALTER TABLE ai_settings ADD COLUMN wikiSourceUrl TEXT DEFAULT '';");
 
+      // Multi-Profile AI Suite Table & Reconciliation
+      this.db.exec(`
+        CREATE TABLE IF NOT EXISTS ai_profiles (
+          id                   TEXT PRIMARY KEY,
+          name                 TEXT NOT NULL,
+          icon                 TEXT DEFAULT '🤖',
+          description          TEXT DEFAULT '',
+          isDefault            INTEGER DEFAULT 0,
+          model                TEXT DEFAULT '',
+          temperature          REAL DEFAULT 0.7,
+          soulPrompt           TEXT DEFAULT '',
+          memoryPrompt         TEXT DEFAULT '',
+          fewShotPrompt        TEXT DEFAULT '',
+          exemplarConversation TEXT DEFAULT '',
+          scopePrompt          TEXT DEFAULT '',
+          wikiSourceUrl        TEXT DEFAULT '',
+          createdAt            TEXT DEFAULT (datetime('now')),
+          updatedAt            TEXT DEFAULT (datetime('now'))
+        );
+      `);
+
+      // Auto-Migration: If ai_profiles is empty, migrate current ai_settings into 'default' profile
+      const profileCount = this.db.prepare("SELECT COUNT(*) as count FROM ai_profiles;").get()?.count || 0;
+      if (profileCount === 0) {
+        const currentAi = this.db.prepare("SELECT * FROM ai_settings WHERE id = 'default'").get() || {};
+        this.db.prepare(`
+          INSERT OR IGNORE INTO ai_profiles (
+            id, name, icon, description, isDefault, model, temperature,
+            soulPrompt, memoryPrompt, fewShotPrompt, exemplarConversation, scopePrompt, wikiSourceUrl, createdAt, updatedAt
+          ) VALUES (
+            'default', 'Trợ Lý Mặc Định', '🤖', 'Hồ sơ mặc định được chuyển đổi tự động từ AI Suite', 1, '', 0.7,
+            ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now')
+          );
+        `).run(
+          currentAi.soulPrompt || '',
+          currentAi.memoryPrompt || '',
+          currentAi.fewShotPrompt || '',
+          currentAi.exemplarConversation || '',
+          currentAi.scopePrompt || '',
+          currentAi.wikiSourceUrl || ''
+        );
+        logger.info('✅ [Multi-Profile Migration] Successfully seeded default AI profile from existing ai_settings!');
+      }
+
       // Scheduled Messages (1-1 Direct In-Thread Scheduling) Table & Indexes
       this.db.exec(`
         CREATE TABLE IF NOT EXISTS scheduled_messages (
@@ -437,6 +481,11 @@ export class LocalStore extends EventEmitter {
         );
       `);
 
+      const accCols = this.db.prepare("PRAGMA table_info('accounts');").all().map(c => c.name);
+      if (!accCols.includes('aiProfileId')) {
+        this.db.exec("ALTER TABLE accounts ADD COLUMN aiProfileId TEXT DEFAULT 'default';");
+      }
+
       // Detach obsolete foreign keys from conversation_tags and scheduled_messages
       try {
         const ctFks = this.db.prepare("PRAGMA foreign_key_list('conversation_tags');").all();
@@ -498,6 +547,9 @@ export class LocalStore extends EventEmitter {
       if (!hasAccountUidCol) {
         this.db.exec("ALTER TABLE conversations ADD COLUMN accountUid TEXT DEFAULT 'default';");
       }
+      if (!convTableInfo.some(c => c.name === 'aiProfileId')) {
+        this.db.exec("ALTER TABLE conversations ADD COLUMN aiProfileId TEXT DEFAULT NULL;");
+      }
       const msgTableInfo = this.db.prepare("PRAGMA table_info('messages');").all();
       const hasMsgAccountUid = msgTableInfo.some(c => c.name === 'accountUid');
       if (!hasMsgAccountUid) {
@@ -530,6 +582,7 @@ export class LocalStore extends EventEmitter {
               lastUserMessageTime INTEGER DEFAULT NULL,
               customerPhone TEXT DEFAULT '',
               aiEnabled   INTEGER DEFAULT 1,
+              aiProfileId TEXT DEFAULT NULL,
               phone       TEXT DEFAULT '',
               email       TEXT DEFAULT '',
               address     TEXT DEFAULT '',
@@ -540,10 +593,10 @@ export class LocalStore extends EventEmitter {
             );
 
             INSERT OR IGNORE INTO conversations_v5 (
-              id, accountUid, name, avatar, isGroup, lastMessage, lastTime, unreadCount, isPinned, channel, oaId, isFollower, lastUserMessageTime, customerPhone, aiEnabled, phone, email, address, needs, notes, updatedAt
+              id, accountUid, name, avatar, isGroup, lastMessage, lastTime, unreadCount, isPinned, channel, oaId, isFollower, lastUserMessageTime, customerPhone, aiEnabled, aiProfileId, phone, email, address, needs, notes, updatedAt
             )
             SELECT 
-              id, COALESCE(NULLIF(accountUid, ''), 'default'), name, avatar, isGroup, lastMessage, lastTime, unreadCount, isPinned, channel, oaId, isFollower, lastUserMessageTime, customerPhone, aiEnabled, phone, email, address, needs, notes, updatedAt
+              id, COALESCE(NULLIF(accountUid, ''), 'default'), name, avatar, isGroup, lastMessage, lastTime, unreadCount, isPinned, channel, oaId, isFollower, lastUserMessageTime, customerPhone, aiEnabled, NULL, phone, email, address, needs, notes, updatedAt
             FROM conversations;
 
             DROP TABLE conversations;
@@ -657,11 +710,12 @@ export class LocalStore extends EventEmitter {
     const sessionFile = acc.sessionFile !== undefined ? acc.sessionFile : (existing?.sessionFile || `zalo_${accountUid}`);
     const isDefault = acc.isDefault !== undefined ? (acc.isDefault ? 1 : 0) : (existing?.isDefault ? 1 : 0);
     const status = acc.status !== undefined ? acc.status : (existing?.status || 'offline');
+    const aiProfileId = acc.aiProfileId !== undefined ? acc.aiProfileId : (existing?.aiProfileId || 'default');
     const updatedAt = new Date().toISOString();
 
     const stmt = this.db.prepare(`
-      INSERT INTO accounts (accountUid, displayName, avatar, phone, sessionFile, isDefault, status, updatedAt)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO accounts (accountUid, displayName, avatar, phone, sessionFile, isDefault, status, aiProfileId, updatedAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(accountUid) DO UPDATE SET
         displayName = excluded.displayName,
         avatar = CASE WHEN excluded.avatar != '' THEN excluded.avatar ELSE accounts.avatar END,
@@ -669,9 +723,10 @@ export class LocalStore extends EventEmitter {
         sessionFile = CASE WHEN excluded.sessionFile != '' THEN excluded.sessionFile ELSE accounts.sessionFile END,
         isDefault = excluded.isDefault,
         status = excluded.status,
+        aiProfileId = CASE WHEN excluded.aiProfileId != '' THEN excluded.aiProfileId ELSE accounts.aiProfileId END,
         updatedAt = excluded.updatedAt
     `);
-    stmt.run(accountUid, displayName, avatar, phone, sessionFile, isDefault, status, updatedAt);
+    stmt.run(accountUid, displayName, avatar, phone, sessionFile, isDefault, status, aiProfileId, updatedAt);
     return this.getAccount(accountUid);
   }
 
@@ -2089,11 +2144,199 @@ export class LocalStore extends EventEmitter {
     return this.getConversation(threadId);
   }
 
+  // ---------------------------------------------------------------------------
+  // Multi-Profile AI Suite (Personas, Wiki Second Brain & Contextual Routing)
+  // ---------------------------------------------------------------------------
+  getAiProfiles() {
+    return this.db.prepare('SELECT * FROM ai_profiles ORDER BY isDefault DESC, createdAt ASC').all().map(p => ({
+      ...p,
+      isDefault: Boolean(p.isDefault)
+    }));
+  }
+
+  getAiProfile(id) {
+    if (!id) return null;
+    const row = this.db.prepare('SELECT * FROM ai_profiles WHERE id = ?').get(String(id));
+    if (!row) return null;
+    return {
+      ...row,
+      isDefault: Boolean(row.isDefault)
+    };
+  }
+
+  getDefaultAiProfile() {
+    const row = this.db.prepare('SELECT * FROM ai_profiles WHERE isDefault = 1 LIMIT 1').get()
+      || this.db.prepare("SELECT * FROM ai_profiles WHERE id = 'default' LIMIT 1").get()
+      || this.db.prepare('SELECT * FROM ai_profiles LIMIT 1').get();
+    if (!row) return null;
+    return {
+      ...row,
+      isDefault: Boolean(row.isDefault)
+    };
+  }
+
+  saveAiProfile(data) {
+    if (!data) return null;
+    const id = data.id || `profile_${Date.now()}`;
+    const existing = this.getAiProfile(id);
+
+    const name = data.name !== undefined ? String(data.name).trim() : (existing?.name || 'Hồ Sơ Mới');
+    const icon = data.icon !== undefined ? String(data.icon).trim() : (existing?.icon || '🤖');
+    const description = data.description !== undefined ? String(data.description).trim() : (existing?.description || '');
+    const isDefault = data.isDefault !== undefined ? (data.isDefault ? 1 : 0) : (existing?.isDefault ? 1 : 0);
+    const model = data.model !== undefined ? String(data.model).trim() : (existing?.model || '');
+    const temperature = data.temperature !== undefined ? Number(data.temperature) : (existing?.temperature ?? 0.7);
+    const soulPrompt = data.soulPrompt !== undefined ? String(data.soulPrompt) : (existing?.soulPrompt || '');
+    const memoryPrompt = data.memoryPrompt !== undefined ? String(data.memoryPrompt) : (existing?.memoryPrompt || '');
+    const fewShotPrompt = data.fewShotPrompt !== undefined ? String(data.fewShotPrompt) : (existing?.fewShotPrompt || '');
+    const exemplarConversation = data.exemplarConversation !== undefined 
+      ? (typeof data.exemplarConversation === 'object' ? JSON.stringify(data.exemplarConversation) : String(data.exemplarConversation))
+      : (existing?.exemplarConversation || '');
+    const scopePrompt = data.scopePrompt !== undefined ? String(data.scopePrompt) : (existing?.scopePrompt || '');
+    const wikiSourceUrl = data.wikiSourceUrl !== undefined ? String(data.wikiSourceUrl).trim() : (existing?.wikiSourceUrl || '');
+
+    // Nếu đặt làm default, bỏ cờ default của các profile khác
+    if (isDefault) {
+      this.db.prepare('UPDATE ai_profiles SET isDefault = 0').run();
+    }
+
+    this.db.prepare(`
+      INSERT INTO ai_profiles (
+        id, name, icon, description, isDefault, model, temperature,
+        soulPrompt, memoryPrompt, fewShotPrompt, exemplarConversation, scopePrompt, wikiSourceUrl, updatedAt
+      ) VALUES (
+        ?, ?, ?, ?, ?, ?, ?,
+        ?, ?, ?, ?, ?, ?, datetime('now')
+      )
+      ON CONFLICT(id) DO UPDATE SET
+        name = excluded.name,
+        icon = excluded.icon,
+        description = excluded.description,
+        isDefault = excluded.isDefault,
+        model = excluded.model,
+        temperature = excluded.temperature,
+        soulPrompt = excluded.soulPrompt,
+        memoryPrompt = excluded.memoryPrompt,
+        fewShotPrompt = excluded.fewShotPrompt,
+        exemplarConversation = excluded.exemplarConversation,
+        scopePrompt = excluded.scopePrompt,
+        wikiSourceUrl = excluded.wikiSourceUrl,
+        updatedAt = datetime('now')
+    `).run(
+      id, name, icon, description, isDefault, model, temperature,
+      soulPrompt, memoryPrompt, fewShotPrompt, exemplarConversation, scopePrompt, wikiSourceUrl
+    );
+
+    return this.getAiProfile(id);
+  }
+
+  deleteAiProfile(id) {
+    if (!id || id === 'default') {
+      throw new Error('Không thể xóa Profile mặc định của hệ thống.');
+    }
+    const profile = this.getAiProfile(id);
+    if (!profile) return false;
+    if (profile.isDefault) {
+      throw new Error('Không thể xóa Profile đang được đặt làm mặc định.');
+    }
+
+    this.db.exec('BEGIN IMMEDIATE;');
+    try {
+      // Self-Healing Deletion: Cập nhật tài khoản về default, hội thoại về NULL
+      this.db.prepare("UPDATE accounts SET aiProfileId = 'default' WHERE aiProfileId = ?").run(id);
+      this.db.prepare('UPDATE conversations SET aiProfileId = NULL WHERE aiProfileId = ?').run(id);
+      this.db.prepare('DELETE FROM ai_profiles WHERE id = ?').run(id);
+      this.db.exec('COMMIT;');
+      return true;
+    } catch (err) {
+      this.db.exec('ROLLBACK;');
+      throw err;
+    }
+  }
+
+  setDefaultAiProfile(id) {
+    if (!id) return null;
+    const profile = this.getAiProfile(id);
+    if (!profile) return null;
+    this.db.exec('BEGIN IMMEDIATE;');
+    try {
+      this.db.prepare('UPDATE ai_profiles SET isDefault = 0').run();
+      this.db.prepare('UPDATE ai_profiles SET isDefault = 1, updatedAt = datetime(\'now\') WHERE id = ?').run(id);
+      this.db.exec('COMMIT;');
+      return this.getAiProfile(id);
+    } catch (err) {
+      this.db.exec('ROLLBACK;');
+      throw err;
+    }
+  }
+
+  assignAccountAiProfile(accountUid, aiProfileId) {
+    if (!accountUid) return null;
+    const targetProfileId = aiProfileId || 'default';
+    this.db.prepare('UPDATE accounts SET aiProfileId = ?, updatedAt = datetime(\'now\') WHERE accountUid = ?').run(targetProfileId, String(accountUid));
+    return this.getAccount(accountUid);
+  }
+
+  assignConversationAiProfile(accountUid, threadId, aiProfileId) {
+    if (!threadId) return null;
+    const profileVal = aiProfileId ? String(aiProfileId) : null;
+    if (accountUid && accountUid !== 'all') {
+      this.db.prepare(`
+        UPDATE conversations 
+        SET aiProfileId = ?, updatedAt = datetime('now') 
+        WHERE id = ? AND accountUid = ?
+      `).run(profileVal, String(threadId), String(accountUid));
+    } else {
+      this.db.prepare(`
+        UPDATE conversations 
+        SET aiProfileId = ?, updatedAt = datetime('now') 
+        WHERE id = ?
+      `).run(profileVal, String(threadId));
+    }
+    return this.getConversation(threadId, accountUid);
+  }
+
+  resolveAiProfileForContext({ threadId, accountUid } = {}) {
+    // Tier 1: Thread-specific override
+    if (threadId) {
+      const conv = this.getConversation(threadId, accountUid);
+      if (conv && conv.aiProfileId) {
+        const customProfile = this.getAiProfile(conv.aiProfileId);
+        if (customProfile) return customProfile;
+      }
+    }
+
+    // Tier 2: Account-specific binding
+    if (accountUid) {
+      const acc = this.getAccount(accountUid);
+      if (acc && acc.aiProfileId) {
+        const accProfile = this.getAiProfile(acc.aiProfileId);
+        if (accProfile) return accProfile;
+      }
+    }
+
+    // Tier 3: Global default fallback (với cơ chế chống Dangling pointer)
+    return this.getDefaultAiProfile() || {
+      id: 'default',
+      name: 'Trợ Lý Mặc Định',
+      icon: '🤖',
+      isDefault: true,
+      model: '',
+      temperature: 0.7,
+      soulPrompt: '',
+      memoryPrompt: '',
+      fewShotPrompt: '',
+      exemplarConversation: '',
+      scopePrompt: '',
+      wikiSourceUrl: ''
+    };
+  }
+
   /**
    * Dọn dẹp an toàn khi đổi tài khoản Zalo (Clean Switch Account)
    * Whitelist bảo vệ tuyệt đối:
    * - CHỈ XÓA: conversations, messages, conversation_tags
-   * - TUYỆT ĐỐI GIỮ NGUYÊN: ai_settings, tags, quick_messages, campaigns
+   * - TUYỆT ĐỐI GIỮ NGUYÊN: ai_settings, ai_profiles, tags, quick_messages, campaigns
    * - HỦY: các bản ghi pending trong campaign_queue và tắt isEnabled của campaigns (Anti-ban)
    */
   cleanSwitchAccountData() {

@@ -258,19 +258,24 @@ router.post('/ai/scan-models', requireAuth, async (req, res) => {
 // -----------------------------------------------------------------------------
 router.post('/ai/simulate', requireAuth, async (req, res) => {
   try {
-    const { message, history = [] } = req.body || {};
+    const { message, history = [], profileId } = req.body || {};
     if (!message || !message.trim()) {
       return res.status(400).json({ error: 'Message is required for simulation' });
     }
 
-    const settings = localStore.getAiSettings();
-    const systemPrompt = aiAgentAdapter.compilePrompt(settings);
+    const profile = (profileId && profileId !== 'default')
+      ? (localStore.getAiProfile(profileId) || localStore.getDefaultAiProfile())
+      : localStore.getDefaultAiProfile();
+    const globalSettings = localStore.getAiSettings() || {};
+    const mergedSettings = { ...globalSettings, ...profile };
+
+    const systemPrompt = aiAgentAdapter.compilePrompt(mergedSettings);
 
     const reply = await aiAgentAdapter.callModelWithFallback(
       systemPrompt,
       history,
       message.trim(),
-      settings
+      mergedSettings
     );
 
     res.json({
@@ -288,10 +293,16 @@ router.post('/ai/simulate', requireAuth, async (req, res) => {
 // -----------------------------------------------------------------------------
 router.get('/ai/wiki-preview', requireAuth, (req, res) => {
   try {
-    const settings = localStore.getAiSettings() || {};
-    const wikiMarkdown = aiAgentAdapter.compileWikiView(settings);
-    const rawPrompt = aiAgentAdapter.compilePrompt(settings);
-    const stats = aiAgentAdapter.getWikiStats(wikiMarkdown, settings);
+    const profileId = req.query.profileId;
+    const profile = (profileId && profileId !== 'default')
+      ? (localStore.getAiProfile(profileId) || localStore.getDefaultAiProfile())
+      : localStore.getDefaultAiProfile();
+    const globalSettings = localStore.getAiSettings() || {};
+    const mergedSettings = { ...globalSettings, ...profile };
+
+    const wikiMarkdown = aiAgentAdapter.compileWikiView(mergedSettings);
+    const rawPrompt = aiAgentAdapter.compilePrompt(mergedSettings);
+    const stats = aiAgentAdapter.getWikiStats(wikiMarkdown, mergedSettings);
     res.json({
       status: 'success',
       data: {
@@ -314,8 +325,20 @@ router.post('/ai/wiki-preview', requireAuth, (req, res) => {
       return res.status(400).json({ error: 'draftSettings must be a valid JSON object' });
     }
 
-    const current = localStore.getAiSettings() || {};
-    const merged = { ...current, ...draft };
+    const profileId = draft.profileId || req.query.profileId;
+    const targetProfile = (profileId && profileId !== 'default')
+      ? (localStore.getAiProfile(profileId) || localStore.getDefaultAiProfile())
+      : localStore.getDefaultAiProfile();
+
+    const globalSettings = localStore.getAiSettings() || {};
+    // Profile-specific settings override global defaults, and draft user inputs override profile
+    const merged = { ...globalSettings, ...(targetProfile || {}), ...draft };
+    if (targetProfile) {
+      merged.name = targetProfile.name;
+      merged.profileName = targetProfile.name;
+      merged.profileId = targetProfile.id;
+      merged.isDefault = Boolean(targetProfile.isDefault);
+    }
 
     const wikiMarkdown = aiAgentAdapter.compileWikiView(merged);
     const rawPrompt = aiAgentAdapter.compilePrompt(merged);
@@ -604,13 +627,20 @@ router.post('/ai/wiki-fetch-url', requireAuth, async (req, res) => {
 // -----------------------------------------------------------------------------
 router.post('/ai/wiki-apply', requireAuth, (req, res) => {
   try {
-    const { markdown, replaceQna = false, wikiSourceUrl = '' } = req.body || {};
+    const { markdown, replaceQna = false, wikiSourceUrl = '', profileId } = req.body || {};
     if (!markdown || typeof markdown !== 'string' || !markdown.trim()) {
       return res.status(400).json({ error: 'Nội dung Markdown không được để trống.' });
     }
 
-    const current = localStore.getAiSettings() || {};
-    const parsed = aiAgentAdapter.parseWikiMarkdown(markdown, current);
+    const targetProfileId = profileId || 'default';
+    const targetProfile = (targetProfileId && targetProfileId !== 'default')
+      ? (localStore.getAiProfile(targetProfileId) || localStore.getDefaultAiProfile())
+      : localStore.getDefaultAiProfile();
+
+    const globalSettings = localStore.getAiSettings() || {};
+    const baseSettings = { ...globalSettings, ...(targetProfile || {}) };
+
+    const parsed = aiAgentAdapter.parseWikiMarkdown(markdown, baseSettings);
     const toUpdate = {};
     const updatedFields = [];
 
@@ -635,8 +665,20 @@ router.post('/ai/wiki-apply', requireAuth, (req, res) => {
       updatedFields.push('Few-Shot (Mẫu chat)');
     }
 
-    // Save AI Settings to SQLite
-    const saved = localStore.saveAiSettings(toUpdate);
+    // 1. Lưu vào bảng ai_profiles cho hồ sơ cụ thể
+    let savedProfile = null;
+    if (targetProfile) {
+      savedProfile = localStore.saveAiProfile({
+        id: targetProfile.id,
+        ...toUpdate
+      });
+    }
+
+    // 2. Nếu là Default profile, đồng thời cập nhật cả ai_settings để tương thích ngược 100%
+    let saved = savedProfile || baseSettings;
+    if (!targetProfile || targetProfile.isDefault || targetProfile.id === 'default') {
+      saved = localStore.saveAiSettings(toUpdate);
+    }
 
     // Sync Q&A Pairs into Quick Messages
     let qnaSyncedCount = 0;
@@ -687,18 +729,27 @@ router.post('/ai/wiki-apply', requireAuth, (req, res) => {
       updatedFields.push(`Q&A (${qnaSyncedCount} câu hỏi đáp)`);
     }
 
-    // Re-compile view & compute stats
-    const freshWikiMarkdown = aiAgentAdapter.compileWikiView(saved);
-    const stats = aiAgentAdapter.getWikiStats(freshWikiMarkdown, saved);
+    // Re-compile view & compute stats for target profile
+    const mergedForCompile = { ...globalSettings, ...(savedProfile || saved || {}), ...toUpdate };
+    if (targetProfile) {
+      mergedForCompile.name = targetProfile.name;
+      mergedForCompile.profileName = targetProfile.name;
+      mergedForCompile.profileId = targetProfile.id;
+      mergedForCompile.isDefault = Boolean(targetProfile.isDefault);
+    }
+    const freshWikiMarkdown = aiAgentAdapter.compileWikiView(mergedForCompile);
+    const stats = aiAgentAdapter.getWikiStats(freshWikiMarkdown, mergedForCompile);
 
-    logger.info(`✅ [Mini Second Brain Wiki] Applied raw markdown. Updated fields: ${updatedFields.join(', ')}`);
+    logger.info(`✅ [Mini Second Brain Wiki] Applied raw markdown to profile "${targetProfile?.name || targetProfileId}". Updated fields: ${updatedFields.join(', ')}`);
 
     res.json({
       status: 'success',
       message: updatedFields.length > 0
-        ? `Đã đồng bộ thành công: ${updatedFields.join(', ')}`
+        ? `Đã đồng bộ thành công vào hồ sơ "${targetProfile?.name || targetProfileId}": ${updatedFields.join(', ')}`
         : 'Đã phân tích Markdown nhưng không tìm thấy trường thay đổi mới.',
       data: {
+        profileId: targetProfile?.id || targetProfileId,
+        profileName: targetProfile?.name || '',
         updatedFields,
         qnaSyncedCount,
         parsed,
@@ -706,7 +757,8 @@ router.post('/ai/wiki-apply', requireAuth, (req, res) => {
           soulPrompt: saved.soulPrompt,
           memoryPrompt: saved.memoryPrompt,
           scopePrompt: saved.scopePrompt,
-          exemplarConversation: saved.exemplarConversation
+          exemplarConversation: saved.exemplarConversation,
+          wikiSourceUrl: saved.wikiSourceUrl || toUpdate.wikiSourceUrl || ''
         },
         wikiMarkdown: freshWikiMarkdown,
         stats
@@ -871,4 +923,263 @@ Chỉ trả về JSON thuần túy theo đúng cấu trúc sau (không kèm mark
   }
 });
 
+// =============================================================================
+// MULTI-PROFILE AI SUITE (PERSONAS, SECOND BRAIN WIKI & ASSIGNMENTS)
+// =============================================================================
+
+export const AI_PROFILE_TEMPLATES = [
+  {
+    id: 'template_sales',
+    name: 'Trợ Lý Bán Hàng & Chốt Đơn',
+    icon: '🛍️',
+    description: 'Thân thiện, xưng em, tư vấn tính năng và chính sách khuyến mãi',
+    temperature: 0.7,
+    soulPrompt: `Bạn là "Chuyên viên Tư Vấn Bán Hàng & CSKH".
+- Tính cách: Nhiệt tình, lễ phép, khéo léo, đồng hành cùng khách hàng.
+- Quy tắc xưng hô: Xưng "em" và gọi khách là "anh/chị" (hoặc "{name}").
+- Phong cách: Trả lời ngắn gọn (1-3 câu/tin nhắn), ngắt đoạn thoáng, ưu tiên dùng icon sinh động. Luôn chủ động đặt câu hỏi mở để hỗ trợ và thúc đẩy chốt đơn.`,
+    memoryPrompt: `# 🛍️ BẢNG GIÁ & CHÍNH SÁCH BÁN HÀNG
+## 1. Danh Mục Sản Phẩm
+- Gói Tiêu Chuẩn: 1.200.000đ / năm
+- Gói Pro Business: 2.500.000đ / năm (Bao gồm Bot AI 24/7 & Remarketing)
+
+## 2. Chính Sách Giao Hàng & Bảo Hành
+- Hỗ trợ kích hoạt tài khoản trong vòng 5 phút sau khi thanh toán.
+- Bảo hành và hỗ trợ kỹ thuật 1-1 suốt thời gian sử dụng.`,
+    fewShotPrompt: '',
+    exemplarConversation: JSON.stringify([
+      { role: 'user', text: 'Shop ơi gói Pro Business giá bao nhiêu ạ?' },
+      { role: 'model', text: 'Dạ em chào anh/chị ạ! Gói Pro Business bên em có giá niêm yết là 2.500.000đ/năm, đã bao gồm đầy đủ Bot AI tự động tư vấn 24/7 và hệ thống Remarketing ạ. Anh/chị đang cần tính năng nào để em tư vấn chi tiết hơn cho mình nhé ạ!' }
+    ]),
+    scopePrompt: `1. Tuyệt đối không tự ý cam kết giảm giá ngoài các chương trình ưu đãi đã nêu.
+2. Không cung cấp số tài khoản cá nhân lạ, chỉ dùng thông tin thanh toán chính thức của công ty.
+3. Nếu khách khiếu nại gay gắt, lịch sự xin số điện thoại và báo chuyển bộ phận chuyên trách xử lý.`
+  },
+  {
+    id: 'template_b2b',
+    name: 'Chuyên Gia Tư Vấn B2B',
+    icon: '💼',
+    description: 'Chuyên nghiệp, chuẩn mực, tư vấn giải pháp và báo giá doanh nghiệp',
+    temperature: 0.5,
+    soulPrompt: `Bạn là "Chuyên Gia Tư Vấn Giải Pháp Doanh Nghiệp B2B".
+- Tính cách: Đĩnh đạc, tự tin, chuyên sâu, thấu hiểu bài toán vận hành của đối tác.
+- Quy tắc xưng hô: Xưng "tôi" hoặc "em" tùy ngữ cảnh, gọi đối tác là "anh/chị" hoặc "Quý đối tác".
+- Phong cách: Rõ ràng, có cấu trúc, dẫn chứng số liệu thực tế, giải thích mạch lạc.`,
+    memoryPrompt: `# 💼 GIẢI PHÁP & BẢNG GIÁ DOANH NGHIỆP
+## 1. Gói Giải Pháp Doanh Nghiệp
+- Gói Doanh Nghiệp Standard: Phù hợp dưới 20 nhân sự.
+- Gói Doanh Nghiệp Enterprise: Tích hợp API Webhook, SLA 99.9% và bảo mật cấp ngân hàng.
+
+## 2. Quy Trình Phối Hợp
+- Bước 1: Khảo sát hiện trạng và nhu cầu.
+- Bước 2: Trình diễn Demo trực tiếp.
+- Bước 3: Ký kết hợp đồng và chuyển giao kỹ thuật.`,
+    fewShotPrompt: '',
+    exemplarConversation: '',
+    scopePrompt: `1. Không tự ý báo giá tùy tiện nếu chưa nắm rõ quy mô yêu cầu.
+2. Đề xuất gửi hồ sơ Proposal hoặc hẹn lịch demo trực tuyến.`
+  },
+  {
+    id: 'template_internal',
+    name: 'Trợ Lý Nội Bộ & SOP',
+    icon: '🏢',
+    description: 'Nghiêm túc, chính xác, giải đáp quy định công ty, xin nghỉ phép, danh bạ',
+    temperature: 0.2,
+    soulPrompt: `Bạn là "Trợ Lý Vận Hành & Quy Chế Nội Bộ Công Ty".
+- Tính cách: Chuẩn mực, khách quan, bảo mật, bám sát văn bản quy định.
+- Quy tắc xưng hô: Xưng "tôi" hoặc "trợ lý nội bộ", gọi đồng nghiệp là "bạn" hoặc "anh/chị".
+- Phong cách: Trả lời ngắn gọn, trích dẫn đúng điều khoản quy định, cung cấp link biểu mẫu khi cần.`,
+    memoryPrompt: `# 🏢 QUY CHẾ VẬN HÀNH NỘI BỘ (SOP)
+## 1. Chế Độ Nghỉ Phép
+- Nhân viên chính thức có 12 ngày phép năm.
+- Xin nghỉ 1 ngày: Báo trước tối thiểu 2 ngày làm việc.
+- Xin nghỉ từ 3 ngày trở lên: Báo trước tối thiểu 1 tuần và được Trưởng bộ phận phê duyệt.
+
+## 2. Thời Gian Làm Việc & Chấm Công
+- Giờ làm việc: 8h30 - 17h30 (Thứ 2 đến Thứ 6).
+- Chấm công: Qua app nội bộ trước 8h45 sáng.`,
+    fewShotPrompt: '',
+    exemplarConversation: '',
+    scopePrompt: `1. Không tiết lộ thông tin lương thưởng cá nhân của bất kỳ nhân sự nào.
+2. Chỉ trích dẫn thông tin đã được ban hành chính thức trong cẩm nang nội bộ.`
+  },
+  {
+    id: 'template_support',
+    name: 'Kỹ Thuật Viên Hỗ Trợ 24/7',
+    icon: '🛠️',
+    description: 'Kiên nhẫn, bắt bệnh lỗi nhanh, hướng dẫn thao tác từng bước 1-2-3',
+    temperature: 0.3,
+    soulPrompt: `Bạn là "Kỹ Thuật Viên Hỗ Trợ Kỹ Thuật Zalo-Flow".
+- Tính cách: Điềm tĩnh, kiên nhẫn, thấu cảm với sự cố của khách hàng.
+- Quy tắc xưng hô: Xưng "em" hoặc "kỹ thuật", gọi khách là "anh/chị".
+- Phong cách: Hướng dẫn theo từng bước 1-2-3 đơn giản, dễ hiểu, tránh dùng thuật ngữ quá hàn lâm.`,
+    memoryPrompt: `# 🛠️ HƯỚNG DẪN XỬ LÝ SỰ CỐ PHỔ BIẾN (FAQ)
+## 1. Lỗi Không Quét Được Mã QR Đăng Nhập
+- Cách xử lý: Kiểm tra lại mạng Internet, làm mới trang Web (F5), mở app Zalo trên điện thoại chọn Quét mã QR.
+
+## 2. Lỗi Không Nhận Được Tin Nhắn Webhook
+- Cách xử lý: Đảm bảo server Zalo-Flow đang chạy và URL Webhook trên Chatwoot cấu hình đúng port 3000.`,
+    fewShotPrompt: '',
+    exemplarConversation: '',
+    scopePrompt: `1. Hướng dẫn từng bước, hỏi lại khách sau mỗi bước xem đã thực hiện được chưa.
+2. Nếu lỗi nghiêm trọng liên quan đến server crash, xin ảnh chụp màn hình lỗi và báo chuyển đội ngũ kỹ sư.`
+  }
+];
+
+// -----------------------------------------------------------------------------
+// GET /api/ai/profiles/templates — Lấy 4 mẫu kịch bản vàng có sẵn
+// -----------------------------------------------------------------------------
+router.get('/ai/profiles/templates', requireAuth, (req, res) => {
+  res.json({ status: 'success', data: AI_PROFILE_TEMPLATES });
+});
+
+// -----------------------------------------------------------------------------
+// GET /api/ai/profiles — Danh sách tất cả hồ sơ kèm số lượng nick/hội thoại đang gán
+// -----------------------------------------------------------------------------
+router.get('/ai/profiles', requireAuth, (req, res) => {
+  try {
+    const profiles = localStore.getAiProfiles();
+    const accounts = localStore.getAccounts();
+    
+    // Đếm số tài khoản và hội thoại được gán cho từng profile
+    const enriched = profiles.map(p => {
+      const assignedAccounts = accounts.filter(a => a.aiProfileId === p.id);
+      let convCount = 0;
+      try {
+        const row = localStore.db.prepare('SELECT COUNT(*) as count FROM conversations WHERE aiProfileId = ?').get(p.id);
+        convCount = row?.count || 0;
+      } catch {}
+
+      return {
+        ...p,
+        assignedAccountsCount: assignedAccounts.length,
+        assignedAccounts: assignedAccounts.map(a => ({ accountUid: a.accountUid, displayName: a.displayName, avatar: a.avatar })),
+        assignedConversationsCount: convCount
+      };
+    });
+
+    res.json({ status: 'success', data: enriched });
+  } catch (err) {
+    logger.error(`[AI Profiles] Failed to list profiles: ${err.message}`);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// -----------------------------------------------------------------------------
+// GET /api/ai/profiles/:id — Chi tiết 1 hồ sơ
+// -----------------------------------------------------------------------------
+router.get('/ai/profiles/:id', requireAuth, (req, res) => {
+  try {
+    const profile = localStore.getAiProfile(req.params.id);
+    if (!profile) {
+      return res.status(404).json({ error: 'Không tìm thấy hồ sơ AI yêu cầu' });
+    }
+    res.json({ status: 'success', data: profile });
+  } catch (err) {
+    logger.error(`[AI Profiles] Failed to get profile ${req.params.id}: ${err.message}`);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// -----------------------------------------------------------------------------
+// POST /api/ai/profiles — Tạo mới hoặc cập nhật hồ sơ
+// -----------------------------------------------------------------------------
+router.post('/ai/profiles', requireAuth, (req, res) => {
+  try {
+    const payload = req.body || {};
+    if (!payload.name || !payload.name.trim()) {
+      return res.status(400).json({ error: 'Tên hồ sơ AI không được để trống' });
+    }
+
+    // Nếu profile là default thì không cho phép bỏ cờ isDefault
+    if (payload.id === 'default' && payload.isDefault === false) {
+      payload.isDefault = true;
+    }
+
+    const saved = localStore.saveAiProfile(payload);
+    logger.info(`✅ [AI Profiles] Saved profile "${saved.name}" (ID: ${saved.id}, Default: ${saved.isDefault})`);
+    res.json({ status: 'success', data: saved });
+  } catch (err) {
+    logger.error(`[AI Profiles] Failed to save profile: ${err.message}`);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// -----------------------------------------------------------------------------
+// DELETE /api/ai/profiles/:id — Xóa hồ sơ (Tự chữa lành liên kết)
+// -----------------------------------------------------------------------------
+router.delete('/ai/profiles/:id', requireAuth, (req, res) => {
+  try {
+    const { id } = req.params;
+    if (id === 'default') {
+      return res.status(400).json({ error: 'Không thể xóa hồ sơ mặc định của hệ thống.' });
+    }
+
+    localStore.deleteAiProfile(id);
+    logger.info(`🗑️ [AI Profiles] Deleted profile ${id} and reconciled dangling links.`);
+    res.json({ status: 'success', message: 'Đã xóa hồ sơ AI thành công' });
+  } catch (err) {
+    logger.error(`[AI Profiles] Failed to delete profile ${req.params.id}: ${err.message}`);
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// -----------------------------------------------------------------------------
+// POST /api/ai/profiles/:id/set-default — Đặt làm hồ sơ mặc định toàn hệ thống
+// -----------------------------------------------------------------------------
+router.post('/ai/profiles/:id/set-default', requireAuth, (req, res) => {
+  try {
+    const updated = localStore.setDefaultAiProfile(req.params.id);
+    if (!updated) {
+      return res.status(404).json({ error: 'Không tìm thấy hồ sơ để đặt làm mặc định' });
+    }
+    logger.info(`⭐ [AI Profiles] Set profile "${updated.name}" as default.`);
+    res.json({ status: 'success', data: updated });
+  } catch (err) {
+    logger.error(`[AI Profiles] Failed to set default profile: ${err.message}`);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// -----------------------------------------------------------------------------
+// POST /api/ai/profiles/assign-account — Gán hồ sơ cho tài khoản Zalo
+// -----------------------------------------------------------------------------
+router.post('/ai/profiles/assign-account', requireAuth, (req, res) => {
+  try {
+    const { accountUid } = req.body || {};
+    const targetProfileId = req.body?.profileId !== undefined ? req.body.profileId : req.body?.aiProfileId;
+    if (!accountUid) {
+      return res.status(400).json({ error: 'Thiếu accountUid cần gán' });
+    }
+
+    const updated = localStore.assignAccountAiProfile(accountUid, targetProfileId);
+    logger.info(`🔗 [AI Profiles] Assigned account ${accountUid} to profile ${targetProfileId || 'default'}`);
+    res.json({ status: 'success', data: updated });
+  } catch (err) {
+    logger.error(`[AI Profiles] Failed to assign account profile: ${err.message}`);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// -----------------------------------------------------------------------------
+// POST /api/ai/profiles/assign-conversation — Gán hồ sơ cho hội thoại (Composite Key)
+// -----------------------------------------------------------------------------
+router.post('/ai/profiles/assign-conversation', requireAuth, (req, res) => {
+  try {
+    const { accountUid, threadId } = req.body || {};
+    const targetProfileId = req.body?.profileId !== undefined ? req.body.profileId : req.body?.aiProfileId;
+    if (!threadId) {
+      return res.status(400).json({ error: 'Thiếu threadId cần gán' });
+    }
+
+    const updated = localStore.assignConversationAiProfile(accountUid, threadId, targetProfileId);
+    logger.info(`🔗 [AI Profiles] Assigned thread ${threadId} (Account: ${accountUid || 'default'}) to profile ${targetProfileId || 'inherited'}`);
+    res.json({ status: 'success', data: updated });
+  } catch (err) {
+    logger.error(`[AI Profiles] Failed to assign conversation profile: ${err.message}`);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;
+

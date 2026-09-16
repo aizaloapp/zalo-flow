@@ -164,7 +164,10 @@ function openModal(id) {
 
   if (id === 'modal-tags') renderTagsManager();
   if (id === 'modal-quick-msg') renderQuickMessagesManager();
-  if (id === 'modal-ai-brain') loadAiSettings();
+  if (id === 'modal-ai-brain') {
+    loadAiSettings();
+    loadAiProfiles();
+  }
   if (id === 'modal-campaigns') loadCampaigns();
 }
 
@@ -3985,6 +3988,16 @@ async function loadCustomerCrmInfo() {
     if (addrInput) addrInput.value = data.address || '';
     if (needsInput) needsInput.value = data.needs || '';
     if (notesInput) notesInput.value = data.notes || '';
+
+    // Populate and set AI Profile for this conversation
+    if (typeof populateCrmAiProfileSelect === 'function') {
+      populateCrmAiProfileSelect();
+      const crmProfileSelect = document.getElementById('crm-ai-profile-select');
+      const conv = state.activeThread || state.conversations.find(c => c.id === state.activeThreadId);
+      if (crmProfileSelect && conv) {
+        crmProfileSelect.value = conv.aiProfileId || '';
+      }
+    }
   } catch (err) {
     console.warn('Could not load CRM info:', err);
   }
@@ -3998,6 +4011,7 @@ async function saveCurrentCrmInfo() {
   const address = document.getElementById('crm-address-input')?.value.trim();
   const needs = document.getElementById('crm-needs-input')?.value.trim();
   const notes = document.getElementById('crm-notes-input')?.value.trim();
+  const aiProfileId = document.getElementById('crm-ai-profile-select')?.value || null;
 
   try {
     const res = await fetch(`/api/conversations/${state.activeThreadId}/crm`, {
@@ -4013,6 +4027,21 @@ async function saveCurrentCrmInfo() {
         const activeCard = document.querySelector(`.conv-card[data-id="${state.activeThreadId}"] .conv-name`);
         if (activeCard) activeCard.textContent = name;
       }
+
+      // Save AI Profile override for this conversation
+      try {
+        await fetch('/api/ai/profiles/assign-conversation', {
+          method: 'POST',
+          headers: getHeaders(),
+          body: JSON.stringify({ threadId: state.activeThreadId, profileId: aiProfileId })
+        });
+        const conv = state.conversations.find(c => c.id === state.activeThreadId);
+        if (conv) conv.aiProfileId = aiProfileId;
+        if (state.activeThread) state.activeThread.aiProfileId = aiProfileId;
+      } catch (profileErr) {
+        console.warn('Failed to assign AI profile to conversation:', profileErr);
+      }
+
       alert('✅ Đã lưu thông tin khách hàng thành công!');
     } else {
       alert('Lỗi lưu CRM: ' + (data.error || 'Vui lòng thử lại.'));
@@ -4868,8 +4897,37 @@ window.toggleAiGroupAliasesUI = toggleAiGroupAliasesUI;
 let simChatHistory = [];
 let pendingExemplarDialogue = [];
 
+// =============================================================================
+// AI Central Hub 3-Tier Navigation & Multi-Profile Suite
+// =============================================================================
+let aiProfilesList = [];
+let activeProfileId = 'default';
+let activeProfileData = null;
+let aiGoldenTemplates = null;
+
+function switchAiMainTab(tabKey) {
+  const tabs = ['engine', 'profiles', 'allocation'];
+  tabs.forEach(t => {
+    const btn = document.getElementById(`main-tab-btn-${t}`);
+    const pane = document.getElementById(`pane-main-${t}`);
+    if (btn) btn.classList.toggle('active', t === tabKey);
+    if (pane) pane.style.display = (t === tabKey ? 'block' : 'none');
+  });
+
+  if (tabKey === 'profiles') {
+    if (aiProfilesList.length === 0) {
+      loadAiProfiles();
+    } else {
+      renderActiveProfileUI();
+    }
+  } else if (tabKey === 'allocation') {
+    renderAiAccountAllocations();
+  }
+}
+window.switchAiMainTab = switchAiMainTab;
+
 function switchKnowledgeTab(tabKey) {
-  const tabs = ['soul', 'memory', 'brain', 'scope', 'sim'];
+  const tabs = ['soul', 'memory', 'fewshot', 'scope', 'sim'];
   tabs.forEach(t => {
     const btn = document.getElementById(`tab-btn-${t}`);
     const pane = document.getElementById(`pane-${t}`);
@@ -4878,6 +4936,7 @@ function switchKnowledgeTab(tabKey) {
   });
 
   if (tabKey === 'memory') renderKnowledgeQnaSummary();
+  if (tabKey === 'fewshot') renderAiExemplarPreview();
   if (tabKey === 'scope') {
     populateLeadTagsSelect();
     updateAiTagFilterUI();
@@ -4887,6 +4946,548 @@ function switchKnowledgeTab(tabKey) {
     setTimeout(() => document.getElementById('sim-chat-input')?.focus(), 100);
   }
 }
+window.switchKnowledgeTab = switchKnowledgeTab;
+
+async function loadAiProfiles() {
+  try {
+    const res = await fetch('/api/ai/profiles', { headers: getHeaders() });
+    const result = await res.json();
+    if (result.data) {
+      aiProfilesList = result.data;
+      populateProfileSelector();
+      populateProfileModelOptions();
+      if (!activeProfileId || !aiProfilesList.some(p => p.id === activeProfileId)) {
+        const def = aiProfilesList.find(p => p.isDefault) || aiProfilesList[0];
+        activeProfileId = def ? def.id : 'default';
+      }
+      handleAiProfileSelect(activeProfileId);
+      populateCrmAiProfileSelect();
+    }
+  } catch (err) {
+    console.error('Failed to load AI profiles:', err);
+  }
+}
+window.loadAiProfiles = loadAiProfiles;
+
+function populateProfileModelOptions(selectedModel) {
+  const select = document.getElementById('ai-profile-model-select');
+  if (!select) return;
+
+  const currentVal = selectedModel !== undefined ? selectedModel : select.value;
+
+  const primaryProvider = document.getElementById('ai-provider-select')?.value || aiSettingsState?.provider || 'gemini';
+  const primaryModel = document.getElementById('ai-model-select')?.value || aiSettingsState?.model || 'gemini-2.5-flash';
+  const fallbackEnabled = document.getElementById('ai-fallback-enabled')?.checked || Boolean(aiSettingsState?.fallbackEnabled);
+  const fallbackProvider = document.getElementById('ai-fallback-provider-select')?.value || aiSettingsState?.fallbackProvider || 'deepseek';
+
+  const PROVIDER_NAMES = {
+    gemini: 'Google Gemini',
+    zai: 'Z.AI GLM (Zhipu / BigModel)',
+    deepseek: 'DeepSeek AI',
+    groq: 'Groq (Siêu tốc độ)',
+    openai: 'OpenAI (GPT-4o)',
+    openrouter: 'OpenRouter (Đa mô hình)',
+    ollama: 'Ollama (Offline máy cục bộ)'
+  };
+
+  // Lấy tên hiển thị của model chính
+  const primaryList = CURATED_MODELS_CLIENT[primaryProvider] || [];
+  const primaryModelObj = primaryList.find(m => m.id === primaryModel);
+  const primaryModelName = primaryModelObj ? primaryModelObj.name : primaryModel;
+  const primaryProviderName = PROVIDER_NAMES[primaryProvider] || primaryProvider.toUpperCase();
+
+  // 1. Option Mặc định kế thừa
+  let html = `<option value="">-- Mặc định theo Động Cơ (${escapeHtml(primaryModelName)}) --</option>`;
+
+  // 2. Nhóm 1: Các model của Nhà Cung Cấp Chính (Đang cấu hình ở Tab 1)
+  if (primaryList.length > 0) {
+    html += `<optgroup label="⭐ Model Thuộc Nhà Cung Cấp Chính (${escapeHtml(primaryProviderName)})">`;
+    html += primaryList.map(m => {
+      const isSel = (m.id === currentVal);
+      return `<option value="${m.id}" ${isSel ? 'selected' : ''}>${escapeHtml(m.name)}</option>`;
+    }).join('');
+    html += `</optgroup>`;
+  }
+
+  // 3. Nhóm 2: Các model của Nhà Cung Cấp Dự Phòng (nếu bật Fallback và khác Provider chính)
+  if (fallbackEnabled && fallbackProvider && fallbackProvider !== primaryProvider) {
+    const fallbackList = CURATED_MODELS_CLIENT[fallbackProvider] || [];
+    const fallbackProviderName = PROVIDER_NAMES[fallbackProvider] || fallbackProvider.toUpperCase();
+    if (fallbackList.length > 0) {
+      html += `<optgroup label="🛡️ Model Thuộc Nhà Cung Cấp Dự Phòng (${escapeHtml(fallbackProviderName)})">`;
+      html += fallbackList.map(m => {
+        const isSel = (m.id === currentVal);
+        return `<option value="${m.id}" ${isSel ? 'selected' : ''}>${escapeHtml(m.name)}</option>`;
+      }).join('');
+      html += `</optgroup>`;
+    }
+  }
+
+  // 4. Nhóm 3: Các Nhà Cung Cấp Khác (Gom nhóm có tổ chức rõ ràng)
+  for (const [provKey, provModels] of Object.entries(CURATED_MODELS_CLIENT)) {
+    if (provKey === primaryProvider || (fallbackEnabled && provKey === fallbackProvider)) {
+      continue; // Đã đưa lên nhóm ưu tiên phía trên
+    }
+    const provTitle = PROVIDER_NAMES[provKey] || provKey.toUpperCase();
+    html += `<optgroup label="🌐 ${escapeHtml(provTitle)}">`;
+    html += provModels.map(m => {
+      const isSel = (m.id === currentVal);
+      return `<option value="${m.id}" ${isSel ? 'selected' : ''}>${escapeHtml(m.name)}</option>`;
+    }).join('');
+    html += `</optgroup>`;
+  }
+
+  // 5. Nếu Profile đang lưu một model tùy biến hoặc scan live chưa có trong CURATED_MODELS_CLIENT
+  if (currentVal && !html.includes(`value="${currentVal}"`)) {
+    html = `<option value="${escapeHtml(currentVal)}" selected>${escapeHtml(currentVal)} (Model tùy chỉnh / Live Scan)</option>` + html;
+  }
+
+  select.innerHTML = html;
+  if (currentVal) {
+    select.value = currentVal;
+  }
+}
+window.populateProfileModelOptions = populateProfileModelOptions;
+
+function populateProfileSelector() {
+  const select = document.getElementById('ai-profile-selector');
+  if (!select) return;
+  select.innerHTML = aiProfilesList.map(p => `
+    <option value="${p.id}" ${p.id === activeProfileId ? 'selected' : ''}>
+      ${escapeHtml(p.name || p.id)} ${p.isDefault ? '⭐ [Mặc định]' : ''}
+    </option>
+  `).join('');
+}
+
+function populateCrmAiProfileSelect() {
+  const select = document.getElementById('crm-ai-profile-select');
+  if (!select) return;
+  const currentVal = select.value;
+  select.innerHTML = `
+    <option value="">-- Mặc định (Theo tài khoản Zalo) --</option>
+    ${aiProfilesList.map(p => `
+      <option value="${p.id}">${escapeHtml(p.name || p.id)} ${p.isDefault ? '⭐ [Mặc định]' : ''}</option>
+    `).join('')}
+  `;
+  if (currentVal) select.value = currentVal;
+}
+window.populateCrmAiProfileSelect = populateCrmAiProfileSelect;
+
+function handleAiProfileSelect(profileId) {
+  activeProfileId = profileId;
+  activeProfileData = aiProfilesList.find(p => p.id === profileId) || null;
+  populateProfileSelector();
+  renderActiveProfileUI();
+}
+window.handleAiProfileSelect = handleAiProfileSelect;
+
+function renderActiveProfileUI() {
+  if (!activeProfileData) return;
+  const p = activeProfileData;
+
+  // Header Bar controls
+  const badge = document.getElementById('ai-profile-badge');
+  const btnSetDefault = document.getElementById('btn-set-default-profile');
+  const btnDelete = document.getElementById('btn-delete-profile');
+
+  if (badge) {
+    badge.innerText = p.isDefault ? 'Mặc định toàn cục' : 'Hồ sơ phụ';
+    badge.className = `ai-hub-badge ${p.isDefault ? 'success' : ''}`;
+  }
+  if (btnSetDefault) {
+    btnSetDefault.style.display = p.isDefault ? 'none' : 'inline-block';
+  }
+  if (btnDelete) {
+    btnDelete.style.display = (p.id === 'default' || p.isDefault) ? 'none' : 'inline-block';
+  }
+
+  // Metadata
+  const nameInput = document.getElementById('ai-profile-name-input');
+  if (nameInput) nameInput.value = p.name || '';
+
+  const descInput = document.getElementById('ai-profile-desc-input');
+  if (descInput) descInput.value = p.description || '';
+
+  populateProfileModelOptions(p.model || '');
+  const modelSelect = document.getElementById('ai-profile-model-select');
+  if (modelSelect) modelSelect.value = p.model || '';
+
+  // Sub-tab 1: SOUL
+  const soulInput = document.getElementById('ai-soul-input');
+  if (soulInput) soulInput.value = p.soulPrompt || '';
+
+  // Sub-tab 2: MEMORY
+  const memoryInput = document.getElementById('ai-memory-input');
+  if (memoryInput) memoryInput.value = p.memoryPrompt || '';
+  renderKnowledgeQnaSummary();
+
+  // Sub-tab 3: Few-Shot Exemplar
+  aiSettingsState.exemplarConversation = p.fewShotPrompt || '';
+  renderAiExemplarPreview();
+
+  // Sub-tab 4: Scope & Rules
+  const adminCooldown = document.getElementById('ai-admin-cooldown');
+  if (adminCooldown) adminCooldown.value = p.adminCooldownMinutes ?? 15;
+
+  const debounceSec = document.getElementById('ai-debounce-sec');
+  if (debounceSec) debounceSec.value = p.debounceSeconds ?? 3;
+
+  const allowGroupsCheck = document.getElementById('ai-allow-groups');
+  if (allowGroupsCheck) {
+    allowGroupsCheck.checked = Boolean(p.allowGroups);
+    toggleAiGroupAliasesUI();
+  }
+
+  const botAliasesInput = document.getElementById('ai-bot-aliases');
+  if (botAliasesInput) botAliasesInput.value = p.botAliases || '';
+
+  const autoTagCheck = document.getElementById('ai-auto-tag-lead');
+  if (autoTagCheck) autoTagCheck.checked = Boolean(p.autoTagNewLead);
+
+  populateLeadTagsSelect();
+  const leadTagSelect = document.getElementById('ai-default-lead-tag-select');
+  if (leadTagSelect) leadTagSelect.value = p.defaultLeadTagId || '';
+
+  // Parse tag filters
+  let excludedTags = [];
+  let allowedTags = [];
+  try {
+    excludedTags = typeof p.excludedTagIds === 'string' ? JSON.parse(p.excludedTagIds || '[]') : (p.excludedTagIds || []);
+    allowedTags = typeof p.allowedTagIds === 'string' ? JSON.parse(p.allowedTagIds || '[]') : (p.allowedTagIds || []);
+  } catch {}
+  aiSettingsState.excludedTagIds = excludedTags;
+  aiSettingsState.allowedTagIds = allowedTags;
+
+  const targetModeRadios = document.querySelectorAll('input[name="ai-target-mode"]');
+  targetModeRadios.forEach(r => {
+    r.checked = (r.value === (p.targetMode || 'all'));
+  });
+  updateAiTagFilterUI();
+
+  const scopeInput = document.getElementById('ai-scope-input');
+  if (scopeInput) scopeInput.value = p.scopePrompt || '';
+}
+
+
+
+async function parseSafeJson(res) {
+  const text = await res.text();
+  try {
+    return JSON.parse(text);
+  } catch {
+    const isHtml = text.trim().startsWith('<');
+    if (res.status === 404 && isHtml) {
+      throw new Error('Máy chủ đang chạy phiên bản cũ (HTTP 404). Vui lòng khởi động lại server Node.js để áp dụng.');
+    }
+    throw new Error(isHtml ? `Lỗi máy chủ (HTTP ${res.status}): Phản hồi không phải định dạng JSON.` : (text.slice(0, 150) || `HTTP ${res.status}`));
+  }
+}
+
+async function saveActiveAiProfile() {
+  const btn = document.getElementById('btn-save-ai-profile');
+  if (btn) btn.innerText = '💾 Đang lưu hồ sơ...';
+
+  const name = document.getElementById('ai-profile-name-input')?.value.trim() || 'Hồ Sơ Không Tên';
+  const description = document.getElementById('ai-profile-desc-input')?.value.trim() || '';
+  const model = document.getElementById('ai-profile-model-select')?.value.trim() || '';
+  const soulPrompt = document.getElementById('ai-soul-input')?.value.trim() || '';
+  const memoryPrompt = document.getElementById('ai-memory-input')?.value.trim() || '';
+  const scopePrompt = document.getElementById('ai-scope-input')?.value.trim() || '';
+  const adminCooldownMinutes = Number(document.getElementById('ai-admin-cooldown')?.value || 15);
+  const debounceSeconds = Number(document.getElementById('ai-debounce-sec')?.value || 3);
+  const allowGroups = document.getElementById('ai-allow-groups')?.checked ? 1 : 0;
+  const botAliases = document.getElementById('ai-bot-aliases')?.value.trim() || '';
+  const autoTagNewLead = document.getElementById('ai-auto-tag-lead')?.checked ? 1 : 0;
+  const defaultLeadTagId = document.getElementById('ai-default-lead-tag-select')?.value || '';
+  const targetMode = document.querySelector('input[name="ai-target-mode"]:checked')?.value || 'all';
+
+  const payload = {
+    id: activeProfileId,
+    name,
+    description,
+    model: model || null,
+    soulPrompt,
+    memoryPrompt,
+    fewShotPrompt: aiSettingsState.exemplarConversation || '',
+    scopePrompt,
+    allowGroups,
+    botAliases,
+    autoTagNewLead,
+    defaultLeadTagId,
+    targetMode,
+    excludedTagIds: aiSettingsState.excludedTagIds,
+    allowedTagIds: aiSettingsState.allowedTagIds,
+    adminCooldownMinutes,
+    debounceSeconds
+  };
+
+  try {
+    const res = await fetch('/api/ai/profiles', {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(payload)
+    });
+    const result = await parseSafeJson(res);
+    if (res.ok && result.data) {
+      const idx = aiProfilesList.findIndex(p => p.id === activeProfileId);
+      if (idx !== -1) {
+        aiProfilesList[idx] = { ...aiProfilesList[idx], ...result.data };
+      } else {
+        aiProfilesList.push(result.data);
+      }
+      activeProfileData = result.data;
+      populateProfileSelector();
+      populateCrmAiProfileSelect();
+      showToast(`🎉 Đã lưu Hồ Sơ "${name}" thành công!`, 'info');
+    } else {
+      alert('Lỗi lưu hồ sơ: ' + (result.error || 'Vui lòng thử lại.'));
+    }
+  } catch (err) {
+    alert('Lỗi mạng: ' + err.message);
+  } finally {
+    if (btn) btn.innerText = '💾 Lưu Cấu Hình Hồ Sơ Này';
+  }
+}
+window.saveActiveAiProfile = saveActiveAiProfile;
+
+async function openCreateProfilePrompt() {
+  const name = prompt('Nhập tên hồ sơ AI mới (Ví dụ: Tư Vấn Khách VIP, Chuyên Viên B2B, Hỗ Trợ Nội Bộ...):');
+  if (!name || !name.trim()) return;
+
+  const id = 'prof_' + Date.now();
+  const payload = {
+    id,
+    name: name.trim(),
+    description: `Hồ sơ ${name.trim()} riêng biệt`,
+    soulPrompt: `Bạn là trợ lý ${name.trim()}. Hãy phản hồi khách hàng chu đáo, thân thiện và chuyên nghiệp.`,
+    memoryPrompt: '',
+    scopePrompt: ''
+  };
+
+  try {
+    const res = await fetch('/api/ai/profiles', {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(payload)
+    });
+    const result = await parseSafeJson(res);
+    if (res.ok && result.data) {
+      aiProfilesList.push(result.data);
+      activeProfileId = id;
+      activeProfileData = result.data;
+      populateProfileSelector();
+      populateCrmAiProfileSelect();
+      renderActiveProfileUI();
+      showToast(`✨ Đã tạo mới hồ sơ "${name}"!`, 'info');
+    } else {
+      alert('Lỗi tạo hồ sơ: ' + (result.error || 'Không thể tạo hồ sơ.'));
+    }
+  } catch (err) {
+    alert('Lỗi: ' + err.message);
+  }
+}
+window.openCreateProfilePrompt = openCreateProfilePrompt;
+
+async function setDefaultActiveProfile() {
+  if (!activeProfileId) return;
+  try {
+    const res = await fetch(`/api/ai/profiles/${activeProfileId}/set-default`, {
+      method: 'POST',
+      headers: getHeaders()
+    });
+    const result = await parseSafeJson(res);
+    if (res.ok) {
+      aiProfilesList.forEach(p => {
+        p.isDefault = (p.id === activeProfileId) ? 1 : 0;
+      });
+      if (activeProfileData) activeProfileData.isDefault = 1;
+      populateProfileSelector();
+      populateCrmAiProfileSelect();
+      renderActiveProfileUI();
+      showToast('⭐ Đã đặt hồ sơ này làm Mặc Định Toàn Cục!', 'info');
+    } else {
+      alert('Lỗi: ' + (result.error || 'Không thể đặt mặc định.'));
+    }
+  } catch (err) {
+    alert('Lỗi mạng: ' + err.message);
+  }
+}
+window.setDefaultActiveProfile = setDefaultActiveProfile;
+
+async function deleteActiveProfile() {
+  if (!activeProfileId || activeProfileId === 'default') {
+    return alert('Không thể xóa hồ sơ mặc định hệ thống!');
+  }
+  if (!confirm(`Bạn có chắc chắn muốn xóa hồ sơ "${activeProfileData?.name || activeProfileId}"?\n\nMọi tài khoản hoặc hội thoại đang gán hồ sơ này sẽ tự động chuyển về Mặc Định.`)) {
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/ai/profiles/${activeProfileId}`, {
+      method: 'DELETE',
+      headers: getHeaders()
+    });
+    const result = await parseSafeJson(res);
+    if (res.ok) {
+      aiProfilesList = aiProfilesList.filter(p => p.id !== activeProfileId);
+      activeProfileId = 'default';
+      activeProfileData = aiProfilesList.find(p => p.id === 'default') || aiProfilesList[0];
+      populateProfileSelector();
+      populateCrmAiProfileSelect();
+      renderActiveProfileUI();
+      showToast('🗑️ Đã xóa hồ sơ thành công!', 'info');
+    }
+  } catch (err) {
+    alert('Lỗi mạng: ' + err.message);
+  }
+}
+window.deleteActiveProfile = deleteActiveProfile;
+
+function toggleTemplatesMenu(e) {
+  if (e) e.stopPropagation();
+  const menu = document.getElementById('ai-templates-menu');
+  if (!menu) return;
+  menu.style.display = (menu.style.display === 'block' ? 'none' : 'block');
+}
+window.toggleTemplatesMenu = toggleTemplatesMenu;
+
+document.addEventListener('click', () => {
+  const menu = document.getElementById('ai-templates-menu');
+  if (menu) menu.style.display = 'none';
+});
+
+async function applyGoldenTemplate(templateKey) {
+  try {
+    if (!aiGoldenTemplates) {
+      const res = await fetch('/api/ai/profiles/templates', { headers: getHeaders() });
+      const result = await res.json();
+      if (result.data) aiGoldenTemplates = result.data;
+    }
+
+    const tpl = aiGoldenTemplates?.[templateKey];
+    if (!tpl) return alert('Không tìm thấy template tương ứng!');
+
+    if (!confirm(`Áp dụng Mẫu Vàng "${tpl.name}" cho hồ sơ hiện tại?\n\nNội dung Giọng điệu (SOUL), Kho tri thức và Điều cấm kỵ sẽ được điền tự động theo chuẩn mực ngành.`)) {
+      return;
+    }
+
+    const nameInput = document.getElementById('ai-profile-name-input');
+    if (nameInput && !nameInput.value.trim()) nameInput.value = tpl.name;
+
+    const descInput = document.getElementById('ai-profile-desc-input');
+    if (descInput) descInput.value = tpl.description || '';
+
+    const soulInput = document.getElementById('ai-soul-input');
+    if (soulInput) soulInput.value = tpl.soulPrompt || '';
+
+    const memoryInput = document.getElementById('ai-memory-input');
+    if (memoryInput) memoryInput.value = tpl.memoryPrompt || '';
+
+    const scopeInput = document.getElementById('ai-scope-input');
+    if (scopeInput) scopeInput.value = tpl.scopePrompt || '';
+
+    showToast(`📋 Đã áp dụng mẫu "${tpl.name}"! Bấm "Lưu Cấu Hình Hồ Sơ Này" để hoàn tất.`, 'info');
+  } catch (err) {
+    alert('Lỗi áp dụng mẫu: ' + err.message);
+  }
+}
+window.applyGoldenTemplate = applyGoldenTemplate;
+
+async function renderAiAccountAllocations() {
+  const tbody = document.getElementById('ai-allocation-table-body');
+  if (!tbody) return;
+
+  if (aiProfilesList.length === 0) {
+    await loadAiProfiles();
+  }
+
+  try {
+    const res = await fetch('/api/accounts', { headers: getHeaders() });
+    const result = await parseSafeJson(res);
+    const rawList = Array.isArray(result.data) 
+      ? result.data 
+      : (result.data?.accounts || result.accounts || (Array.isArray(state.accounts) ? state.accounts : []));
+    const accounts = Array.isArray(rawList) ? rawList : [];
+
+    if (accounts.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="3" style="text-align: center; color: var(--text-muted); padding: 20px;">
+            Chưa có tài khoản Zalo nào trong hệ thống.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = accounts.map(acc => {
+      const assignedId = acc.aiProfileId || 'default';
+      const avatarLetters = (acc.displayName || acc.accountUid || 'Z').substring(0, 2).toUpperCase();
+      const hasAvatarUrl = acc.avatar && acc.avatar.startsWith('http');
+      return `
+        <tr>
+          <td>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div class="conv-avatar" style="width: 32px; height: 32px; font-size: 0.8rem; background: linear-gradient(135deg, #0ea5e9, #3b82f6); color: #fff; display: flex; align-items: center; justify-content: center; border-radius: 50%; overflow: hidden; flex-shrink: 0;">
+                ${hasAvatarUrl 
+                  ? `<img src="${escapeHtml(acc.avatar)}" alt="" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"><span style="display:none;">${avatarLetters}</span>`
+                  : avatarLetters}
+              </div>
+              <div>
+                <div style="font-weight: 700; font-size: 0.82rem; color: #f8fafc;">${escapeHtml(acc.displayName || 'Zalo Account')}</div>
+                <div style="font-size: 0.71rem; color: var(--text-muted); font-family: monospace;">UID: ${escapeHtml(acc.accountUid)}</div>
+              </div>
+            </div>
+          </td>
+          <td>
+            <select class="form-select" style="font-size: 0.78rem; padding: 5px 8px; width: 100%; max-width: 240px;" onchange="assignAccountProfile('${escapeHtml(acc.accountUid)}', this.value)">
+              ${aiProfilesList.map(p => `
+                <option value="${p.id}" ${p.id === assignedId ? 'selected' : ''}>
+                  ${escapeHtml(p.name || p.id)} ${p.isDefault ? '⭐ [Mặc định]' : ''}
+                </option>
+              `).join('')}
+            </select>
+          </td>
+          <td style="text-align: center;">
+            <span class="ai-hub-badge ${acc.status === 'online' || acc.isLoggedIn ? 'success' : ''}" style="font-size: 0.72rem;">
+              ${acc.status === 'online' || acc.isLoggedIn ? '🟢 Sẵn sàng' : '⚪ Đang ngắt'}
+            </span>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  } catch (err) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="3" style="text-align: center; color: #f87171; padding: 20px;">
+          Lỗi tải tài khoản: ${escapeHtml(err.message)}
+        </td>
+      </tr>
+    `;
+  }
+}
+window.renderAiAccountAllocations = renderAiAccountAllocations;
+
+async function assignAccountProfile(accountUid, profileId) {
+  try {
+    const res = await fetch('/api/ai/profiles/assign-account', {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ accountUid, profileId })
+    });
+    const result = await res.json();
+    if (res.ok) {
+      const acc = (state.accounts || []).find(a => a.accountUid === accountUid);
+      if (acc) acc.aiProfileId = profileId;
+      showToast('✅ Đã gán vai trò AI cho tài khoản Zalo thành công!', 'info');
+    } else {
+      alert('Lỗi gán hồ sơ: ' + (result.error || 'Vui lòng thử lại.'));
+    }
+  } catch (err) {
+    alert('Lỗi mạng: ' + err.message);
+  }
+}
+window.assignAccountProfile = assignAccountProfile;
 
 async function loadAiSettings() {
   try {
@@ -5249,10 +5850,11 @@ function renderKnowledgeQnaSummary() {
 
 async function showSecondBrainWikiPreview() {
   try {
-    const res = await fetch('/api/ai/wiki-preview', { headers: getHeaders() });
+    const pId = typeof activeProfileId !== 'undefined' ? activeProfileId : 'default';
+    const res = await fetch(`/api/ai/wiki-preview?profileId=${encodeURIComponent(pId)}`, { headers: getHeaders() });
     const result = await res.json();
     const pre = document.getElementById('wiki-preview-content');
-    if (pre) pre.innerText = result.data || 'Chưa có dữ liệu.';
+    if (pre) pre.innerText = (result.data && (result.data.wikiMarkdown || result.data)) || 'Chưa có dữ liệu.';
     openModal('modal-second-brain-wiki');
   } catch (err) {
     alert('Lỗi: ' + err.message);
@@ -5360,6 +5962,8 @@ function handleProviderTypeChange(provider) {
       fallbackKeyLabel.style.color = '#f59e0b';
     }
   }
+
+  populateProfileModelOptions();
 }
 
 function handleFallbackProviderChange(provider) {
@@ -5384,6 +5988,7 @@ function handleFallbackProviderChange(provider) {
   }
 
   updateAiKeyHelperHints();
+  populateProfileModelOptions();
 }
 
 function toggleFallbackFieldsUI() {
@@ -5687,15 +6292,14 @@ async function saveKnowledgeSettings() {
     if (res.ok && result.data) {
       aiSettingsState = { ...aiSettingsState, ...result.data };
       renderAiSettingsUI();
-      showToast('🎉 Đã lưu cấu hình Trung Tâm AI 5 Tabs thành công!', 'info');
-      closeModal('modal-ai-brain');
+      showToast('🎉 Đã lưu cấu hình Động Cơ AI thành công!', 'info');
     } else {
       alert('Lỗi lưu cấu hình: ' + (result.error || 'Không rõ nguyên nhân'));
     }
   } catch (err) {
     alert('Lỗi mạng: ' + err.message);
   } finally {
-    if (btn) btn.innerText = '💾 Lưu Cấu Hình AI Suite';
+    if (btn) btn.innerText = '💾 Lưu Cấu Hình Động Cơ AI';
   }
 }
 
@@ -5761,7 +6365,7 @@ async function sendSimMessage() {
     const res = await fetch('/api/ai/simulate', {
       method: 'POST',
       headers: getHeaders(),
-      body: JSON.stringify({ message, history: historyPayload })
+      body: JSON.stringify({ message, history: historyPayload, profileId: activeProfileId })
     });
     const result = await res.json();
 
@@ -6413,16 +7017,41 @@ async function openSecondBrainWikiModal() {
   const btn = document.getElementById('btn-open-second-brain-wiki');
   if (btn) btn.innerText = '⏳ Đang tổng hợp...';
 
+  // Determine active profile context
+  const currentProfId = activeProfileId || 'default';
+  const currentProf = (typeof aiProfilesList !== 'undefined' && Array.isArray(aiProfilesList))
+    ? aiProfilesList.find(p => p.id === currentProfId)
+    : activeProfileData;
+
+  // Update modal header with active profile identity
+  const modalTitleEl = document.getElementById('wiki-modal-profile-title');
+  const modalBadgeEl = document.getElementById('wiki-modal-profile-badge');
+  const modalDescEl = document.getElementById('wiki-modal-profile-desc');
+  if (modalTitleEl) {
+    modalTitleEl.innerText = currentProf ? currentProf.name : 'Toàn Cảnh Bộ Não AI';
+  }
+  if (modalBadgeEl) {
+    const isDef = currentProf ? Boolean(currentProf.isDefault) : true;
+    modalBadgeEl.innerText = isDef ? 'Mặc định toàn cục' : 'Hồ sơ nghiệp vụ';
+    modalBadgeEl.className = `ai-hub-badge ${isDef ? 'success' : ''}`;
+  }
+  if (modalDescEl && currentProf?.description) {
+    modalDescEl.innerText = `Hồ sơ: ${currentProf.description}`;
+  } else if (modalDescEl) {
+    modalDescEl.innerText = 'Tổng hợp đồng bộ tri thức: SOUL, MEMORY, Q&A chuẩn mực, Few-Shot và Quy tắc ứng xử.';
+  }
+
   const draftSettings = {
+    profileId: currentProfId,
     soulPrompt: document.getElementById('ai-soul-input')?.value.trim() || '',
     memoryPrompt: document.getElementById('ai-memory-input')?.value.trim() || '',
     scopePrompt: document.getElementById('ai-scope-input')?.value.trim() || '',
     provider: document.getElementById('ai-provider-select')?.value || 'gemini',
-    model: document.getElementById('ai-model-select')?.value || 'gemini-2.5-flash',
+    model: document.getElementById('ai-profile-model-select')?.value || document.getElementById('ai-model-select')?.value || 'gemini-2.5-flash',
     fallbackEnabled: document.getElementById('ai-fallback-enabled')?.checked ? 1 : 0,
     fallbackProvider: document.getElementById('ai-fallback-provider-select')?.value || 'deepseek',
     fallbackModel: document.getElementById('ai-fallback-model-select')?.value || 'deepseek-chat',
-    exemplarConversation: aiSettingsState.exemplarConversation || ''
+    exemplarConversation: currentProf?.fewShotPrompt || currentProf?.exemplarConversation || aiSettingsState.exemplarConversation || ''
   };
 
   try {
@@ -6489,11 +7118,12 @@ async function openSecondBrainWikiModal() {
     }
 
     // Toggle Sync Saved URL button visibility
+    const activeWikiUrl = currentProf?.wikiSourceUrl || aiSettingsState?.wikiSourceUrl;
     const btnSyncSaved = document.getElementById('btn-wiki-sync-saved-url');
     if (btnSyncSaved) {
-      if (aiSettingsState?.wikiSourceUrl) {
+      if (activeWikiUrl) {
         btnSyncSaved.style.display = 'inline-flex';
-        btnSyncSaved.title = `Cập nhật nhanh lại từ: ${aiSettingsState.wikiSourceUrl}`;
+        btnSyncSaved.title = `Cập nhật nhanh lại từ: ${activeWikiUrl}`;
       } else {
         btnSyncSaved.style.display = 'none';
       }
@@ -6635,9 +7265,13 @@ function toggleWikiUrlTray(forceState) {
   const isOpening = forceState !== undefined ? forceState : tray.style.display === 'none';
   tray.style.display = isOpening ? 'block' : 'none';
   if (isOpening) {
+    const currentProf = (typeof aiProfilesList !== 'undefined' && Array.isArray(aiProfilesList))
+      ? aiProfilesList.find(p => p.id === activeProfileId)
+      : activeProfileData;
+    const activeWikiUrl = currentProf?.wikiSourceUrl || aiSettingsState?.wikiSourceUrl;
     const urlInput = document.getElementById('wiki-url-input');
-    if (urlInput && !urlInput.value && aiSettingsState?.wikiSourceUrl) {
-      urlInput.value = aiSettingsState.wikiSourceUrl;
+    if (urlInput && !urlInput.value && activeWikiUrl) {
+      urlInput.value = activeWikiUrl;
     }
     if (window.innerWidth > 768 && urlInput) {
       setTimeout(() => urlInput.focus(), 50);
@@ -6761,9 +7395,12 @@ async function fetchWikiFromUrl() {
 }
 
 async function syncWikiFromSavedUrl() {
-  const savedUrl = aiSettingsState?.wikiSourceUrl;
+  const currentProf = (typeof aiProfilesList !== 'undefined' && Array.isArray(aiProfilesList))
+    ? aiProfilesList.find(p => p.id === activeProfileId)
+    : activeProfileData;
+  const savedUrl = currentProf?.wikiSourceUrl || aiSettingsState?.wikiSourceUrl;
   if (!savedUrl) {
-    showToast('Chưa có liên kết URL nào được lưu trước đó.', 'warning');
+    showToast('Chưa có liên kết URL nào được lưu cho hồ sơ này.', 'warning');
     return;
   }
   const urlInput = document.getElementById('wiki-url-input');
@@ -6780,7 +7417,11 @@ async function saveRawWikiMarkdown() {
     return;
   }
 
-  const sourceUrl = rawEditor?.dataset?.sourceUrl || aiSettingsState?.wikiSourceUrl || '';
+  const currentProfId = activeProfileId || 'default';
+  const currentProf = (typeof aiProfilesList !== 'undefined' && Array.isArray(aiProfilesList))
+    ? aiProfilesList.find(p => p.id === currentProfId)
+    : activeProfileData;
+  const sourceUrl = rawEditor?.dataset?.sourceUrl || currentProf?.wikiSourceUrl || aiSettingsState?.wikiSourceUrl || '';
 
   const btnSave = document.getElementById('btn-wiki-save-apply');
   if (btnSave) btnSave.innerText = '⏳ Đang phân tích...';
@@ -6789,10 +7430,14 @@ async function saveRawWikiMarkdown() {
     const res = await fetch('/api/ai/wiki-apply', {
       method: 'POST',
       headers: getHeaders(),
-      body: JSON.stringify({ markdown: content, wikiSourceUrl: sourceUrl })
+      body: JSON.stringify({
+        profileId: currentProfId,
+        markdown: content,
+        wikiSourceUrl: sourceUrl
+      })
     });
 
-    const json = await res.json();
+    const json = await parseSafeJson(res);
     if (!res.ok) {
       throw new Error(json.error || 'Không thể áp dụng Markdown');
     }
@@ -6811,12 +7456,36 @@ async function saveRawWikiMarkdown() {
       const scopeInput = document.getElementById('ai-scope-input');
       if (scopeInput && scopePrompt !== undefined) scopeInput.value = scopePrompt;
 
+      // Update active profile in memory & in aiProfilesList
+      if (currentProf) {
+        if (soulPrompt !== undefined) currentProf.soulPrompt = soulPrompt;
+        if (memoryPrompt !== undefined) currentProf.memoryPrompt = memoryPrompt;
+        if (scopePrompt !== undefined) currentProf.scopePrompt = scopePrompt;
+        if (exemplarConversation !== undefined) {
+          currentProf.fewShotPrompt = exemplarConversation;
+          currentProf.exemplarConversation = exemplarConversation;
+        }
+        if (sourceUrl) currentProf.wikiSourceUrl = sourceUrl;
+      }
+      if (activeProfileData) {
+        if (soulPrompt !== undefined) activeProfileData.soulPrompt = soulPrompt;
+        if (memoryPrompt !== undefined) activeProfileData.memoryPrompt = memoryPrompt;
+        if (scopePrompt !== undefined) activeProfileData.scopePrompt = scopePrompt;
+        if (exemplarConversation !== undefined) {
+          activeProfileData.fewShotPrompt = exemplarConversation;
+          activeProfileData.exemplarConversation = exemplarConversation;
+        }
+        if (sourceUrl) activeProfileData.wikiSourceUrl = sourceUrl;
+      }
+
       if (typeof aiSettingsState !== 'undefined' && aiSettingsState) {
-        aiSettingsState.soulPrompt = soulPrompt;
-        aiSettingsState.memoryPrompt = memoryPrompt;
-        aiSettingsState.scopePrompt = scopePrompt;
-        if (sourceUrl) aiSettingsState.wikiSourceUrl = sourceUrl;
-        if (exemplarConversation) aiSettingsState.exemplarConversation = exemplarConversation;
+        if (currentProf?.isDefault || currentProfId === 'default') {
+          aiSettingsState.soulPrompt = soulPrompt;
+          aiSettingsState.memoryPrompt = memoryPrompt;
+          aiSettingsState.scopePrompt = scopePrompt;
+          if (sourceUrl) aiSettingsState.wikiSourceUrl = sourceUrl;
+          if (exemplarConversation) aiSettingsState.exemplarConversation = exemplarConversation;
+        }
       }
 
       // Update sync URL button visibility
