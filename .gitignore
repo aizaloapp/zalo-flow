@@ -22,6 +22,9 @@ sessions/
 *.enc
 zalo-session.json
 credentials.json
+*service-account*.json
+service_account.json
+google-indexing-key.json
 
 # SQLite Databases & Shards
 *.db
