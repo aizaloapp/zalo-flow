@@ -115,3 +115,7 @@ Khi chuyển giao hoặc cấu hình tên miền chính (`aizalo.com`) sang Clou
    - Sử dụng domain tăng cường quyền riêng tư `https://www.youtube-nocookie.com/embed/{id}` và gắn cờ `loading="lazy"` cùng `title` rõ nghĩa để tối ưu điểm Core Web Vitals (LCP/TBT).
    - BẮT BUỘC khai báo đối tượng Schema `VideoObject` theo chuẩn Schema.org bên trong mảng `@graph` của bài viết (bao gồm `name`, `description`, `thumbnailUrl`, `uploadDate`, `contentUrl`, `embedUrl`).
    - BẮT BUỘC cập nhật `"dateModified": "YYYY-MM-DD"` của bài viết lên ngày mới nhất để gửi tín hiệu Freshness tới Googlebot và các công cụ tìm kiếm AI (GEO).
+8. **Blog Semantic Layout & Anti-Regression Invariant:**
+   - **Footer Blog Tối Giản:** Mọi bài viết blog BẮT BUỘC chỉ sử dụng cấu trúc footer tối giản `.footer > .container > .footer-bottom`. TUYỆT ĐỐI KHÔNG mang cấu trúc `.footer-links-group` hay `.footer-col` của Landing Page vào bài viết Blog gây mất style CSS.
+   - **Related Posts Grid 3 Cột:** Khối `.related-grid` BẮT BUỘC chỉ chứa đúng các thẻ con dạng `<a href="..." class="related-card">` (kèm `.related-card-badge`, `.related-card-title`, `.related-card-desc`, `.related-card-meta`). TUYỆT ĐỐI KHÔNG sử dụng class `.blog-card` hoặc nhúng ảnh thumbnail lớn `.card-thumb` làm vỡ CSS Grid 3 cột sang ngang.
+   - **Bộ Tiện Ích Đầy Đủ:** Mỗi bài viết blog BẮT BUỘC phải có thẻ `floating-badge` ("🤖 Trải Nghiệm Thử Bot Zalo AI"), script điều hướng di động `toggleMenu` và hàm `copyArticleUrl()` kích hoạt nút sao chép link.

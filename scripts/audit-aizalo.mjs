@@ -192,6 +192,26 @@ for (const file of htmlFiles) {
         deduct('geo', 5, `Phát hiện thẻ <table> trong ${file.rel} chưa được bọc trong <div class="geo-table-wrapper">`, 'P2');
       }
     }
+
+    // Blog Semantic Layout Isolation: Footer Minimal
+    if (content.includes('footer-links-group') || content.includes('footer-col')) {
+      deduct('onPage', 10, `Bài viết ${file.rel} dùng nhầm Footer Landing Page (footer-links-group / footer-col). Blog chỉ được dùng .footer-bottom tối giản để tránh vỡ giao diện.`, 'P0');
+    }
+
+    // Blog Semantic Layout Isolation: Related Posts Grid (.related-card vs .blog-card)
+    if (content.includes('related-grid')) {
+      if (content.includes('class="blog-card"') || content.includes("class='blog-card'")) {
+        deduct('onPage', 10, `Khối .related-grid trong ${file.rel} dùng sai class .blog-card (gây vỡ tỷ lệ ảnh và tràn lề). Phải dùng class .related-card chuẩn cho Blog.`, 'P0');
+      }
+      if (!content.includes('related-card')) {
+        deduct('onPage', 10, `Khối .related-grid trong ${file.rel} thiếu các thẻ .related-card bài viết liên quan.`, 'P0');
+      }
+    }
+
+    // Blog Utility Isolation: copyArticleUrl
+    if (content.includes('btnCopyUrl') && !content.includes('copyArticleUrl')) {
+      deduct('technical', 5, `Trang ${file.rel} có nút sao chép link nhưng thiếu định nghĩa hàm copyArticleUrl trong script`, 'P1');
+    }
   }
 
   // H. Schema JSON-LD Validation & Entity Truth Reconciliation
