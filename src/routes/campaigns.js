@@ -6,6 +6,7 @@ import crypto from 'crypto';
 import { requireAuth } from '../middleware/auth.js';
 import { localStore } from '../utils/local-store.js';
 import { zaloClient } from '../zalo-client.js';
+import { accountManager } from '../utils/account-manager.js';
 import { resolveSpintax, generateSamplePreviews } from '../utils/spintax.js';
 import { logger } from '../utils/logger.js';
 
@@ -302,7 +303,7 @@ router.post('/campaigns/:id/start', requireAuth, (req, res) => {
     return res.status(404).json({ error: 'Chiến dịch không tồn tại' });
   }
 
-  if (!zaloClient.isLoggedIn) {
+  if (!accountManager.hasAnyLoggedIn() && !zaloClient.isLoggedIn) {
     return res.status(503).json({ error: 'Zalo client chưa đăng nhập. Vui lòng kết nối Zalo trước.' });
   }
 
@@ -442,7 +443,7 @@ export function resolveCampaignAttachments(rawInput = []) {
 /**
  * Smart Campaign Message Dispatcher (Single-Image Caption Integration & Fallback Guard)
  */
-export async function dispatchSmartCampaignMessage({ threadId, customerName, rawMessage, localFilePaths = [], isGroup = false }) {
+export async function dispatchSmartCampaignMessage({ threadId, customerName, rawMessage, localFilePaths = [], isGroup = false, accountUid = null }) {
   // 1. Resolve Spintax & Personalization variables ({name}, {time}, {date})
   const personalizedMessage = rawMessage ? resolveSpintax(rawMessage, {
     name: customerName || 'bạn',
@@ -453,13 +454,16 @@ export async function dispatchSmartCampaignMessage({ threadId, customerName, raw
   const imageItems = localFilePaths.filter(f => f.mediaType === 'image');
   const docItems = localFilePaths.filter(f => f.mediaType !== 'image');
 
+  const targetAccountUid = accountUid || (threadId ? localStore.getConversation(threadId)?.accountUid : null);
+  const client = accountManager.getClient(targetAccountUid) || zaloClient;
+
   // Điều kiện gộp Caption: đúng 1 bức ảnh VÀ có nội dung text VÀ text <= 1000 ký tự
   const canMergeCaption = imageItems.length === 1 && Boolean(personalizedMessage && personalizedMessage.trim()) && personalizedMessage.length <= 1000;
 
   if (canMergeCaption) {
     // [Luồng Gộp Caption Dính Liền]: Gửi đúng 1 ảnh mang caption dính liền
     const singleImage = imageItems[0];
-    await zaloClient.uploadAttachment(threadId, [singleImage.path], isGroup, {
+    await client.uploadAttachment(threadId, [singleImage.path], isGroup, {
       caption: personalizedMessage,
       items: [singleImage],
       mediaUrl: singleImage.mediaUrl,
@@ -471,7 +475,7 @@ export async function dispatchSmartCampaignMessage({ threadId, customerName, raw
     // Nếu có thêm tài liệu (PDF, docx), gửi gom toàn bộ docItems trong 1 request riêng biệt
     if (docItems.length > 0) {
       const docDiskPaths = docItems.map(f => f.path);
-      await zaloClient.uploadAttachment(threadId, docDiskPaths, isGroup, {
+      await client.uploadAttachment(threadId, docDiskPaths, isGroup, {
         items: docItems,
         mediaUrl: docItems[0].mediaUrl,
         mediaType: 'file',
@@ -481,12 +485,12 @@ export async function dispatchSmartCampaignMessage({ threadId, customerName, raw
   } else {
     // [Luồng Phân Tách An Toàn]: Nhiều ảnh (album), text siêu dài > 1000 ký tự, hoặc chỉ có file tài liệu
     if (personalizedMessage) {
-      await zaloClient.sendMessage(threadId, personalizedMessage, isGroup);
+      await client.sendMessage(threadId, personalizedMessage, isGroup);
     }
 
     if (localFilePaths.length > 0) {
       const diskPaths = localFilePaths.map(f => f.path);
-      await zaloClient.uploadAttachment(threadId, diskPaths, isGroup, {
+      await client.uploadAttachment(threadId, diskPaths, isGroup, {
         items: localFilePaths,
         mediaUrl: localFilePaths[0].mediaUrl,
         mediaType: localFilePaths[0].mediaType,
@@ -672,7 +676,7 @@ router.post('/campaigns/test-send', requireAuth, async (req, res) => {
 // =============================================================================
 setInterval(async () => {
   try {
-    if (!zaloClient.isLoggedIn) return;
+    if (!accountManager.hasAnyLoggedIn() && !zaloClient.isLoggedIn) return;
 
     const now = new Date();
     // Vietnam Time (UTC+7)

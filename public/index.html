@@ -49,7 +49,7 @@
 
     <div class="header-status">
       <div class="status-pill" id="zalo-status-pill" onclick="openZaloLoginModal()" style="cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 8px;" title="Bấm để xem thông tin / Đăng nhập / Đổi tài khoản Zalo" data-i18n-title="header.account_pill_title">
-        <img id="zalo-header-avatar" src="" alt="" style="width: 22px; height: 22px; border-radius: 50%; object-fit: cover; display: none; border: 1.5px solid #10b981;">
+        <img id="zalo-header-avatar" src="" alt="" referrerpolicy="no-referrer" style="width: 22px; height: 22px; border-radius: 50%; object-fit: cover; display: none; border: 1.5px solid #10b981;">
         <div class="dot" id="zalo-header-dot"></div>
         <span id="zalo-account-name" data-i18n="header.connected">Đã Kết Nối (Online)</span>
       </div>
@@ -102,9 +102,21 @@
       <button class="rail-btn" data-tooltip="💾 Sao Lưu & Phục Hồi" data-i18n-tooltip="rail.backup_tooltip" onclick="openModal('modal-backup')">
         💾
       </button>
-      <button class="rail-btn" id="rail-btn-oa" style="display: none;" data-tooltip="🏢 Cấu Hình Zalo OA" data-i18n-tooltip="rail.oa_tooltip" onclick="openOaModal()">
-        🏢
-      </button>
+
+      <div class="rail-divider"></div>
+
+      <!-- Account Switcher Section -->
+      <div class="rail-accounts-section" id="rail-accounts-container" title="Chuyển đổi tài khoản Zalo">
+        <button class="rail-account-btn active" id="rail-acc-all" onclick="switchAccount('all')" data-tooltip="🌐 Tất Cả Nick" data-i18n-tooltip="rail.all_accounts">
+          <div class="rail-acc-avatar-wrap">
+            <div class="rail-acc-avatar-placeholder">🌐</div>
+          </div>
+        </button>
+        <div id="rail-accounts-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
+        <button class="rail-account-btn add-btn" id="rail-btn-add-acc" onclick="openAddAccountModal()" data-tooltip="➕ Thêm Nick Zalo" data-i18n-tooltip="rail.add_account">
+          <span style="font-size: 1.2rem; line-height: 1; font-weight: 700;">+</span>
+        </button>
+      </div>
     </nav>
 
     <!-- Main Layout: 2 Columns (Sidebar + Chat) -->
@@ -128,7 +140,6 @@
               <button class="quick-tab active" data-quick-filter="all" data-i18n="sidebar.filter_all" onclick="setQuickFilter('all')">Tất cả</button>
               <button class="quick-tab" data-quick-filter="personal" data-i18n="sidebar.filter_personal" onclick="setQuickFilter('personal')">Cá nhân</button>
               <button class="quick-tab" data-quick-filter="group" data-i18n="sidebar.filter_group" onclick="setQuickFilter('group')">Nhóm</button>
-              <button class="quick-tab" data-quick-filter="oa" data-i18n="sidebar.filter_oa" onclick="setQuickFilter('oa')">🏢 OA</button>
             </div>
 
             <div class="filter-dropdown-wrapper">
@@ -1805,6 +1816,15 @@
 
         </div>
 
+        <!-- Danh sách các tài khoản đang kết nối (Multi-Account Manager) -->
+        <div style="margin-top: 14px; text-align: left;">
+          <div style="font-size: 0.78rem; font-weight: 700; color: #94a3b8; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
+            <span>DANH SÁCH TÀI KHOẢN KẾT NỐI</span>
+            <button class="filter-btn" style="font-size: 0.72rem; padding: 2px 8px;" onclick="closeModal('modal-zalo-login'); openAddAccountModal();">➕ Thêm nick</button>
+          </div>
+          <div id="modal-accounts-manage-list"></div>
+        </div>
+
         <!-- Pill Trạng Thái Đáy Popup -->
         <div style="margin-top: 18px; display: flex; justify-content: center;">
           <div id="zalo-modal-bot-status-pill" style="display: inline-flex; align-items: center; gap: 8px; padding: 6px 16px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; font-size: 0.78rem; color: #cbd5e1;">
@@ -1813,6 +1833,62 @@
           </div>
         </div>
 
+      </div>
+    </div>
+  </div>
+
+  <!-- ➕ MODAL THÊM TÀI KHOẢN ZALO (MULTI-ACCOUNT) -->
+  <div class="modal-overlay" id="modal-add-account">
+    <div class="modal-dialog" style="max-width: 460px; text-align: center; border-radius: 20px; background: #0e1526; border: 1px solid rgba(255,255,255,0.12); box-shadow: 0 25px 60px rgba(0,0,0,0.85); overflow: hidden;">
+      <div class="modal-header" style="border-bottom: none; padding: 22px 24px 8px; justify-content: center; position: relative;">
+        <h2 class="modal-title" style="font-size: 1.22rem; font-weight: 800; color: #38bdf8; display: flex; align-items: center; justify-content: center; gap: 8px;" data-i18n="account.add_modal_title">
+          ➕ Thêm Tài Khoản Zalo (Song Song)
+        </h2>
+        <button class="modal-close-btn" style="position: absolute; right: 18px; top: 18px;" onclick="closeModal('modal-add-account')">&times;</button>
+      </div>
+
+      <div style="font-size: 0.84rem; color: #94a3b8; padding: 0 24px 14px; line-height: 1.45;" data-i18n="account.add_modal_desc">
+        Đăng nhập thêm nick Zalo vào hệ thống (tối đa 3 tài khoản). Tài khoản mới sẽ chạy song song, độc lập phiên nhưng dùng chung thẻ tag, mẫu tin nhắn, chiến dịch và AI.
+      </div>
+
+      <div class="modal-body" style="padding: 0 24px 20px;">
+        <div style="background: #ffffff; border-radius: 16px; padding: 22px 16px; min-height: 250px; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+          
+          <!-- STATE 1: Bấm để tạo QR -->
+          <div id="add-acc-state-idle" style="display: flex; flex-direction: column; align-items: center; gap: 14px;">
+            <div style="font-size: 3.2rem; line-height: 1;">📱➕</div>
+            <p style="font-size: 0.85rem; color: #64748b; line-height: 1.5; max-width: 300px; margin: 0;" data-i18n="account.add_qr_hint">
+              Bấm nút bên dưới để tạo mã QR riêng cho tài khoản mới mà không ảnh hưởng tới tài khoản đang chạy.
+            </p>
+            <button class="send-btn" id="btn-generate-add-qr" onclick="generateAddAccountQr()" style="background: linear-gradient(135deg, #0284c7, #38bdf8); color: #fff; font-weight: 700; padding: 10px 24px; border-radius: 10px; box-shadow: 0 4px 15px rgba(2,132,199,0.35); font-size: 0.9rem; border: none; cursor: pointer;" data-i18n="account.add_btn_create_qr">
+              ⚡ Tạo Mã QR Đăng Nhập Mới
+            </button>
+          </div>
+
+          <!-- STATE 2: Đang chờ quét QR -->
+          <div id="add-acc-state-qr" style="display: none; flex-direction: column; align-items: center; gap: 10px;">
+            <div style="padding: 6px; background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
+              <img id="add-acc-qr-img" src="" alt="Zalo QR Code" style="width: 200px; height: 200px; display: block; border-radius: 8px;">
+            </div>
+            <div id="add-acc-qr-msg" style="font-size: 0.82rem; color: #0284c7; font-weight: 600; text-align: center; max-width: 290px; line-height: 1.4;">
+              Mở Zalo trên điện thoại quét mã QR bên trên...
+            </div>
+            <button class="filter-btn" style="color: #475569; border-color: #cbd5e1; font-size: 0.78rem; padding: 5px 14px; margin-top: 4px;" onclick="generateAddAccountQr()" data-i18n="account.add_btn_refresh_qr">
+              🔄 Làm Mới Mã QR
+            </button>
+          </div>
+
+          <!-- STATE 3: Đăng nhập thành công -->
+          <div id="add-acc-state-success" style="display: none; flex-direction: column; align-items: center; gap: 10px;">
+            <div style="font-size: 3rem;">🎉</div>
+            <div style="font-size: 1.05rem; font-weight: 800; color: #0f172a;" id="add-acc-success-name">Đăng Nhập Thành Công!</div>
+            <div style="font-size: 0.8rem; color: #10b981; font-weight: 600;" data-i18n="account.add_success_desc">Tài khoản đã được thêm vào hệ thống và sẵn sàng hoạt động.</div>
+            <button class="send-btn" onclick="closeModal('modal-add-account')" style="background: #10b981; color: #fff; font-weight: 700; padding: 8px 20px; border-radius: 8px; border: none; cursor: pointer; margin-top: 8px;" data-i18n="account.add_btn_done">
+              Hoàn Tất
+            </button>
+          </div>
+
+        </div>
       </div>
     </div>
   </div>

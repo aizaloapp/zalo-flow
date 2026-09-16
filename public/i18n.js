@@ -56,7 +56,24 @@
         campaigns_tooltip: '📢 Chiến Dịch Remarketing',
         ai_tooltip: '🧠 Trung Tâm AI (5 Tabs)',
         backup_tooltip: '💾 Sao Lưu & Phục Hồi',
-        oa_tooltip: '🏢 Cấu Hình Zalo OA'
+        oa_tooltip: '🏢 Cấu Hình Zalo OA',
+        all_accounts: '🌐 Tất Cả Nick',
+        add_account: '➕ Thêm Nick Zalo'
+      },
+      account: {
+        add_modal_title: '➕ Thêm Tài Khoản Zalo (Song Song)',
+        add_modal_desc: 'Đăng nhập thêm nick Zalo vào hệ thống (tối đa 3 tài khoản). Tài khoản mới sẽ chạy song song, độc lập phiên nhưng dùng chung thẻ tag, mẫu tin nhắn, chiến dịch và AI.',
+        add_qr_hint: 'Bấm nút bên dưới để tạo mã QR riêng cho tài khoản mới mà không ảnh hưởng tới tài khoản đang chạy.',
+        add_btn_create_qr: '⚡ Tạo Mã QR Đăng Nhập Mới',
+        add_btn_refresh_qr: '🔄 Làm Mới Mã QR',
+        add_success_desc: 'Tài khoản đã được thêm vào hệ thống và sẵn sàng hoạt động.',
+        add_btn_done: 'Hoàn Tất',
+        manage_title: 'Quản Lý Tài Khoản Zalo ({count}/3)',
+        switch_to: 'Chuyển sang tài khoản này',
+        set_as_default: 'Đặt làm tài khoản chính',
+        is_default_badge: 'Chính',
+        online_status: 'Trực tuyến',
+        offline_status: 'Ngoại tuyến'
       },
       sidebar: {
         search_placeholder: 'Tìm theo tên hoặc ID...',
@@ -277,7 +294,24 @@
         campaigns_tooltip: '📢 Campaigns & CRM',
         ai_tooltip: '🧠 AI Studio (5 Tabs)',
         backup_tooltip: '💾 Backup & Restore',
-        oa_tooltip: '🏢 Zalo OA Settings'
+        oa_tooltip: '🏢 Zalo OA Settings',
+        all_accounts: '🌐 All Accounts',
+        add_account: '➕ Add Zalo Account'
+      },
+      account: {
+        add_modal_title: '➕ Add Zalo Account (Parallel)',
+        add_modal_desc: 'Log in to an additional Zalo account (up to 3 accounts). The new account will run concurrently with independent sessions while sharing tags, templates, campaigns, and AI.',
+        add_qr_hint: 'Click the button below to generate a dedicated QR code without disrupting currently connected accounts.',
+        add_btn_create_qr: '⚡ Generate New Login QR',
+        add_btn_refresh_qr: '🔄 Refresh QR Code',
+        add_success_desc: 'Account added successfully and ready to use.',
+        add_btn_done: 'Done',
+        manage_title: 'Manage Zalo Accounts ({count}/3)',
+        switch_to: 'Switch to this account',
+        set_as_default: 'Set as default account',
+        is_default_badge: 'Default',
+        online_status: 'Online',
+        offline_status: 'Offline'
       },
       sidebar: {
         search_placeholder: 'Search by name or ID...',

@@ -24,7 +24,7 @@ router.get('/oa/settings', requireAuth, (req, res) => {
       name: raw.name || '',
       avatar: raw.avatar || '',
       appId: raw.appId || '',
-      isEnabled: Boolean(raw.isEnabled),
+      isEnabled: Boolean(raw.isEnabled && raw.oaId),
       isAiAutoReply: Boolean(raw.isAiAutoReply),
       expiresAt: raw.expiresAt || 0,
       hasSecretKey: Boolean(secretDecrypted),
@@ -90,9 +90,8 @@ router.post('/oa/settings', requireAuth, (req, res) => {
 // -----------------------------------------------------------------------------
 router.post('/oa/disconnect', requireAuth, (req, res) => {
   try {
-    localStore.deleteOaSettings();
-    localStore.setSystemConfig('onboarding_status', 'personal_only');
-    res.json({ status: 'success', message: 'Đã ngắt kết nối Zalo OA thành công.' });
+    localStore.purgeOaData();
+    res.json({ status: 'success', message: 'Đã ngắt kết nối và xóa sạch dữ liệu Zalo OA thành công.' });
   } catch (err) {
     logger.error(`[OA Route] Error disconnecting OA: ${err.message}`);
     res.status(500).json({ error: err.message });

@@ -31,7 +31,9 @@ let state = {
   pendingChatFiles: [],
   pendingPreviewUrls: [],
   isSendingMessage: false,
-  selectedTagColor: '#38bdf8'
+  selectedTagColor: '#38bdf8',
+  accounts: [],
+  activeAccountUid: localStorage.getItem('zaloflow_active_account') || 'all'
 };
 
 // Preset 10 Colors
@@ -108,6 +110,7 @@ function initApp() {
   renderColorSwatches();
   loadTags();
   loadQuickMessages();
+  loadAccounts();
   loadConversations();
   loadZaloProfile();
   
@@ -169,6 +172,273 @@ function closeModal(id) {
   const modal = document.getElementById(id);
   if (modal) modal.style.display = 'none';
   if (id === 'modal-quick-msg') cancelQuickMsgEdit();
+}
+
+// -----------------------------------------------------------------------------
+// Multi-Account Pool & Switcher Management
+// -----------------------------------------------------------------------------
+async function loadAccounts() {
+  try {
+    const res = await fetch('/api/accounts', { headers: getHeaders() });
+    if (!res.ok) return;
+    const json = await res.json();
+    if (json.data) {
+      state.accounts = json.data.accounts || [];
+      renderAccountRail();
+      renderAccountsInLoginModal(json.data);
+
+      // Tự động đồng bộ Header Pill theo tài khoản active hiện tại
+      if (state.activeAccountUid && state.activeAccountUid !== 'all') {
+        const activeAcc = state.accounts.find(a => String(a.accountUid) === String(state.activeAccountUid));
+        if (activeAcc) {
+          updateZaloHeaderStatus({
+            isLoggedIn: activeAcc.status === 'online' || activeAcc.isLoggedIn,
+            userId: activeAcc.accountUid,
+            displayName: activeAcc.displayName,
+            avatar: activeAcc.avatar
+          });
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Failed to load accounts:', err);
+  }
+}
+
+function renderAccountRail() {
+  const container = document.getElementById('rail-accounts-list');
+  const allBtn = document.getElementById('rail-acc-all');
+  if (!container) return;
+
+  if (allBtn) {
+    allBtn.classList.toggle('active', state.activeAccountUid === 'all');
+  }
+
+  container.innerHTML = (state.accounts || []).map(acc => {
+    const isActive = state.activeAccountUid === acc.accountUid;
+    const statusClass = acc.status === 'online' || acc.isLoggedIn ? 'online' : 'offline';
+    const initials = (acc.displayName || 'Zalo').substring(0, 2).toUpperCase();
+    const tooltipText = `${acc.displayName} (${acc.status === 'online' ? 'Online' : 'Offline'})${acc.isDefault ? ' [Chính]' : ''}`;
+
+    return `
+      <button class="rail-account-btn ${isActive ? 'active' : ''}" 
+              id="rail-acc-${acc.accountUid}" 
+              onclick="switchAccount('${acc.accountUid}')" 
+              data-tooltip="${escapeHtml(tooltipText)}">
+        <div class="rail-acc-avatar-wrap">
+          ${acc.avatar ? 
+            `<img class="rail-acc-avatar-img" src="${acc.avatar}" alt="${escapeHtml(acc.displayName)}" loading="lazy" referrerpolicy="no-referrer" onerror="this.outerHTML='<span class=\\'rail-acc-avatar-placeholder\\'>${initials}</span>'">` :
+            `<span class="rail-acc-avatar-placeholder">${initials}</span>`
+          }
+        </div>
+        <div class="status-dot ${statusClass}"></div>
+      </button>
+    `;
+  }).join('');
+}
+
+async function switchAccount(accountUid) {
+  state.activeAccountUid = accountUid;
+  localStorage.setItem('zaloflow_active_account', accountUid);
+  renderAccountRail();
+
+  // Xóa chấm unread badge trên nút tài khoản vừa chọn nếu có
+  const railBtn = document.getElementById(`rail-acc-${accountUid}`);
+  if (railBtn) {
+    const dot = railBtn.querySelector('.rail-unread-badge');
+    if (dot) dot.remove();
+  }
+
+  // Cập nhật Header Pill ngay lập tức theo tài khoản được chọn
+  const selectedAcc = (state.accounts || []).find(a => String(a.accountUid) === String(accountUid));
+  if (selectedAcc) {
+    updateZaloHeaderStatus({
+      isLoggedIn: selectedAcc.status === 'online' || selectedAcc.isLoggedIn,
+      userId: selectedAcc.accountUid,
+      displayName: selectedAcc.displayName,
+      avatar: selectedAcc.avatar
+    });
+  } else if (accountUid === 'all') {
+    updateZaloHeaderStatus({
+      isLoggedIn: true,
+      userId: 'all',
+      displayName: window.t ? window.t('header.all_accounts') : 'Tất cả tài khoản',
+      avatar: ''
+    });
+  }
+
+  try {
+    await fetch('/api/accounts/switch-active', {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ accountUid })
+    });
+  } catch {}
+
+  closeActiveChat();
+  await loadConversations();
+  loadZaloProfile(accountUid);
+}
+
+function openAddAccountModal() {
+  const modal = document.getElementById('modal-add-account');
+  if (!modal) return;
+  modal.style.display = 'flex';
+
+  const idle = document.getElementById('add-acc-state-idle');
+  const qr = document.getElementById('add-acc-state-qr');
+  const success = document.getElementById('add-acc-state-success');
+  if (idle) idle.style.display = 'flex';
+  if (qr) qr.style.display = 'none';
+  if (success) success.style.display = 'none';
+}
+
+async function generateAddAccountQr() {
+  const btn = document.getElementById('btn-generate-add-qr');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerText = '⏳ Đang tạo mã QR...';
+  }
+
+  const idle = document.getElementById('add-acc-state-idle');
+  const qr = document.getElementById('add-acc-state-qr');
+  const qrMsg = document.getElementById('add-acc-qr-msg');
+
+  if (idle) idle.style.display = 'none';
+  if (qr) qr.style.display = 'flex';
+  if (qrMsg) qrMsg.innerText = 'Đang khởi tạo phiên Zalo mới và tạo mã QR...';
+
+  try {
+    const res = await fetch('/api/accounts/add-qr', {
+      method: 'POST',
+      headers: getHeaders()
+    });
+    const json = await res.json();
+    if (!res.ok || json.error) {
+      alert('Lỗi: ' + (json.error || 'Không thể tạo mã QR'));
+      if (idle) idle.style.display = 'flex';
+      if (qr) qr.style.display = 'none';
+      return;
+    }
+    if (json.data?.qrDataUrl) {
+      renderAddAccountQr(json.data);
+    }
+  } catch (err) {
+    alert('Lỗi kết nối máy chủ: ' + err.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerText = '⚡ Tạo Mã QR Đăng Nhập Mới';
+    }
+  }
+}
+
+function renderAddAccountQr(data) {
+  const qrBox = document.getElementById('add-acc-state-qr');
+  const qrImg = document.getElementById('add-acc-qr-img');
+  const qrMsg = document.getElementById('add-acc-qr-msg');
+
+  if (qrBox) qrBox.style.display = 'flex';
+  if (qrImg && data.qrDataUrl) qrImg.src = data.qrDataUrl;
+  if (qrMsg && data.qrStatusText) qrMsg.innerText = data.qrStatusText;
+}
+
+function onAccountAddedSuccess(data) {
+  const idle = document.getElementById('add-acc-state-idle');
+  const qr = document.getElementById('add-acc-state-qr');
+  const success = document.getElementById('add-acc-state-success');
+  const nameEl = document.getElementById('add-acc-success-name');
+
+  if (idle) idle.style.display = 'none';
+  if (qr) qr.style.display = 'none';
+  if (success) success.style.display = 'flex';
+  if (nameEl && data?.profile?.displayName) {
+    nameEl.innerText = `Đã kết nối: ${data.profile.displayName}!`;
+  }
+
+  loadAccounts();
+  loadConversations();
+}
+
+async function removeAccount(accountUid) {
+  if (!confirm('Bạn có chắc chắn muốn đăng xuất tài khoản Zalo này không?')) return;
+  try {
+    const res = await fetch(`/api/accounts/${accountUid}/delete`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ cleanData: false })
+    });
+    const json = await res.json();
+    if (json.success) {
+      alert('Đã đăng xuất tài khoản thành công.');
+      loadAccounts();
+      loadConversations();
+    }
+  } catch (err) {
+    alert('Lỗi đăng xuất tài khoản: ' + err.message);
+  }
+}
+
+async function setDefaultAccount(accountUid) {
+  try {
+    const res = await fetch(`/api/accounts/${accountUid}/set-default`, {
+      method: 'POST',
+      headers: getHeaders()
+    });
+    const text = await res.text();
+    let json = {};
+    try {
+      json = JSON.parse(text);
+    } catch (_) {
+      throw new Error(`Máy chủ phản hồi không hợp lệ (${res.status})`);
+    }
+    if (!res.ok || json.error) {
+      throw new Error(json.error || 'Không thể đặt tài khoản mặc định');
+    }
+    showToast('⭐ Đã đặt tài khoản chính mặc định thành công!', 'success');
+    loadAccounts();
+  } catch (err) {
+    alert('Lỗi cập nhật: ' + err.message);
+  }
+}
+
+function renderAccountsInLoginModal(poolData) {
+  const listContainer = document.getElementById('modal-accounts-manage-list');
+  if (!listContainer) return;
+  const accounts = poolData.accounts || [];
+
+  if (accounts.length === 0) {
+    listContainer.innerHTML = `<div style="font-size: 0.8rem; color: #94a3b8; padding: 6px 0;">Chưa có tài khoản nào được lưu.</div>`;
+    return;
+  }
+
+  listContainer.innerHTML = accounts.map(acc => {
+    const isOnline = acc.status === 'online' || acc.isLoggedIn;
+    return `
+      <div class="account-manage-item ${acc.isDefault ? 'is-default' : ''}">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <img src="${acc.avatar || DEFAULT_AVATAR_PLACEHOLDER}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1.5px solid ${isOnline ? '#10b981' : '#94a3b8'};" alt="">
+          <div style="text-align: left;">
+            <div style="font-size: 0.84rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 6px;">
+              ${escapeHtml(acc.displayName)}
+              ${acc.isDefault ? `<span style="font-size: 0.65rem; background: rgba(16,185,129,0.15); color: #10b981; border: 1px solid rgba(16,185,129,0.3); border-radius: 4px; padding: 1px 4px;">Chính</span>` : ''}
+            </div>
+            <div style="font-size: 0.72rem; color: #94a3b8;">${isOnline ? '🟢 Online' : '⚪ Offline'} • UID: ${acc.accountUid}</div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          ${!acc.isDefault ? `
+            <button class="filter-btn" style="font-size: 0.72rem; padding: 3px 8px;" onclick="setDefaultAccount('${acc.accountUid}')" title="Đặt làm tài khoản mặc định">
+              ⭐ Đặt làm chính
+            </button>
+          ` : ''}
+          <button class="filter-btn" style="font-size: 0.72rem; padding: 3px 8px; color: #ef4444; border-color: rgba(239,68,68,0.3);" onclick="removeAccount('${acc.accountUid}')" title="Đăng xuất tài khoản này">
+            🚪 Thoát
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
 }
 
 function switchMainView(view) {
@@ -2104,7 +2374,8 @@ async function loadConversations() {
     const statusFilter = state.statusFilter || 'all';
     const tagId = state.currentTagId || '';
     const search = state.searchQuery || '';
-    const url = `/api/conversations?filter=${encodeURIComponent(quickFilter)}&status=${encodeURIComponent(statusFilter)}&search=${encodeURIComponent(search)}&tagId=${encodeURIComponent(tagId)}`;
+    const accountUid = state.activeAccountUid || 'all';
+    const url = `/api/conversations?filter=${encodeURIComponent(quickFilter)}&status=${encodeURIComponent(statusFilter)}&search=${encodeURIComponent(search)}&tagId=${encodeURIComponent(tagId)}&accountUid=${encodeURIComponent(accountUid)}`;
     const res = await fetch(url, { headers: getHeaders() });
     if (res.status === 401) {
       promptAuthToken();
@@ -2144,12 +2415,19 @@ function createConversationCard(conv) {
     ? `<div class="conv-tag-dot-list">${conv.tags.slice(0, 4).map(t => `<span class="conv-tag-dot" style="background-color: ${escapeHtml(t.color || '#38bdf8')};" title="${escapeHtml(t.name)}"></span>`).join('')}</div>`
     : '';
 
+  // Badge avatar tài khoản Zalo khi xem ở chế độ Tất Cả (Unified Inbox)
+  const assignedAccount = (state.accounts || []).find(a => a.accountUid === conv.accountUid);
+  const accountBadgeHtml = (state.activeAccountUid === 'all' && assignedAccount?.avatar)
+    ? `<img class="conv-account-badge" src="${assignedAccount.avatar}" title="Tài khoản: ${escapeHtml(assignedAccount.displayName)}" alt="Account">`
+    : '';
+
   card.innerHTML = `
     <div class="conv-avatar-box">
       ${conv.avatar ? 
         `<img class="conv-avatar" src="${conv.avatar}" alt="${escapeHtml(conv.name)}" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.outerHTML='<div class=\\'conv-avatar\\'>${initials}</div>'">` : 
         `<div class="conv-avatar">${initials}</div>`
       }
+      ${accountBadgeHtml}
       ${conv.channel === 'oa' ? `<div class="oa-badge-icon" style="position:absolute; bottom:-2px; right:-2px; background:#2563eb; color:#fff; font-size:9px; font-weight:700; border-radius:4px; padding:1px 3px; line-height:1; border:1px solid #fff;">OA</div>` : (conv.isGroup ? `<div class="group-badge-icon">👥</div>` : '')}
     </div>
     <div class="conv-details">
@@ -3240,7 +3518,8 @@ async function sendQuickLike() {
       body: JSON.stringify({
         recipientId: state.activeThreadId,
         message: '👍',
-        isGroup: Boolean(state.activeThread?.isGroup)
+        isGroup: Boolean(state.activeThread?.isGroup),
+        accountUid: state.activeThread?.accountUid || (state.activeAccountUid !== 'all' ? state.activeAccountUid : undefined)
       })
     });
   } catch (err) {
@@ -3285,7 +3564,7 @@ async function sendMessage() {
     threadId: state.activeThreadId,
     senderId: 'self',
     senderName: 'Admin (Bạn)',
-    text: text || (hasFiles ? (isImageAttachment ? '[Hình ảnh]' : (filesToSend[0].name || '[Tập tin]')) : ''),
+    text: text || (hasFiles ? (isImageAttachment ? '' : (filesToSend[0].name || '[Tập tin]')) : ''),
     mediaType: isImageAttachment ? 'image' : (hasFiles ? 'file' : 'text'),
     mediaUrl: tempBlobUrl,
     quoteText: quoteToUse ? quoteToUse.text : '',
@@ -3304,7 +3583,7 @@ async function sendMessage() {
   // Update conversation card preview immediately
   let conv = state.conversations.find(c => c.id === state.activeThreadId);
   if (conv) {
-    conv.lastMessage = optimisticMsg.text;
+    conv.lastMessage = optimisticMsg.text || (optimisticMsg.mediaType === 'image' ? '[Hình ảnh]' : '[Tin nhắn]');
     conv.lastTime = optimisticMsg.timestamp;
     state.conversations = [conv, ...state.conversations.filter(c => c.id !== state.activeThreadId)];
     renderConversations();
@@ -3327,7 +3606,8 @@ async function sendMessage() {
               senderName: quoteToUse.senderName,
               msgId: quoteToUse.msgId
             },
-            isGroup: Boolean(state.activeThread?.isGroup)
+            isGroup: Boolean(state.activeThread?.isGroup),
+            accountUid: state.activeThread?.accountUid || (state.activeAccountUid !== 'all' ? state.activeAccountUid : undefined)
           })
         });
         const quoteData = await quoteRes.json();
@@ -3341,6 +3621,7 @@ async function sendMessage() {
           formData.append('files', file);
         }
         formData.append('isGroup', Boolean(state.activeThread?.isGroup));
+        formData.append('accountUid', state.activeThread?.accountUid || (state.activeAccountUid !== 'all' ? state.activeAccountUid : ''));
 
         res = await fetch(`/api/conversations/${state.activeThreadId}/upload-media`, {
           method: 'POST',
@@ -3358,6 +3639,7 @@ async function sendMessage() {
           formData.append('message', text);
         }
         formData.append('isGroup', Boolean(state.activeThread?.isGroup));
+        formData.append('accountUid', state.activeThread?.accountUid || (state.activeAccountUid !== 'all' ? state.activeAccountUid : ''));
 
         res = await fetch(`/api/conversations/${state.activeThreadId}/upload-media`, {
           method: 'POST',
@@ -3378,7 +3660,8 @@ async function sendMessage() {
             senderName: quoteToUse.senderName,
             msgId: quoteToUse.msgId
           },
-          isGroup: Boolean(state.activeThread?.isGroup)
+          isGroup: Boolean(state.activeThread?.isGroup),
+          accountUid: state.activeThread?.accountUid || (state.activeAccountUid !== 'all' ? state.activeAccountUid : undefined)
         })
       });
     } else {
@@ -3400,7 +3683,8 @@ async function sendMessage() {
           body: JSON.stringify({
             recipientId: state.activeThreadId,
             message: text,
-            isGroup: Boolean(state.activeThread?.isGroup)
+            isGroup: Boolean(state.activeThread?.isGroup),
+            accountUid: state.activeThread?.accountUid || (state.activeAccountUid !== 'all' ? state.activeAccountUid : undefined)
           })
         });
       }
@@ -3427,7 +3711,8 @@ async function sendMessage() {
             headers: getHeaders(),
             body: JSON.stringify({
               mediaUrls: pendingAtts,
-              isGroup: Boolean(state.activeThread?.isGroup)
+              isGroup: Boolean(state.activeThread?.isGroup),
+              accountUid: state.activeThread?.accountUid || (state.activeAccountUid !== 'all' ? state.activeAccountUid : '')
             })
           });
           const sendData = await sendRes.json();
@@ -3853,20 +4138,73 @@ function handleStreamEvent(eventType, rawData) {
 
     if (eventType === 'new_message') {
       const msg = data;
+
+      // Multi-Account Isolation Guard:
+      // Nếu tin nhắn thuộc tài khoản khác với tài khoản đang chọn (và không phải chế độ 'all'):
+      // KHÔNG can thiệp vào chat active hay conversation list của tài khoản hiện tại!
+      const isCrossAccount = state.activeAccountUid &&
+        state.activeAccountUid !== 'all' &&
+        msg.accountUid &&
+        String(msg.accountUid) !== String(state.activeAccountUid);
+
+      if (isCrossAccount) {
+        // Cập nhật chấm đỏ thông báo tin nhắn mới trên rail button của tài khoản nhận tin
+        const railBtn = document.getElementById(`rail-acc-${msg.accountUid}`);
+        if (railBtn) {
+          let dot = railBtn.querySelector('.rail-unread-badge');
+          if (!dot) {
+            dot = document.createElement('div');
+            dot.className = 'rail-unread-badge';
+            dot.style.cssText = 'position:absolute; top:2px; right:2px; width:9px; height:9px; background:#ef4444; border-radius:50%; border:2px solid #0f172a; pointer-events:none;';
+            railBtn.style.position = 'relative';
+            railBtn.appendChild(dot);
+          }
+        }
+        return;
+      }
+
       if (state.activeThreadId && String(msg.threadId) === String(state.activeThreadId)) {
         const existingBubble = document.getElementById(`msg-${msg.id}`);
         if (!existingBubble) {
           // If this message was sent by self, check if we can update the optimistic bubble
-          const tempMsg = state.messages.find(m => String(m.id).startsWith('temp_') && m.text === msg.text);
+          let tempMsg = null;
+          if (msg.isSelf) {
+            // 1. Khớp chính xác theo text nếu có
+            if (msg.text) {
+              tempMsg = state.messages.find(m => String(m.id).startsWith('temp_') && m.text === msg.text);
+            }
+            // 2. Khớp theo mediaType (ảnh/tệp) nếu không có text hoặc không khớp text
+            if (!tempMsg && msg.mediaType && msg.mediaType !== 'text') {
+              tempMsg = state.messages.find(m => String(m.id).startsWith('temp_') && m.mediaType === msg.mediaType);
+            }
+            // 3. Fallback: Bất kỳ tin nhắn temp_ nào đang chờ trong luồng
+            if (!tempMsg) {
+              tempMsg = state.messages.find(m => String(m.id).startsWith('temp_'));
+            }
+          }
+
           if (tempMsg && msg.isSelf) {
             const tempEl = document.getElementById(`msg-${tempMsg.id}`);
             if (tempEl) {
               tempEl.id = `msg-${msg.id}`;
               const tick = tempEl.querySelector('.msg-status-tick');
               if (tick) tick.id = `status-tick-${msg.id}`;
+
+              // Cập nhật đường dẫn media từ server nếu có
+              if (msg.mediaUrl) {
+                const imgEl = tempEl.querySelector('img.media-img');
+                if (imgEl) {
+                  const authParam = state.adminToken ? `?token=${encodeURIComponent(state.adminToken)}` : '';
+                  const resolvedImgUrl = msg.mediaUrl.startsWith('http') ? msg.mediaUrl : msg.mediaUrl + authParam;
+                  imgEl.src = resolvedImgUrl;
+                  imgEl.setAttribute('onclick', `openImagePreview('${escapeHtml(resolvedImgUrl)}')`);
+                }
+              }
             }
             tempMsg.id = msg.id;
             tempMsg.cliMsgId = msg.cliMsgId || '';
+            tempMsg.text = msg.text;
+            if (msg.mediaUrl) tempMsg.mediaUrl = msg.mediaUrl;
           } else {
             appendMessageElement(msg, true);
             state.messages.push(msg);
@@ -3886,7 +4224,9 @@ function handleStreamEvent(eventType, rawData) {
       } else {
         const newConv = {
           id: msg.threadId,
-          name: msg.senderName || msg.threadId,
+          accountUid: msg.accountUid,
+          name: msg.conversationName || (msg.isGroup ? (msg.name || `Nhóm ${String(msg.threadId).substring(0, 8)}`) : (msg.senderName || msg.threadId)),
+          avatar: msg.conversationAvatar || '',
           isGroup: Boolean(msg.isGroup),
           lastMessage: msg.text || (msg.mediaType === 'image' ? '[Hình ảnh]' : '[Tin nhắn]'),
           lastTime: msg.timestamp,
@@ -3959,6 +4299,22 @@ function handleStreamEvent(eventType, rawData) {
       }
     } else if (eventType === 'startup_sync_status') {
       handleStartupSyncEvent(data);
+    } else if (eventType === 'accounts_updated') {
+      state.accounts = data.accounts || [];
+      renderAccountRail();
+      renderAccountsInLoginModal(data);
+    } else if (eventType === 'account_add_qr') {
+      renderAddAccountQr(data);
+    } else if (eventType === 'account_added') {
+      onAccountAddedSuccess(data);
+    } else if (eventType === 'account_removed') {
+      loadAccounts();
+      loadConversations();
+    } else if (eventType === 'active_account_switched') {
+      if (data.activeAccountUid) {
+        state.activeAccountUid = data.activeAccountUid;
+        renderAccountRail();
+      }
     }
   } catch (err) {
     console.error('Error handling stream event:', err);
@@ -5685,9 +6041,11 @@ function dismissStartupSyncBanner() {
 // -----------------------------------------------------------------------------
 let currentZaloProfile = null;
 
-async function loadZaloProfile() {
+async function loadZaloProfile(accountUid = null) {
   try {
-    const res = await fetch('/api/zalo/profile', { headers: getHeaders() });
+    const targetUid = accountUid || (state.activeAccountUid !== 'all' ? state.activeAccountUid : '');
+    const query = targetUid ? `?accountUid=${encodeURIComponent(targetUid)}` : '';
+    const res = await fetch(`/api/zalo/profile${query}`, { headers: getHeaders() });
     const json = await res.json();
     if (json.data) {
       currentZaloProfile = json.data;
@@ -7591,12 +7949,12 @@ async function updateOaTabVisibility() {
 
     if (oaTab) {
       oaTab.style.display = isOaActive ? '' : 'none';
-      if (!isOaActive && state.quickFilter === 'oa') {
-        setQuickFilter('all');
-      }
     }
     if (railOaBtn) {
       railOaBtn.style.display = isOaActive ? '' : 'none';
+    }
+    if (!isOaActive && (state.quickFilter === 'oa' || state.currentFilter === 'oa')) {
+      setQuickFilter('all');
     }
   } catch (err) {
     console.warn('[OA] Error updating OA tab visibility:', err);

@@ -7,22 +7,26 @@ import path from 'path';
 import fs from 'fs';
 import { logger } from './utils/logger.js';
 import { saveEncryptedSession, loadEncryptedSession } from './utils/session-store.js';
-import { defaultRateLimiter } from './utils/rate-limiter.js';
-import { defaultSelfEchoShield } from './utils/self-echo.js';
-import { defaultFloodDetector } from './utils/flood-detector.js';
+import { RateLimiter, defaultRateLimiter } from './utils/rate-limiter.js';
+import { SelfEchoShield, defaultSelfEchoShield } from './utils/self-echo.js';
+import { FloodDetector, defaultFloodDetector } from './utils/flood-detector.js';
 import { localStore } from './utils/local-store.js';
 import { parseMessage } from './utils/message-parser.js';
 
 export class ZaloClient {
-  constructor() {
+  constructor({ sessionName = 'zalo_default', accountUid = '' } = {}) {
     this.api = null;
     this.isLoggedIn = false;
     this.currentQrCode = null;
     this.currentQrDataUrl = null;
     this.inboundHandlers = [];
-    this.sessionName = 'zalo_default';
+    this.sessionName = sessionName;
+    this.accountUid = accountUid;
+    this.rateLimiter = new RateLimiter();
+    this.selfEchoShield = new SelfEchoShield();
+    this.floodDetector = new FloodDetector();
     this.botInfo = null;
-    this.userProfile = { userId: '', displayName: '', avatar: '' };
+    this.userProfile = { userId: accountUid || '', displayName: '', avatar: '' };
     this.qrStatusText = '';
     this.scannedUser = null;
     this.onQrCallback = null;
@@ -185,6 +189,7 @@ export class ZaloClient {
   async syncInitialContacts() {
     if (!this.api) return;
     try {
+      const myAccountUid = this.accountUid || this.userProfile?.userId || 'default';
       this._setStartupSyncState('contacts', 'Đang nạp danh bạ bạn bè Zalo...');
 
       // 1. Sync Friends
@@ -198,6 +203,7 @@ export class ZaloClient {
             this.friendUids.add(id);
             localStore.upsertConversation({
               id,
+              accountUid: myAccountUid,
               name: f.displayName || f.zaloName || f.name || id,
               avatar: f.avatar || f.avatarUrl || '',
               isGroup: false,
@@ -235,6 +241,7 @@ export class ZaloClient {
 
           localStore.upsertConversation({
             id: gid,
+            accountUid: myAccountUid,
             name: groupName,
             avatar: groupAvatar,
             isGroup: true,
@@ -243,7 +250,7 @@ export class ZaloClient {
         }
         if (groupIds.length > 0) {
           logger.info(`👥 Initial group sync: Synced ${groupIds.length} groups into LocalStore.`);
-          const healed = localStore.reconcileGroupsWithGroundTruth(this.groupUids);
+          const healed = localStore.reconcileGroupsWithGroundTruth(this.groupUids, myAccountUid);
           if (healed > 0) {
             logger.info(`👥 [Ground-Truth Reconcile] Corrected ${healed} misclassified conversations back to isGroup=0.`);
           }
@@ -352,9 +359,53 @@ export class ZaloClient {
         displayName: finalName,
         avatar: finalAvatar
       };
+      this.accountUid = finalUid;
+      try {
+        localStore.upsertAccount({
+          accountUid: finalUid,
+          displayName: finalName,
+          avatar: finalAvatar,
+          sessionFile: this.sessionName,
+          status: 'online'
+        });
+      } catch {}
       logger.info(`👤 Zalo Profile synced: ${this.userProfile.displayName} (UID: ${this.userProfile.userId})`);
     } catch (err) {
       logger.warn(`[ProfileSync] Failed: ${err.message}`);
+    }
+  }
+
+  /**
+   * Gracefully destroy this client instance, close socket listener and cleanup timers
+   */
+  async destroy() {
+    try {
+      this.isLoggedIn = false;
+      if (this._deliveredFlushTimer) {
+        clearInterval(this._deliveredFlushTimer);
+        this._deliveredFlushTimer = null;
+      }
+      if (this.api && this.api.listener) {
+        try {
+          if (typeof this.api.listener.stop === 'function') {
+            this.api.listener.stop();
+          } else if (typeof this.api.listener.removeAllListeners === 'function') {
+            this.api.listener.removeAllListeners();
+          }
+        } catch {}
+      }
+      this.api = null;
+      this._deliveredQueue.clear();
+      this.inboundHandlers = [];
+      this.startupSyncState = { stage: 'idle', message: '', errorDetail: null };
+      if (this.accountUid) {
+        try {
+          localStore.updateAccountStatus(this.accountUid, 'offline');
+        } catch {}
+      }
+      logger.info(`🔌 [ZaloClient] Client for ${this.accountUid || this.sessionName} destroyed cleanly.`);
+    } catch (err) {
+      logger.warn(`[ZaloClient] Error during destroy: ${err.message}`);
     }
   }
 
@@ -533,11 +584,12 @@ export class ZaloClient {
         if (!safeText && !parsed.mediaUrl) return;
 
         // Xử lý gói tin đồng bộ từ chính tài khoản (Self Message / Multi-Device Sync từ điện thoại hoặc PC)
+        const myAccountUid = this.accountUid || this.userProfile.userId || 'default';
         if (message.isSelf) {
           // 1. Nếu tin nhắn do chính Zalo-Flow vừa gửi đi qua Web Dashboard/Bot (có trong SelfEchoShield)
           // Chỉ kiểm tra Shield khi có text để tránh false-positive với ảnh/tệp không caption
           if (safeText.trim()) {
-            const isEcho = defaultSelfEchoShield.isSelfEcho(safeText, threadId);
+            const isEcho = (this.selfEchoShield || defaultSelfEchoShield).isSelfEcho(safeText, threadId);
             if (isEcho) {
               logger.debug(`[Self-Echo] Ignored echo of Zalo-Flow outbound message to ${threadId}`);
               return;
@@ -546,7 +598,7 @@ export class ZaloClient {
 
           // 2. Kiểm tra trùng lặp theo msgId trong SQLite
           const incomingMsgId = String(message.msgId || message.data?.msgId || '');
-          if (incomingMsgId && localStore.getMessage(incomingMsgId)) {
+          if (incomingMsgId && localStore.getMessage(incomingMsgId, myAccountUid)) {
             return;
           }
 
@@ -558,6 +610,7 @@ export class ZaloClient {
 
           localStore.addMessage({
             id: incomingMsgId || crypto.randomUUID(),
+            accountUid: myAccountUid,
             threadId,
             senderId: 'self',
             senderName,
@@ -579,12 +632,12 @@ export class ZaloClient {
         }
 
         // Anti-ban: Flood Shield (chỉ áp dụng cho tin nhắn từ khách hàng)
-        if (defaultFloodDetector.isFlooding(senderId)) {
+        if ((this.floodDetector || defaultFloodDetector).isFlooding(senderId)) {
           return;
         }
 
         // Anti-ban: Self-Echo Check
-        if (safeText && defaultSelfEchoShield.isSelfEcho(safeText, senderId)) {
+        if (safeText && (this.selfEchoShield || defaultSelfEchoShield).isSelfEcho(safeText, senderId)) {
           return;
         }
 
@@ -595,6 +648,7 @@ export class ZaloClient {
         const msgCliId = String(message.cliMsgId || message.data?.cliMsgId || message.data?.ts || message.ts || Date.now());
         localStore.addMessage({
           id: String(message.msgId || message.data?.msgId || crypto.randomUUID()),
+          accountUid: myAccountUid,
           threadId,
           senderId,
           senderName,
@@ -622,6 +676,7 @@ export class ZaloClient {
               isGroup,
               mediaType: parsed.type,
               mediaUrl: parsed.mediaUrl || '',
+              accountUid: myAccountUid,
               client: this
             });
           } catch (handlerErr) {
@@ -638,6 +693,7 @@ export class ZaloClient {
       try {
         if (!Array.isArray(messages) || messages.length === 0) return;
         logger.info(`📥 Ingested ${messages.length} historical messages from Zalo.`);
+        const myAccountUid = this.accountUid || this.userProfile.userId || 'default';
 
         for (const msg of messages) {
           const senderId = String(msg.uidFrom || msg.data?.uidFrom || msg.senderId || '');
@@ -654,6 +710,7 @@ export class ZaloClient {
 
           localStore.addMessage({
             id: String(msg.msgId || msg.data?.msgId || crypto.randomUUID()),
+            accountUid: myAccountUid,
             threadId,
             senderId,
             senderName,
@@ -740,6 +797,19 @@ export class ZaloClient {
       }
     });
 
+    // 6. Network / Socket Lifecycle & Error Handling (Anti-Crash Guard)
+    this.api.listener.on('error', (err) => {
+      logger.warn(`⚠️ [Zalo Listener] Network or protocol error: ${err?.message || JSON.stringify(err)}`);
+    });
+
+    this.api.listener.on('disconnected', (code, reason) => {
+      logger.warn(`🔌 [Zalo Listener] Disconnected: code=${code}, reason=${reason}`);
+    });
+
+    this.api.listener.on('closed', (code, reason) => {
+      logger.info(`🔒 [Zalo Listener] Connection closed: code=${code}, reason=${reason}`);
+    });
+
     this.api.listener.start();
   }
 
@@ -771,9 +841,10 @@ export class ZaloClient {
     }
 
     // Schedule through Anti-Ban Rate Limiter
-    return defaultRateLimiter.schedule(async () => {
+    const myAccountUid = this.accountUid || this.userProfile.userId || 'default';
+    return (this.rateLimiter || defaultRateLimiter).schedule(async () => {
       // Record to self-echo shield
-      defaultSelfEchoShield.recordSent(text, threadId);
+      (this.selfEchoShield || defaultSelfEchoShield).recordSent(text, threadId);
 
       const senderTag = isBot ? '🤖 [AI Bot]' : '📤 [Outbound]';
       logger.info(`${senderTag} Sending to ${threadId}: "${String(text).substring(0, 40)}..."`);
@@ -787,7 +858,7 @@ export class ZaloClient {
       if (quote && (quote.msgId || quote.cliMsgId || quote.content || quote.text)) {
         let origMsg = null;
         if (quote.msgId) {
-          origMsg = localStore.getMessage(quote.msgId);
+          origMsg = localStore.getMessage(quote.msgId, myAccountUid);
         }
         const uidFrom = quote.uidFrom || origMsg?.senderId || threadId;
         const msgId = quote.msgId || origMsg?.id || '0';
@@ -838,6 +909,7 @@ export class ZaloClient {
       // Record outbound to LocalStore
       localStore.addMessage({
         id: outMsgId,
+        accountUid: myAccountUid,
         threadId,
         senderId: isBot ? 'ai_bot' : 'self',
         senderName: isBot ? 'Bot AI (Tự động)' : senderName,
@@ -1070,15 +1142,16 @@ export class ZaloClient {
       throw new Error('Zalo Client is not logged in.');
     }
 
-    return defaultRateLimiter.schedule(async () => {
-      defaultSelfEchoShield.recordSent(text, threadId);
+    const myAccountUid = this.accountUid || this.userProfile.userId || 'default';
+    return (this.rateLimiter || defaultRateLimiter).schedule(async () => {
+      (this.selfEchoShield || defaultSelfEchoShield).recordSent(text, threadId);
       logger.info(`📤 [Quote Outbound] Replying to ${threadId}: "${String(text).substring(0, 40)}..."`);
 
       const threadType = isGroup ? ThreadType.Group : ThreadType.User;
 
       let origMsg = null;
       if (quoteData?.msgId) {
-        origMsg = localStore.getMessage(quoteData.msgId);
+        origMsg = localStore.getMessage(quoteData.msgId, myAccountUid);
       }
 
       const uidFrom = quoteData?.uidFrom || origMsg?.senderId || threadId;
@@ -1123,6 +1196,7 @@ export class ZaloClient {
 
       localStore.addMessage({
         id: quoteMsgId,
+        accountUid: myAccountUid,
         threadId,
         senderId: 'self',
         senderName: 'Admin (Bạn)',
@@ -1154,8 +1228,9 @@ export class ZaloClient {
       throw new Error('Zalo Client is not logged in.');
     }
 
-    return defaultRateLimiter.schedule(async () => {
-      const conv = localStore.getConversation(threadId);
+    const myAccountUid = this.accountUid || this.userProfile.userId || 'default';
+    return (this.rateLimiter || defaultRateLimiter).schedule(async () => {
+      const conv = localStore.getConversation(threadId, myAccountUid);
       const isGroupResolved = conv ? Boolean(conv.isGroup) : Boolean(isGroup === true || isGroup === 'true' || isGroup === '1');
       const threadType = isGroupResolved ? ThreadType.Group : ThreadType.User;
       const rawPaths = Array.isArray(filePaths) ? filePaths : [filePaths];
@@ -1199,14 +1274,16 @@ export class ZaloClient {
         const itemMediaUrl = item.mediaUrl || '';
         const itemText = (i === 0 && hasCaption)
           ? meta.caption.trim()
-          : (item.originalName || (itemMediaType === 'image' ? '[Hình ảnh]' : '[Tập tin]'));
+          : (itemMediaType === 'image' ? '' : (item.originalName || '[Tập tin]'));
         const subMsgId = i === 0 ? attachMsgId : `${attachMsgId}_${i}`;
         const subCliMsgId = attachCliMsgId ? (i === 0 ? attachCliMsgId : `${attachCliMsgId}_${i}`) : '';
 
-        defaultSelfEchoShield.recordSent(itemText, threadId);
+        const shieldText = itemText || (itemMediaType === 'image' ? '[Hình ảnh]' : '[Tập tin]');
+        (this.selfEchoShield || defaultSelfEchoShield).recordSent(shieldText, threadId);
 
         localStore.addMessage({
           id: subMsgId,
+          accountUid: myAccountUid,
           threadId,
           senderId: 'self',
           senderName: 'Admin (Bạn)',

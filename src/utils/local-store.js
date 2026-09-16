@@ -38,8 +38,21 @@ export class LocalStore extends EventEmitter {
 
   _initSchema() {
     this.db.exec(`
+      CREATE TABLE IF NOT EXISTS accounts (
+        accountUid   TEXT PRIMARY KEY,
+        displayName  TEXT NOT NULL DEFAULT '',
+        avatar       TEXT DEFAULT '',
+        phone        TEXT DEFAULT '',
+        sessionFile  TEXT DEFAULT '',
+        isDefault    INTEGER DEFAULT 0,
+        status       TEXT DEFAULT 'offline',
+        createdAt    TEXT DEFAULT (datetime('now')),
+        updatedAt    TEXT DEFAULT (datetime('now'))
+      );
+
       CREATE TABLE IF NOT EXISTS conversations (
-        id          TEXT PRIMARY KEY,
+        id          TEXT NOT NULL,
+        accountUid  TEXT NOT NULL DEFAULT 'default',
         name        TEXT NOT NULL DEFAULT '',
         avatar      TEXT DEFAULT '',
         isGroup     INTEGER DEFAULT 0,
@@ -47,11 +60,24 @@ export class LocalStore extends EventEmitter {
         lastTime    TEXT DEFAULT '',
         unreadCount INTEGER DEFAULT 0,
         isPinned    INTEGER DEFAULT 0,
-        updatedAt   TEXT DEFAULT (datetime('now'))
+        channel     TEXT DEFAULT 'personal',
+        oaId        TEXT DEFAULT '',
+        isFollower  INTEGER DEFAULT 0,
+        lastUserMessageTime INTEGER DEFAULT NULL,
+        customerPhone TEXT DEFAULT '',
+        aiEnabled   INTEGER DEFAULT 1,
+        phone       TEXT DEFAULT '',
+        email       TEXT DEFAULT '',
+        address     TEXT DEFAULT '',
+        needs       TEXT DEFAULT '',
+        notes       TEXT DEFAULT '',
+        updatedAt   TEXT DEFAULT (datetime('now')),
+        PRIMARY KEY (accountUid, id)
       );
 
       CREATE TABLE IF NOT EXISTS messages (
-        id          TEXT PRIMARY KEY,
+        id          TEXT NOT NULL,
+        accountUid  TEXT NOT NULL DEFAULT 'default',
         threadId    TEXT NOT NULL,
         senderId    TEXT NOT NULL,
         senderName  TEXT NOT NULL DEFAULT '',
@@ -67,10 +93,10 @@ export class LocalStore extends EventEmitter {
         cliMsgId    TEXT DEFAULT '',
         status      TEXT DEFAULT 'sent',
         isRecalled  INTEGER DEFAULT 0,
-        FOREIGN KEY (threadId) REFERENCES conversations(id) ON DELETE CASCADE
+        channel     TEXT DEFAULT 'personal',
+        oaMsgId     TEXT DEFAULT '',
+        PRIMARY KEY (accountUid, id)
       );
-
-      CREATE INDEX IF NOT EXISTS idx_messages_thread ON messages(threadId, timestamp DESC);
 
       CREATE TABLE IF NOT EXISTS ai_settings (
         id                      TEXT PRIMARY KEY DEFAULT 'default',
@@ -146,13 +172,12 @@ export class LocalStore extends EventEmitter {
             createdAt   TEXT DEFAULT (datetime('now'))
           );
 
-          -- 2. Conversation Tags (Many-to-Many)
+          -- 2. Conversation Tags (Many-to-Many Shared Across Accounts)
           CREATE TABLE IF NOT EXISTS conversation_tags (
             threadId    TEXT NOT NULL,
             tagId       TEXT NOT NULL,
             createdAt   TEXT DEFAULT (datetime('now')),
             PRIMARY KEY (threadId, tagId),
-            FOREIGN KEY (threadId) REFERENCES conversations(id) ON DELETE CASCADE,
             FOREIGN KEY (tagId) REFERENCES tags(id) ON DELETE CASCADE
           );
 
@@ -356,8 +381,7 @@ export class LocalStore extends EventEmitter {
           status       TEXT DEFAULT 'pending',
           error        TEXT DEFAULT '',
           sentAt       INTEGER DEFAULT NULL,
-          createdAt    INTEGER DEFAULT (strftime('%s', 'now') * 1000),
-          FOREIGN KEY (threadId) REFERENCES conversations(id) ON DELETE CASCADE
+          createdAt    INTEGER DEFAULT (strftime('%s', 'now') * 1000)
         );
         CREATE INDEX IF NOT EXISTS idx_sched_thread ON scheduled_messages(threadId, status);
         CREATE INDEX IF NOT EXISTS idx_sched_due ON scheduled_messages(status, scheduledAt);
@@ -379,11 +403,11 @@ export class LocalStore extends EventEmitter {
           accessTokenEncrypted    TEXT DEFAULT '',
           refreshTokenEncrypted   TEXT DEFAULT '',
           expiresAt               INTEGER DEFAULT 0,
-          isEnabled               INTEGER DEFAULT 1,
+          isEnabled               INTEGER DEFAULT 0,
           isAiAutoReply           INTEGER DEFAULT 0,
           updatedAt               TEXT DEFAULT (datetime('now'))
         );
-        INSERT OR IGNORE INTO oa_settings (id) VALUES ('default');
+        INSERT OR IGNORE INTO oa_settings (id, isEnabled) VALUES ('default', 0);
 
         CREATE TABLE IF NOT EXISTS system_configs (
           key       TEXT PRIMARY KEY,
@@ -396,33 +420,314 @@ export class LocalStore extends EventEmitter {
       // Cleanup: Sửa tận gốc các hội thoại rỗng bị gán timestamp giả khi khởi tạo
       this.db.exec("UPDATE conversations SET lastTime = NULL WHERE (lastMessage = '' OR lastMessage IS NULL) AND lastTime IS NOT NULL;");
 
+      // -----------------------------------------------------------------------
+      // Multi-Account Suite: Accounts Table & Composite Primary Keys
+      // -----------------------------------------------------------------------
+      this.db.exec(`
+        CREATE TABLE IF NOT EXISTS accounts (
+          accountUid   TEXT PRIMARY KEY,
+          displayName  TEXT NOT NULL DEFAULT '',
+          avatar       TEXT DEFAULT '',
+          phone        TEXT DEFAULT '',
+          sessionFile  TEXT DEFAULT '',
+          isDefault    INTEGER DEFAULT 0,
+          status       TEXT DEFAULT 'offline',
+          createdAt    TEXT DEFAULT (datetime('now')),
+          updatedAt    TEXT DEFAULT (datetime('now'))
+        );
+      `);
+
+      // Detach obsolete foreign keys from conversation_tags and scheduled_messages
+      try {
+        const ctFks = this.db.prepare("PRAGMA foreign_key_list('conversation_tags');").all();
+        if (ctFks.some(f => f.table === 'conversations')) {
+          this.db.exec('PRAGMA foreign_keys = OFF;');
+          this.db.exec(`
+            CREATE TABLE conversation_tags_v5 (
+              threadId    TEXT NOT NULL,
+              tagId       TEXT NOT NULL,
+              createdAt   TEXT DEFAULT (datetime('now')),
+              PRIMARY KEY (threadId, tagId),
+              FOREIGN KEY (tagId) REFERENCES tags(id) ON DELETE CASCADE
+            );
+            INSERT OR IGNORE INTO conversation_tags_v5 (threadId, tagId, createdAt)
+            SELECT threadId, tagId, createdAt FROM conversation_tags;
+            DROP TABLE conversation_tags;
+            ALTER TABLE conversation_tags_v5 RENAME TO conversation_tags;
+          `);
+          this.db.exec('PRAGMA foreign_keys = ON;');
+        }
+      } catch {}
+
+      try {
+        const smFks = this.db.prepare("PRAGMA foreign_key_list('scheduled_messages');").all();
+        if (smFks.some(f => f.table === 'conversations')) {
+          this.db.exec('PRAGMA foreign_keys = OFF;');
+          this.db.exec(`
+            CREATE TABLE scheduled_messages_v5 (
+              id           TEXT PRIMARY KEY,
+              threadId     TEXT NOT NULL,
+              message      TEXT NOT NULL,
+              mediaUrl     TEXT DEFAULT '',
+              mediaName    TEXT DEFAULT '',
+              scheduledAt  INTEGER NOT NULL,
+              status       TEXT DEFAULT 'pending',
+              error        TEXT DEFAULT '',
+              sentAt       INTEGER DEFAULT NULL,
+              createdAt    INTEGER DEFAULT (strftime('%s', 'now') * 1000)
+            );
+            INSERT OR IGNORE INTO scheduled_messages_v5 (id, threadId, message, mediaUrl, mediaName, scheduledAt, status, error, sentAt, createdAt)
+            SELECT id, threadId, message, mediaUrl, mediaName, scheduledAt, status, error, sentAt, createdAt FROM scheduled_messages;
+            DROP TABLE scheduled_messages;
+            ALTER TABLE scheduled_messages_v5 RENAME TO scheduled_messages;
+            CREATE INDEX IF NOT EXISTS idx_sched_thread ON scheduled_messages(threadId, status);
+            CREATE INDEX IF NOT EXISTS idx_sched_due ON scheduled_messages(status, scheduledAt);
+          `);
+          this.db.exec('PRAGMA foreign_keys = ON;');
+        }
+      } catch {}
+
+      const campColsAll = this.db.prepare("PRAGMA table_info('campaigns');").all().map(c => c.name);
+      if (!campColsAll.includes('accountUid')) {
+        this.db.exec("ALTER TABLE campaigns ADD COLUMN accountUid TEXT DEFAULT '';");
+      }
+
+      // Check if conversations has composite primary key (accountUid, id)
+      const convTableInfo = this.db.prepare("PRAGMA table_info('conversations');").all();
+      const hasAccountUidCol = convTableInfo.some(c => c.name === 'accountUid');
+      if (!hasAccountUidCol) {
+        this.db.exec("ALTER TABLE conversations ADD COLUMN accountUid TEXT DEFAULT 'default';");
+      }
+      const msgTableInfo = this.db.prepare("PRAGMA table_info('messages');").all();
+      const hasMsgAccountUid = msgTableInfo.some(c => c.name === 'accountUid');
+      if (!hasMsgAccountUid) {
+        this.db.exec("ALTER TABLE messages ADD COLUMN accountUid TEXT DEFAULT 'default';");
+      }
+
+      const pkCols = this.db.prepare("PRAGMA table_info('conversations');").all().filter(c => c.pk > 0);
+      const isCompositePk = pkCols.length >= 2 && pkCols.some(c => c.name === 'accountUid');
+
+      if (!isCompositePk) {
+        logger.info('🔄 [Multi-Account Migration] Upgrading conversations and messages to Composite Primary Key (accountUid, id)...');
+        this.db.exec('PRAGMA foreign_keys = OFF;');
+        this.db.exec('BEGIN IMMEDIATE;');
+        try {
+          // 1. Rebuild conversations
+          this.db.exec(`
+            CREATE TABLE conversations_v5 (
+              id          TEXT NOT NULL,
+              accountUid  TEXT NOT NULL DEFAULT 'default',
+              name        TEXT NOT NULL DEFAULT '',
+              avatar      TEXT DEFAULT '',
+              isGroup     INTEGER DEFAULT 0,
+              lastMessage TEXT DEFAULT '',
+              lastTime    TEXT DEFAULT '',
+              unreadCount INTEGER DEFAULT 0,
+              isPinned    INTEGER DEFAULT 0,
+              channel     TEXT DEFAULT 'personal',
+              oaId        TEXT DEFAULT '',
+              isFollower  INTEGER DEFAULT 0,
+              lastUserMessageTime INTEGER DEFAULT NULL,
+              customerPhone TEXT DEFAULT '',
+              aiEnabled   INTEGER DEFAULT 1,
+              phone       TEXT DEFAULT '',
+              email       TEXT DEFAULT '',
+              address     TEXT DEFAULT '',
+              needs       TEXT DEFAULT '',
+              notes       TEXT DEFAULT '',
+              updatedAt   TEXT DEFAULT (datetime('now')),
+              PRIMARY KEY (accountUid, id)
+            );
+
+            INSERT OR IGNORE INTO conversations_v5 (
+              id, accountUid, name, avatar, isGroup, lastMessage, lastTime, unreadCount, isPinned, channel, oaId, isFollower, lastUserMessageTime, customerPhone, aiEnabled, phone, email, address, needs, notes, updatedAt
+            )
+            SELECT 
+              id, COALESCE(NULLIF(accountUid, ''), 'default'), name, avatar, isGroup, lastMessage, lastTime, unreadCount, isPinned, channel, oaId, isFollower, lastUserMessageTime, customerPhone, aiEnabled, phone, email, address, needs, notes, updatedAt
+            FROM conversations;
+
+            DROP TABLE conversations;
+            ALTER TABLE conversations_v5 RENAME TO conversations;
+            CREATE INDEX IF NOT EXISTS idx_conv_account ON conversations(accountUid, isPinned DESC, updatedAt DESC);
+
+            -- 2. Rebuild messages
+            CREATE TABLE messages_v5 (
+              id          TEXT NOT NULL,
+              accountUid  TEXT NOT NULL DEFAULT 'default',
+              threadId    TEXT NOT NULL,
+              senderId    TEXT NOT NULL,
+              senderName  TEXT NOT NULL DEFAULT '',
+              text        TEXT NOT NULL DEFAULT '',
+              isSelf      INTEGER DEFAULT 0,
+              isBot       INTEGER DEFAULT 0,
+              timestamp   TEXT DEFAULT (datetime('now')),
+              mediaType   TEXT DEFAULT 'text',
+              mediaUrl    TEXT DEFAULT '',
+              quoteText   TEXT DEFAULT '',
+              quoteSender TEXT DEFAULT '',
+              reactions   TEXT DEFAULT '',
+              cliMsgId    TEXT DEFAULT '',
+              status      TEXT DEFAULT 'sent',
+              isRecalled  INTEGER DEFAULT 0,
+              channel     TEXT DEFAULT 'personal',
+              oaMsgId     TEXT DEFAULT '',
+              PRIMARY KEY (accountUid, id)
+            );
+
+            INSERT OR IGNORE INTO messages_v5 (
+              id, accountUid, threadId, senderId, senderName, text, isSelf, isBot, timestamp, mediaType, mediaUrl, quoteText, quoteSender, reactions, cliMsgId, status, isRecalled, channel, oaMsgId
+            )
+            SELECT 
+              id, COALESCE(NULLIF(accountUid, ''), 'default'), threadId, senderId, senderName, text, isSelf, isBot, timestamp, mediaType, mediaUrl, quoteText, quoteSender, reactions, cliMsgId, status, isRecalled, channel, oaMsgId
+            FROM messages;
+
+            DROP TABLE messages;
+            ALTER TABLE messages_v5 RENAME TO messages;
+            CREATE INDEX IF NOT EXISTS idx_messages_thread ON messages(accountUid, threadId, timestamp DESC);
+          `);
+
+          this.db.exec('COMMIT;');
+          logger.info('✅ [Multi-Account Migration] Successfully upgraded to Composite Primary Keys without data loss!');
+        } catch (migErr) {
+          this.db.exec('ROLLBACK;');
+          logger.error(`❌ [Multi-Account Migration] Rebuild failed: ${migErr.message}`);
+          throw migErr;
+        } finally {
+          this.db.exec('PRAGMA foreign_keys = ON;');
+        }
+      }
+
+      // Auto-detect and link existing data to primary account
+      const selfMsg = this.db.prepare("SELECT senderId, senderName FROM messages WHERE isSelf = 1 AND senderId != '' LIMIT 1").get();
+      if (selfMsg && selfMsg.senderId) {
+        const primaryUid = String(selfMsg.senderId);
+        const primaryName = selfMsg.senderName || 'Phan Lê Khoa';
+        
+        this.db.prepare(`
+          INSERT OR IGNORE INTO accounts (accountUid, displayName, sessionFile, isDefault, status)
+          VALUES (?, ?, 'zalo_default', 1, 'offline')
+        `).run(primaryUid, primaryName);
+
+        this.db.prepare("UPDATE conversations SET accountUid = ? WHERE accountUid = 'default' OR accountUid = ''").run(primaryUid);
+        this.db.prepare("UPDATE messages SET accountUid = ? WHERE accountUid = 'default' OR accountUid = ''").run(primaryUid);
+      }
+
     } catch (err) {
       logger.warn(`Migration notice: ${err.message}`);
     }
   }
 
   // ---------------------------------------------------------------------------
+  // Account Management Suite (Multi-Account Parallel Architecture)
+  // ---------------------------------------------------------------------------
+  getAccounts() {
+    return this.db.prepare('SELECT * FROM accounts ORDER BY isDefault DESC, createdAt ASC').all().map(acc => ({
+      ...acc,
+      isDefault: Boolean(acc.isDefault)
+    }));
+  }
+
+  getAccount(accountUid) {
+    if (!accountUid) return null;
+    const row = this.db.prepare('SELECT * FROM accounts WHERE accountUid = ?').get(String(accountUid));
+    if (!row) return null;
+    return {
+      ...row,
+      isDefault: Boolean(row.isDefault)
+    };
+  }
+
+  getDefaultAccount() {
+    const row = this.db.prepare('SELECT * FROM accounts WHERE isDefault = 1 LIMIT 1').get()
+      || this.db.prepare('SELECT * FROM accounts LIMIT 1').get();
+    if (!row) return null;
+    return {
+      ...row,
+      isDefault: Boolean(row.isDefault)
+    };
+  }
+
+  upsertAccount(acc) {
+    if (!acc || !acc.accountUid) return null;
+    const accountUid = String(acc.accountUid);
+    const existing = this.getAccount(accountUid);
+    const displayName = acc.displayName !== undefined ? acc.displayName : (existing?.displayName || 'Zalo User');
+    const avatar = acc.avatar !== undefined ? acc.avatar : (existing?.avatar || '');
+    const phone = acc.phone !== undefined ? acc.phone : (existing?.phone || '');
+    const sessionFile = acc.sessionFile !== undefined ? acc.sessionFile : (existing?.sessionFile || `zalo_${accountUid}`);
+    const isDefault = acc.isDefault !== undefined ? (acc.isDefault ? 1 : 0) : (existing?.isDefault ? 1 : 0);
+    const status = acc.status !== undefined ? acc.status : (existing?.status || 'offline');
+    const updatedAt = new Date().toISOString();
+
+    const stmt = this.db.prepare(`
+      INSERT INTO accounts (accountUid, displayName, avatar, phone, sessionFile, isDefault, status, updatedAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(accountUid) DO UPDATE SET
+        displayName = excluded.displayName,
+        avatar = CASE WHEN excluded.avatar != '' THEN excluded.avatar ELSE accounts.avatar END,
+        phone = CASE WHEN excluded.phone != '' THEN excluded.phone ELSE accounts.phone END,
+        sessionFile = CASE WHEN excluded.sessionFile != '' THEN excluded.sessionFile ELSE accounts.sessionFile END,
+        isDefault = excluded.isDefault,
+        status = excluded.status,
+        updatedAt = excluded.updatedAt
+    `);
+    stmt.run(accountUid, displayName, avatar, phone, sessionFile, isDefault, status, updatedAt);
+    return this.getAccount(accountUid);
+  }
+
+  deleteAccount(accountUid, { deleteData = false } = {}) {
+    if (!accountUid) return false;
+    const uid = String(accountUid);
+    if (deleteData) {
+      this.db.prepare('DELETE FROM conversation_tags WHERE threadId IN (SELECT id FROM conversations WHERE accountUid = ?)').run(uid);
+      this.db.prepare('DELETE FROM messages WHERE accountUid = ?').run(uid);
+      this.db.prepare('DELETE FROM conversations WHERE accountUid = ?').run(uid);
+    }
+    this.db.prepare('DELETE FROM accounts WHERE accountUid = ?').run(uid);
+    return true;
+  }
+
+  setDefaultAccount(accountUid) {
+    if (!accountUid) return;
+    this.db.prepare('UPDATE accounts SET isDefault = 0').run();
+    this.db.prepare("UPDATE accounts SET isDefault = 1, updatedAt = datetime('now') WHERE accountUid = ?").run(String(accountUid));
+  }
+
+  updateAccountStatus(accountUid, status) {
+    if (!accountUid) return;
+    this.db.prepare("UPDATE accounts SET status = ?, updatedAt = datetime('now') WHERE accountUid = ?").run(String(status), String(accountUid));
+  }
+
+  // ---------------------------------------------------------------------------
   // CRM Information
   // ---------------------------------------------------------------------------
-  getCrmInfo(threadId) {
+  getCrmInfo(threadId, accountUid = null) {
     if (!threadId) return {};
-    const stmt = this.db.prepare('SELECT name, phone, email, address, needs, notes FROM conversations WHERE id = ?');
-    const res = stmt.get(threadId);
+    let stmt;
+    let res;
+    if (accountUid && accountUid !== 'all') {
+      stmt = this.db.prepare('SELECT name, phone, email, address, needs, notes FROM conversations WHERE id = ? AND accountUid = ?');
+      res = stmt.get(threadId, accountUid);
+    } else {
+      stmt = this.db.prepare('SELECT name, phone, email, address, needs, notes FROM conversations WHERE id = ? ORDER BY updatedAt DESC LIMIT 1');
+      res = stmt.get(threadId);
+    }
     return res || { name: '', phone: '', email: '', address: '', needs: '', notes: '' };
   }
 
-  saveCrmInfo(threadId, { name = '', phone = '', email = '', address = '', needs = '', notes = '' } = {}) {
+  saveCrmInfo(threadId, { name = '', phone = '', email = '', address = '', needs = '', notes = '' } = {}, accountUid = null) {
     if (!threadId) return;
-    this.upsertConversation({ id: threadId, name: threadId });
-    const current = this.getConversation(threadId);
+    const resolvedAccountUid = accountUid || this.getDefaultAccount()?.accountUid || 'default';
+    this.upsertConversation({ id: threadId, name: threadId, accountUid: resolvedAccountUid });
+    const current = this.getConversation(threadId, resolvedAccountUid);
     const finalName = name && name.trim() ? name.trim() : (current?.name || threadId);
     const stmt = this.db.prepare(`
       UPDATE conversations 
       SET name = ?, phone = ?, email = ?, address = ?, needs = ?, notes = ?, updatedAt = datetime('now')
-      WHERE id = ?
+      WHERE id = ? AND accountUid = ?
     `);
-    stmt.run(finalName, phone.trim(), email.trim(), address.trim(), needs.trim(), notes.trim(), threadId);
-    return this.getCrmInfo(threadId);
+    stmt.run(finalName, phone.trim(), email.trim(), address.trim(), needs.trim(), notes.trim(), threadId, resolvedAccountUid);
+    return this.getCrmInfo(threadId, resolvedAccountUid);
   }
 
   // ---------------------------------------------------------------------------
@@ -432,7 +737,8 @@ export class LocalStore extends EventEmitter {
   upsertConversation(conv) {
     if (!conv || !conv.id) return;
 
-    const existing = this.getConversation(conv.id);
+    const accountUid = String(conv.accountUid || this.getDefaultAccount()?.accountUid || 'default');
+    const existing = this.getConversation(conv.id, accountUid);
     const name = conv.name !== undefined ? conv.name : (existing?.name || conv.id);
     const avatar = conv.avatar !== undefined ? conv.avatar : (existing?.avatar || '');
     const isGroup = (existing?.isGroup || conv.isGroup) ? 1 : 0;
@@ -442,10 +748,8 @@ export class LocalStore extends EventEmitter {
     let lastTime = conv.lastTime !== undefined ? (conv.lastTime ? String(conv.lastTime) : null) : (existing?.lastTime || null);
 
     if (existing?.lastTime && conv.lastTime) {
-      // Chỉ bảo vệ giữ tin cũ hơn nếu hội thoại hiện tại ĐÃ CÓ tin nhắn thực tế
       if (existing.lastMessage && String(existing.lastMessage).trim()) {
         if (new Date(conv.lastTime) < new Date(existing.lastTime)) {
-          // Keep existing newer lastTime and lastMessage
           lastTime = existing.lastTime;
           lastMessage = existing.lastMessage || lastMessage;
         }
@@ -461,9 +765,9 @@ export class LocalStore extends EventEmitter {
     const updatedAt = new Date().toISOString();
 
     const stmt = this.db.prepare(`
-      INSERT INTO conversations (id, name, avatar, isGroup, lastMessage, lastTime, unreadCount, channel, oaId, isFollower, lastUserMessageTime, customerPhone, updatedAt)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
+      INSERT INTO conversations (id, accountUid, name, avatar, isGroup, lastMessage, lastTime, unreadCount, channel, oaId, isFollower, lastUserMessageTime, customerPhone, updatedAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(accountUid, id) DO UPDATE SET
         name = excluded.name,
         avatar = CASE WHEN excluded.avatar != '' THEN excluded.avatar ELSE conversations.avatar END,
         isGroup = CASE WHEN conversations.isGroup = 1 THEN 1 ELSE excluded.isGroup END,
@@ -478,18 +782,22 @@ export class LocalStore extends EventEmitter {
         updatedAt = excluded.updatedAt
     `);
 
-    stmt.run(conv.id, name, avatar, isGroup, lastMessage, lastTime, unreadCount, channel, oaId, isFollower, lastUserMessageTime, customerPhone, updatedAt);
+    stmt.run(conv.id, accountUid, name, avatar, isGroup, lastMessage, lastTime, unreadCount, channel, oaId, isFollower, lastUserMessageTime, customerPhone, updatedAt);
   }
 
-  setConversationGroupState(threadId, isGroup) {
+  setConversationGroupState(threadId, isGroup, accountUid = null) {
     if (!threadId) return;
     const val = isGroup ? 1 : 0;
-    this.db.prepare("UPDATE conversations SET isGroup = ?, updatedAt = datetime('now') WHERE id = ?").run(val, String(threadId));
+    if (accountUid && accountUid !== 'all') {
+      this.db.prepare("UPDATE conversations SET isGroup = ?, updatedAt = datetime('now') WHERE id = ? AND accountUid = ?").run(val, String(threadId), String(accountUid));
+    } else {
+      this.db.prepare("UPDATE conversations SET isGroup = ?, updatedAt = datetime('now') WHERE id = ?").run(val, String(threadId));
+    }
   }
 
-  updateConversationIdentity(id, { name = '', avatar = '' } = {}) {
+  updateConversationIdentity(id, { name = '', avatar = '' } = {}, accountUid = null) {
     if (!id) return null;
-    const existing = this.getConversation(id);
+    const existing = this.getConversation(id, accountUid);
     if (!existing) return null;
 
     // Chỉ cập nhật name nếu tên hiện tại là UID số thuần túy hoặc đang trống
@@ -498,46 +806,73 @@ export class LocalStore extends EventEmitter {
     const newAvatar = (avatar && avatar.trim()) ? avatar.trim() : existing.avatar;
 
     if (newName !== existing.name || newAvatar !== existing.avatar) {
-      this.db.prepare(`
-        UPDATE conversations 
-        SET name = ?, avatar = ?, updatedAt = datetime('now')
-        WHERE id = ?
-      `).run(newName, newAvatar, id);
-
-      // Cập nhật luôn senderName trong bảng messages nếu senderName đang là UID số
-      if (newName !== existing.name) {
+      if (accountUid && accountUid !== 'all') {
         this.db.prepare(`
-          UPDATE messages 
-          SET senderName = ? 
-          WHERE threadId = ? AND (senderName = ? OR senderName = '' OR senderName IS NULL)
-        `).run(newName, id, id);
+          UPDATE conversations 
+          SET name = ?, avatar = ?, updatedAt = datetime('now')
+          WHERE id = ? AND accountUid = ?
+        `).run(newName, newAvatar, id, accountUid);
+
+        if (newName !== existing.name) {
+          this.db.prepare(`
+            UPDATE messages 
+            SET senderName = ? 
+            WHERE threadId = ? AND accountUid = ? AND (senderName = ? OR senderName = '' OR senderName IS NULL)
+          `).run(newName, id, accountUid, id);
+        }
+      } else {
+        this.db.prepare(`
+          UPDATE conversations 
+          SET name = ?, avatar = ?, updatedAt = datetime('now')
+          WHERE id = ?
+        `).run(newName, newAvatar, id);
+
+        if (newName !== existing.name) {
+          this.db.prepare(`
+            UPDATE messages 
+            SET senderName = ? 
+            WHERE threadId = ? AND (senderName = ? OR senderName = '' OR senderName IS NULL)
+          `).run(newName, id, id);
+        }
       }
 
-      const updated = this.getConversation(id);
+      const updated = this.getConversation(id, accountUid);
       this.emit('conversationUpdated', updated);
       return updated;
     }
     return existing;
   }
 
-  reconcileGroupsWithGroundTruth(validGroupIds = new Set()) {
+  reconcileGroupsWithGroundTruth(validGroupIds = new Set(), accountUid = null) {
     if (!validGroupIds || validGroupIds.size === 0) return 0;
-    const currentGroups = this.db.prepare('SELECT id FROM conversations WHERE isGroup = 1').all();
+    let currentGroups;
+    if (accountUid && accountUid !== 'all') {
+      currentGroups = this.db.prepare('SELECT id, accountUid FROM conversations WHERE isGroup = 1 AND accountUid = ?').all(accountUid);
+    } else {
+      currentGroups = this.db.prepare('SELECT id, accountUid FROM conversations WHERE isGroup = 1').all();
+    }
     let healedCount = 0;
-    const updateStmt = this.db.prepare("UPDATE conversations SET isGroup = 0, updatedAt = datetime('now') WHERE id = ?");
+    const updateStmt = this.db.prepare("UPDATE conversations SET isGroup = 0, updatedAt = datetime('now') WHERE id = ? AND accountUid = ?");
     for (const row of currentGroups) {
       if (!validGroupIds.has(String(row.id))) {
-        updateStmt.run(row.id);
+        updateStmt.run(row.id, row.accountUid);
         healedCount++;
       }
     }
     return healedCount;
   }
 
-
-  getConversation(id) {
-    const stmt = this.db.prepare('SELECT * FROM conversations WHERE id = ?');
-    const result = stmt.get(id);
+  getConversation(id, accountUid = null) {
+    if (!id) return null;
+    let stmt;
+    let result;
+    if (accountUid && accountUid !== 'all') {
+      stmt = this.db.prepare('SELECT * FROM conversations WHERE id = ? AND accountUid = ?');
+      result = stmt.get(String(id), String(accountUid));
+    } else {
+      stmt = this.db.prepare("SELECT * FROM conversations WHERE id = ? ORDER BY CASE WHEN accountUid != 'default' THEN 0 ELSE 1 END, updatedAt DESC LIMIT 1");
+      result = stmt.get(String(id));
+    }
     if (!result) return null;
     return {
       ...result,
@@ -546,11 +881,11 @@ export class LocalStore extends EventEmitter {
     };
   }
 
-  getCustomer(id) {
-    return this.getConversation(id);
+  getCustomer(id, accountUid = null) {
+    return this.getConversation(id, accountUid);
   }
 
-  getConversations({ search = '', filter = 'all', status = 'all', tagId = '', limit = 50, offset = 0 } = {}) {
+  getConversations({ accountUid = '', search = '', filter = 'all', status = 'all', tagId = '', limit = 50, offset = 0 } = {}) {
     let sql = `
       SELECT DISTINCT c.* FROM conversations c
     `;
@@ -562,6 +897,11 @@ export class LocalStore extends EventEmitter {
     }
 
     sql += ` WHERE 1=1`;
+
+    if (accountUid && accountUid !== 'all') {
+      sql += ` AND (c.accountUid = ? OR (c.accountUid = 'default' AND NOT EXISTS (SELECT 1 FROM conversations c2 WHERE c2.id = c.id AND c2.accountUid = ?)))`;
+      params.push(accountUid, accountUid);
+    }
 
     if (search && search.trim()) {
       sql += ` AND (c.name LIKE ? OR c.id LIKE ? OR c.lastMessage LIKE ?)`;
@@ -620,41 +960,62 @@ export class LocalStore extends EventEmitter {
     }));
   }
 
-  markAsRead(threadId) {
+  markAsRead(threadId, accountUid = null) {
     if (!threadId) return;
-    const stmt = this.db.prepare('UPDATE conversations SET unreadCount = 0 WHERE id = ?');
-    stmt.run(threadId);
+    if (accountUid && accountUid !== 'all') {
+      this.db.prepare('UPDATE conversations SET unreadCount = 0 WHERE id = ? AND accountUid = ?').run(threadId, accountUid);
+    } else {
+      this.db.prepare('UPDATE conversations SET unreadCount = 0 WHERE id = ?').run(threadId);
+    }
   }
 
-  markAsUnread(threadId) {
+  markAsUnread(threadId, accountUid = null) {
     if (!threadId) return;
-    const stmt = this.db.prepare('UPDATE conversations SET unreadCount = 1 WHERE id = ?');
-    stmt.run(threadId);
+    if (accountUid && accountUid !== 'all') {
+      this.db.prepare('UPDATE conversations SET unreadCount = 1 WHERE id = ? AND accountUid = ?').run(threadId, accountUid);
+    } else {
+      this.db.prepare('UPDATE conversations SET unreadCount = 1 WHERE id = ?').run(threadId);
+    }
   }
 
-  setConversationPinned(threadId, isPinned) {
+  setConversationPinned(threadId, isPinned, accountUid = null) {
     if (!threadId) return { success: false, error: 'missing_thread_id' };
     const shouldPin = Boolean(isPinned);
     if (shouldPin) {
-      const checkStmt = this.db.prepare('SELECT COUNT(*) as count FROM conversations WHERE isPinned = 1');
-      const { count } = checkStmt.get() || { count: 0 };
-      if (count >= 5) {
-        return { success: false, error: 'limit_reached' };
+      let checkStmt;
+      if (accountUid && accountUid !== 'all') {
+        checkStmt = this.db.prepare('SELECT COUNT(*) as count FROM conversations WHERE isPinned = 1 AND accountUid = ?');
+        const { count } = checkStmt.get(accountUid) || { count: 0 };
+        if (count >= 5) return { success: false, error: 'limit_reached' };
+      } else {
+        checkStmt = this.db.prepare('SELECT COUNT(*) as count FROM conversations WHERE isPinned = 1');
+        const { count } = checkStmt.get() || { count: 0 };
+        if (count >= 5) return { success: false, error: 'limit_reached' };
       }
     }
-    const stmt = this.db.prepare('UPDATE conversations SET isPinned = ? WHERE id = ?');
-    stmt.run(shouldPin ? 1 : 0, threadId);
+    if (accountUid && accountUid !== 'all') {
+      this.db.prepare('UPDATE conversations SET isPinned = ? WHERE id = ? AND accountUid = ?').run(shouldPin ? 1 : 0, threadId, accountUid);
+    } else {
+      this.db.prepare('UPDATE conversations SET isPinned = ? WHERE id = ?').run(shouldPin ? 1 : 0, threadId);
+    }
     return { success: true, isPinned: shouldPin };
   }
 
-  deleteConversation(threadId) {
+  deleteConversation(threadId, accountUid = null) {
     if (!threadId) return;
     this.db.exec('BEGIN IMMEDIATE;');
     try {
-      this.db.prepare('DELETE FROM conversation_tags WHERE threadId = ?').run(threadId);
-      this.db.prepare('DELETE FROM messages WHERE threadId = ?').run(threadId);
-      this.db.prepare("DELETE FROM campaign_queue WHERE threadId = ? AND status = 'pending'").run(threadId);
-      this.db.prepare('DELETE FROM conversations WHERE id = ?').run(threadId);
+      if (accountUid && accountUid !== 'all') {
+        this.db.prepare('DELETE FROM conversation_tags WHERE threadId = ?').run(threadId);
+        this.db.prepare('DELETE FROM messages WHERE threadId = ? AND accountUid = ?').run(threadId, accountUid);
+        this.db.prepare("DELETE FROM campaign_queue WHERE threadId = ? AND status = 'pending'").run(threadId);
+        this.db.prepare('DELETE FROM conversations WHERE id = ? AND accountUid = ?').run(threadId, accountUid);
+      } else {
+        this.db.prepare('DELETE FROM conversation_tags WHERE threadId = ?').run(threadId);
+        this.db.prepare('DELETE FROM messages WHERE threadId = ?').run(threadId);
+        this.db.prepare("DELETE FROM campaign_queue WHERE threadId = ? AND status = 'pending'").run(threadId);
+        this.db.prepare('DELETE FROM conversations WHERE id = ?').run(threadId);
+      }
       this.db.exec('COMMIT;');
     } catch (err) {
       this.db.exec('ROLLBACK;');
@@ -666,6 +1027,7 @@ export class LocalStore extends EventEmitter {
     if (!msg || !msg.threadId) return null;
 
     const id = String(msg.id || crypto.randomUUID());
+    const accountUid = String(msg.accountUid || this.getDefaultAccount()?.accountUid || 'default');
     const threadId = String(msg.threadId);
     const senderId = String(msg.senderId || '');
     const senderName = String(msg.senderName || '');
@@ -683,11 +1045,12 @@ export class LocalStore extends EventEmitter {
     const isRecalled = msg.isRecalled ? 1 : 0;
 
     // Check if message already exists in DB
-    const existingMsg = this.db.prepare('SELECT id, isBot FROM messages WHERE id = ?').get(id);
+    const existingMsg = this.db.prepare('SELECT id, isBot FROM messages WHERE id = ? AND accountUid = ?').get(id, accountUid)
+      || this.db.prepare('SELECT id, isBot FROM messages WHERE id = ?').get(id);
     const isNew = !existingMsg;
     const finalIsBot = (msg.isBot ? 1 : 0) || (existingMsg?.isBot ? 1 : 0);
 
-    const existing = this.getConversation(threadId);
+    const existing = this.getConversation(threadId, accountUid);
 
     // Only increment unreadCount for genuinely new incoming real-time messages (not silent, not history, not self, not bot)
     let newUnread = existing?.unreadCount ?? 0;
@@ -703,9 +1066,10 @@ export class LocalStore extends EventEmitter {
     const oaMsgId = String(msg.oaMsgId || '');
     const isCustomerOaMsg = !isSelf && channel === 'oa';
 
-    // Ensure parent conversation record exists before inserting message for FOREIGN KEY constraints
+    // Ensure parent conversation record exists before inserting message
     this.upsertConversation({
       id: threadId,
+      accountUid,
       name: existing?.name || senderName || threadId,
       isGroup: Boolean(existing?.isGroup || msg.isGroup),
       lastMessage: text || (mediaType === 'image' ? '[Hình ảnh]' : (mediaType === 'sticker' ? '[Sticker]' : (mediaType === 'contact' ? '[Danh thiếp]' : '[Tin nhắn]'))),
@@ -720,13 +1084,14 @@ export class LocalStore extends EventEmitter {
 
     const insertStmt = this.db.prepare(`
       INSERT OR REPLACE INTO messages 
-        (id, threadId, senderId, senderName, text, isSelf, isBot, timestamp, mediaType, mediaUrl, quoteText, quoteSender, reactions, cliMsgId, status, isRecalled, channel, oaMsgId)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (id, accountUid, threadId, senderId, senderName, text, isSelf, isBot, timestamp, mediaType, mediaUrl, quoteText, quoteSender, reactions, cliMsgId, status, isRecalled, channel, oaMsgId)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
-    insertStmt.run(id, threadId, senderId, senderName, text, isSelf, finalIsBot, timestamp, mediaType, mediaUrl, quoteText, quoteSender, reactions, cliMsgId, status, isRecalled, channel, oaMsgId);
+    insertStmt.run(id, accountUid, threadId, senderId, senderName, text, isSelf, finalIsBot, timestamp, mediaType, mediaUrl, quoteText, quoteSender, reactions, cliMsgId, status, isRecalled, channel, oaMsgId);
 
     const savedMsg = {
       id,
+      accountUid,
       threadId,
       senderId,
       senderName,
@@ -743,7 +1108,10 @@ export class LocalStore extends EventEmitter {
       status,
       isRecalled: Boolean(isRecalled),
       channel,
-      oaMsgId
+      oaMsgId,
+      isGroup: Boolean(existing?.isGroup || msg.isGroup),
+      conversationName: existing?.name || senderName || threadId,
+      conversationAvatar: existing?.avatar || ''
     };
 
     if (!silent) {
@@ -753,13 +1121,13 @@ export class LocalStore extends EventEmitter {
     return savedMsg;
   }
 
-  addMessagesBatch(messages) {
+  addMessagesBatch(messages, defaultAccountUid = null) {
     if (!Array.isArray(messages) || messages.length === 0) return [];
 
     const insertStmt = this.db.prepare(`
       INSERT OR REPLACE INTO messages 
-        (id, threadId, senderId, senderName, text, isSelf, isBot, timestamp, mediaType, mediaUrl, quoteText, quoteSender, reactions, cliMsgId, status, isRecalled)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (id, accountUid, threadId, senderId, senderName, text, isSelf, isBot, timestamp, mediaType, mediaUrl, quoteText, quoteSender, reactions, cliMsgId, status, isRecalled)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const savedMessages = [];
@@ -770,6 +1138,7 @@ export class LocalStore extends EventEmitter {
       for (const msg of messages) {
         if (!msg || !msg.threadId) continue;
         const id = String(msg.id || crypto.randomUUID());
+        const accountUid = String(msg.accountUid || defaultAccountUid || this.getDefaultAccount()?.accountUid || 'default');
         const threadId = String(msg.threadId);
         const senderId = String(msg.senderId || '');
         const senderName = String(msg.senderName || '');
@@ -786,17 +1155,19 @@ export class LocalStore extends EventEmitter {
         const status = String(msg.status || 'sent');
         const isRecalled = msg.isRecalled ? 1 : 0;
 
-        insertStmt.run(id, threadId, senderId, senderName, text, isSelf, isBot, timestamp, mediaType, mediaUrl, quoteText, quoteSender, reactions, cliMsgId, status, isRecalled);
+        insertStmt.run(id, accountUid, threadId, senderId, senderName, text, isSelf, isBot, timestamp, mediaType, mediaUrl, quoteText, quoteSender, reactions, cliMsgId, status, isRecalled);
 
         savedMessages.push({
-          id, threadId, senderId, senderName, text, isSelf: Boolean(isSelf), isBot: Boolean(isBot),
+          id, accountUid, threadId, senderId, senderName, text, isSelf: Boolean(isSelf), isBot: Boolean(isBot),
           timestamp, mediaType, mediaUrl, quoteText, quoteSender, reactions, cliMsgId, status, isRecalled: Boolean(isRecalled)
         });
 
-        const currentLatest = threadUpdates.get(threadId);
+        const key = `${accountUid}:${threadId}`;
+        const currentLatest = threadUpdates.get(key);
         if (!currentLatest || new Date(timestamp) > new Date(currentLatest.lastTime || 0)) {
-          threadUpdates.set(threadId, {
+          threadUpdates.set(key, {
             id: threadId,
+            accountUid,
             lastMessage: text || (mediaType === 'image' ? '[Hình ảnh]' : (mediaType === 'sticker' ? '[Sticker]' : (mediaType === 'contact' ? '[Danh thiếp]' : '[Tin nhắn]'))),
             lastTime: timestamp,
             isGroup: Boolean(msg.isGroup)
@@ -804,7 +1175,7 @@ export class LocalStore extends EventEmitter {
         }
       }
 
-      for (const [tId, update] of threadUpdates.entries()) {
+      for (const update of threadUpdates.values()) {
         this.upsertConversation(update);
       }
 
@@ -817,13 +1188,24 @@ export class LocalStore extends EventEmitter {
     return savedMessages;
   }
 
-  getMessages(threadId, { limit = 50, before = null } = {}) {
+  getMessages(threadId, { limit = 50, before = null, accountUid = null } = {}) {
     let sql = 'SELECT * FROM (SELECT * FROM messages WHERE threadId = ?';
     const params = [threadId];
 
+    if (accountUid && accountUid !== 'all') {
+      sql += " AND (accountUid = ? OR accountUid = 'default')";
+      params.push(accountUid);
+    }
+
     if (before) {
-      sql += ' AND timestamp < (SELECT timestamp FROM messages WHERE id = ?)';
-      params.push(before);
+      sql += ' AND timestamp < (SELECT timestamp FROM messages WHERE id = ?';
+      if (accountUid && accountUid !== 'all') {
+        sql += " AND (accountUid = ? OR accountUid = 'default')";
+        params.push(before, accountUid);
+      } else {
+        params.push(before);
+      }
+      sql += ')';
     }
 
     sql += ' ORDER BY timestamp DESC LIMIT ?) ORDER BY timestamp ASC';
@@ -846,10 +1228,17 @@ export class LocalStore extends EventEmitter {
     }));
   }
 
-  getMessage(id) {
+  getMessage(id, accountUid = null) {
     if (!id) return null;
-    const stmt = this.db.prepare('SELECT * FROM messages WHERE id = ?');
-    const r = stmt.get(id);
+    let stmt;
+    let r;
+    if (accountUid && accountUid !== 'all') {
+      stmt = this.db.prepare('SELECT * FROM messages WHERE id = ? AND accountUid = ?');
+      r = stmt.get(id, accountUid);
+    } else {
+      stmt = this.db.prepare('SELECT * FROM messages WHERE id = ? LIMIT 1');
+      r = stmt.get(id);
+    }
     if (!r) return null;
     return {
       ...r,
@@ -1818,7 +2207,17 @@ export class LocalStore extends EventEmitter {
 
   deleteOaSettings(id = 'default') {
     this.db.prepare('DELETE FROM oa_settings WHERE id = ?').run(id);
-    this.db.prepare("INSERT OR IGNORE INTO oa_settings (id) VALUES (?)").run(id);
+    this.db.prepare("INSERT OR IGNORE INTO oa_settings (id, isEnabled) VALUES (?, 0)").run(id);
+    this.db.prepare("UPDATE oa_settings SET isEnabled = 0, oaId = '', name = '', appId = '', secretKeyEncrypted = '', accessTokenEncrypted = '', refreshTokenEncrypted = '', expiresAt = 0 WHERE id = ?").run(id);
+    return true;
+  }
+
+  purgeOaData(id = 'default') {
+    this.db.prepare("DELETE FROM conversation_tags WHERE threadId IN (SELECT id FROM conversations WHERE channel = 'oa')").run();
+    this.db.prepare("DELETE FROM messages WHERE threadId IN (SELECT id FROM conversations WHERE channel = 'oa') OR threadId LIKE 'oa_%'").run();
+    this.db.prepare("DELETE FROM conversations WHERE channel = 'oa'").run();
+    this.deleteOaSettings(id);
+    this.setSystemConfig('onboarding_status', 'personal_only');
     return true;
   }
 

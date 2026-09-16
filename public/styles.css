@@ -310,6 +310,167 @@ body {
   margin: 4px 0;
 }
 
+/* Account Switcher trên Navigation Rail */
+.rail-accounts-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.rail-account-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 0;
+  outline: none;
+}
+
+.rail-account-btn:hover {
+  transform: scale(1.08);
+  border-color: rgba(56, 189, 248, 0.5);
+}
+
+.rail-account-btn.active {
+  border-color: #38bdf8;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
+}
+
+.rail-account-btn.active::before {
+  content: '';
+  position: absolute;
+  left: -9px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 20px;
+  background: #38bdf8;
+  border-radius: 0 4px 4px 0;
+}
+
+.rail-acc-avatar-wrap {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-card);
+}
+
+.rail-acc-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.rail-acc-avatar-placeholder {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.rail-account-btn .status-dot {
+  position: absolute;
+  bottom: 0px;
+  right: 0px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--bg-rail);
+}
+
+.rail-account-btn .status-dot.online {
+  background: #10b981;
+  box-shadow: 0 0 6px #10b981;
+}
+
+.rail-account-btn .status-dot.offline {
+  background: #94a3b8;
+}
+
+.rail-account-btn.add-btn {
+  border: 1.5px dashed rgba(255, 255, 255, 0.2);
+  background: transparent;
+  color: var(--text-dim);
+}
+
+.rail-account-btn.add-btn:hover {
+  border-color: #38bdf8;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.1);
+}
+
+.rail-account-btn::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: 54px;
+  background: #1e293b;
+  color: #fff;
+  font-size: 0.76rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  border: 1px solid var(--border);
+  z-index: 99;
+}
+
+.rail-account-btn:hover::after {
+  opacity: 1;
+}
+
+/* Badge nick trên conversation card khi ở chế độ xem 'all' (Unified Inbox) */
+.conv-account-badge {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1.5px solid var(--bg-card);
+  object-fit: cover;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  z-index: 2;
+}
+
+/* Multi-Account Cards trong Modal Login / Quản lý tài khoản */
+.account-manage-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  margin-bottom: 8px;
+  transition: all 0.2s ease;
+}
+
+.account-manage-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+.account-manage-item.is-default {
+  border-color: rgba(16, 185, 129, 0.4);
+  background: rgba(16, 185, 129, 0.05);
+}
+
+
 /* App Main Layout */
 .app-layout {
   flex: 1;

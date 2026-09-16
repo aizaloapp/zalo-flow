@@ -6,9 +6,15 @@ import crypto from 'crypto';
 import { requireAuth } from '../middleware/auth.js';
 import { localStore } from '../utils/local-store.js';
 import { zaloClient } from '../zalo-client.js';
+import { accountManager } from '../utils/account-manager.js';
 import { logger } from '../utils/logger.js';
 
 const router = Router();
+
+function getResolvedClient(req, threadId = null) {
+  const accountUid = req.body?.accountUid || req.query?.accountUid || (threadId ? localStore.getConversation(threadId)?.accountUid : null);
+  return accountManager.getClient(accountUid) || zaloClient;
+}
 
 // Ensure upload directory exists
 const uploadDir = path.resolve('data/uploads');
@@ -46,8 +52,13 @@ router.post('/conversations/:threadId/react', requireAuth, async (req, res) => {
     return res.status(400).json({ error: 'Thiếu msgId để thả cảm xúc!' });
   }
 
+  const client = getResolvedClient(req, threadId);
+  if (!client || !client.isLoggedIn) {
+    return res.status(503).json({ error: 'Zalo client chưa đăng nhập hoặc đang offline.' });
+  }
+
   try {
-    const result = await zaloClient.addReaction(msgId, threadId, emoji, Boolean(isGroup));
+    const result = await client.addReaction(msgId, threadId, emoji, Boolean(isGroup));
     localStore.updateMessageReaction(msgId, emoji);
     res.json({
       status: 'success',
@@ -73,8 +84,13 @@ router.post('/conversations/:threadId/reply-quote', requireAuth, async (req, res
     return res.status(400).json({ error: 'Nội dung tin nhắn không được để trống!' });
   }
 
+  const client = getResolvedClient(req, threadId);
+  if (!client || !client.isLoggedIn) {
+    return res.status(503).json({ error: 'Zalo client chưa đăng nhập hoặc đang offline.' });
+  }
+
   try {
-    const result = await zaloClient.sendMessageWithQuote(threadId, text.trim(), quoteData || {}, Boolean(isGroup));
+    const result = await client.sendMessageWithQuote(threadId, text.trim(), quoteData || {}, Boolean(isGroup));
     res.json({
       status: 'success',
       message: 'Đã gửi tin nhắn trích dẫn thành công!',
@@ -155,6 +171,11 @@ router.post('/conversations/:threadId/upload-media', requireAuth, uploadAny, asy
   const { message = '', caption = '' } = req.body || {};
   const effectiveCaption = (caption || message || '').trim();
 
+  const client = getResolvedClient(req, threadId);
+  if (!client || !client.isLoggedIn) {
+    return res.status(503).json({ error: 'Zalo client chưa đăng nhập hoặc đang offline. Vui lòng kiểm tra kết nối Zalo.' });
+  }
+
   try {
     const firstItem = localFilePaths[0];
     const isSingleImage = localFilePaths.length === 1 && firstItem.mediaType === 'image';
@@ -162,7 +183,7 @@ router.post('/conversations/:threadId/upload-media', requireAuth, uploadAny, asy
 
     if (isSingleImage && effectiveCaption.length <= 1000) {
       // Gộp caption dính liền theo AGENTS.md Trụ Cột II Điều 8
-      result = await zaloClient.uploadAttachment(threadId, [firstItem.path], isGroup, {
+      result = await client.uploadAttachment(threadId, [firstItem.path], isGroup, {
         items: localFilePaths,
         mediaUrl: firstItem.mediaUrl,
         mediaType: firstItem.mediaType,
@@ -172,10 +193,10 @@ router.post('/conversations/:threadId/upload-media', requireAuth, uploadAny, asy
     } else {
       // Phân tách an toàn nếu nhiều tệp hoặc caption > 1000 ký tự
       if (effectiveCaption) {
-        await zaloClient.sendMessage(threadId, effectiveCaption, isGroup);
+        await client.sendMessage(threadId, effectiveCaption, isGroup);
       }
       const diskPaths = localFilePaths.map(f => f.path);
-      result = await zaloClient.uploadAttachment(threadId, diskPaths, isGroup, {
+      result = await client.uploadAttachment(threadId, diskPaths, isGroup, {
         items: localFilePaths,
         mediaUrl: firstItem.mediaUrl,
         mediaType: firstItem.mediaType,
@@ -270,8 +291,13 @@ router.post('/conversations/:threadId/forward', requireAuth, async (req, res) =>
     }
   }
 
+  const client = getResolvedClient(req);
+  if (!client || !client.isLoggedIn) {
+    return res.status(503).json({ error: 'Zalo client chưa đăng nhập hoặc đang offline.' });
+  }
+
   try {
-    const result = await zaloClient.forwardMessage(msgPayload, targetThreadIds, Boolean(isGroup));
+    const result = await client.forwardMessage(msgPayload, targetThreadIds, Boolean(isGroup));
     res.json({
       status: 'success',
       message: `Đã chuyển tiếp tin nhắn tới ${targetThreadIds.length} người nhận!`,
@@ -323,8 +349,13 @@ router.post('/conversations/:threadId/messages/:msgId/undo', requireAuth, async 
     }
   }
 
+  const client = getResolvedClient(req, threadId);
+  if (!client || !client.isLoggedIn) {
+    return res.status(503).json({ error: 'Zalo client chưa đăng nhập hoặc đang offline.' });
+  }
+
   try {
-    const result = await zaloClient.undoMessage(msgId, threadId, Boolean(isGroup));
+    const result = await client.undoMessage(msgId, threadId, Boolean(isGroup));
     res.json({
       status: 'success',
       message: 'Đã thu hồi tin nhắn thành công!',
@@ -345,8 +376,13 @@ router.post('/phone-lookup', requireAuth, async (req, res) => {
     return res.status(400).json({ error: 'Vui lòng nhập số điện thoại hợp lệ (tối thiểu 9 số)!' });
   }
 
+  const client = getResolvedClient(req);
+  if (!client || !client.isLoggedIn) {
+    return res.status(503).json({ error: 'Zalo client chưa đăng nhập hoặc đang offline.' });
+  }
+
   try {
-    const result = await zaloClient.lookupPhoneNumber(String(phone).trim());
+    const result = await client.lookupPhoneNumber(String(phone).trim());
     res.json({
       status: 'success',
       data: {
@@ -372,8 +408,13 @@ router.post('/conversations/:threadId/resolve-stranger', requireAuth, async (req
     return res.status(400).json({ error: 'Thiếu threadId!' });
   }
 
+  const client = getResolvedClient(req, threadId);
+  if (!client || !client.isLoggedIn) {
+    return res.status(503).json({ error: 'Zalo client chưa đăng nhập hoặc đang offline.' });
+  }
+
   try {
-    const result = await zaloClient.resolveStrangerProfile(threadId);
+    const result = await client.resolveStrangerProfile(threadId);
     if (!result) {
       return res.json({
         status: 'unresolved',

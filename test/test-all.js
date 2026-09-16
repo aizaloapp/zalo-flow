@@ -2287,13 +2287,213 @@ console.log('50. Testing Frontend UI Message Renderer & Template String Variable
     assert(typeof hoverActionsHtml === 'string', 'hoverActionsHtml must resolve without ReferenceError');
   }
 
-  console.log('   ✅ Frontend UI Message Renderer & Template String Variables Guard passed!\n');
+    console.log('   ✅ Frontend UI Message Renderer & Template String Variables Guard passed!\n');
 }
 
-console.log('🎉 ALL 50 INTEGRITY, SECURITY, CRM, AIZALO REMARKETING, AI SUITE, BULK DEEP-SYNC, QR AUTH, MEMORY GUARD, ZALO SANITIZER, DESKTOP PACKAGED, CLEAN SWITCH, MULTI-DEVICE SYNC, GROUP MENTION, QUICK-MSG, CAMPAIGN TEST DISPATCH, GROUP RECONCILIATION, AUTO-FALLBACK OPENROUTER, MULTIMODAL VISION, STRANGER IDENTITY, SCHEDULED MESSAGES, UNIVERSAL WIKI URL INGESTION, LIVE CHAT MEDIA CAPTION, CHAT AVATAR DYNAMIC, i18n MULTI-LANGUAGE, CSRF LOCALHOST SHIELD, PIN/CONTEXT ACTIONS, OA ISOLATION, OA MUTEX, OA ROUTING, ANTI-MOJIBAKE & UI RENDERER TESTS PASSED 100%!');
+// -----------------------------------------------------------------------------
+// Test 51: Multi-Account SQLite Composite Primary Key & Isolation Invariant
+// -----------------------------------------------------------------------------
+console.log('51. Testing Multi-Account SQLite Composite Primary Key & Isolation Invariant...');
+{
+  const multiDbPath = path.resolve(process.cwd(), 'data', 'test_multi.db');
+  if (fs.existsSync(multiDbPath)) {
+    try { fs.unlinkSync(multiDbPath); } catch {}
+  }
+  const multiStore = new LocalStore(multiDbPath);
 
+  // 1. Create 2 accounts
+  multiStore.upsertAccount({
+    accountUid: 'acc_111',
+    displayName: 'Nick 1 - Khoa Bán Hàng',
+    avatar: 'https://avatar1.com',
+    isDefault: true,
+    status: 'online'
+  });
+  multiStore.upsertAccount({
+    accountUid: 'acc_222',
+    displayName: 'Nick 2 - Khoa Tuyển Dụng',
+    avatar: 'https://avatar2.com',
+    isDefault: false,
+    status: 'online'
+  });
 
+  const accounts = multiStore.getAccounts();
+  assert.strictEqual(accounts.length, 2, 'Should have 2 accounts stored');
+  const defaultAcc = multiStore.getDefaultAccount();
+  assert.strictEqual(defaultAcc.accountUid, 'acc_111', 'Default account must be acc_111');
 
+  // 2. Both accounts chat with the same customer UID (shared customer threadId: 'cust_888')
+  multiStore.upsertConversation({
+    id: 'cust_888',
+    accountUid: 'acc_111',
+    name: 'Khách Hàng Chung (Nick 1)',
+    lastMessage: 'Chào anh nick 1',
+    lastTime: '2026-09-16T10:00:00Z'
+  });
 
+  multiStore.upsertConversation({
+    id: 'cust_888',
+    accountUid: 'acc_222',
+    name: 'Khách Hàng Chung (Nick 2)',
+    lastMessage: 'Chào anh nick 2',
+    lastTime: '2026-09-16T10:05:00Z'
+  });
 
+  // Querying acc_111
+  const conv1 = multiStore.getConversation('cust_888', 'acc_111');
+  assert.strictEqual(conv1.name, 'Khách Hàng Chung (Nick 1)');
 
+  // Querying acc_222
+  const conv2 = multiStore.getConversation('cust_888', 'acc_222');
+  assert.strictEqual(conv2.name, 'Khách Hàng Chung (Nick 2)');
+
+  // Querying all
+  const allConvs = multiStore.getConversations({ accountUid: 'all' });
+  assert.strictEqual(allConvs.length, 2, 'Unified Inbox should return both accounts conversations');
+
+  // Add same message ID for different accounts
+  multiStore.addMessage({
+    id: 'msg_001',
+    accountUid: 'acc_111',
+    threadId: 'cust_888',
+    text: 'Tin nhắn nick 1'
+  });
+  multiStore.addMessage({
+    id: 'msg_001',
+    accountUid: 'acc_222',
+    threadId: 'cust_888',
+    text: 'Tin nhắn nick 2'
+  });
+
+  const msgs1 = multiStore.getMessages('cust_888', { accountUid: 'acc_111' });
+  assert.strictEqual(msgs1.length, 1);
+  assert.strictEqual(msgs1[0].text, 'Tin nhắn nick 1');
+
+  const msgs2 = multiStore.getMessages('cust_888', { accountUid: 'acc_222' });
+  assert.strictEqual(msgs2.length, 1);
+  assert.strictEqual(msgs2[0].text, 'Tin nhắn nick 2');
+
+  multiStore.close();
+  try { fs.unlinkSync(multiDbPath); } catch {}
+  console.log('   ✅ Multi-Account SQLite Composite Primary Key & Isolation Invariant passed!\n');
+}
+
+// -----------------------------------------------------------------------------
+// Test 52: Account Manager Pool & Capacity Guard
+// -----------------------------------------------------------------------------
+console.log('52. Testing Account Manager Pool & Capacity Guard...');
+{
+  const { ZaloAccountManager } = await import('../src/utils/account-manager.js');
+  const pool = new ZaloAccountManager({ maxConcurrent: 3 });
+  assert.strictEqual(pool.maxConcurrent, 3, 'Default max concurrent accounts should be 3');
+
+  // Verify routing
+  const mockClient1 = { isLoggedIn: true, accountUid: 'acc_1', getAccountProfile: () => ({ displayName: 'Acc 1' }), onMessage: () => {} };
+  const mockClient2 = { isLoggedIn: true, accountUid: 'acc_2', getAccountProfile: () => ({ displayName: 'Acc 2' }), onMessage: () => {} };
+
+  pool.clients.set('acc_1', mockClient1);
+  pool.clients.set('acc_2', mockClient2);
+  pool.activeAccountUid = 'acc_2';
+
+  assert.strictEqual(pool.getClient('acc_1'), mockClient1, 'Should resolve acc_1');
+  assert.strictEqual(pool.getClient('acc_2'), mockClient2, 'Should resolve acc_2');
+  assert.strictEqual(pool.getClient('all'), mockClient2, 'When all, should fallback to active account');
+  assert.strictEqual(pool.hasAnyLoggedIn(), true, 'Should report logged in');
+
+  console.log('   ✅ Account Manager Pool & Capacity Guard passed!\n');
+}
+
+// -----------------------------------------------------------------------------
+// Test 53: Multi-Account Shared Resources Invariant (Tags, QuickMsgs, AI, Campaigns)
+// -----------------------------------------------------------------------------
+console.log('53. Testing Multi-Account Shared Resources Invariant...');
+{
+  const multiDbPath = path.resolve(process.cwd(), 'data', 'test_multi_shared.db');
+  if (fs.existsSync(multiDbPath)) {
+    try { fs.unlinkSync(multiDbPath); } catch {}
+  }
+  const multiStore = new LocalStore(multiDbPath);
+
+  // 1. Create a Tag
+  const sharedTag = multiStore.upsertTag({ name: 'Khách VIP Chung', color: '#10b981' });
+
+  // 2. Assign tag to customer 'cust_vip'
+  multiStore.addConversationTag('cust_vip', sharedTag.id);
+
+  // 3. Verify tag is visible from customer thread regardless of which account queries
+  const tagsForCust = multiStore.getConversationTags('cust_vip');
+  assert.strictEqual(tagsForCust.length, 1);
+  assert.strictEqual(tagsForCust[0].name, 'Khách VIP Chung');
+
+  // 4. Create Quick Message Template
+  multiStore.upsertQuickMessage({
+    shortcut: '/chao',
+    title: 'Lời chào chung',
+    content: 'Chào quý khách đến với công ty!'
+  });
+  const quickList = multiStore.getQuickMessages();
+  assert.strictEqual(quickList.length, 1);
+  assert.strictEqual(quickList[0].shortcut, '/chao');
+
+  // 5. Save AI Settings
+  multiStore.saveAiSettings({
+    isEnabled: 1,
+    provider: 'gemini',
+    soulPrompt: 'Chung cho cả hệ thống'
+  });
+  const aiCfg = multiStore.getAiSettings();
+  assert.strictEqual(aiCfg.soulPrompt, 'Chung cho cả hệ thống');
+
+  multiStore.close();
+  try { fs.unlinkSync(multiDbPath); } catch {}
+  console.log('   ✅ Multi-Account Shared Resources Invariant passed!\n');
+}
+
+// -----------------------------------------------------------------------------
+// Test 54: Independent RateLimiter & Shield Isolation
+// -----------------------------------------------------------------------------
+console.log('54. Testing Independent RateLimiter & Shield Isolation...');
+{
+  const { ZaloClient } = await import('../src/zalo-client.js');
+  const clientA = new ZaloClient({ sessionName: 'mock_a', accountUid: 'acc_a' });
+  const clientB = new ZaloClient({ sessionName: 'mock_b', accountUid: 'acc_b' });
+
+  assert.notStrictEqual(clientA.rateLimiter, clientB.rateLimiter, 'RateLimiter must be separate instances');
+  assert.notStrictEqual(clientA.selfEchoShield, clientB.selfEchoShield, 'SelfEchoShield must be separate instances');
+  assert.notStrictEqual(clientA.floodDetector, clientB.floodDetector, 'FloodDetector must be separate instances');
+
+  // Trigger echo record on clientA
+  clientA.selfEchoShield.recordSent('echo_msg_1', 'thread_1');
+  assert.strictEqual(clientA.selfEchoShield.isSelfEcho('echo_msg_1', 'thread_1'), true, 'Client A should recognize its own echo');
+  assert.strictEqual(clientB.selfEchoShield.isSelfEcho('echo_msg_1', 'thread_1'), false, 'Client B should not be affected by Client A echo');
+
+  console.log('   ✅ Independent RateLimiter & Shield Isolation passed!\n');
+}
+
+// -----------------------------------------------------------------------------
+// Test 55: Isolated Account Removal & Destroy Lifecycle
+// -----------------------------------------------------------------------------
+console.log('55. Testing Isolated Account Removal & Destroy Lifecycle...');
+{
+  const { ZaloAccountManager } = await import('../src/utils/account-manager.js');
+  const pool = new ZaloAccountManager({ maxConcurrent: 3 });
+
+  let destroyed = false;
+  const mockClient = {
+    accountUid: 'acc_test_del',
+    isLoggedIn: true,
+    destroy: async () => { destroyed = true; },
+    getAccountProfile: () => ({ displayName: 'Test Del' })
+  };
+
+  pool.clients.set('acc_test_del', mockClient);
+  assert.strictEqual(pool.clients.has('acc_test_del'), true);
+
+  await pool.removeAccount('acc_test_del', { cleanData: false });
+  assert.strictEqual(destroyed, true, 'Client destroy() must be invoked upon removal');
+  assert.strictEqual(pool.clients.has('acc_test_del'), false, 'Client must be deleted from pool');
+
+  console.log('   ✅ Isolated Account Removal & Destroy Lifecycle passed!\n');
+}
+
+console.log('🎉 ALL 55 INTEGRITY, SECURITY, CRM, AIZALO REMARKETING, AI SUITE, BULK DEEP-SYNC, QR AUTH, MEMORY GUARD, ZALO SANITIZER, DESKTOP PACKAGED, CLEAN SWITCH, MULTI-DEVICE SYNC, GROUP MENTION, QUICK-MSG, CAMPAIGN TEST DISPATCH, GROUP RECONCILIATION, AUTO-FALLBACK OPENROUTER, MULTIMODAL VISION, STRANGER IDENTITY, SCHEDULED MESSAGES, UNIVERSAL WIKI URL INGESTION, LIVE CHAT MEDIA CAPTION, CHAT AVATAR DYNAMIC, i18n MULTI-LANGUAGE, CSRF LOCALHOST SHIELD, PIN/CONTEXT ACTIONS, OA ISOLATION, OA MUTEX, OA ROUTING, ANTI-MOJIBAKE, UI RENDERER & MULTI-ACCOUNT POOL (51-55) TESTS PASSED 100%!');

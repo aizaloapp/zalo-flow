@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kiến Trúc Hệ Sinh Thái Zalo-Flow: Nền Tảng Lõi & 4 Khối Plugin Chiến Lược</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" integrity="sha384-ZZ1pncU3bQe8y31yfZdMFdSpttDoPmOZg2wguVK9almUodir1PghgT0eY7Mrty8H" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js" integrity="sha384-en/ztfPSRkGfME4KIm05joYXynqzUgbsG5nMrj/xEFAHXkeZfO3yMK8QQ+mP7p1/" crossorigin="anonymous"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'JetBrains Mono', monospace;
+      background: #020617;
+      min-height: 100vh;
+      padding: 2rem;
+      color: white;
+    }
+    
+    .container {
+      max-width: 1240px;
+      margin: 0 auto;
+    }
+    
+    .header {
+      margin-bottom: 2rem;
+    }
+    
+    .header-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .pulse-dot {
+      width: 12px;
+      height: 12px;
+      background: #22d3ee;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    h1 {
+      font-size: 1.45rem;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+    }
+    
+    .subtitle {
+      color: #94a3b8;
+      font-size: 0.85rem;
+      margin-left: 1.75rem;
+      line-height: 1.5;
+    }
+    
+    .diagram-container {
+      background: rgba(15, 23, 42, 0.5);
+      border-radius: 1rem;
+      border: 1px solid #1e293b;
+      padding: 1.5rem;
+      overflow-x: auto;
+    }
+    
+    svg {
+      width: 100%;
+      min-width: 1050px;
+      display: block;
+    }
+    
+    /* Timeline Section */
+    .timeline-section {
+      margin-top: 2rem;
+      background: rgba(15, 23, 42, 0.5);
+      border-radius: 1rem;
+      border: 1px solid #1e293b;
+      padding: 1.5rem;
+    }
+
+    .timeline-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #38bdf8;
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .timeline-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .timeline-step {
+      display: flex;
+      gap: 0.875rem;
+      align-items: flex-start;
+    }
+
+    .step-number {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: rgba(56, 189, 248, 0.2);
+      border: 1.5px solid #38bdf8;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .step-content h4 {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #f1f5f9;
+      margin-bottom: 0.25rem;
+    }
+
+    .step-content p {
+      font-size: 0.75rem;
+      color: #94a3b8;
+      line-height: 1.45;
+    }
+
+    /* Summary Cards */
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+    
+    .card {
+      background: rgba(15, 23, 42, 0.5);
+      border-radius: 0.75rem;
+      border: 1px solid #1e293b;
+      padding: 1.25rem;
+    }
+    
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+    
+    .card-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+    
+    .card-dot.cyan { background: #22d3ee; }
+    .card-dot.emerald { background: #34d399; }
+    .card-dot.violet { background: #a78bfa; }
+    .card-dot.amber { background: #fbbf24; }
+    .card-dot.rose { background: #fb7185; }
+    .card-dot.orange { background: #fb923c; }
+    
+    .card h3 {
+      font-size: 0.875rem;
+      font-weight: 600;
+    }
+    
+    .card ul {
+      list-style: none;
+      color: #94a3b8;
+      font-size: 0.75rem;
+    }
+    
+    .card li {
+      margin-bottom: 0.375rem;
+      line-height: 1.4;
+    }
+    
+    .footer {
+      text-align: center;
+      margin-top: 1.75rem;
+      color: #475569;
+      font-size: 0.75rem;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 0.5rem;
+      margin-left: auto;
+      flex-shrink: 0;
+      align-items: center;
+    }
+    .toolbar-toggle {
+      background: transparent;
+      border: none;
+      color: #475569;
+      cursor: pointer;
+      font-size: 1.25rem;
+      line-height: 1;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.375rem;
+      transition: color 0.2s, background 0.2s;
+    }
+    .toolbar-toggle:hover { color: #94a3b8; background: rgba(30, 41, 59, 0.5); }
+    .toolbar-actions {
+      display: none;
+      gap: 0.5rem;
+    }
+    .toolbar.expanded .toolbar-actions { display: flex; }
+    .toolbar-actions button {
+      background: rgba(30, 41, 59, 0.8);
+      border: 1px solid #334155;
+      color: #94a3b8;
+      padding: 0.375rem 0.75rem;
+      border-radius: 0.375rem;
+      font-family: inherit;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .toolbar-actions button:hover {
+      background: rgba(51, 65, 85, 0.8);
+      color: white;
+      border-color: #475569;
+    }
+
+    @media print {
+      body { background: #020617; padding: 1rem; }
+      .toolbar { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="report-container">
+    <!-- Header -->
+    <div class="header">
+      <div class="header-row">
+        <div class="pulse-dot"></div>
+        <h1>Zalo-Flow: Kiến Trúc Hệ Sinh Thái Nền Tảng Lõi &amp; 4 Khối Plugin Chiến Lược</h1>
+        <div class="toolbar">
+          <div class="toolbar-actions">
+            <button onclick="copyAsImage(this)">📋 Copy</button>
+            <button onclick="downloadPNG(this)">🖼️ PNG</button>
+            <button onclick="downloadPDF(this)">📄 PDF</button>
+          </div>
+          <button class="toolbar-toggle" onclick="this.parentElement.classList.toggle('expanded')" title="Tùy chọn xuất ảnh" aria-label="Export options">⋯</button>
+        </div>
+      </div>
+      <p class="subtitle">Mô hình kiến trúc cắm-rút (Composable Platform): Phân tách Đôi tay (Zalo Gateway), Bộ nhớ (Second Brain), Bộ não (AI Suite), Cỗ máy tăng trưởng (Remarketing) &amp; Cầu nối mở rộng (CRM Adapters).</p>
+    </div>
+
+    <!-- Main Diagram -->
+    <div class="diagram-container">
+      <svg viewBox="0 0 1100 820">
+        <!-- Definitions -->
+        <defs>
+          <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#64748b" />
+          </marker>
+          <marker id="arrowhead-rose" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#fb7185" />
+          </marker>
+          <marker id="arrowhead-cyan" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#22d3ee" />
+          </marker>
+          <marker id="arrowhead-amber" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#fbbf24" />
+          </marker>
+          <marker id="arrowhead-orange" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#fb923c" />
+          </marker>
+          <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.5"/>
+          </pattern>
+        </defs>
+
+        <!-- Background Grid -->
+        <rect width="100%" height="100%" fill="url(#grid)" />
+
+        <!-- =================================================================
+             CONNECTION ARROWS (Drawn first to stay behind component boxes)
+             ================================================================= -->
+        <!-- Ingress to Core Kernel -->
+        <line x1="160" y1="95" x2="160" y2="165" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <line x1="550" y1="95" x2="550" y2="185" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#arrowhead-cyan)"/>
+        <line x1="940" y1="95" x2="940" y2="165" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+        <!-- Inbound Shield to Event Bus -->
+        <line x1="270" y1="205" x2="330" y2="205" stroke="#fb7185" stroke-width="1.5" marker-end="url(#arrowhead-rose)"/>
+        <!-- Event Bus to SQLite Storage -->
+        <line x1="770" y1="205" x2="820" y2="205" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+        <!-- Event Bus down to Plugins (Step 2 to Step 3, 4, 5) -->
+        <line x1="410" y1="230" x2="150" y2="440" stroke="#fb923c" stroke-width="1.5" marker-end="url(#arrowhead-orange)"/>
+        <line x1="510" y1="230" x2="415" y2="440" stroke="#fb923c" stroke-width="1.5" marker-end="url(#arrowhead-orange)"/>
+        <line x1="610" y1="230" x2="685" y2="440" stroke="#fb923c" stroke-width="1.5" marker-end="url(#arrowhead-orange)"/>
+        <line x1="710" y1="230" x2="950" y2="440" stroke="#fb923c" stroke-width="1.5" marker-end="url(#arrowhead-orange)"/>
+
+        <!-- Bi-directional Link between AI Plugin and Second Brain -->
+        <line x1="275" y1="520" x2="295" y2="520" stroke="#fbbf24" stroke-width="2" marker-end="url(#arrowhead-amber)"/>
+        <line x1="295" y1="540" x2="275" y2="540" stroke="#fbbf24" stroke-width="2" marker-end="url(#arrowhead-amber)"/>
+
+        <!-- Outbound flows from Plugins back to Strict Outbound Dispatcher -->
+        <!-- AI to Dispatcher -->
+        <path d="M 450 440 L 450 365 L 570 365" fill="none" stroke="#fb7185" stroke-width="1.5" stroke-dasharray="4,4" marker-end="url(#arrowhead-rose)"/>
+        <!-- Remarketing to Dispatcher -->
+        <path d="M 685 440 L 685 365 L 610 365" fill="none" stroke="#fb7185" stroke-width="1.5" stroke-dasharray="4,4" marker-end="url(#arrowhead-rose)"/>
+        <!-- CRM to Dispatcher -->
+        <path d="M 950 440 L 950 345 L 850 345" fill="none" stroke="#fb7185" stroke-width="1.5" stroke-dasharray="4,4" marker-end="url(#arrowhead-rose)"/>
+
+        <!-- Dispatcher Outbound back to Zalo Protocol -->
+        <path d="M 570 310 L 210 310 L 210 250" fill="none" stroke="#fb7185" stroke-width="1.5" marker-end="url(#arrowhead-rose)"/>
+
+        <!-- =================================================================
+             TẦNG 1: INGRESS / CLIENTS (y = 30 to 95)
+             ================================================================= -->
+        <!-- Box 1: Khách hàng Zalo (Mobile / Web) -->
+        <rect x="50" y="30" width="220" height="65" rx="6" fill="#0f172a"/>
+        <rect x="50" y="30" width="220" height="65" rx="6" fill="rgba(30, 41, 59, 0.5)" stroke="#94a3b8" stroke-width="1.5"/>
+        <text x="160" y="52" fill="white" font-size="11" font-weight="600" text-anchor="middle">📱 Khách Hàng (Zalo App)</text>
+        <text x="160" y="68" fill="#94a3b8" font-size="9" text-anchor="middle">Tin nhắn 1-1 &amp; Nhóm Chat</text>
+        <text x="160" y="82" fill="#64748b" font-size="8" text-anchor="middle">Gửi văn bản, hình ảnh, tài liệu</text>
+
+        <!-- Box 2: Quản Trị & Nhân Viên (Web Dashboard / Desktop) -->
+        <rect x="420" y="30" width="260" height="65" rx="6" fill="#0f172a"/>
+        <rect x="420" y="30" width="260" height="65" rx="6" fill="rgba(8, 51, 68, 0.5)" stroke="#22d3ee" stroke-width="1.5"/>
+        <text x="550" y="52" fill="#22d3ee" font-size="11" font-weight="600" text-anchor="middle">💻 Web UI &amp; App Desktop</text>
+        <text x="550" y="68" fill="#94a3b8" font-size="9" text-anchor="middle">localhost:3000 (Express &amp; WebSocket)</text>
+        <text x="550" y="82" fill="#38bdf8" font-size="8" text-anchor="middle">Live Chat • Bật/Tắt Plugin • Settings</text>
+
+        <!-- Box 3: Kênh Mở Rộng CRM Bên Ngoài -->
+        <rect x="830" y="30" width="220" height="65" rx="6" fill="#0f172a"/>
+        <rect x="830" y="30" width="220" height="65" rx="6" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1.5"/>
+        <text x="940" y="52" fill="#fbbf24" font-size="11" font-weight="600" text-anchor="middle">🏢 Kênh CSKH Ngoài</text>
+        <text x="940" y="68" fill="#94a3b8" font-size="9" text-anchor="middle">Chatwoot Agent / Lark Base</text>
+        <text x="940" y="82" fill="#d97706" font-size="8" text-anchor="middle">Nhân viên CSKH trả lời từ xa</text>
+
+        <!-- =================================================================
+             TẦNG 2: NỀN TẢNG LÕI: GATEWAY ZALO & MICROKERNEL (y = 125 to 385)
+             ================================================================= -->
+        <!-- Security Boundary -->
+        <rect x="30" y="125" width="1040" height="260" rx="12" fill="rgba(136, 19, 55, 0.04)" stroke="#fb7185" stroke-width="1.5" stroke-dasharray="6,4"/>
+        <text x="50" y="145" fill="#fb7185" font-size="10" font-weight="700" letter-spacing="0.5">🛡️ ZALO GATEWAY &amp; CORE KERNEL (LÃNH ĐỊA KIỂM SOÁT BẤT BIẾN &amp; AN TOÀN ANTI-BAN)</text>
+
+        <!-- Step 1 Badge & Inbound Gatekeeper -->
+        <rect x="50" y="165" width="220" height="85" rx="6" fill="#0f172a"/>
+        <rect x="50" y="165" width="220" height="85" rx="6" fill="rgba(136, 19, 55, 0.4)" stroke="#fb7185" stroke-width="1.5"/>
+        <circle cx="65" cy="180" r="9" fill="#fb7185"/>
+        <text x="65" y="184" fill="#020617" font-size="9" font-weight="700" text-anchor="middle">1</text>
+        <text x="165" y="185" fill="#fecdd3" font-size="11" font-weight="600" text-anchor="middle">Zalo Inbound &amp; Shield</text>
+        <text x="160" y="202" fill="#94a3b8" font-size="8.5" text-anchor="middle">Driver zca-js: 2.1.2</text>
+        <text x="160" y="217" fill="#94a3b8" font-size="8.5" text-anchor="middle">Flood Shield (&gt;5 tin/3s)</text>
+        <text x="160" y="232" fill="#fb7185" font-size="8" text-anchor="middle">Self-Echo 30s Buffer</text>
+
+        <!-- Step 2 Badge & Central Event Bus -->
+        <rect x="330" y="185" width="440" height="46" rx="6" fill="#0f172a"/>
+        <rect x="330" y="185" width="440" height="46" rx="6" fill="rgba(251, 146, 60, 0.25)" stroke="#fb923c" stroke-width="1.5"/>
+        <circle cx="345" cy="208" r="9" fill="#fb923c"/>
+        <text x="345" y="212" fill="#020617" font-size="9" font-weight="700" text-anchor="middle">2</text>
+        <text x="555" y="204" fill="#fb923c" font-size="11" font-weight="700" text-anchor="middle">Central Event Bus (Điều Phối Sự Kiện)</text>
+        <text x="555" y="221" fill="#fde047" font-size="8.5" text-anchor="middle">zalo:inbound • message:process • plugin:hook • zalo:outbound</text>
+
+        <!-- Step 3 Badge & SQLite Storage -->
+        <rect x="820" y="165" width="230" height="85" rx="6" fill="#0f172a"/>
+        <rect x="820" y="165" width="230" height="85" rx="6" fill="rgba(76, 29, 149, 0.4)" stroke="#a78bfa" stroke-width="1.5"/>
+        <circle cx="835" cy="180" r="9" fill="#a78bfa"/>
+        <text x="835" y="184" fill="#020617" font-size="9" font-weight="700" text-anchor="middle">3</text>
+        <text x="940" y="185" fill="#ddd6fe" font-size="11" font-weight="600" text-anchor="middle">LocalStore SQLite (WAL)</text>
+        <text x="935" y="202" fill="#94a3b8" font-size="8.5" text-anchor="middle">Lưu hội thoại, thẻ tag, tin nhắn</text>
+        <text x="935" y="217" fill="#94a3b8" font-size="8.5" text-anchor="middle">Session AES-256 mã hóa an toàn</text>
+        <text x="935" y="232" fill="#c084fc" font-size="8" text-anchor="middle">Batch Fetching (Chống nghẽn N+1)</text>
+
+        <!-- Lower Core: Plugin Registry & Strict Outbound Dispatcher -->
+        <!-- Plugin Manager -->
+        <rect x="50" y="280" width="460" height="85" rx="6" fill="#0f172a"/>
+        <rect x="50" y="280" width="460" height="85" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="280" y="303" fill="#34d399" font-size="11" font-weight="600" text-anchor="middle">⚙️ Plugin Manager &amp; Safe Lifecycle Sandbox</text>
+        <text x="280" y="321" fill="#94a3b8" font-size="8.5" text-anchor="middle">Bật/Tắt 1-Click trên Web UI • Hot Module Reload (HMR)</text>
+        <text x="280" y="337" fill="#94a3b8" font-size="8.5" text-anchor="middle">Cô lập lỗi try/catch: Plugin lỗi KHÔNG làm sập server Zalo</text>
+        <text x="280" y="353" fill="#6ee7b7" font-size="8" text-anchor="middle">Watchdog kiểm soát trần RAM &lt;350MB Node.js / 512MB Docker</text>
+
+        <!-- Strict Outbound Dispatcher -->
+        <rect x="570" y="280" width="480" height="85" rx="6" fill="#0f172a"/>
+        <rect x="570" y="280" width="480" height="85" rx="6" fill="rgba(136, 19, 55, 0.4)" stroke="#fb7185" stroke-width="1.5"/>
+        <circle cx="585" cy="295" r="9" fill="#fb7185"/>
+        <text x="585" y="299" fill="#020617" font-size="9" font-weight="700" text-anchor="middle">6</text>
+        <text x="815" y="303" fill="#fecdd3" font-size="11" font-weight="600" text-anchor="middle">Strict Outbound Dispatcher (Cửa Gác Xuất Tin)</text>
+        <text x="810" y="321" fill="#94a3b8" font-size="8.5" text-anchor="middle">Token Bucket Rate Limiter (Giãn cách ≥3s, max 20 tin/phút)</text>
+        <text x="810" y="337" fill="#94a3b8" font-size="8.5" text-anchor="middle">CẤM MỌI PLUGIN GỌI THẲNG zca-js • Phải nạp hàng đợi an toàn</text>
+        <text x="810" y="353" fill="#fb7185" font-size="8" text-anchor="middle">Smart Caption (Gộp text vào ảnh nếu ≤1000 ký tự) • Cold Shield</text>
+
+        <!-- =================================================================
+             TẦNG 3: 4 KHỐI PLUGIN CHIẾN LƯỢC (y = 420 to 690)
+             ================================================================= -->
+        <!-- Big Composable Boundary -->
+        <rect x="30" y="415" width="1040" height="280" rx="12" fill="rgba(6, 78, 59, 0.03)" stroke="#34d399" stroke-width="1.5" stroke-dasharray="8,4"/>
+        <text x="50" y="435" fill="#34d399" font-size="10" font-weight="700" letter-spacing="0.5">🔌 4 KHỐI PLUGIN CHIẾN LƯỢC (COMPOSABLE PLUG &amp; PLAY MODULES)</text>
+
+        <!-- ================= KHỐI 1: SECOND BRAIN ================= -->
+        <rect x="45" y="450" width="235" height="225" rx="6" fill="#0f172a"/>
+        <rect x="45" y="450" width="235" height="225" rx="6" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1.5"/>
+        <circle cx="60" cy="465" r="9" fill="#fbbf24"/>
+        <text x="60" y="469" fill="#020617" font-size="9" font-weight="700" text-anchor="middle">4a</text>
+        <text x="168" y="470" fill="#fde68a" font-size="11" font-weight="700" text-anchor="middle">Plugin: Second Brain</text>
+        <text x="162" y="488" fill="#94a3b8" font-size="8.5" text-anchor="middle">🧠 Tri Thức Doanh Nghiệp</text>
+        
+        <!-- Inner Details -->
+        <line x1="55" y1="498" x2="270" y2="498" stroke="#334155" stroke-width="1"/>
+        <text x="60" y="515" fill="#fde047" font-size="8.5" font-weight="600">• Local Knowledge Vault:</text>
+        <text x="70" y="530" fill="#cbd5e1" font-size="8">Tài liệu sản phẩm, PDF, FAQ,</text>
+        <text x="70" y="544" fill="#cbd5e1" font-size="8">bảng giá dịch vụ, chính sách</text>
+        
+        <text x="60" y="565" fill="#fde047" font-size="8.5" font-weight="600">• Fast Local Retriever:</text>
+        <text x="70" y="580" fill="#cbd5e1" font-size="8">TF-Ranking / Semantic Search</text>
+        <text x="70" y="594" fill="#cbd5e1" font-size="8">Trích xuất ngữ cảnh liên quan</text>
+
+        <text x="60" y="615" fill="#fde047" font-size="8.5" font-weight="600">• Anti-Hallucination Guard:</text>
+        <text x="70" y="630" fill="#cbd5e1" font-size="8">Ép AI trả lời đúng dữ liệu thật,</text>
+        <text x="70" y="644" fill="#cbd5e1" font-size="8">triệt tiêu hiện tượng "chém gió"</text>
+
+        <!-- ================= KHỐI 2: AI SUITE ================= -->
+        <rect x="295" y="450" width="245" height="225" rx="6" fill="#0f172a"/>
+        <rect x="295" y="450" width="245" height="225" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <circle cx="310" cy="465" r="9" fill="#34d399"/>
+        <text x="310" y="469" fill="#020617" font-size="9" font-weight="700" text-anchor="middle">4b</text>
+        <text x="425" y="470" fill="#6ee7b7" font-size="11" font-weight="700" text-anchor="middle">Plugin: AI Assistant</text>
+        <text x="420" y="488" fill="#94a3b8" font-size="8.5" text-anchor="middle">⚡ Bộ Não Suy Luận &amp; Tương Tác</text>
+
+        <line x1="305" y1="498" x2="530" y2="498" stroke="#334155" stroke-width="1"/>
+        <text x="310" y="515" fill="#34d399" font-size="8.5" font-weight="600">• Multi-LLM Router:</text>
+        <text x="320" y="530" fill="#cbd5e1" font-size="8">Gemini 2.5/3.0 Flash, DeepSeek,</text>
+        <text x="320" y="544" fill="#cbd5e1" font-size="8">OpenAI, hoặc Ollama chạy Local</text>
+
+        <text x="310" y="565" fill="#34d399" font-size="8.5" font-weight="600">• Multimodal Vision Engine:</text>
+        <text x="320" y="580" fill="#cbd5e1" font-size="8">Đọc ảnh bill, hóa đơn, mẫu áo,</text>
+        <text x="320" y="594" fill="#cbd5e1" font-size="8">sản phẩm khách chụp gửi Zalo</text>
+
+        <text x="310" y="615" fill="#34d399" font-size="8.5" font-weight="600">• Prompt &amp; Persona Compiler:</text>
+        <text x="320" y="630" fill="#cbd5e1" font-size="8">Xưng hô anh/chị/em tự nhiên,</text>
+        <text x="320" y="644" fill="#cbd5e1" font-size="8">cleanForZalo (icon 🔹•, chống lỗi md)</text>
+
+        <!-- ================= KHỐI 3: RE-MARKETING ================= -->
+        <rect x="555" y="450" width="250" height="225" rx="6" fill="#0f172a"/>
+        <rect x="555" y="450" width="250" height="225" rx="6" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+        <circle cx="570" cy="465" r="9" fill="#22d3ee"/>
+        <text x="570" y="469" fill="#020617" font-size="9" font-weight="700" text-anchor="middle">5</text>
+        <text x="685" y="470" fill="#38bdf8" font-size="11" font-weight="700" text-anchor="middle">Plugin: Re-Marketing</text>
+        <text x="680" y="488" fill="#94a3b8" font-size="8.5" text-anchor="middle">🚀 Cỗ Máy Nuôi Dưỡng &amp; Tăng Trưởng</text>
+
+        <line x1="565" y1="498" x2="795" y2="498" stroke="#334155" stroke-width="1"/>
+        <text x="570" y="515" fill="#22d3ee" font-size="8.5" font-weight="600">• CRM Tagging System:</text>
+        <text x="580" y="530" fill="#cbd5e1" font-size="8">Gắn thẻ màu phân loại khách:</text>
+        <text x="580" y="544" fill="#cbd5e1" font-size="8">Khách VIP, Chưa cọc, Quan tâm</text>
+
+        <text x="570" y="565" fill="#22d3ee" font-size="8.5" font-weight="600">• Hẹn Giờ Gửi Tin 1-1:</text>
+        <text x="580" y="580" fill="#cbd5e1" font-size="8">Follow-up sau 2h, chúc sinh nhật,</text>
+        <text x="580" y="594" fill="#cbd5e1" font-size="8">Atomic Claim chống gửi trùng lặp</text>
+
+        <text x="570" y="615" fill="#22d3ee" font-size="8.5" font-weight="600">• Auto-Pause Guard Thông Minh:</text>
+        <text x="580" y="630" fill="#cbd5e1" font-size="8">Tự động HỦY lịch hẹn khi khách vừa</text>
+        <text x="580" y="644" fill="#cbd5e1" font-size="8">nhắn tin (để người thật hoặc AI tiếp)</text>
+
+        <!-- ================= KHỐI 4: CRM & ADAPTERS ================= -->
+        <rect x="820" y="450" width="235" height="225" rx="6" fill="#0f172a"/>
+        <rect x="820" y="450" width="235" height="225" rx="6" fill="rgba(251, 146, 60, 0.25)" stroke="#fb923c" stroke-width="1.5"/>
+        <circle cx="835" cy="465" r="9" fill="#fb923c"/>
+        <text x="835" y="469" fill="#020617" font-size="9" font-weight="700" text-anchor="middle">4c</text>
+        <text x="945" y="470" fill="#fdba74" font-size="11" font-weight="700" text-anchor="middle">Plugin: CRM Adapters</text>
+        <text x="940" y="488" fill="#94a3b8" font-size="8.5" text-anchor="middle">🔌 Cầu Nối Nền Tảng Bên Ngoài</text>
+
+        <line x1="830" y1="498" x2="1045" y2="498" stroke="#334155" stroke-width="1"/>
+        <text x="835" y="515" fill="#fb923c" font-size="8.5" font-weight="600">• Chatwoot 2-Way Adapter:</text>
+        <text x="845" y="530" fill="#cbd5e1" font-size="8">Đồng bộ tin nhắn 2 chiều cho</text>
+        <text x="845" y="544" fill="#cbd5e1" font-size="8">đội ngũ nhân viên trực chat</text>
+
+        <text x="835" y="565" fill="#fb923c" font-size="8.5" font-weight="600">• Bảng Tính &amp; No-Code CRM:</text>
+        <text x="845" y="580" fill="#cbd5e1" font-size="8">Lark Base / Google Sheets Sync</text>
+        <text x="845" y="594" fill="#cbd5e1" font-size="8">Tự động ghi đơn hàng, lưu số điện thoại</text>
+
+        <text x="835" y="615" fill="#fb923c" font-size="8.5" font-weight="600">• MCP &amp; Webhook Gateway:</text>
+        <text x="845" y="630" fill="#cbd5e1" font-size="8">Cổng kết nối mở cho Cursor, n8n,</text>
+        <text x="845" y="644" fill="#cbd5e1" font-size="8">Claude Desktop &amp; Antigravity Agent</text>
+
+        <!-- =================================================================
+             CHÚ GIẢI (LEGEND) - Placed outside all boundaries at y=745
+             ================================================================= -->
+        <g transform="translate(130, 755)">
+          <!-- Item 1: UI -->
+          <circle cx="0" cy="0" r="5" fill="#22d3ee"/>
+          <text x="12" y="3" fill="#94a3b8" font-size="9">Giao Diện (UI/Client)</text>
+
+          <!-- Item 2: Core Kernel -->
+          <circle cx="160" cy="0" r="5" fill="#34d399"/>
+          <text x="172" y="3" fill="#94a3b8" font-size="9">Lõi Hệ Thống (Core)</text>
+
+          <!-- Item 3: SQLite -->
+          <circle cx="340" cy="0" r="5" fill="#a78bfa"/>
+          <text x="352" y="3" fill="#94a3b8" font-size="9">CSDL SQLite (WAL)</text>
+
+          <!-- Item 4: Anti-Ban -->
+          <circle cx="500" cy="0" r="5" fill="#fb7185"/>
+          <text x="512" y="3" fill="#94a3b8" font-size="9">Lãnh Địa Anti-Ban</text>
+
+          <!-- Item 5: Knowledge -->
+          <circle cx="670" cy="0" r="5" fill="#fbbf24"/>
+          <text x="682" y="3" fill="#94a3b8" font-size="9">Second Brain &amp; Tri Thức</text>
+
+          <!-- Item 6: Event Bus -->
+          <circle cx="850" cy="0" r="5" fill="#fb923c"/>
+          <text x="862" y="3" fill="#94a3b8" font-size="9">Event Bus &amp; Cổng CRM</text>
+        </g>
+      </svg>
+    </div>
+
+    <!-- Execution Timeline (Lộ Trình & Luồng Xử Lý 6 Bước) -->
+    <div class="timeline-section">
+      <div class="timeline-title">
+        <span>⚡</span>
+        <span>Lộ Trình Phối Hợp &amp; Vận Hành Giữa Các Khối (6-Step Interaction Flow)</span>
+      </div>
+      <div class="timeline-grid">
+        <div class="timeline-step">
+          <div class="step-number">1</div>
+          <div class="step-content">
+            <h4>Lớp Gác Cổng Tiếp Nhận (Ingress Shield)</h4>
+            <p>Khách hàng gửi tin nhắn (chữ hoặc ảnh) từ app Zalo cá nhân. Gói tin đi qua giao thức Zalo Web được kiểm soát bởi Flood Shield và Self-Echo Buffer 30s để chống vòng lặp phản xạ.</p>
+          </div>
+        </div>
+        <div class="timeline-step">
+          <div class="step-number">2</div>
+          <div class="step-content">
+            <h4>Phát Sóng Qua Event Bus Trung Tâm</h4>
+            <p>Sau khi lọc sạch, Lõi Zalo Gateway phát sự kiện <code>zalo:inbound</code> ra Event Bus. Tất cả các plugin đang được BẬT sẽ nhận được thông điệp song song mà không block lẫn nhau.</p>
+          </div>
+        </div>
+        <div class="timeline-step">
+          <div class="step-number">3</div>
+          <div class="step-content">
+            <h4>Lưu Trữ Bền Vững &amp; Kích Hoạt Auto-Pause</h4>
+            <p>Lõi ghi nhận tin nhắn vào CSDL SQLite. Đồng thời, Plugin Re-marketing kiểm tra: nếu khách đang có lịch hẹn gửi tự động, kích hoạt ngay <strong>Auto-Pause Guard</strong> để dừng kịch bản máy móc.</p>
+          </div>
+        </div>
+        <div class="timeline-step">
+          <div class="step-number">4</div>
+          <div class="step-content">
+            <h4>Hợp Lực: Plugin AI Truy Vấn Second Brain</h4>
+            <p>Nếu tính năng AI được bật, Plugin AI nhận câu hỏi của khách $\rightarrow$ gọi sang Plugin Second Brain để trích xuất bảng giá, chính sách liên quan $\rightarrow$ AI sinh câu trả lời chuẩn xác 100% dữ liệu công ty.</p>
+          </div>
+        </div>
+        <div class="timeline-step">
+          <div class="step-number">5</div>
+          <div class="step-content">
+            <h4>Đồng Bộ Lên Kênh Quản Trị Phụ Trợ (CRM)</h4>
+            <p>Nếu người dùng có bật Plugin Chatwoot hoặc Lark Base, bản sao hội thoại được tự động đẩy về hộp thư chung để nhân viên CSKH hoặc quản lý dễ dàng nắm bắt tiến trình.</p>
+          </div>
+        </div>
+        <div class="timeline-step">
+          <div class="step-number">6</div>
+          <div class="step-content">
+            <h4>Xuất Tin An Toàn Qua Strict Outbound Dispatcher</h4>
+            <p>Câu trả lời của AI hoặc tin nhắn Remarketing không được gửi bừa bãi. Mọi tin nhắn PHẢI đi qua Rate Limiter (giãn cách $\ge 3s$) trước khi xuất về Zalo của khách để triệt tiêu nguy cơ khóa nick.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="cards">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot rose"></div>
+          <h3>1. Lãnh Địa Lõi Bất Biến (Safe Core)</h3>
+        </div>
+        <ul>
+          <li>• <strong>Gateway Zalo cá nhân:</strong> zca-js 2.1.2, quản lý Session AES-256</li>
+          <li>• <strong>Vòng kim cô Anti-Ban:</strong> Rate Limiter $\ge 3s$, Self-Echo 30s</li>
+          <li>• <strong>Cấm plugin gọi thẳng zca-js:</strong> Buộc qua Strict Outbound</li>
+          <li>• <strong>RAM siêu nhẹ:</strong> Dưới 350MB Node.js, an toàn chống rò rỉ</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot amber"></div>
+          <h3>2. Tri Thức &amp; Bộ Não (Brain &amp; AI)</h3>
+        </div>
+        <ul>
+          <li>• <strong>Second Brain:</strong> Kho tài liệu, bảng giá, PDF, FAQ công ty</li>
+          <li>• <strong>Khử ảo giác:</strong> AI chỉ trả lời dựa trên tri thức có thật</li>
+          <li>• <strong>Multi-LLM:</strong> Tự do đổi Gemini, DeepSeek, Ollama Local</li>
+          <li>• <strong>Multimodal Vision:</strong> Đọc ảnh hóa đơn, sản phẩm khách gửi</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot orange"></div>
+          <h3>3. Tự Động Hóa &amp; CRM Cắm Rút</h3>
+        </div>
+        <ul>
+          <li>• <strong>Re-marketing:</strong> Hẹn giờ 1-1, gắn thẻ màu CRM, Spintax</li>
+          <li>• <strong>Auto-Pause:</strong> Dừng ngay tin tự động khi khách phản hồi</li>
+          <li>• <strong>Chatwoot / Lark:</strong> Bật khi có đội ngũ, tắt khi chỉ dùng cá nhân</li>
+          <li>• <strong>Chuẩn MCP quốc tế:</strong> Cho Cursor, n8n, Claude kết nối</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <p class="footer">
+      Zalo-Flow Composable Ecosystem Architecture • Nền Tảng Tự Động Hóa Zalo Cá Nhân &amp; CRM Mã Nguồn Mở MIT
+    </p>
+  </div>
+
+  <script>
+    async function copyAsImage(btn) {
+      const orig = btn.textContent;
+      try {
+        const el = document.getElementById('report-container');
+        const r = el.getBoundingClientRect();
+        const pad = 32;
+        const canvas = await html2canvas(document.body, { backgroundColor: '#020617', scale: 2, useCORS: true, ignoreElements: (e) => e.classList && e.classList.contains('toolbar'), x: r.left + window.scrollX - pad, y: r.top + window.scrollY - pad, width: r.width + pad * 2, height: r.height + pad * 2 });
+        const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        btn.textContent = '✓ Đã chép!';
+      } catch (e) {
+        btn.textContent = '✗ Lỗi';
+      }
+      setTimeout(() => btn.textContent = orig, 2000);
+    }
+
+    async function downloadPNG(btn) {
+      const orig = btn.textContent;
+      btn.textContent = '⏳ ...';
+      try {
+        const el = document.getElementById('report-container');
+        const r = el.getBoundingClientRect();
+        const pad = 32;
+        const canvas = await html2canvas(document.body, { backgroundColor: '#020617', scale: 2, useCORS: true, ignoreElements: (e) => e.classList && e.classList.contains('toolbar'), x: r.left + window.scrollX - pad, y: r.top + window.scrollY - pad, width: r.width + pad * 2, height: r.height + pad * 2 });
+        const link = document.createElement('a');
+        link.download = 'zaloflow-ecosystem-architecture.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        btn.textContent = '✓ Đã tải!';
+      } catch (e) {
+        btn.textContent = '✗ Lỗi';
+      }
+      setTimeout(() => btn.textContent = orig, 2000);
+    }
+
+    async function downloadPDF(btn) {
+      const orig = btn.textContent;
+      btn.textContent = '⏳ ...';
+      try {
+        const el = document.getElementById('report-container');
+        const r = el.getBoundingClientRect();
+        const pad = 32;
+        const canvas = await html2canvas(document.body, { backgroundColor: '#020617', scale: 2, useCORS: true, ignoreElements: (e) => e.classList && e.classList.contains('toolbar'), x: r.left + window.scrollX - pad, y: r.top + window.scrollY - pad, width: r.width + pad * 2, height: r.height + pad * 2 });
+        const imgData = canvas.toDataURL('image/png');
+        const { jsPDF } = window.jspdf;
+        const orientation = canvas.width > canvas.height ? 'landscape' : 'portrait';
+        const pdf = new jsPDF({ orientation, unit: 'px', format: [canvas.width, canvas.height], hotfixes: ['px_scaling'] });
+        pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+        pdf.save('zaloflow-ecosystem-architecture.pdf');
+        btn.textContent = '✓ Đã lưu PDF!';
+      } catch (e) {
+        btn.textContent = '✗ Lỗi';
+      }
+      setTimeout(() => btn.textContent = orig, 2000);
+    }
+  </script>
+</body>
+</html>

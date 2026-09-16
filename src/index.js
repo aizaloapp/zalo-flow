@@ -9,6 +9,7 @@ import { fileURLToPath } from 'url';
 import { logger } from './utils/logger.js';
 import fs from 'fs';
 import { zaloClient } from './zalo-client.js';
+import { accountManager } from './utils/account-manager.js';
 import { localStore } from './utils/local-store.js';
 import { requireAuth, csrfShield } from './middleware/auth.js';
 import { defaultRateLimiter } from './utils/rate-limiter.js';
@@ -35,6 +36,15 @@ import { memoryGuard } from './utils/memory-guard.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Global Error Catchers (Anti-Crash Perimeter)
+process.on('uncaughtException', (err) => {
+  logger.error(`⚠️ [UncaughtException] ${err?.stack || err?.message || err}`);
+});
+
+process.on('unhandledRejection', (reason) => {
+  logger.error(`⚠️ [UnhandledRejection] ${reason?.stack || reason?.message || reason}`);
+});
 
 const app = express();
 app.use(express.json({
@@ -76,8 +86,8 @@ if (HOST === '0.0.0.0' && !process.env.ADMIN_API_TOKEN && !isDocker) {
   logger.warn('⚠️ [SECURITY WARNING] Server is binding to 0.0.0.0 (public LAN) without ADMIN_API_TOKEN! Anyone on your Wi-Fi network can access your Zalo session. Set ADMIN_API_TOKEN in .env to protect your data.');
 }
 
-// Register Inbound Listeners on Zalo Client
-zaloClient.onMessage(async (ctx) => {
+// Register Inbound Listeners on Zalo Client & Account Manager Pool
+const handleInboundMessage = async (ctx) => {
   // 1. Sync to Chatwoot if configured
   await chatwootInboundAdapter.handleInbound(ctx);
 
@@ -91,7 +101,9 @@ zaloClient.onMessage(async (ctx) => {
   if (!ctx.isSelf && ctx.threadId) {
     localStore.pauseScheduledMessageByReply(ctx.threadId);
   }
-});
+};
+zaloClient.onMessage(handleInboundMessage);
+accountManager.onMessage(handleInboundMessage);
 
 // -----------------------------------------------------------------------------
 // Realtime Stream Engine (WebSocket Primary + SSE Fallback)
@@ -131,9 +143,11 @@ app.get('/api/events', requireAuth, (req, res) => {
   });
 });
 
-export function broadcastSSE(eventType, data) {
-  // 1. Broadcast to active WebSocket clients (Zero HTTP pending queue, eliminates tab spinner)
-  const wsPayload = JSON.stringify({ event: eventType, data });
+export function broadcastSSE(eventType, data, accountUid = null) {
+  const resolvedAccountUid = accountUid || (typeof data === 'object' && data?.accountUid) || accountManager.activeAccountUid || '';
+
+  // 1. Broadcast to active WebSocket clients
+  const wsPayload = JSON.stringify({ event: eventType, accountUid: resolvedAccountUid, data });
   for (const client of wsClients) {
     if (client.readyState === 1 /* OPEN */) {
       try {
@@ -146,7 +160,10 @@ export function broadcastSSE(eventType, data) {
 
   // 2. Broadcast to SSE clients (fallback)
   sseEventId++;
-  const payload = `id: ${sseEventId}\nevent: ${eventType}\ndata: ${JSON.stringify(data)}\n\n`;
+  const sseData = (typeof data === 'object' && data !== null && !Array.isArray(data))
+    ? { accountUid: resolvedAccountUid, ...data }
+    : { accountUid: resolvedAccountUid, payload: data };
+  const payload = `id: ${sseEventId}\nevent: ${eventType}\ndata: ${JSON.stringify(sseData)}\n\n`;
   for (const client of sseClients) {
     try {
       client.write(payload);
@@ -158,7 +175,7 @@ export function broadcastSSE(eventType, data) {
 
 // Forward localStore messages and reactions to SSE clients
 localStore.onNewMessage((msg) => {
-  broadcastSSE('new_message', msg);
+  broadcastSSE('new_message', msg, msg.accountUid);
 });
 
 localStore.on('messageReaction', (data) => {
@@ -166,15 +183,29 @@ localStore.on('messageReaction', (data) => {
 });
 
 localStore.on('messagesDelivered', (data) => {
-  broadcastSSE('message_status', data);
+  broadcastSSE('messages_delivered', data);
+});
+
+localStore.on('conversationUpdated', (conv) => {
+  broadcastSSE('conversation_updated', conv, conv?.accountUid);
+});
+
+// Forward Account Manager pool events to SSE clients
+accountManager.on('pool_updated', (profiles) => {
+  broadcastSSE('accounts_updated', profiles);
+});
+accountManager.on('account_added', (data) => {
+  broadcastSSE('account_added', data);
+});
+accountManager.on('account_removed', (data) => {
+  broadcastSSE('account_removed', data);
+});
+accountManager.on('active_account_switched', (data) => {
+  broadcastSSE('active_account_switched', data);
 });
 
 localStore.on('messageRecalled', (data) => {
   broadcastSSE('message_recalled', data);
-});
-
-localStore.on('conversationUpdated', (conv) => {
-  broadcastSSE('conversation_updated', conv);
 });
 
 localStore.on('scheduledMessageUpdated', (data) => {
@@ -203,13 +234,70 @@ app.use('/api', oaRoutes);
 oaTokenManager.startWatchdog();
 
 // -----------------------------------------------------------------------------
+// Multi-Account Management REST APIs
+// -----------------------------------------------------------------------------
+
+// GET /api/accounts (Get all accounts and live statuses)
+app.get('/api/accounts', requireAuth, (req, res) => {
+  res.json({
+    status: 'success',
+    data: accountManager.getAllProfiles()
+  });
+});
+
+// POST /api/accounts/add-qr (Generate non-disruptive QR flow for new account)
+app.post('/api/accounts/add-qr', requireAuth, async (req, res) => {
+  try {
+    const flow = await accountManager.startAddAccountFlow((update) => {
+      broadcastSSE('account_add_qr', update);
+    });
+    res.json({ success: true, data: flow });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// POST /api/accounts/switch-active (Switch active interacting account)
+app.post('/api/accounts/switch-active', requireAuth, (req, res) => {
+  const { accountUid } = req.body;
+  if (!accountUid) return res.status(400).json({ error: 'accountUid là bắt buộc.' });
+  accountManager.setActiveAccount(accountUid);
+  res.json({ success: true, activeAccountUid: accountManager.activeAccountUid });
+});
+
+// POST /api/accounts/:uid/delete (Logout & remove a specific account)
+app.post('/api/accounts/:uid/delete', requireAuth, async (req, res) => {
+  const { uid } = req.params;
+  const cleanData = Boolean(req.body?.cleanData);
+  try {
+    const result = await accountManager.removeAccount(uid, { cleanData });
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/accounts/:uid/set-default (Set default account)
+app.post('/api/accounts/:uid/set-default', requireAuth, (req, res) => {
+  const { uid } = req.params;
+  try {
+    localStore.setDefaultAccount(uid);
+    broadcastSSE('accounts_updated', accountManager.getAllProfiles());
+    res.json({ success: true });
+  } catch (err) {
+    logger.error(`Failed to set default account: ${err.message}`);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// -----------------------------------------------------------------------------
 // Core Conversation & Sync REST APIs
 // -----------------------------------------------------------------------------
 
 // GET /api/conversations
 app.get('/api/conversations', requireAuth, (req, res) => {
-  const { search = '', filter = 'all', status = 'all', tagId = '', limit = 50, offset = 0 } = req.query;
-  const conversations = localStore.getConversations({ search, filter, status, tagId, limit, offset });
+  const { accountUid = '', search = '', filter = 'all', status = 'all', tagId = '', limit = 50, offset = 0 } = req.query;
+  const conversations = localStore.getConversations({ accountUid, search, filter, status, tagId, limit, offset });
   res.json({
     status: 'success',
     data: conversations
@@ -219,10 +307,11 @@ app.get('/api/conversations', requireAuth, (req, res) => {
 // GET /api/conversations/:threadId/messages
 app.get('/api/conversations/:threadId/messages', requireAuth, (req, res) => {
   const { threadId } = req.params;
-  const { limit = 50, before = null } = req.query;
+  const { limit = 50, before = null, accountUid = null } = req.query;
   const messages = localStore.getMessages(threadId, {
     limit: Math.min(Number(limit), 100),
-    before
+    before,
+    accountUid
   });
   res.json({
     status: 'success',
@@ -233,14 +322,17 @@ app.get('/api/conversations/:threadId/messages', requireAuth, (req, res) => {
 // POST /api/conversations/:threadId/read
 app.post('/api/conversations/:threadId/read', requireAuth, (req, res) => {
   const { threadId } = req.params;
-  localStore.markAsRead(threadId);
+  const { accountUid = null } = req.body || {};
+  localStore.markAsRead(threadId, accountUid);
   res.json({ success: true });
 });
 
 // POST /api/sync-contacts (Manual contact sync trigger)
 app.post('/api/sync-contacts', requireAuth, async (req, res) => {
+  const { accountUid = null } = req.body || {};
+  const client = accountManager.getClient(accountUid) || zaloClient;
   try {
-    await zaloClient.syncInitialContacts();
+    await client.syncInitialContacts();
     res.json({ success: true, message: 'Contacts synced successfully.' });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -253,8 +345,10 @@ const syncState = new Map();
 app.post('/api/conversations/:threadId/sync', requireAuth, async (req, res) => {
   const { threadId } = req.params;
   const isGroup = req.query.isGroup === 'true' || req.body?.isGroup === true;
+  const { accountUid = null } = req.body || {};
+  const client = accountManager.getClient(accountUid) || zaloClient;
 
-  if (!zaloClient.isLoggedIn) {
+  if (!client || !client.isLoggedIn) {
     return res.status(503).json({ error: 'Zalo client is offline. Please login first.' });
   }
 
@@ -272,7 +366,7 @@ app.post('/api/conversations/:threadId/sync', requireAuth, async (req, res) => {
   syncState.set(threadId, 'syncing');
 
   try {
-    const count = await zaloClient.fetchThreadHistory(threadId, isGroup, 50);
+    const count = await client.fetchThreadHistory(threadId, isGroup, 50);
     syncState.set(threadId, Date.now());
     res.json({ success: true, synced: count });
   } catch (err) {
@@ -283,17 +377,18 @@ app.post('/api/conversations/:threadId/sync', requireAuth, async (req, res) => {
 
 // POST /api/send-message (Send message from Web UI / Admin API)
 app.post('/api/send-message', requireAuth, async (req, res) => {
-  const { recipientId, message, isGroup = false, isBot = false } = req.body;
+  const { recipientId, message, isGroup = false, isBot = false, accountUid = null } = req.body;
   if (!recipientId || !message) {
     return res.status(400).json({ error: 'recipientId và message là bắt buộc.' });
   }
 
-  if (!zaloClient.isLoggedIn) {
+  const client = accountManager.getClient(accountUid) || zaloClient;
+  if (!client || !client.isLoggedIn) {
     return res.status(503).json({ error: 'Zalo chưa đăng nhập hoặc đang offline. Vui lòng quét mã QR trước.' });
   }
 
   try {
-    const result = await zaloClient.sendMessage(recipientId, message, Boolean(isGroup), {
+    const result = await client.sendMessage(recipientId, message, Boolean(isGroup), {
       isBot: Boolean(isBot),
       senderName: isBot ? 'Bot AI (Tự động)' : 'Admin (Bạn)'
     });
@@ -310,24 +405,24 @@ app.post('/api/send-message', requireAuth, async (req, res) => {
 
 // POST /api/sync-all-history (1-Click Bulk Deep-Sync All Conversations & History)
 app.post('/api/sync-all-history', requireAuth, async (req, res) => {
-  if (!zaloClient.isLoggedIn) {
+  const { accountUid = null } = req.body || {};
+  const client = accountManager.getClient(accountUid) || zaloClient;
+  if (!client || !client.isLoggedIn) {
     return res.status(503).json({ error: 'Zalo chưa đăng nhập hoặc đang offline. Vui lòng quét mã QR trước.' });
   }
 
   const { limitThreads = 30, limitPerThread = 50 } = req.body || {};
 
   try {
-    const result = await zaloClient.syncAllHistory({
+    const result = await client.syncAllHistory({
       limitThreads: Number(limitThreads) || 30,
       limitPerThread: Number(limitPerThread) || 50,
       onProgress: (progress) => {
-        // Send SSE broadcast to update active connected UI sessions
-        broadcastSSE('sync_progress', progress);
+        broadcastSSE('sync_progress', progress, client.accountUid);
       }
     });
 
-    // Notify UI that sync completed
-    broadcastSSE('sync_complete', result);
+    broadcastSSE('sync_complete', result, client.accountUid);
     res.json({ success: true, result });
   } catch (err) {
     logger.error(`[Bulk Deep-Sync API] Failed: ${err.message}`);
@@ -341,27 +436,29 @@ app.post('/api/sync-all-history', requireAuth, async (req, res) => {
 
 // GET /api/zalo/profile
 app.get('/api/zalo/profile', requireAuth, (req, res) => {
+  const client = accountManager.getClient(req.query.accountUid) || zaloClient;
   res.json({
     status: 'success',
-    data: zaloClient.getAccountProfile()
+    data: client.getAccountProfile()
   });
 });
 
 // POST /api/zalo/qr/generate
 app.post('/api/zalo/qr/generate', requireAuth, async (req, res) => {
   const cleanData = Boolean(req.body?.cleanData);
+  const client = accountManager.getClient(req.body?.accountUid) || zaloClient;
   try {
-    const profile = await zaloClient.requestNewQrLogin((updatedProfile) => {
-      broadcastSSE('zalo_profile', updatedProfile);
+    const profile = await client.requestNewQrLogin((updatedProfile) => {
+      broadcastSSE('zalo_profile', updatedProfile, client.accountUid);
       if (updatedProfile.qrDataUrl) {
         broadcastSSE('zalo_qr', {
           qrDataUrl: updatedProfile.qrDataUrl,
           statusText: updatedProfile.qrStatusText,
           scannedUser: updatedProfile.scannedUser
-        });
+        }, client.accountUid);
       }
     }, { cleanData });
-    broadcastSSE('zalo_profile', profile);
+    broadcastSSE('zalo_profile', profile, client.accountUid);
     res.json({ success: true, data: profile });
   } catch (err) {
     logger.error(`[QR Generate API] Failed: ${err.message}`);
@@ -371,10 +468,15 @@ app.post('/api/zalo/qr/generate', requireAuth, async (req, res) => {
 
 // POST /api/zalo/logout
 app.post('/api/zalo/logout', requireAuth, async (req, res) => {
-  const cleanData = Boolean(req.body?.cleanData);
+  const { accountUid = null, cleanData = false } = req.body || {};
+  if (accountUid && accountUid !== 'all') {
+    const result = await accountManager.removeAccount(accountUid, { cleanData: Boolean(cleanData) });
+    return res.json({ success: true, data: result });
+  }
+  const client = accountManager.getClient() || zaloClient;
   try {
-    const profile = await zaloClient.logout({ cleanData });
-    broadcastSSE('zalo_profile', profile);
+    const profile = await client.logout({ cleanData: Boolean(cleanData) });
+    broadcastSSE('zalo_profile', profile, client.accountUid);
     res.json({ success: true, data: profile });
   } catch (err) {
     logger.error(`[Zalo Logout API] Failed: ${err.message}`);
@@ -531,7 +633,7 @@ function startServer(port, host, attempt = 0, maxAttempts = 5) {
   server.listen(port, host, () => {
     logger.info(`🚀 Zalo-Flow Server is running on http://${host}:${port}`);
     logger.info(`📊 Health check available at: http://${host}:${port}/health`);
-    zaloClient.initialize();
+    accountManager.initializeAllAccounts();
     memoryGuard.startMonitoring({
       server,
       sseBroadcast: (event, data) => broadcastSSE(event, data)
@@ -551,20 +653,22 @@ function startServer(port, host, attempt = 0, maxAttempts = 5) {
   });
 
   // Process signal graceful termination
-  process.on('SIGTERM', () => {
+  process.on('SIGTERM', async () => {
     logger.info('Received SIGTERM signal. Executing graceful shutdown...');
     try {
       scheduledDispatcher.stop();
+      await accountManager.destroyAll();
       server.close();
       localStore.close();
     } catch {}
     process.exit(0);
   });
 
-  process.on('SIGINT', () => {
+  process.on('SIGINT', async () => {
     logger.info('Received SIGINT (Ctrl+C). Executing graceful shutdown...');
     try {
       scheduledDispatcher.stop();
+      await accountManager.destroyAll();
       server.close();
       localStore.close();
     } catch {}

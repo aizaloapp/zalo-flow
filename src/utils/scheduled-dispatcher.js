@@ -1,7 +1,8 @@
-﻿import fs from 'fs';
+import fs from 'fs';
 import path from 'path';
 import { localStore } from '../utils/local-store.js';
 import { zaloClient } from '../zalo-client.js';
+import { accountManager } from './account-manager.js';
 import { logger } from '../utils/logger.js';
 import { resolveSpintax } from '../utils/spintax.js';
 
@@ -71,7 +72,7 @@ export class ScheduledDispatcher {
 
     try {
       // 1. Chỉ thực thi khi Zalo đã đăng nhập online
-      if (!zaloClient.isLoggedIn) {
+      if (!accountManager.hasAnyLoggedIn() && !zaloClient.isLoggedIn) {
         return;
       }
 
@@ -104,7 +105,7 @@ export class ScheduledDispatcher {
           threadId: item.threadId
         }) : '';
 
-        // 6. Gửi bất đồng bộ qua RateLimiter của zaloClient
+        // 6. Gửi bất đồng bộ qua RateLimiter của client tương ứng
         (async () => {
           try {
             // Double check trạng thái DB trước khi bắn tin (trường hợp user vừa bấm Hủy)
@@ -114,12 +115,16 @@ export class ScheduledDispatcher {
               return;
             }
 
+            const conv = localStore.getConversation(item.threadId);
+            const targetAccountUid = item.accountUid || conv?.accountUid;
+            const client = accountManager.getClient(targetAccountUid) || zaloClient;
+
             const diskPath = resolveLocalFilePath(item.mediaUrl);
             const isImage = diskPath && ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp'].includes(path.extname(diskPath).toLowerCase());
 
             // Smart Dispatch Protocol: Single-Image Caption Integration (Trụ Cột II Điều 8)
             if (diskPath && isImage && resolvedText.length <= 1000) {
-              await zaloClient.uploadAttachment(item.threadId, [diskPath], false, {
+              await client.uploadAttachment(item.threadId, [diskPath], false, {
                 caption: resolvedText,
                 mediaUrl: item.mediaUrl,
                 mediaType: 'image',
@@ -128,12 +133,12 @@ export class ScheduledDispatcher {
               logger.info(`📸 [Scheduled Dispatcher] Dispatched scheduled image with merged caption to ${item.threadId}`);
             } else if (diskPath) {
               if (resolvedText) {
-                await zaloClient.sendMessage(item.threadId, resolvedText, false, {
+                await client.sendMessage(item.threadId, resolvedText, false, {
                   isBot: false,
                   senderName: 'Admin (Lịch hẹn)'
                 });
               }
-              await zaloClient.uploadAttachment(item.threadId, [diskPath], false, {
+              await client.uploadAttachment(item.threadId, [diskPath], false, {
                 mediaUrl: item.mediaUrl,
                 mediaType: isImage ? 'image' : 'file',
                 originalName: item.mediaName || path.basename(diskPath)
@@ -141,7 +146,7 @@ export class ScheduledDispatcher {
               logger.info(`📎 [Scheduled Dispatcher] Dispatched scheduled text + separate attachment to ${item.threadId}`);
             } else {
               // Gửi tin nhắn text thuần qua RateLimiter
-              await zaloClient.sendMessage(item.threadId, resolvedText, false, {
+              await client.sendMessage(item.threadId, resolvedText, false, {
                 isBot: false,
                 senderName: 'Admin (Lịch hẹn)'
               });
