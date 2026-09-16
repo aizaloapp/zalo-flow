@@ -56,6 +56,12 @@
 8. **Single-Image Media Caption Integration & Fallback Protocol:**
    - **Điều kiện Gộp Caption:** Nếu danh sách tệp có đúng **1 hình ảnh** (`imageItems.length === 1`) VÀ có nội dung văn bản VÀ độ dài văn bản `<= 1000` ký tự ➔ BẮT BUỘC gọi `uploadAttachment` truyền kèm `{ caption: personalizedMessage }` để hiển thị dính liền trong 1 tin nhắn duy nhất.
    - **Phân Tách An Toàn (Fallback Guard):** Khi có nhiều hơn 1 ảnh HOẶC nội dung văn bản `> 1000` ký tự ➔ BẮT BUỘC phân tách an toàn: gửi tin nhắn văn bản trước qua `sendMessage`, sau đó gửi tệp đính kèm qua `uploadAttachment`.
+9. **Multi-Account Client Dynamic Resolution Contract:**
+   - Trong kiến trúc Multi-Account Concurrent Pool, TUYỆT ĐỐI KHÔNG gọi trực tiếp instance client mặc định `zaloClient` trong các luồng gửi outbound (Chat Actions, Campaign, Scheduled Dispatcher).
+   - Mọi thao tác outbound BẮT BUỘC phân giải client qua helper 3 tầng `getResolvedClient(req, threadId)`:
+     (1) Ưu tiên `req.accountUid` từ request header/query của phiên làm việc hiện tại;
+     (2) Nếu không có header, truy vấn SQLite theo `threadId` để xác định chính xác `accountUid` sở hữu cuộc trò chuyện;
+     (3) Cuối cùng mới fallback về `accountManager.getActiveClient()`.
 
 ---
 
@@ -88,6 +94,12 @@
    - BẮT BUỘC sử dụng kỹ thuật **Two-Step Batch Fetching**:
      - Bước 1: Lấy danh sách hội thoại theo bộ lọc và phân trang (`LIMIT ? OFFSET ?`).
      - Bước 2: Dùng 1 câu truy vấn duy nhất `SELECT ... FROM conversation_tags ct JOIN tags t ON ct.tagId = t.id WHERE ct.threadId IN (...)` để lấy toàn bộ thẻ của trang đó, sau đó gom nhóm bằng `Map<threadId, tags>` trong Node.js (`< 0.5ms`), bảo đảm hiệu năng siêu tốc và không nghẽn SQLite.
+9. **Strict SQLite DateTime Literal & Keyword Invariant:**
+   - Trong mọi câu truy vấn SQLite, các hàm thời gian BẮT BUỘC dùng nháy đơn literal: `datetime('now')` hoặc `CURRENT_TIMESTAMP`.
+   - TUYỆT ĐỐI KHÔNG dùng nháy kép `datetime("now")` vì SQLite sẽ diễn giải nhầm thành định danh cột (column identifier), dẫn đến lỗi cú pháp hoặc crash ứng dụng.
+10. **Account-Scoped Ground-Truth Group Reconciliation:**
+    - Khi khởi động hoặc đồng bộ nhóm (`reconcileGroupsWithGroundTruth`), hàm đối soát BẮT BUỘC nhận tham số `accountUid` và chỉ đối soát các hội thoại thuộc quyền sở hữu của UID đó (`WHERE accountUid = ?`).
+    - TUYỆT ĐỐI KHÔNG đối soát toàn cục làm hạ cờ nhóm (`isGroup = 0`) của các tài khoản khác trong cùng cơ sở dữ liệu.
 
 ---
 
@@ -135,6 +147,12 @@
       - **Kill Background Tunnel:** Tự động phát hiện và chấm dứt mọi tiến trình tunnel nền (`cloudflared`) để giải phóng tài nguyên.
       - **UI Suppression:** Tự động ẩn cả nút biểu tượng trên thanh điều hướng Navigation Rail (`#rail-btn-oa`) lẫn nút lọc nhanh (`.quick-tab[data-quick-filter="oa"]`).
       - **Data Isolation & Purge:** Làm sạch triệt để các hội thoại và tin nhắn mẫu kênh OA (`channel = 'oa'` hoặc `id LIKE 'oa_%'`) để trả lại 100% giao diện Zalo cá nhân thuần túy, không để sót bất kỳ dấu vết rác nào làm phiền người dùng.
+13. **Zalo CDN Avatar Hotlink Shield via Referrer Policy:**
+    - Mọi thẻ `<img>` dùng để hiển thị ảnh đại diện từ CDN Zalo (`*.zadn.vn`) BẮT BUỘC phải có thuộc tính `referrerpolicy="no-referrer"`.
+    - Điều này triệt tiêu hoàn toàn mã lỗi HTTP 403 Forbidden do chính sách chặn hotlink của Zalo khi truy cập từ localhost hoặc domain khác.
+14. **Optimistic Media Deduplication & Empty-Caption Immunity:**
+    - Khi người dùng gửi hình ảnh/tệp không có nội dung chữ (`text = ''`), tin nhắn tạm (`tempMsg`) BẮT BUỘC mang `text = ''` và `type = 'image'` (hoặc `file`).
+    - Bộ nhận diện SSE `new_message` khi xóa tin nhắn tạm BẮT BUỘC so khớp kết hợp: `temp.type === item.type`, `temp.mediaType === item.mediaType`, và thời gian chênh lệch `<= 5000ms`, triệt tiêu hoàn toàn hiện tượng nhân đôi bong bóng tin nhắn (1 ảnh thành 2 thẻ) trên giao diện.
 
 ---
 
