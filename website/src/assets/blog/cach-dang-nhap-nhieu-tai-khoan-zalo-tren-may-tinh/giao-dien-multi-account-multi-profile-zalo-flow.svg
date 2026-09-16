@@ -1,0 +1,131 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 500" width="1000" height="500">
+  <defs>
+    <linearGradient id="winBg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </linearGradient>
+    <linearGradient id="headerGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0084ff"/>
+      <stop offset="100%" stop-color="#00d2ff"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Window Container -->
+  <rect width="1000" height="500" rx="14" fill="url(#winBg)" stroke="#334155" stroke-width="1.5"/>
+
+  <!-- Window Titlebar -->
+  <rect width="1000" height="42" rx="14" fill="#0b1329"/>
+  <rect y="26" width="1000" height="16" fill="#0b1329"/>
+  <circle cx="22" cy="21" r="5.5" fill="#ef4444"/>
+  <circle cx="40" cy="21" r="5.5" fill="#f59e0b"/>
+  <circle cx="58" cy="21" r="5.5" fill="#10b981"/>
+  <text x="85" y="26" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" fill="#94a3b8" font-weight="600">Zalo-Flow v1.4.0 — Multi-Account Hub &amp; Multi-Profile AI Suite</text>
+
+  <!-- Left Sidebar: Account Switcher & Navigation (width 220) -->
+  <rect x="0" y="42" width="220" height="458" fill="#0b1329" stroke="#1e293b" stroke-width="1"/>
+  
+  <!-- Account Switcher Header -->
+  <text x="18" y="72" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="700" fill="#64748b" letter-spacing="1">TÀI KHOẢN ZALO (3)</text>
+  
+  <!-- Account Item 1 (Active) -->
+  <rect x="12" y="85" width="196" height="48" rx="8" fill="#1e293b" stroke="#00d2ff" stroke-width="1.2"/>
+  <circle cx="34" cy="109" r="14" fill="#0284c7"/>
+  <text x="28" y="114" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="700" fill="#ffffff">M1</text>
+  <text x="56" y="103" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="700" fill="#ffffff">Minh Bán Lẻ</text>
+  <text x="56" y="120" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="10" fill="#34d399">● Profile: Bán Hàng E-com</text>
+
+  <!-- Account Item 2 -->
+  <rect x="12" y="140" width="196" height="48" rx="8" fill="#0f172a" stroke="#1e293b" stroke-width="1"/>
+  <circle cx="34" cy="164" r="14" fill="#7c3aed"/>
+  <text x="28" y="169" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="700" fill="#ffffff">M2</text>
+  <text x="56" y="158" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="600" fill="#cbd5e1">Khoa B2B</text>
+  <text x="56" y="175" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="10" fill="#c084fc">● Profile: Tư Vấn B2B</text>
+
+  <!-- Account Item 3 -->
+  <rect x="12" y="195" width="196" height="48" rx="8" fill="#0f172a" stroke="#1e293b" stroke-width="1"/>
+  <circle cx="34" cy="219" r="14" fill="#059669"/>
+  <text x="28" y="224" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="700" fill="#ffffff">M3</text>
+  <text x="56" y="213" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="600" fill="#cbd5e1">CSKH Kỹ Thuật</text>
+  <text x="56" y="230" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="10" fill="#34d399">● Profile: Kỹ Thuật VIP</text>
+
+  <!-- Add Account Button -->
+  <rect x="12" y="252" width="196" height="34" rx="6" fill="rgba(0, 132, 255, 0.12)" stroke="#0084ff" stroke-width="1" stroke-dasharray="3 3"/>
+  <text x="110" y="274" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="600" fill="#00d2ff" text-anchor="middle">+ Thêm Tài Khoản Mới</text>
+
+  <!-- Navigation Menu Links -->
+  <line x1="15" y1="305" x2="205" y2="305" stroke="#1e293b" stroke-width="1"/>
+  <text x="25" y="335" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" fill="#94a3b8">💬 Trò Chuyện &amp; CRM</text>
+  <text x="25" y="370" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="700" fill="#00d2ff">🧠 Trung Tâm AI Studio</text>
+  <text x="25" y="405" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" fill="#94a3b8">📢 Chiến Dịch Gửi Tin</text>
+  <text x="25" y="440" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" fill="#94a3b8">⚙️ Cấu Hình Hệ Thống</text>
+
+  <!-- Main Center Area: AI Profile Studio (width 780) -->
+  <g transform="translate(240, 55)">
+    <!-- Tab navigation -->
+    <rect width="740" height="42" rx="8" fill="#1e293b"/>
+    <rect x="5" y="4" width="220" height="34" rx="6" fill="#0084ff"/>
+    <text x="115" y="26" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle">1. Quản Lý Hồ Sơ AI (Personas)</text>
+    
+    <text x="355" y="26" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#94a3b8" text-anchor="middle">2. Động Cơ LLM Toàn Cục</text>
+    <text x="590" y="26" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#94a3b8" text-anchor="middle">3. Ma Trận Gán Bot &amp; Nick Zalo</text>
+
+    <!-- Profile Detail Panel -->
+    <g transform="translate(0, 55)">
+      <!-- Left sub-column: Profile Select & Quick Templates -->
+      <rect width="230" height="365" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+      <text x="15" y="25" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="700" fill="#ffffff">DANH SÁCH HỒ SƠ (4)</text>
+      
+      <rect x="10" y="38" width="210" height="36" rx="6" fill="rgba(0, 210, 255, 0.15)" stroke="#00d2ff" stroke-width="1"/>
+      <text x="20" y="61" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="700" fill="#00d2ff">🛒 Bán Hàng E-com (Mặc định)</text>
+      
+      <rect x="10" y="82" width="210" height="36" rx="6" fill="#0f172a"/>
+      <text x="20" y="105" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#cbd5e1">💼 Tư Vấn Giải Pháp B2B</text>
+
+      <rect x="10" y="126" width="210" height="36" rx="6" fill="#0f172a"/>
+      <text x="20" y="149" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#cbd5e1">🛠️ CSKH &amp; Kỹ Thuật VIP</text>
+
+      <rect x="10" y="170" width="210" height="36" rx="6" fill="#0f172a"/>
+      <text x="20" y="193" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#cbd5e1">📋 Trợ Lý Nội Bộ HR/SOP</text>
+
+      <line x1="10" y1="220" x2="220" y2="220" stroke="#334155" stroke-width="1"/>
+      <text x="15" y="245" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="700" fill="#64748b">KỊCH BẢN MẪU VÀNG</text>
+      <rect x="10" y="260" width="210" height="28" rx="4" fill="#0f172a" stroke="#475569" stroke-width="1"/>
+      <text x="20" y="278" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" fill="#f59e0b">⚡ Nạp mẫu Bán Hàng 1-Click</text>
+
+      <rect x="10" y="320" width="210" height="34" rx="6" fill="#0084ff"/>
+      <text x="115" y="342" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle">+ Tạo Hồ Sơ Mới</text>
+
+      <!-- Right sub-column: Profile Config Fields (width 495) -->
+      <g transform="translate(245, 0)">
+        <rect width="495" height="365" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+        
+        <!-- Field 1: SOUL -->
+        <text x="15" y="25" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="700" fill="#00d2ff">✨ SOUL — Nhân cách &amp; Giọng điệu:</text>
+        <rect x="15" y="35" width="465" height="48" rx="4" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+        <text x="25" y="55" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" fill="#94a3b8">"Bạn là Mai Anh, chuyên viên tư vấn thời trang nữ thân thiện, xưng hô Em - Chị,</text>
+        <text x="25" y="72" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" fill="#94a3b8">luôn khéo léo xin số đo chiều cao/cân nặng để gợi ý size chuẩn nhất..."</text>
+
+        <!-- Field 2: Memory / Wiki -->
+        <text x="15" y="105" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="700" fill="#34d399">📚 Kho Tri Thức Sản Phẩm (Mini Second Brain Wiki):</text>
+        <rect x="15" y="115" width="465" height="48" rx="4" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+        <text x="25" y="135" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" fill="#94a3b8">[Đã liên kết Wiki: catalogue_mua_thu_2026.md - 36 SKU sản phẩm, bảng size,</text>
+        <text x="25" y="152" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" fill="#94a3b8">chính sách đổi trả 7 ngày, miễn phí vận chuyển từ 499k]</text>
+
+        <!-- Field 3: Scope & Rules -->
+        <text x="15" y="185" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="700" fill="#f87171">🛡️ Phạm Vi &amp; Điều Cấm Kỵ (Guardrails):</text>
+        <rect x="15" y="195" width="465" height="42" rx="4" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+        <text x="25" y="215" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" fill="#94a3b8">• Tuyệt đối không cam kết thời gian giao hàng nếu khách cần gấp trong 2 giờ</text>
+        <text x="25" y="230" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" fill="#94a3b8">• Chuyển cuộc gọi cho quản lý nếu khách phàn nàn chất lượng vải</text>
+
+        <!-- Field 4: Model Override -->
+        <text x="15" y="260" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="700" fill="#c084fc">⚙️ Model Ghi Đè (Tùy chọn):</text>
+        <rect x="15" y="270" width="465" height="34" rx="4" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+        <text x="25" y="292" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#ffffff">Google: gemini-2.5-flash (Phản hồi siêu tốc &lt; 0.8s, giá rẻ)</text>
+
+        <!-- Save button -->
+        <rect x="340" y="318" width="140" height="34" rx="6" fill="#10b981"/>
+        <text x="410" y="340" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle">💾 Lưu Hồ Sơ AI</text>
+      </g>
+    </g>
+  </g>
+</svg>

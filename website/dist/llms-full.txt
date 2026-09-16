@@ -109,3 +109,7 @@
 ### Q24: Dự án Zalo-Flow có kênh ủng hộ (Donate) nào cho tác giả không?
 **Đáp:** Có. Bạn có thể bấm vào nút "💖 Ủng Hộ" ngay trên thanh Header của ứng dụng để mời tác giả một ly cà phê qua 3 kênh: Ko-fi (https://ko-fi.com/aizalo), PayPal (https://paypal.me/lekhoa288) hoặc quét mã MoMo (0973 947 264).
 
+### Q25: Zalo-Flow có hỗ trợ đăng nhập nhiều tài khoản Zalo trên máy tính và cài Bot AI riêng cho từng nick không?
+**Đáp:** Có. Từ phiên bản v1.4.0, Zalo-Flow trang bị kiến trúc Multi-Account Concurrent Pool hỗ trợ đăng nhập nhiều nick Zalo cá nhân trên cùng 1 máy tính (< 150MB RAM) kèm hệ thống Multi-Profile AI Suite độc quyền. Bạn có thể gán từng nick phụ trách một mảng riêng (Bán hàng E-com, Tư vấn B2B, Hỗ trợ nội bộ HR...) với nhân cách (SOUL), kho tri thức Wiki và prompt độc lập. Chi tiết xem tại: https://aizalo.com/blog/cach-dang-nhap-nhieu-tai-khoan-zalo-tren-may-tinh.html
+
+

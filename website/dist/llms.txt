@@ -38,6 +38,7 @@
 6. **Web Dashboard Quản Trị & Tự Động Định Danh:** Giao diện Live Chat trực tiếp tại `localhost:3000`, phân loại khách hàng bằng thẻ tag màu sắc, tự động nhận diện tên và avatar thật của khách lạ.
 7. **Chiến Dịch Remarketing & Spintax:** Gửi tin nhắn chăm sóc khách hàng định kỳ kèm hình ảnh/tài liệu và đảo ngẫu nhiên cú pháp.
 8. **Mở Rộng Đội Ngũ:** Tích hợp 2 chiều với Chatwoot CRM khi cần nhiều nhân viên cùng trực 1 số Zalo.
+9. **Multi-Account Pool & Multi-Profile AI Suite:** Quản lý không giới hạn nick Zalo trên 1 máy tính (< 150MB RAM), gán riêng hồ sơ Bot AI (SOUL, Memory Wiki, Few-Shot, Scope) cho từng nick độc lập.
 
 ## Hướng Dẫn Tải Về & Cài Đặt
 - Tải gói cài đặt Windows: `https://github.com/aizaloapp/zalo-flow/releases/latest` (file `ZaloFlow-Setup-v1.4.0.exe`).
@@ -45,6 +46,7 @@
 - Lưu ý Windows SmartScreen: Khi xuất hiện màn hình "Windows protected your PC", bấm "More info" -> "Run anyway" (phần mềm cộng đồng chưa mua chứng chỉ thương mại Microsoft, sạch 0/70 trên VirusTotal).
 
 ## Cẩm Nang & Bài Viết Chuyên Sâu
+- Cách đăng nhập nhiều tài khoản Zalo trên máy tính: https://aizalo.com/blog/cach-dang-nhap-nhieu-tai-khoan-zalo-tren-may-tinh.html
 - Cách huấn luyện AI bán hàng Zalo bằng bảng giá riêng: https://aizalo.com/blog/cach-huan-luyen-ai-ban-hang-zalo-bang-bang-gia-rieng.html
 - Cách hẹn giờ gửi tin nhắn Zalo cá nhân tự động: https://aizalo.com/blog/cach-hen-gio-gui-tin-nhan-zalo-ca-nhan-tu-dong.html
 - Bí quyết chống khóa nick Zalo: https://aizalo.com/blog/cach-gui-tin-nhan-tu-dong-tren-zalo-khong-bi-khoa.html

@@ -1,0 +1,77 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 480" width="1000" height="480">
+  <defs>
+    <linearGradient id="cardBg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="winnerBg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0c2340"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1000" height="480" rx="16" fill="#0b1329" stroke="#334155" stroke-width="1.5"/>
+
+  <!-- Header -->
+  <text x="500" y="45" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="22" font-weight="800" fill="#ffffff" text-anchor="middle">
+    SO SÁNH CÁC PHƯƠNG PHÁP ĐĂNG NHẬP NHIỀU NICK ZALO TRÊN MÁY TÍNH
+  </text>
+  <text x="500" y="70" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14" fill="#94a3b8" text-anchor="middle">
+    Đánh giá độ ổn định, mức tiêu thụ tài nguyên và khả năng tự động hóa AI
+  </text>
+
+  <!-- 3 Columns -->
+  <!-- Col 1: Zalo PC + Web -->
+  <g transform="translate(50, 100)">
+    <rect width="280" height="340" rx="12" fill="url(#cardBg)" stroke="#334155" stroke-width="1.5"/>
+    <rect width="280" height="45" rx="12" fill="#334155"/>
+    <rect y="30" width="280" height="15" fill="#334155"/>
+    <text x="140" y="28" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="15" font-weight="700" fill="#f87171" text-anchor="middle">Cách 1: App Zalo + Web</text>
+    
+    <text x="20" y="75" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" fill="#cbd5e1">• Số nick tối đa: <tspan font-weight="700" fill="#f87171">Chỉ 2 nick</tspan></text>
+    <text x="20" y="105" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" fill="#cbd5e1">• RAM tiêu thụ: ~450 MB</text>
+    <text x="20" y="135" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" fill="#cbd5e1">• Ổn định: Dễ bị văng web</text>
+    <text x="20" y="165" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" fill="#cbd5e1">• Tự động trả lời: <tspan fill="#f87171">Không có</tspan></text>
+    <text x="20" y="195" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" fill="#cbd5e1">• Phân quyền Bot AI: <tspan fill="#f87171">Không</tspan></text>
+    <text x="20" y="225" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" fill="#cbd5e1">• Quản lý tin nhắn: Rời rạc</text>
+    
+    <rect x="20" y="280" width="240" height="35" rx="6" fill="rgba(239, 68, 68, 0.15)" stroke="#ef4444" stroke-width="1"/>
+    <text x="140" y="302" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="700" fill="#f87171" text-anchor="middle">❌ Bất tiện khi > 2 nick</text>
+  </g>
+
+  <!-- Col 2: Chrome Profiles / Giả Lập -->
+  <g transform="translate(360, 100)">
+    <rect width="280" height="340" rx="12" fill="url(#cardBg)" stroke="#334155" stroke-width="1.5"/>
+    <rect width="280" height="45" rx="12" fill="#334155"/>
+    <rect y="30" width="280" height="15" fill="#334155"/>
+    <text x="140" y="28" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="15" font-weight="700" fill="#fbbf24" text-anchor="middle">Cách 2: Giả Lập / Chrome</text>
+    
+    <text x="20" y="75" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" fill="#cbd5e1">• Số nick tối đa: 3 - 5 nick</text>
+    <text x="20" y="105" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" fill="#cbd5e1">• RAM tiêu thụ: <tspan font-weight="700" fill="#f87171">3GB - 6GB (Lag)</tspan></text>
+    <text x="20" y="135" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" fill="#cbd5e1">• Ổn định: Máy nóng, quạt to</text>
+    <text x="20" y="165" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" fill="#cbd5e1">• Tự động trả lời: <tspan fill="#f87171">Không có</tspan></text>
+    <text x="20" y="195" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" fill="#cbd5e1">• Phân quyền Bot AI: <tspan fill="#f87171">Không</tspan></text>
+    <text x="20" y="225" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" fill="#cbd5e1">• Rủi ro: Quét giả lập</text>
+    
+    <rect x="20" y="280" width="240" height="35" rx="6" fill="rgba(245, 158, 11, 0.15)" stroke="#f59e0b" stroke-width="1"/>
+    <text x="140" y="302" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="700" fill="#fbbf24" text-anchor="middle">⚠️ Ngốn RAM, dễ đơ máy</text>
+  </g>
+
+  <!-- Col 3: Zalo-Flow v1.4.0 (Winner) -->
+  <g transform="translate(670, 100)">
+    <rect width="280" height="340" rx="12" fill="url(#winnerBg)" stroke="#00d2ff" stroke-width="2"/>
+    <rect width="280" height="45" rx="12" fill="rgba(0, 132, 255, 0.3)"/>
+    <rect y="30" width="280" height="15" fill="rgba(0, 132, 255, 0.3)"/>
+    <text x="140" y="28" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="15" font-weight="800" fill="#00d2ff" text-anchor="middle">🏆 Zalo-Flow v1.4.0</text>
+    
+    <text x="20" y="75" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" fill="#ffffff">• Số nick tối đa: <tspan font-weight="700" fill="#34d399">Không giới hạn</tspan></text>
+    <text x="20" y="105" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" fill="#ffffff">• RAM tiêu thụ: <tspan font-weight="700" fill="#34d399">&lt; 150 MB siêu nhẹ</tspan></text>
+    <text x="20" y="135" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" fill="#ffffff">• Ổn định: Chạy ngầm 24/7</text>
+    <text x="20" y="165" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" fill="#ffffff">• Tự động trả lời: <tspan fill="#34d399">AI thông minh</tspan></text>
+    <text x="20" y="195" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" fill="#ffffff">• Phân quyền Bot AI: <tspan fill="#34d399">Profile riêng</tspan></text>
+    <text x="20" y="225" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" fill="#ffffff">• Quản lý tin nhắn: CRM tập trung</text>
+    
+    <rect x="20" y="280" width="240" height="35" rx="6" fill="rgba(0, 210, 255, 0.2)" stroke="#00d2ff" stroke-width="1.5"/>
+    <text x="140" y="302" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="800" fill="#00d2ff" text-anchor="middle">✅ Tối ưu, mượt mà 100%</text>
+  </g>
+</svg>

@@ -98,9 +98,14 @@
 - **Giải pháp trên v1.1.0:** Ảnh được đưa vào thanh xem trước (staging preview bar) phía trên ô chat kèm tên, dung lượng và nút đỏ `×` hủy bỏ.
 - **Cách dùng:** Dán hoặc chọn ảnh ➔ Gõ lời nhắn, báo giá vào ô chat ➔ Bấm **Gửi (✈️)** hoặc nhấn **Enter**: Hệ thống tự động gộp ảnh và chữ thành 1 tin nhắn dính liền (Single-Image Caption Integration) hiển thị cực kỳ chuyên nghiệp và tiện lợi.
 
+### J. Quản Lý Đa Tài Khoản & Multi-Profile AI Suite (Tính năng mới v1.4.0)
+1. **Đa tài khoản không giới hạn (Multi-Account Pool):** Đăng nhập quét mã QR cho nhiều nick Zalo cá nhân, chuyển đổi 1-Click hoặc chạy song song trên 1 giao diện duy nhất, siêu nhẹ tiêu tốn < 150MB RAM (loại bỏ hoàn toàn giả lập Android nặng nề).
+2. **Multi-Profile AI Suite:** Tách biệt Động cơ LLM dùng chung (Shared Engine) và Hồ sơ nhân cách (Personas). Gán từng nick Zalo với 1 Profile AI riêng biệt (Bán lẻ E-com, Tư vấn B2B, Hỗ trợ nội bộ HR/SOP...) với nhân cách (SOUL), kho tri thức Wiki và prompt độc lập.
+3. **Xem hướng dẫn chi tiết có ảnh minh họa:** `https://aizalo.com/blog/cach-dang-nhap-nhieu-tai-khoan-zalo-tren-may-tinh.html`
+
 ---
 
-### J. Tắt / Dừng / Khởi Động Lại Phần Mềm
+### K. Tắt / Dừng / Khởi Động Lại Phần Mềm
 - **Dừng phần mềm:** Vào Start Menu hoặc thư mục cài đặt (`%LOCALAPPDATA%\Programs\ZaloFlow`), bấm đúp `Dừng Zalo-Flow.bat`.
 - **Khởi động lại:** Nhấp đúp vào icon `Zalo-Flow` ngoài Desktop.
 
@@ -152,9 +157,16 @@
   **👉 Trả lời chuẩn:** Dạ không hề bị trùng ạ! Zalo-Flow tích hợp lá chắn Auto-Pause độc quyền: Nếu khách hàng chủ động nhắn tin đến trước giờ hẹn (ví dụ báo bận hoặc dời lịch), hệ thống sẽ tự động hủy lệnh gửi đang chờ để bạn không bị rơi vào tình huống gửi thông điệp lệch ngữ cảnh ạ.
   👉 Anh/chị xem thêm cơ chế hoạt động của Auto-Pause tại: https://aizalo.com/blog/cach-hen-gio-gui-tin-nhan-zalo-ca-nhan-tu-dong.html
 
+- **Khách hỏi:** Tôi có nhiều nick Zalo cho các mảng kinh doanh khác nhau thì Zalo-Flow có chạy cùng lúc được không?
+  **👉 Trả lời chuẩn:** Dạ từ phiên bản v1.4.0, Zalo-Flow hỗ trợ thêm nhiều tài khoản Zalo cá nhân cùng lúc (Multi-Account Pool) và gán riêng hồ sơ Bot AI (Profile) cho từng nick cực kỳ tiện lợi ạ! Ví dụ nick 1 tư vấn bán lẻ với giọng điệu ngọt ngào, nick 2 tư vấn hợp đồng B2B với phong thái chuyên nghiệp và kho bảng giá riêng biệt, hoàn toàn không bị nhầm lẫn ạ.
+  👉 Anh/chị xem cẩm nang hướng dẫn chi tiết tại: https://aizalo.com/blog/cach-dang-nhap-nhieu-tai-khoan-zalo-tren-may-tinh.html
+
 ---
 
 ## 💬 4. Mẫu Đoạn Chat Thực Chiến (Few-Shot Exemplar)
+
+- **Khách:** Cho mình hỏi Zalo-Flow có chạy được 2 - 3 nick Zalo trên cùng 1 máy tính không bạn?
+- **Bot:** Dạ hoàn toàn được anh/chị {name} nhé! Bản Zalo-Flow v1.4.0 mới nhất hỗ trợ quản lý đa tài khoản Zalo trên cùng một màn hình máy tính duy nhất cực kỳ mượt mà (< 150MB RAM). Đặc biệt mỗi nick anh/chị có thể cài một trợ lý AI riêng với tính cách và bảng giá sản phẩm độc lập luôn ạ! Anh/chị xem hướng dẫn thiết lập tại đây nhé: https://aizalo.com/blog/cach-dang-nhap-nhieu-tai-khoan-zalo-tren-may-tinh.html
 
 - **Khách:** Bạn ơi hướng dẫn mình cách cài đặt Zalo Flow với, mình mới tải file setup về máy tính.
 - **Bot:** Dạ em chào anh/chị {name}! Cài đặt Zalo-Flow siêu nhanh chỉ mất 3 phút với bộ cài 1-Click (không cần biết lập trình) ạ:
