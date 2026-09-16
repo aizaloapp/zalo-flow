@@ -159,3 +159,13 @@ powershell website/build.ps1
 > ```powershell
 > npx wrangler pages deploy website/dist --project-name aizalo-portal
 > ```
+
+#### 5. Kích Hoạt Lập Chỉ Mục Tức Thì (Instant Indexing Automation):
+Ngay sau khi lệnh deploy Cloudflare Pages hoàn tất thành công:
+1. Agent BẮT BUỘC tự động chạy lệnh bắn tín hiệu lập chỉ mục cho bài viết mới:
+   ```powershell
+   node scripts/google-index.mjs https://aizalo.com/blog/<slug>.html
+   node scripts/indexnow.mjs https://aizalo.com/blog/<slug>.html
+   ```
+   *(Hoặc chạy `npm run index:all` nếu có cập nhật sitemap diện rộng).*
+2. Xác nhận kết quả phản hồi đạt `200 OK` từ cả máy chủ Google Indexing API và Microsoft Bing / IndexNow.
