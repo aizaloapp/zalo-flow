@@ -23,6 +23,12 @@ if (Test-Path (Join-Path $srcDir "*.js")) {
     Copy-Item -Path (Join-Path $srcDir "*.js") -Destination $distDir -Force
 }
 
+# Copy Widget files
+if (Test-Path (Join-Path $srcDir "widget")) {
+    New-Item -ItemType Directory -Force -Path (Join-Path $distDir "widget") | Out-Null
+    Copy-Item -Path (Join-Path $srcDir "widget\*") -Destination (Join-Path $distDir "widget\") -Recurse -Force
+}
+
 # Copy English (EN) files
 if (Test-Path (Join-Path $srcDir "en")) {
     Copy-Item -Path (Join-Path $srcDir "en\*") -Destination (Join-Path $distDir "en\") -Recurse -Force
