@@ -89,7 +89,7 @@
       background: linear-gradient(135deg, ${CONFIG.primaryColor} 0%, #1d4ed8 100%);
       box-shadow: 0 8px 24px rgba(0, 104, 255, 0.4);
       cursor: pointer;
-      display: ${CONFIG.hideLauncher ? 'none' : 'flex'};
+      display: ${CONFIG.hideLauncher ? 'none !important' : 'flex'};
       align-items: center;
       gap: 8px;
       z-index: 999990;
