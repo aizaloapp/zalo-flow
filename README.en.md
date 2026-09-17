@@ -16,16 +16,28 @@
 [![Anti-Leak & Secret Scan](https://github.com/aizaloapp/zalo-flow/actions/workflows/secret-scan.yml/badge.svg)](https://github.com/aizaloapp/zalo-flow/actions/workflows/secret-scan.yml)
 [![Memory Footprint](https://img.shields.io/badge/RAM-%3C%20100MB-success.svg)](test/test-all.js)
 [![Tests Passing](https://img.shields.io/badge/Tests-56%2F56%20Passing-brightgreen.svg)](test/test-all.js)
+[![Chrome Web Store](https://img.shields.io/badge/Chrome_Web_Store-AIzalo_Flow_Companion-4285F4?logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/aizalo-flow-chat-companio/ckdbkfocakhkkpjjbcclifdkgikbelan)
 [![Docker Ready](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](docker-compose.yml)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
 <p align="center">
-  <a href="https://aizalo.com"><img src="https://img.shields.io/badge/🌐_Official_Website-aizalo.com-0068FF?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Official Website"/></a>
+  <a href="https://aizalo.com/en/"><img src="https://img.shields.io/badge/🌐_Official_Website-aizalo.com-0068FF?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Official Website"/></a>
+  <a href="https://chromewebstore.google.com/detail/aizalo-flow-chat-companio/ckdbkfocakhkkpjjbcclifdkgikbelan"><img src="https://img.shields.io/badge/🧩_Chrome_Extension-Free_Install-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Chrome Extension"/></a>
   <a href="https://zalo.me/g/mcihan713"><img src="https://img.shields.io/badge/💬_Community_Support-Zalo_Group-0088FF?style=for-the-badge&logo=zalo&logoColor=white" alt="Zalo Community"/></a>
   <a href="https://aizalo.com/blog/"><img src="https://img.shields.io/badge/📚_Knowledge_Base-Blog_Tutorials-FF6B00?style=for-the-badge" alt="Blog Tutorials"/></a>
 </p>
 
-[🌐 Website](https://aizalo.com) • [📚 Guides](https://aizalo.com/blog/) • [💬 Zalo Community](https://zalo.me/g/mcihan713) • [Features](#-key-features) • [Download Windows](#-1-click-windows-installer-for-everyone) • [Architecture](#-system-architecture) • [Quick Start](#-quick-start-in-3-minutes) • [Anti-Ban](#-3-layer-anti-ban-defense)
+[🌐 Website](https://aizalo.com) • [🧩 Chrome Extension](https://aizalo.com/guide) • [📺 Video Demo](#-video-walkthrough--quick-setup-tutorial) • [📚 Guides](https://aizalo.com/blog/) • [💬 Zalo Community](https://zalo.me/g/mcihan713) • [Features](#-key-features) • [Download Windows](#-1-click-windows-installer-for-everyone) • [Architecture](#-system-architecture) • [Quick Start](#-quick-start-in-3-minutes) • [Anti-Ban](#-3-layer-anti-ban-defense)
+
+<br/>
+
+### 📺 Video Walkthrough & Quick Setup Tutorial
+
+[![Personal Zalo AI Chatbot Setup Guide](https://img.youtube.com/vi/oq3UDWxoXMg/maxresdefault.jpg)](https://www.youtube.com/watch?v=oq3UDWxoXMg "Click to watch the step-by-step tutorial on YouTube")
+
+<p align="center">
+  <i>🎬 <b>Step-by-Step Video Guide:</b> How to install Zalo-Flow, scan the QR code to authenticate, and configure your AI personal assistant without Zalo OA. (Credits: YouTube channel <b>AI - Trợ Thủ Công Việc</b>)</i>
+</p>
 
 <br/>
 
@@ -36,6 +48,18 @@ No Git, no Node.js installation, no command line terminals required:
 [![Download Windows Setup](https://img.shields.io/badge/Windows-Download%20Setup%20v1.4.0%20(.exe)-0068FF?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/aizaloapp/zalo-flow/releases/latest)
 
 > 💡 **Download & Run:** Click the button above to download **`ZaloFlow-Setup-v1.4.0.exe`** (Only **24.5MB**). Run the installer in 30 seconds to get your Zalo-Flow desktop assistant ready!
+
+<br/>
+
+### 🧩 Browser Toolbar Companion: AIzalo Flow Extension
+
+The official Chrome & Edge browser extension has been verified and published on the **Chrome Web Store**:
+
+[![Add to Chrome](https://img.shields.io/badge/Chrome_Web_Store-Add_to_Chrome_(Free)-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/aizalo-flow-chat-companio/ckdbkfocakhkkpjjbcclifdkgikbelan)
+
+- 🔴 **Real-time Unread Badge:** Instant visual indicators for incoming customer messages.
+- ⚡ **1-Click Quick Message Dispatcher:** Send pre-configured customer care response templates without switching tabs.
+- 📖 **Detailed Setup & Permissions:** View the [Chrome Extension Guide (aizalo.com/guide)](https://aizalo.com/guide).
 
 > 🚀 **What's New in v1.4.0:**
 > - 🧠 **Multi-Profile AI Suite & 3-Tier Architecture:** Complete decoupling of Shared LLM Engine (API Key, Auto-Fallback Shield) from Business Personas. Create unlimited AI profiles with dedicated SOUL, Knowledge Memory, Few-Shot Exemplars, Scope/Rules, and Model Overrides.

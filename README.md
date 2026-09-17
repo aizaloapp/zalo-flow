@@ -16,16 +16,28 @@
 [![Anti-Leak & Secret Scan](https://github.com/aizaloapp/zalo-flow/actions/workflows/secret-scan.yml/badge.svg)](https://github.com/aizaloapp/zalo-flow/actions/workflows/secret-scan.yml)
 [![Memory Footprint](https://img.shields.io/badge/RAM-%3C%20100MB-success.svg)](test/test-all.js)
 [![Tests Passing](https://img.shields.io/badge/Tests-56%2F56%20Passing-brightgreen.svg)](test/test-all.js)
+[![Chrome Web Store](https://img.shields.io/badge/Chrome_Web_Store-AIzalo_Flow_Companion-4285F4?logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/aizalo-flow-chat-companio/ckdbkfocakhkkpjjbcclifdkgikbelan)
 [![Docker Ready](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](docker-compose.yml)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
 <p align="center">
   <a href="https://aizalo.com"><img src="https://img.shields.io/badge/🌐_Website_Chính_Thức-aizalo.com-0068FF?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Official Website"/></a>
+  <a href="https://chromewebstore.google.com/detail/aizalo-flow-chat-companio/ckdbkfocakhkkpjjbcclifdkgikbelan"><img src="https://img.shields.io/badge/🧩_Tiện_Ích_Chrome-Cài_Đặt_1--Click-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Chrome Extension"/></a>
   <a href="https://zalo.me/g/mcihan713"><img src="https://img.shields.io/badge/💬_Cộng_Đồng_Hỗ_Trợ-Nhóm_Zalo-0088FF?style=for-the-badge&logo=zalo&logoColor=white" alt="Zalo Community"/></a>
   <a href="https://aizalo.com/blog/"><img src="https://img.shields.io/badge/📚_Cẩm_Nang-Bài_Viết_Hướng_Dẫn-FF6B00?style=for-the-badge" alt="Blog Tutorials"/></a>
 </p>
 
-[🌐 Website](https://aizalo.com) • [📚 Cẩm Nang Kỹ Thuật](https://aizalo.com/blog/) • [💬 Nhóm Zalo](https://zalo.me/g/mcihan713) • [Tính Năng](#-tính-năng-nổi-bật) • [Tải Về Windows](#-tải-về-cài-đặt-1-click-cho-windows) • [Kiến Trúc](#-kiến-trúc-hệ-thống) • [Cài Đặt Nhanh](#-cài-đặt-nhanh-trong-3-phút) • [Anti-Ban](#-hệ-thống-phòng-vệ-anti-ban-3-lớp)
+[🌐 Website](https://aizalo.com) • [🧩 Tiện Ích Chrome](https://aizalo.com/guide) • [📺 Video Demo](#-video-hướng-dẫn-cài-đặt--sử-dụng) • [📚 Cẩm Nang](https://aizalo.com/blog/) • [💬 Nhóm Zalo](https://zalo.me/g/mcihan713) • [Tính Năng](#-tính-năng-nổi-bật) • [Tải Về Windows](#-tải-về-cài-đặt-1-click-cho-windows) • [Kiến Trúc](#-kiến-trúc-hệ-thống) • [Cài Đặt Nhanh](#-cài-đặt-nhanh-trong-3-phút) • [Anti-Ban](#-hệ-thống-phòng-vệ-anti-ban-3-lớp)
+
+<br/>
+
+### 📺 Video Hướng Dẫn Cài Đặt & Sử Dụng
+
+[![Chatbot AI Zalo Cá Nhân Miễn Phí - Không Cần OA](https://img.youtube.com/vi/oq3UDWxoXMg/maxresdefault.jpg)](https://www.youtube.com/watch?v=oq3UDWxoXMg "Bấm để xem video hướng dẫn chi tiết trên YouTube")
+
+<p align="center">
+  <i>🎬 <b>Video Hướng Dẫn Thực Tế:</b> Từng bước cài đặt Zalo-Flow, quét mã QR đăng nhập và thiết lập Bot AI tự động trả lời tin nhắn Zalo cá nhân không cần OA. (Nguồn: Kênh YouTube <b>AI - Trợ Thủ Công Việc</b>)</i>
+</p>
 
 <br/>
 
@@ -36,6 +48,18 @@ Không cần biết Git, không cần cài Node.js, không cần mở màn hình
 [![Tải Bản Cài Đặt Windows](https://img.shields.io/badge/Windows-Download%20Setup%20v1.4.0%20(.exe)-0068FF?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/aizaloapp/zalo-flow/releases/latest)
 
 > 💡 **Tải về chạy ngay:** Bấm nút ở trên để tải file **`ZaloFlow-Setup-v1.4.0.exe`** (Chỉ **24.5MB**). Cài đặt trong 30 giây là có ngay icon Zalo-Flow ngoài Desktop!
+
+<br/>
+
+### 🧩 Tiện Ích Trực Chat Trình Duyệt: AIzalo Flow Companion
+
+Tiện ích mở rộng chính thức cho Google Chrome & Microsoft Edge đã được Google kiểm duyệt và phát hành trên **Chrome Web Store**:
+
+[![Cài Đặt Trên Chrome Web Store](https://img.shields.io/badge/Chrome_Web_Store-Thêm_Vào_Chrome_(Miễn_Phí)-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/aizalo-flow-chat-companio/ckdbkfocakhkkpjjbcclifdkgikbelan)
+
+- 🔴 **Huy hiệu số tin nhắn chưa đọc thời gian thực:** Nắm bắt tin nhắn mới ngay trên biểu tượng thanh công cụ trình duyệt.
+- ⚡ **Bắn tin nhắn mẫu 1-Click:** Soạn và gửi nhanh kịch bản tư vấn khách hàng mà không cần chuyển qua lại giữa các tab.
+- 📖 **Hướng dẫn sử dụng chi tiết:** Xem tại [Hướng Dẫn Tiện Ích Chrome (aizalo.com/guide)](https://aizalo.com/guide).
 
 > 🚀 **Điểm mới trong v1.4.0:**
 > - 🧠 **Đa Hồ Sơ AI Nghiệp Vụ (Multi-Profile AI Suite):** Tách bạch Động cơ toàn cục (Shared LLM Engine: API Key, Auto-Fallback Shield) và Hồ sơ nghiệp vụ. Hỗ trợ tạo không giới hạn Persona với Nhân cách (SOUL), Kho Tri Thức (Memory/Wiki), Mẫu Hội Thoại (Few-Shot), Ranh Giới (Scope) và Model Ghi Đè riêng biệt.
