@@ -110,7 +110,7 @@ body {
 .nav-menu {
   display: flex;
   align-items: center;
-  gap: 1.05rem;
+  gap: 1.75rem;
   list-style: none;
 }
 
@@ -137,6 +137,54 @@ body {
   white-space: nowrap !important;
   font-size: 0.85rem;
   padding: 0.45rem 0.85rem;
+}
+
+/* Nút Hỏi AI trên Navbar */
+.btn-ask-ai {
+  background: linear-gradient(135deg, rgba(0, 132, 255, 0.15) 0%, rgba(0, 210, 255, 0.2) 100%);
+  color: var(--cyan) !important;
+  border: 1px solid rgba(0, 210, 255, 0.35);
+  border-radius: 20px;
+  padding: 0.45rem 0.95rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap !important;
+  box-shadow: 0 0 14px rgba(0, 132, 255, 0.2);
+}
+
+.btn-ask-ai:hover {
+  background: linear-gradient(135deg, var(--primary) 0%, #00b4d8 100%);
+  color: #fff !important;
+  border-color: var(--cyan);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 18px rgba(0, 132, 255, 0.4);
+}
+
+.btn-ask-ai-mobile {
+  width: 100%;
+  background: linear-gradient(135deg, rgba(0, 132, 255, 0.2) 0%, rgba(0, 210, 255, 0.25) 100%);
+  color: var(--cyan) !important;
+  border: 1px solid rgba(0, 210, 255, 0.4);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.btn-ask-ai-mobile:hover {
+  background: var(--primary);
+  color: #fff !important;
 }
 
 /* Language Switcher Styling */
@@ -316,6 +364,23 @@ body {
   transform: translateY(-2px);
 }
 
+.btn-chrome {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff !important;
+  border: 1px solid rgba(66, 133, 244, 0.55);
+  box-shadow: 0 4px 15px rgba(66, 133, 244, 0.22);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.btn-chrome:hover {
+  background: rgba(66, 133, 244, 0.22);
+  border-color: #60a5fa;
+  color: #ffffff !important;
+  box-shadow: 0 6px 24px rgba(66, 133, 244, 0.4);
+  transform: translateY(-2px);
+}
+
 .btn-lg {
   padding: 0.85rem 1.75rem;
   font-size: 1.05rem;
@@ -370,8 +435,36 @@ body {
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 1rem;
-  margin-bottom: 2.5rem;
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.hero-sub-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.hero-sub-link {
+  color: #38bdf8;
+  text-decoration: none;
+  font-size: 0.92rem;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: all 0.2s ease;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+}
+
+.hero-sub-link:hover {
+  color: #fff;
+  background: rgba(56, 189, 248, 0.1);
+  text-decoration: underline;
 }
 
 .cli-snippet {

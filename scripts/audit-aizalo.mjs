@@ -467,6 +467,8 @@ async function runPass2() {
     const res = await safeFetch(testUrl, { method: 'HEAD' });
     if (res.status === 200) {
       // Good
+    } else if (isLocalRun && res.status === 404) {
+      console.log(`   ⏭️ [PRE-DEPLOY] Bỏ qua kiểm tra Live Edge cho trang mới chưa deploy: ${testUrl}`);
     } else {
       deduct('technical', 10, `URL live trả lỗi HTTP ${res.status}: ${testUrl}`, 'P0');
     }

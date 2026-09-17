@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 500" width="1000" height="500">
+  <defs>
+    <linearGradient id="bgMockup" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#090d16"/>
+    </linearGradient>
+    <linearGradient id="primaryGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00d2ff"/>
+      <stop offset="100%" stop-color="#0068ff"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background Window -->
+  <rect width="1000" height="500" rx="14" fill="url(#bgMockup)" stroke="#334155" stroke-width="1.5"/>
+
+  <!-- Window Header Bar -->
+  <rect width="1000" height="46" rx="14" fill="#1e293b"/>
+  <rect y="32" width="1000" height="14" fill="#1e293b"/>
+  <circle cx="22" cy="23" r="6" fill="#ef4444"/>
+  <circle cx="42" cy="23" r="6" fill="#f59e0b"/>
+  <circle cx="62" cy="23" r="6" fill="#10b981"/>
+
+  <text x="90" y="28" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="700" fill="#94a3b8">
+    🌐 Google Chrome Toolbar — AIzalo Flow: Chat Companion (Extension Active)
+  </text>
+
+  <!-- Left: Explanatory Feature Cards (3 Bước) -->
+  <g transform="translate(50, 75)">
+    <text x="0" y="24" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="20" font-weight="900" fill="#ffffff">
+      3 Điểm Nổi Bật Nâng Tầm Năng Suất Trực Chat
+    </text>
+    <text x="0" y="48" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" fill="#94a3b8">
+      Vừa lướt web làm việc, vừa theo dõi và phản hồi khách hàng Zalo tức thời
+    </text>
+
+    <!-- Feature 1 -->
+    <g transform="translate(0, 75)">
+      <rect width="420" height="85" rx="10" fill="#1e293b" stroke="#334155"/>
+      <circle cx="40" cy="42" r="20" fill="rgba(239, 68, 68, 0.15)"/>
+      <text x="32" y="48" font-size="18">🔴</text>
+      <text x="75" y="32" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="800" fill="#f87171">1. Huy hiệu Unread Live trên thanh công cụ</text>
+      <text x="75" y="52" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#94a3b8">Tự động cập nhật số lượng tin chưa đọc theo thời gian thực.</text>
+      <text x="75" y="68" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#64748b">Triệt tiêu 100% tình trạng bỏ quên tin nhắn khách VIP.</text>
+    </g>
+
+    <!-- Feature 2 -->
+    <g transform="translate(0, 180)">
+      <rect width="420" height="85" rx="10" fill="#1e293b" stroke="#334155"/>
+      <circle cx="40" cy="42" r="20" fill="rgba(0, 210, 255, 0.15)"/>
+      <text x="32" y="48" font-size="18">⚡</text>
+      <text x="75" y="32" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="800" fill="#38bdf8">2. Bắn tin nhắn mẫu kịch bản 1-Click</text>
+      <text x="75" y="52" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#94a3b8">Chọn tin nhắn mẫu soạn sẵn (bảng giá, tài khoản, hướng dẫn).</text>
+      <text x="75" y="68" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#64748b">Bắn thẳng vào khung chat Zalo của khách trong 0.1 giây.</text>
+    </g>
+
+    <!-- Feature 3 -->
+    <g transform="translate(0, 285)">
+      <rect width="420" height="85" rx="10" fill="#1e293b" stroke="#334155"/>
+      <circle cx="40" cy="42" r="20" fill="rgba(16, 185, 129, 0.15)"/>
+      <text x="32" y="48" font-size="18">🔒</text>
+      <text x="75" y="32" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="800" fill="#34d399">3. Kiến trúc Local-First bảo mật tuyệt đối</text>
+      <text x="75" y="52" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#94a3b8">Giao tiếp trực tiếp với cổng localhost:3000 trên máy của bạn.</text>
+      <text x="75" y="68" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#64748b">Không trung gian, không lưu tin nhắn trên Cloud bên thứ ba.</text>
+    </g>
+  </g>
+
+  <!-- Right: Extension UI Interactive Drawer Mockup -->
+  <g transform="translate(540, 75)">
+    <!-- Popup Card Frame -->
+    <rect width="410" height="395" rx="12" fill="#090d16" stroke="#0084ff" stroke-width="2"/>
+    
+    <!-- Header -->
+    <rect width="410" height="50" rx="12" fill="#152033"/>
+    <circle cx="28" cy="25" r="12" fill="#0068ff"/>
+    <text x="24" y="30" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="900" fill="#ffffff">Z</text>
+    <text x="50" y="30" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="800" fill="#ffffff">AIzalo Flow Companion</text>
+
+    <rect x="300" y="14" width="95" height="22" rx="11" fill="rgba(16,185,129,0.2)" stroke="#10b981"/>
+    <text x="312" y="29" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="700" fill="#10b981">● CHUẨN KẾT NỐI</text>
+
+    <!-- Search Input Mockup -->
+    <g transform="translate(20, 65)">
+      <rect width="370" height="36" rx="8" fill="#131d31" stroke="#334155"/>
+      <text x="14" y="23" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#64748b">🔍 Tìm bạn bè, khách hàng...</text>
+    </g>
+
+    <!-- Conversation 1 -->
+    <g transform="translate(20, 115)">
+      <rect width="370" height="58" rx="8" fill="#17233d" stroke="#0084ff"/>
+      <circle cx="28" cy="29" r="16" fill="#0284c7"/>
+      <text x="22" y="34" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="800" fill="#ffffff">L</text>
+      <text x="56" y="23" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="700" fill="#f8fafc">Lê Khoa (Khách Sộp BĐS)</text>
+      <text x="56" y="43" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" fill="#93c5fd">Gửi hợp đồng đặt cọc giúp anh nhé!</text>
+      <circle cx="348" cy="29" r="6" fill="#ef4444"/>
+    </g>
+
+    <!-- Conversation 2 -->
+    <g transform="translate(20, 183)">
+      <rect width="370" height="58" rx="8" fill="#131d31" stroke="#1e293b"/>
+      <circle cx="28" cy="29" r="16" fill="#10b981"/>
+      <text x="23" y="34" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="800" fill="#ffffff">T</text>
+      <text x="56" y="23" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="700" fill="#e2e8f0">Thu Trang (Đại Lý Sỉ)</text>
+      <text x="56" y="43" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" fill="#94a3b8">Bên em có sẵn mẫu màu xanh không?</text>
+      <circle cx="348" cy="29" r="6" fill="#ef4444"/>
+    </g>
+
+    <!-- Quick Actions -->
+    <g transform="translate(20, 255)">
+      <text x="2" y="16" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="700" fill="#64748b">BẮN TIN NHẮN MẪU TỨC THÌ:</text>
+      <rect y="26" width="180" height="34" rx="6" fill="#1e293b" stroke="#334155"/>
+      <text x="12" y="48" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" fill="#e2e8f0">📑 Gửi Hợp Đồng Mẫu</text>
+
+      <rect x="190" y="26" width="180" height="34" rx="6" fill="#1e293b" stroke="#334155"/>
+      <text x="202" y="48" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" fill="#e2e8f0">📍 Gửi Định Vị Văn Phòng</text>
+    </g>
+
+    <!-- Open Dashboard Button -->
+    <g transform="translate(20, 335)">
+      <rect width="370" height="42" rx="8" fill="url(#primaryGrad)"/>
+      <text x="100" y="26" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="800" fill="#ffffff">TRUY CẬP FULL DASHBOARD ➔</text>
+    </g>
+  </g>
+</svg>

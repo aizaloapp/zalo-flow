@@ -150,11 +150,14 @@
           </div>
         </li>
         <li><a href="#features" class="nav-link">Tính Năng</a></li>
-        <li><a href="#smartscreen" class="nav-link">Cài Đặt</a></li>
-        <li><a href="#comparison" class="nav-link">So Sánh</a></li>
+        <li><a href="/guide" class="nav-link">Tiện Ích Chrome</a></li>
+        <li><a href="/blog/" class="nav-link">Cẩm Nang</a></li>
         <li><a href="#faq" class="nav-link">Hỏi Đáp</a></li>
-        <li><a href="/blog/" class="nav-link">Cẩm Nang (Blog)</a></li>
-        <li><a href="#community" class="nav-link">Cộng Đồng</a></li>
+        <li class="mobile-only-action">
+          <button class="btn btn-ask-ai-mobile" data-zf-open onclick="toggleMenu(false)">
+            ✨ Hỏi AI Trợ Lý
+          </button>
+        </li>
         <li class="mobile-only-action">
           <a href="https://zalo.me/0373315784" target="_blank" rel="noopener" class="btn btn-zalo">
             🤖 Thử Bot Zalo AI
@@ -173,11 +176,11 @@
           <span class="lang-divider">/</span>
           <a href="/en/" class="lang-btn" title="English">🇬🇧 EN</a>
         </div>
-        <a href="https://zalo.me/0373315784" target="_blank" rel="noopener" class="btn btn-zalo">
-          🤖 Thử Bot Zalo AI
-        </a>
+        <button class="btn btn-ask-ai" data-zf-open title="Hỏi đáp AI về Zalo-Flow">
+          ✨ Hỏi AI
+        </button>
         <a href="https://github.com/aizaloapp/zalo-flow/releases/latest" target="_blank" rel="noopener" class="btn btn-primary">
-          🪟 Tải .exe
+          🪟 Tải Cho Windows
         </a>
         <button class="nav-toggle" id="navToggle" aria-label="Mở menu điều hướng" aria-expanded="false" onclick="toggleMenu()">
           <span class="bar"></span>
@@ -210,19 +213,28 @@
           <a href="https://github.com/aizaloapp/zalo-flow/releases/latest" class="btn btn-primary btn-lg" target="_blank" rel="noopener">
             🪟 Tải Cho Windows (.exe v1.4.0)
           </a>
-          <a href="https://zalo.me/0373315784" class="btn btn-zalo btn-lg" target="_blank" rel="noopener">
-            🤖 Trải Nghiệm Thử Bot Zalo AI
+          <a href="https://chromewebstore.google.com/detail/aizalo-flow-chat-companio/ckdbkfocakhkkpjjbcclifdkgikbelan" class="btn btn-chrome btn-lg" target="_blank" rel="noopener">
+            <svg width="20" height="20" viewBox="0 0 48 48" style="vertical-align: middle; flex-shrink: 0;"><path fill="#4CAF50" d="M45,24c0,11.6-9.4,21-21,21c-5.5,0-10.5-2.1-14.3-5.6l9.6-16.7c0.8,3.2,3.7,5.5,7.1,5.5 c4,0,7.3-3.2,7.3-7.2c0-1.8-0.6-3.4-1.7-4.7L42.2,14C43.9,16.9,45,20.3,45,24z"/><path fill="#FBC02D" d="M19.3,28.2L9.7,44.9C4.9,40.4,2,34,2,27C2,17.2,8.6,9,17.6,6.6l9.4,16.3C23.8,23.6,20.8,25.3,19.3,28.2z"/><path fill="#E53935" d="M42.2,14H23.5l-6-10.4C20.1,2.8,22.5,2.4,25,2.4C36.6,2.4,46,11.8,46,23.4c0,0.2,0,0.4,0,0.6H42.2z"/><path fill="#FFFFFF" d="M24,14c-5.5,0-10,4.5-10,10s4.5,10,10,10s10-4.5,10-10S29.5,14,24,14z"/><path fill="#1E88E5" d="M24,17c-3.9,0-7,3.1-7,7s3.1,7,7,7s7-3.1,7-7S27.9,17,24,17z"/></svg>
+            Thêm Vào Chrome (Free)
           </a>
+        </div>
+
+        <div class="hero-sub-actions">
           <div class="cli-snippet" onclick="navigator.clipboard.writeText('npx zalo-flow init'); alert('Đã sao chép lệnh: npx zalo-flow init');">
             <span>💻</span>
             <span>npx zalo-flow init</span>
             <span style="color: var(--text-dim); font-size: 0.8rem;">(Click copy)</span>
           </div>
+          <a href="https://zalo.me/0373315784" target="_blank" rel="noopener" class="hero-sub-link">
+            🤖 Nhắn tin trải nghiệm thử bot Zalo AI ➔
+          </a>
         </div>
 
         <!-- Badges Bar -->
         <div class="badges-bar">
           <div class="badge-item">🛡️ Giấy phép MIT + Commons Clause</div>
+          <div class="badge-item">•</div>
+          <div class="badge-item">🌐 <a href="https://chromewebstore.google.com/detail/aizalo-flow-chat-companio/ckdbkfocakhkkpjjbcclifdkgikbelan" target="_blank" rel="noopener" style="color: inherit; text-decoration: none;">Đã duyệt trên Chrome Web Store</a></div>
           <div class="badge-item">•</div>
           <div class="badge-item">⚡ Siêu nhẹ RAM &lt; 100MB</div>
           <div class="badge-item">•</div>
@@ -308,6 +320,23 @@
             <p class="card-desc">
               Giám sát RAM thông minh (trần 350MB). Tự động xả hết hàng đợi tin nhắn và checkpoint cơ sở dữ liệu SQLite trước khi tự khởi động lại ngầm, không làm gián đoạn hội thoại.
             </p>
+          </div>
+
+          <div class="card" style="border: 1px solid rgba(66, 133, 244, 0.4); position: relative; overflow: hidden; background: linear-gradient(180deg, rgba(66, 133, 244, 0.08) 0%, rgba(15, 23, 42, 0.6) 100%);">
+            <div style="position: absolute; top: 12px; right: 12px; background: rgba(66, 133, 244, 0.2); border: 1px solid rgba(66, 133, 244, 0.4); color: #60a5fa; font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 9999px;">MỚI • GOOGLE APPROVED</div>
+            <div class="card-icon">🧩</div>
+            <h3 class="card-title">Tiện Ích Chrome Extension</h3>
+            <p class="card-desc">
+              Theo dõi tin nhắn chưa đọc thời gian thực, tra cứu nhanh danh bạ và gửi tin nhắn mẫu 1-click trực tiếp trên thanh công cụ trình duyệt Chrome mà không cần mở tab Zalo-Flow.
+            </p>
+            <div style="margin-top: 1rem; display: flex; gap: 0.6rem; flex-wrap: wrap;">
+              <a href="https://chromewebstore.google.com/detail/aizalo-flow-chat-companio/ckdbkfocakhkkpjjbcclifdkgikbelan" target="_blank" rel="noopener" class="btn btn-chrome" style="font-size: 0.82rem; padding: 0.4rem 0.8rem;">
+                Cài Ngay Trên Chrome ➔
+              </a>
+              <a href="/guide" class="btn btn-secondary" style="font-size: 0.82rem; padding: 0.4rem 0.8rem;">
+                Xem Hướng Dẫn
+              </a>
+            </div>
           </div>
         </div>
       </div>
@@ -425,7 +454,27 @@
           <p class="section-desc">Tổng hợp kinh nghiệm thực tế về tự động hóa Zalo, kỹ thuật Anti-ban và giải pháp Zalo CRM.</p>
         </div>
 
+        <div style="display: flex; justify-content: center; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 2rem;">
+          <a href="/guide" class="hero-pill" style="text-decoration: none; font-size: 0.82rem; padding: 0.35rem 0.85rem; border-color: rgba(0, 210, 255, 0.4);">🌐 Tiện Ích Chrome</a>
+          <a href="/blog/cach-gui-tin-nhan-tu-dong-tren-zalo-khong-bi-khoa.html" class="hero-pill" style="text-decoration: none; font-size: 0.82rem; padding: 0.35rem 0.85rem;">🛡️ Bí Quyết Anti-Ban</a>
+          <a href="/blog/cach-huan-luyen-ai-ban-hang-zalo-bang-bang-gia-rieng.html" class="hero-pill" style="text-decoration: none; font-size: 0.82rem; padding: 0.35rem 0.85rem;">🤖 AI Bán Hàng</a>
+          <a href="/blog/cach-hen-gio-gui-tin-nhan-zalo-ca-nhan-tu-dong.html" class="hero-pill" style="text-decoration: none; font-size: 0.82rem; padding: 0.35rem 0.85rem;">⏱️ Lên Lịch Tự Động</a>
+        </div>
+
         <div class="grid-2">
+          <a href="/blog/cach-nhan-thong-bao-va-quan-ly-tin-nhan-zalo-bang-chrome-extension.html" class="card blog-card" style="border-color: rgba(0, 210, 255, 0.35);">
+            <span class="blog-tag" style="background: rgba(0, 210, 255, 0.15); color: var(--cyan); border: 1px solid rgba(0, 210, 255, 0.3);">🔥 Tiện Ích Chrome Mới</span>
+            <h3 class="card-title">Cách Nhận Thông Báo &amp; Quản Lý Tin Nhắn Zalo Bằng Chrome Extension (Không Trôi Tin 2026)</h3>
+            <p class="card-desc">
+              Nhận thông báo số tin nhắn mới thời gian thực ngay trên toolbar Chrome, tra cứu danh bạ tức thì và gửi tin nhắn mẫu 1-click không lo giật lag máy tính.
+            </p>
+            <div class="blog-meta">
+              <span>📅 17/09/2026</span>
+              <span>•</span>
+              <span>⏱️ 5 phút đọc</span>
+            </div>
+          </a>
+
           <a href="/blog/cach-gui-tin-nhan-tu-dong-tren-zalo-khong-bi-khoa.html" class="card blog-card">
             <span class="blog-tag">Bí Quyết Anti-Ban</span>
             <h3 class="card-title">Cách Gửi Tin Nhắn Tự Động Trên Zalo Không Bị Khóa Tài Khoản (2026)</h3>
@@ -439,29 +488,16 @@
             </div>
           </a>
 
-          <a href="/blog/huong-dan-cach-tao-chatbot-zalo-ca-nhan.html" class="card blog-card">
-            <span class="blog-tag">Hướng Dẫn Cài Đặt</span>
-            <h3 class="card-title">Hướng Dẫn Cách Tạo Chatbot Zalo Cá Nhân Bằng Zalo-Flow Trong 3 Phút</h3>
+          <a href="/blog/cach-huan-luyen-ai-ban-hang-zalo-bang-bang-gia-rieng.html" class="card blog-card">
+            <span class="blog-tag" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3);">🤖 AI Bán Hàng</span>
+            <h3 class="card-title">Cách Huấn Luyện AI Bán Hàng Zalo Cá Nhân Bằng Bảng Giá Riêng</h3>
             <p class="card-desc">
-              Từng bước cài đặt Zalo-Flow trên Windows 1-Click, xử lý cảnh báo Microsoft SmartScreen và quét mã QR đăng nhập tài khoản Zalo cá nhân.
+              Bí quyết nạp bảng giá sản phẩm riêng cho AI trên Zalo cá nhân: phản hồi 24/7 trong 3s, chống bịa giá và tự động bóc tách số điện thoại chốt đơn.
             </p>
             <div class="blog-meta">
-              <span>📅 07/09/2026</span>
+              <span>📅 11/09/2026</span>
               <span>•</span>
-              <span>⏱️ 4 phút đọc</span>
-            </div>
-          </a>
-
-          <a href="/blog/tich-hop-ai-gemini-deepseek-vao-zalo-ca-nhan.html" class="card blog-card">
-            <span class="blog-tag">Trí Tuệ Nhân Tạo</span>
-            <h3 class="card-title">Tích Hợp AI Gemini &amp; DeepSeek Vào Zalo Cá Nhân Tự Động Trả Lời Tin Nhắn</h3>
-            <p class="card-desc">
-              Cách lấy API Key miễn phí từ Google AI Studio, thiết lập Prompt tư vấn bán hàng và tính năng tự động bóc tách danh thiếp lấy số điện thoại khách hàng.
-            </p>
-            <div class="blog-meta">
-              <span>📅 07/09/2026</span>
-              <span>•</span>
-              <span>⏱️ 6 phút đọc</span>
+              <span>⏱️ 9 phút đọc</span>
             </div>
           </a>
 
@@ -621,6 +657,7 @@
           <h4 class="footer-title">Tài Nguyên</h4>
           <ul class="footer-links">
             <li><a href="https://github.com/aizaloapp/zalo-flow/releases/latest" class="footer-link">Tải Bộ Cài Windows (.exe)</a></li>
+            <li><a href="/guide" class="footer-link">Hướng Dẫn Extension Chrome</a></li>
             <li><a href="/blog/" class="footer-link">Cẩm Nang &amp; Hướng Dẫn</a></li>
             <li><a href="/llms.txt" class="footer-link">Tài Liệu Cho AI (llms.txt)</a></li>
             <li><a href="/llms-full.txt" class="footer-link">Tài Liệu Toàn Văn (llms-full.txt)</a></li>
@@ -672,6 +709,18 @@
     document.addEventListener('keydown', function(e) {
       if (e.key === 'Escape') toggleMenu(false);
     });
+  </script>
+
+  <!-- ZaloFlow Live Web Chat Widget (Cloudflare Ask AI Copilot Drawer) -->
+  <script src="https://bot.aizalo.com/widget/webchat.js"
+          data-server="https://bot.aizalo.com"
+          data-title="Hỗ trợ Zalo-Flow"
+          data-subtitle="Tư vấn & Trợ lý AI 24/7"
+          data-placeholder="Hỏi bất kỳ điều gì về Zalo-Flow..."
+          data-primary-color="#0068ff"
+          data-position="bottom-right"
+          data-greeting="Xin chào! Bạn vui lòng để lại số điện thoại Zalo để chuyên viên hỗ trợ bạn nhanh nhất nhé."
+          defer>
   </script>
 </body>
 </html>

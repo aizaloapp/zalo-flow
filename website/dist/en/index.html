@@ -140,7 +140,7 @@
       <a href="/en/" class="brand">
         <img src="/assets/logo.png" alt="Zalo-Flow Logo" class="brand-icon">
         <span>Zalo-Flow</span>
-        <span class="brand-tag">v1.1.0</span>
+        <span class="brand-tag">v1.4.0</span>
       </a>
 
       <ul class="nav-menu" id="navMenu">
@@ -152,11 +152,14 @@
           </div>
         </li>
         <li><a href="#features" class="nav-link">Features</a></li>
-        <li><a href="#smartscreen" class="nav-link">Install</a></li>
-        <li><a href="#comparison" class="nav-link">Comparison</a></li>
-        <li><a href="#faq" class="nav-link">FAQ</a></li>
+        <li><a href="/guide" class="nav-link">Chrome Extension</a></li>
         <li><a href="/en/blog/" class="nav-link">Blog</a></li>
-        <li><a href="#community" class="nav-link">Community</a></li>
+        <li><a href="#faq" class="nav-link">FAQ</a></li>
+        <li class="mobile-only-action">
+          <button class="btn btn-ask-ai-mobile" data-zf-open onclick="toggleMenu(false)">
+            ✨ Ask AI Assistant
+          </button>
+        </li>
         <li class="mobile-only-action">
           <a href="https://zalo.me/0373315784" target="_blank" rel="noopener" class="btn btn-zalo">
             🤖 Try Zalo AI Bot
@@ -164,7 +167,7 @@
         </li>
         <li class="mobile-only-action">
           <a href="https://github.com/aizaloapp/zalo-flow/releases/latest" target="_blank" rel="noopener" class="btn btn-primary">
-            🪟 Download .exe v1.1.0
+            🪟 Download .exe v1.4.0
           </a>
         </li>
       </ul>
@@ -175,11 +178,11 @@
           <span class="lang-divider">/</span>
           <a href="/en/" class="lang-btn active" title="English">🇬🇧 EN</a>
         </div>
-        <a href="https://zalo.me/0373315784" target="_blank" rel="noopener" class="btn btn-zalo">
-          🤖 Try Zalo AI Bot
-        </a>
+        <button class="btn btn-ask-ai" data-zf-open title="Ask Zalo-Flow AI Assistant">
+          ✨ Ask AI
+        </button>
         <a href="https://github.com/aizaloapp/zalo-flow/releases/latest" target="_blank" rel="noopener" class="btn btn-primary">
-          🪟 Download .exe
+          🪟 Download for Windows
         </a>
         <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation menu" aria-expanded="false" onclick="toggleMenu()">
           <span class="bar"></span>
@@ -210,21 +213,30 @@
 
         <div class="hero-cta-group">
           <a href="https://github.com/aizaloapp/zalo-flow/releases/latest" class="btn btn-primary btn-lg" target="_blank" rel="noopener">
-            🪟 Download for Windows (.exe v1.1.0)
+            🪟 Download for Windows (.exe v1.4.0)
           </a>
-          <a href="https://zalo.me/0373315784" class="btn btn-zalo btn-lg" target="_blank" rel="noopener">
-            🤖 Try Zalo AI Bot Demo
+          <a href="https://chromewebstore.google.com/detail/aizalo-flow-chat-companio/ckdbkfocakhkkpjjbcclifdkgikbelan" class="btn btn-chrome btn-lg" target="_blank" rel="noopener">
+            <svg width="20" height="20" viewBox="0 0 48 48" style="vertical-align: middle; flex-shrink: 0;"><path fill="#4CAF50" d="M45,24c0,11.6-9.4,21-21,21c-5.5,0-10.5-2.1-14.3-5.6l9.6-16.7c0.8,3.2,3.7,5.5,7.1,5.5 c4,0,7.3-3.2,7.3-7.2c0-1.8-0.6-3.4-1.7-4.7L42.2,14C43.9,16.9,45,20.3,45,24z"/><path fill="#FBC02D" d="M19.3,28.2L9.7,44.9C4.9,40.4,2,34,2,27C2,17.2,8.6,9,17.6,6.6l9.4,16.3C23.8,23.6,20.8,25.3,19.3,28.2z"/><path fill="#E53935" d="M42.2,14H23.5l-6-10.4C20.1,2.8,22.5,2.4,25,2.4C36.6,2.4,46,11.8,46,23.4c0,0.2,0,0.4,0,0.6H42.2z"/><path fill="#FFFFFF" d="M24,14c-5.5,0-10,4.5-10,10s4.5,10,10,10s10-4.5,10-10S29.5,14,24,14z"/><path fill="#1E88E5" d="M24,17c-3.9,0-7,3.1-7,7s3.1,7,7,7s7-3.1,7-7S27.9,17,24,17z"/></svg>
+            Add to Chrome (Free)
           </a>
+        </div>
+
+        <div class="hero-sub-actions">
           <div class="cli-snippet" onclick="navigator.clipboard.writeText('npx zalo-flow init'); alert('Copied CLI command: npx zalo-flow init');">
             <span>💻</span>
             <span>npx zalo-flow init</span>
             <span style="color: var(--text-dim); font-size: 0.8rem;">(Click copy)</span>
           </div>
+          <a href="https://zalo.me/0373315784" target="_blank" rel="noopener" class="hero-sub-link">
+            🤖 Chat to test Zalo AI bot live ➔
+          </a>
         </div>
 
         <!-- Badges Bar -->
         <div class="badges-bar">
           <div class="badge-item">🛡️ MIT + Commons Clause</div>
+          <div class="badge-item">•</div>
+          <div class="badge-item">🌐 <a href="https://chromewebstore.google.com/detail/aizalo-flow-chat-companio/ckdbkfocakhkkpjjbcclifdkgikbelan" target="_blank" rel="noopener" style="color: inherit; text-decoration: none;">Verified on Chrome Web Store</a></div>
           <div class="badge-item">•</div>
           <div class="badge-item">⚡ Lightweight RAM &lt; 100MB</div>
           <div class="badge-item">•</div>
@@ -311,6 +323,23 @@
               Intelligent memory watchdog (&lt; 350MB ceiling). Automatically drains pending outbound messages and checkpoints the SQLite database before gracefully recycling.
             </p>
           </div>
+
+          <div class="card" style="border: 1px solid rgba(66, 133, 244, 0.4); position: relative; overflow: hidden; background: linear-gradient(180deg, rgba(66, 133, 244, 0.08) 0%, rgba(15, 23, 42, 0.6) 100%);">
+            <div style="position: absolute; top: 12px; right: 12px; background: rgba(66, 133, 244, 0.2); border: 1px solid rgba(66, 133, 244, 0.4); color: #60a5fa; font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 9999px;">NEW • GOOGLE APPROVED</div>
+            <div class="card-icon">🧩</div>
+            <h3 class="card-title">Chrome Browser Extension</h3>
+            <p class="card-desc">
+              Real-time unread message counter badge, quick contact lookup, and 1-click quick message dispatcher directly from your browser toolbar without opening the web dashboard.
+            </p>
+            <div style="margin-top: 1rem; display: flex; gap: 0.6rem; flex-wrap: wrap;">
+              <a href="https://chromewebstore.google.com/detail/aizalo-flow-chat-companio/ckdbkfocakhkkpjjbcclifdkgikbelan" target="_blank" rel="noopener" class="btn btn-chrome" style="font-size: 0.82rem; padding: 0.4rem 0.8rem;">
+                Add to Chrome ➔
+              </a>
+              <a href="/guide" class="btn btn-secondary" style="font-size: 0.82rem; padding: 0.4rem 0.8rem;">
+                User Guide
+              </a>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -395,7 +424,7 @@
             <div class="card-icon" style="background: rgba(0, 210, 255, 0.15); color: var(--cyan); font-weight: 800;">1</div>
             <h3 class="card-title">Download &amp; Install</h3>
             <p class="card-desc">
-              Download <code>ZaloFlow-Setup-v1.1.0.exe</code> from GitHub. Run the 1-click installer bundled with portable runtime — no Node.js installation required.
+              Download <code>ZaloFlow-Setup-v1.4.0.exe</code> from GitHub. Run the 1-click installer bundled with portable runtime — no Node.js installation required.
             </p>
           </div>
 
@@ -642,6 +671,18 @@
     document.addEventListener('keydown', function(e) {
       if (e.key === 'Escape') toggleMenu(false);
     });
+  </script>
+
+  <!-- ZaloFlow Live Web Chat Widget (Cloudflare Ask AI Copilot Drawer) -->
+  <script src="https://bot.aizalo.com/widget/webchat.js"
+          data-server="https://bot.aizalo.com"
+          data-title="Zalo-Flow AI Support"
+          data-subtitle="24/7 AI Assistant & Consultation"
+          data-placeholder="Ask anything about Zalo-Flow..."
+          data-primary-color="#0068ff"
+          data-position="bottom-right"
+          data-greeting="Hello! Please leave your Zalo phone number so our team can assist you immediately."
+          defer>
   </script>
 </body>
 </html>

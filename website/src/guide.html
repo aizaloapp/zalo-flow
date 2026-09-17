@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Hướng Dẫn Cài Đặt & Sử Dụng AIzalo Flow Companion | AIzalo.com</title>
+  <meta name="description" content="Hướng dẫn chi tiết cách cài đặt và sử dụng tiện ích mở rộng Chrome Extension AIzalo Flow: Chat Companion kết nối Zalo Web với Zalo-Flow để gõ tin nhắn mẫu và gợi ý AI.">
+  <meta name="keywords" content="hướng dẫn aizalo companion, extension zalo, chatbot zalo web, phím tắt zalo web, tin nhắn mẫu zalo web">
+  <link rel="canonical" href="https://aizalo.com/guide">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg?v=2">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon.png?v=2">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico?v=2">
+  <link rel="stylesheet" href="/style.css">
+
+  <style>
+    .guide-wrapper {
+      max-width: 920px;
+      margin: 2.5rem auto 4rem;
+      padding: 0 1.5rem;
+      color: var(--text-main, #e2e8f0);
+      line-height: 1.7;
+    }
+    .guide-hero {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95));
+      border: 1px solid var(--border, #334155);
+      border-radius: 20px;
+      padding: 2.5rem 2rem;
+      text-align: center;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.3);
+      margin-bottom: 2.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .guide-hero::before {
+      content: "";
+      position: absolute;
+      top: -50%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 400px;
+      height: 300px;
+      background: radial-gradient(circle, rgba(0, 104, 255, 0.25) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .guide-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(0, 104, 255, 0.15);
+      border: 1px solid rgba(0, 104, 255, 0.4);
+      color: #60a5fa;
+      padding: 0.35rem 0.9rem;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+    .guide-hero h1 {
+      font-size: 2.1rem;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 0.8rem;
+      line-height: 1.3;
+    }
+    .guide-hero p {
+      color: #94a3b8;
+      font-size: 1.05rem;
+      max-width: 680px;
+      margin: 0 auto 1.75rem;
+    }
+    .hero-cta-group {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 12px;
+    }
+    .btn-store {
+      background: linear-gradient(135deg, #0068ff, #0284c7);
+      color: #ffffff !important;
+      padding: 0.75rem 1.4rem;
+      border-radius: 12px;
+      font-weight: 700;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 14px rgba(0, 104, 255, 0.4);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .btn-store:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 104, 255, 0.5);
+    }
+    .btn-outline-custom {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid #334155;
+      color: #cbd5e1 !important;
+      padding: 0.75rem 1.4rem;
+      border-radius: 12px;
+      font-weight: 600;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: background 0.2s;
+    }
+    .btn-outline-custom:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #ffffff !important;
+    }
+
+    /* Content Cards */
+    .content-card {
+      background: var(--bg-card, #1e293b);
+      border: 1px solid var(--border, #334155);
+      border-radius: 16px;
+      padding: 2.2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    .content-card h2 {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: #38bdf8;
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .content-card h3 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #ffffff;
+      margin: 1.5rem 0 0.5rem;
+    }
+    .content-card p, .content-card li {
+      color: #cbd5e1;
+      font-size: 0.96rem;
+      margin-bottom: 0.8rem;
+    }
+    .content-card ol, .content-card ul {
+      padding-left: 1.4rem;
+      margin-bottom: 1.25rem;
+    }
+    .content-card li {
+      margin-bottom: 0.6rem;
+    }
+    .content-card strong {
+      color: #ffffff;
+    }
+
+    /* Step Pill */
+    .step-box {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+    .step-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #60a5fa;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .step-badge {
+      background: #0068ff;
+      color: #ffffff;
+      font-size: 0.75rem;
+      font-weight: 800;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Callout Boxes */
+    .info-callout {
+      background: rgba(2, 132, 199, 0.1);
+      border-left: 4px solid #0284c7;
+      padding: 1rem 1.25rem;
+      border-radius: 8px;
+      margin: 1.25rem 0;
+      font-size: 0.92rem;
+      color: #bae6fd;
+    }
+    .tip-callout {
+      background: rgba(16, 185, 129, 0.1);
+      border-left: 4px solid #10b981;
+      padding: 1rem 1.25rem;
+      border-radius: 8px;
+      margin: 1.25rem 0;
+      font-size: 0.92rem;
+      color: #a7f3d0;
+    }
+    .warning-callout {
+      background: rgba(245, 158, 11, 0.1);
+      border-left: 4px solid #f59e0b;
+      padding: 1rem 1.25rem;
+      border-radius: 8px;
+      margin: 1.25rem 0;
+      font-size: 0.92rem;
+      color: #fde68a;
+    }
+
+    .faq-item {
+      border-bottom: 1px solid #334155;
+      padding: 1.2rem 0;
+    }
+    .faq-item:last-child {
+      border-bottom: none;
+    }
+    .faq-q {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 0.4rem;
+    }
+    .faq-a {
+      color: #94a3b8;
+      font-size: 0.94rem;
+      line-height: 1.6;
+    }
+
+    /* Code Snippet */
+    .code-pill {
+      background: #0f172a;
+      border: 1px solid #334155;
+      color: #38bdf8;
+      padding: 0.15rem 0.45rem;
+      border-radius: 5px;
+      font-family: monospace;
+      font-size: 0.9rem;
+    }
+  </style>
+
+  <!-- Traks Web Analytics -->
+  <script>window.traks=window.traks||function(){(window.traks.q=window.traks.q||[]).push(arguments)}</script>
+  <script defer data-site="pb_live_jbrwzdo04plqmz8u15gnrvjq" src="/t.js"></script>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <header class="navbar">
+    <div class="container nav-container">
+      <a href="/" class="brand">
+        <img src="/assets/logo.png" alt="Zalo-Flow Logo" class="brand-icon">
+        <span>Zalo-Flow</span>
+        <span class="brand-tag">v1.4.0</span>
+      </a>
+
+      <ul class="nav-menu" id="navMenu">
+        <li><a href="/" class="nav-link">Trang Chủ</a></li>
+        <li><a href="/#features" class="nav-link">Tính Năng</a></li>
+        <li><a href="/guide" class="nav-link active" style="color: #38bdf8; font-weight: 700;">Hướng Dẫn Extension</a></li>
+        <li><a href="/blog/" class="nav-link">Cẩm Nang (Blog)</a></li>
+        <li><a href="https://zalo.me/g/mcihan713" target="_blank" rel="noopener" class="nav-link">Nhóm Hỗ Trợ</a></li>
+      </ul>
+
+      <div class="nav-actions">
+        <a href="https://chromewebstore.google.com/detail/aizalo-flow-chat-companio/ckdbkfocakhkkpjjbcclifdkgikbelan" target="_blank" rel="noopener" class="btn btn-primary" style="font-size: 0.88rem; padding: 0.45rem 1rem;">
+          ⚡ Thêm vào Chrome
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main class="guide-wrapper">
+
+    <!-- Hero Header -->
+    <div class="guide-hero">
+      <div class="guide-badge">
+        <span>⚡ Tiện Ích Mở Rộng Chrome Chính Thức</span>
+      </div>
+      <h1>Hướng Dẫn Sử Dụng AIzalo Flow: Chat Companion</h1>
+      <p>Trợ lý thông minh hỗ trợ bán hàng & CSKH: Gõ nhanh tin nhắn mẫu, gợi ý phản hồi AI theo ngữ cảnh khách hỏi trực tiếp trên giao diện Zalo Web (<code class="code-pill">chat.zalo.me</code>).</p>
+      
+      <div class="hero-cta-group">
+        <a href="https://chromewebstore.google.com/detail/aizalo-flow-chat-companio/ckdbkfocakhkkpjjbcclifdkgikbelan" target="_blank" rel="noopener" class="btn-store">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+          Cài Đặt Trên Chrome Web Store
+        </a>
+        <a href="https://github.com/aizaloapp/zalo-flow/releases/latest" target="_blank" rel="noopener" class="btn-outline-custom">
+          🪟 Tải Zalo-Flow Desktop (.exe)
+        </a>
+      </div>
+    </div>
+
+    <!-- 1. Nguyên lý hoạt động -->
+    <section class="content-card">
+      <h2>🏛️ 1. Nguyên Lý Hoạt Động (Architecture)</h2>
+      <p>Tiện ích mở rộng <strong>AIzalo Flow: Chat Companion</strong> hoạt động theo mô hình <strong>Client-Side Bridge</strong> an toàn tuyệt đối:</p>
+      <ul>
+        <li><strong>Server Zalo-Flow cục bộ:</strong> Chạy trên máy tính cá nhân của bạn (<code class="code-pill">http://127.0.0.1:3000</code>), quản lý cơ sở dữ liệu SQLite, các tài khoản Zalo kết nối, cài đặt AI (Gemini, DeepSeek) và kho tin nhắn mẫu.</li>
+        <li><strong>Tiện ích Chrome Extension:</strong> Nhúng giao diện trợ lý nổi (<code class="code-pill">⚡ AIzalo</code>) ngay bên trong trang web Zalo Web (<code class="code-pill">chat.zalo.me</code>). Khi bạn chat với khách hàng, tiện ích sẽ gọi API cục bộ sang máy chủ Zalo-Flow để lấy tin nhắn mẫu và tạo gợi ý trả lời tự động bằng AI.</li>
+      </ul>
+      <div class="tip-callout">
+        🔒 <strong>Bảo Mật Zero-Leak 100%:</strong> Toàn bộ dữ liệu tin nhắn chỉ luân chuyển nội bộ giữa trình duyệt Chrome và máy tính của bạn (<code class="code-pill">127.0.0.1</code>). Tiện ích không gửi bất kỳ cookie, mật khẩu hay tin nhắn nào lên máy chủ trung gian.
+      </div>
+    </section>
+
+    <!-- 2. Hướng dẫn thiết lập 3 bước -->
+    <section class="content-card">
+      <h2>🚀 2. Hướng Dẫn Cài Đặt & Kết Nối (Chỉ Mất 2 Phút)</h2>
+
+      <div class="step-box">
+        <div class="step-title">
+          <span class="step-badge">1</span>
+          Khởi Động Zalo-Flow Trên Máy Tính
+        </div>
+        <p>Đảm bảo phần mềm <strong>Zalo-Flow</strong> đã được cài đặt và đang chạy trên máy tính của bạn:</p>
+        <ul>
+          <li>Nếu dùng bản Windows: Mở ứng dụng Zalo-Flow ngoài Desktop.</li>
+          <li>Nếu chạy bằng terminal mã nguồn: Chạy lệnh <code class="code-pill">npm start</code> hoặc <code class="code-pill">npm run dev</code>.</li>
+          <li>Kiểm tra bằng cách mở trình duyệt vào <a href="http://localhost:3000" target="_blank" style="color: #38bdf8;">http://localhost:3000</a> thấy màn hình Dashboard là máy chủ đã sẵn sàng.</li>
+        </ul>
+      </div>
+
+      <div class="step-box">
+        <div class="step-title">
+          <span class="step-badge">2</span>
+          Cài Đặt Tiện Ích Từ Chrome Web Store
+        </div>
+        <p>Truy cập đường dẫn chính thức trên Chrome Web Store và bấm <strong>Thêm vào Chrome (Add to Chrome)</strong>:</p>
+        <p><a href="https://chromewebstore.google.com/detail/aizalo-flow-chat-companio/ckdbkfocakhkkpjjbcclifdkgikbelan" target="_blank" rel="noopener" style="color: #38bdf8; font-weight: 700;">👉 Tải AIzalo Flow: Chat Companion trên Chrome Web Store</a></p>
+        <p>Sau khi cài đặt xong, bấm vào biểu tượng Mảnh ghép ở góc trên bên phải trình duyệt Chrome và <strong>Ghim (Pin)</strong> biểu tượng tiện ích AIzalo lên thanh công cụ.</p>
+      </div>
+
+      <div class="step-box">
+        <div class="step-title">
+          <span class="step-badge">3</span>
+          Kết Nối Tiện Ích Với Máy Chủ Zalo-Flow
+        </div>
+        <p>Bấm vào biểu tượng chữ <strong>Z</strong> của tiện ích trên thanh công cụ Chrome:</p>
+        <ul>
+          <li><strong>Địa chỉ Zalo-Flow:</strong> Mặc định giữ nguyên <code class="code-pill">http://127.0.0.1:3000</code>.</li>
+          <li><strong>Mã bảo mật (Admin Token):</strong> Bỏ trống nếu trong file <code class="code-pill">.env</code> bạn không đặt mã này. Nếu có cài mã, hãy nhập chính xác mã bảo mật của bạn.</li>
+          <li>Bấm nút xanh: <strong>"Lưu & Thử Kết Nối"</strong>.</li>
+        </ul>
+        <p>Khi màn hình hiển thị trạng thái chấm xanh: <strong>"Đã kết nối Zalo-Flow"</strong> kèm số lượng mẫu tin nhanh sẵn sàng là bạn đã thiết lập thành công!</p>
+      </div>
+    </section>
+
+    <!-- 3. Hướng dẫn sử dụng tính năng -->
+    <section class="content-card">
+      <h2>✨ 3. Cách Sử Dụng Trên Zalo Web (chat.zalo.me)</h2>
+      <p>Mở tab Zalo Web tại địa chỉ <a href="https://chat.zalo.me" target="_blank" rel="noopener" style="color: #38bdf8;">https://chat.zalo.me</a> và mở bất kỳ cuộc trò chuyện nào. Bạn sẽ thấy thanh công cụ nhỏ gọn <code class="code-pill">⚡ AIzalo</code> xuất hiện ở góc dưới bên phải màn hình chat.</p>
+
+      <h3>1. Gợi Ý Phản Hồi AI Thông Minh (Smart Reply)</h3>
+      <ul>
+        <li>Bấm vào nút <strong>✨ Gợi ý AI</strong> trên thanh công cụ nổi.</li>
+        <li>Hệ thống sẽ tự động đọc câu hỏi gần nhất của khách hàng và yêu cầu Bot AI (Gemini / DeepSeek) sinh ra 3 phương án phản hồi tối ưu:
+          <ul>
+            <li><strong>Tư vấn nhiệt tình:</strong> Đầy đủ chi tiết, văn phong lịch sự, chốt deal khéo léo.</li>
+            <li><strong>Báo giá & Chi tiết nhanh:</strong> Ngắn gọn, súc tích, đi thẳng vào vấn đề.</li>
+            <li><strong>Hẹn lịch demo / CSKH:</strong> Mời khách trao đổi chuyên sâu hoặc giải quyết khiếu nại.</li>
+          </ul>
+        </li>
+        <li><strong>1-Click Điền Tin Nhắn:</strong> Chỉ cần click chuột vào thẻ gợi ý bạn ưng ý nhất, nội dung sẽ được tự động điền ngay vào khung soạn thảo tin nhắn Zalo để bạn kiểm tra và gửi đi.</li>
+      </ul>
+
+      <h3>2. Kho Tin Nhắn Mẫu & Gõ Nhanh Phím Tắt (Quick Templates)</h3>
+      <ul>
+        <li>Bấm vào nút <strong>💬 Mẫu tin</strong> để duyệt nhanh danh sách các mẫu tin nhắn chăm sóc khách hàng thường dùng (Lời chào, Bảng giá, Số tài khoản thanh toán, Địa chỉ showroom...).</li>
+        <li>Hỗ trợ thanh tìm kiếm lọc theo phím tắt: gõ <code class="code-pill">/stk</code>, <code class="code-pill">/chao</code>, <code class="code-pill">/gia</code> để chọn mẫu ngay lập tức.</li>
+        <li>Bấm chuột vào mẫu tin để chèn vào khung chat Zalo chỉ trong 0.1 giây.</li>
+      </ul>
+
+      <h3>3. Nút Đồng Bộ Làm Mới (🔄)</h3>
+      <ul>
+        <li>Khi bạn vừa tạo thêm tin nhắn mẫu mới hoặc cập nhật prompt AI trên giao diện Zalo-Flow Dashboard, chỉ cần bấm nút <strong>🔄</strong> trên thanh nổi để cập nhật dữ liệu mới nhất mà không cần tải lại trang Zalo Web.</li>
+      </ul>
+    </section>
+
+    <!-- 4. Xử lý sự cố FAQ -->
+    <section class="content-card">
+      <h2>🛠️ 4. Câu Hỏi Thường Gặp & Xử Lý Sự Cố (FAQ)</h2>
+
+      <div class="faq-item">
+        <div class="faq-q">❓ Tại sao popup tiện ích báo "Không thể kết nối tới Zalo-Flow"?</div>
+        <div class="faq-a">Nguyên nhân do máy chủ Zalo-Flow trên máy tính của bạn chưa được khởi động. Hãy mở phần mềm Zalo-Flow ngoài màn hình Desktop (hoặc chạy <code class="code-pill">npm start</code>) và thử truy cập <code class="code-pill">http://localhost:3000</code>. Khi server đã bật, bấm lại nút "Lưu & Thử Kết Nối" trong popup tiện ích.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">❓ Tôi không thấy thanh nổi ⚡ AIzalo xuất hiện trên chat.zalo.me?</div>
+        <div class="faq-a">Nếu bạn vừa mới cài đặt tiện ích từ Chrome Web Store, hãy bấm F5 (Reload) lại tab Zalo Web để tiện ích nạp mã giao diện vào trang. Đồng thời đảm bảo URL trình duyệt bắt đầu bằng <code class="code-pill">https://chat.zalo.me/</code>.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">❓ Tính năng Gợi Ý AI có tốn tiền không?</div>
+        <div class="faq-a">Không tốn tiền nếu bạn sử dụng Google Gemini (model <code class="code-pill">gemini-2.5-flash</code>) được Google cung cấp hạn mức miễn phí rất dồi dào qua Google AI Studio. Bạn cấu hình API Key một lần duy nhất trong mục Cài đặt AI của Zalo-Flow là dùng mãi mãi.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">❓ Sử dụng tiện ích này có bị khóa tài khoản Zalo không?</div>
+        <div class="faq-a">Hoàn toàn an toàn! Tiện ích hoạt động như một bàn phím phụ trợ (Assistant Keyboard), chỉ hỗ trợ chèn văn bản vào ô nhập liệu để người dùng chủ động xem lại và bấm gửi bằng tay. Tiện ích không can thiệp gửi tin nhắn spam ngầm nên 100% tuân thủ chính sách người dùng.</div>
+      </div>
+    </section>
+
+    <!-- Hỗ trợ cộng đồng -->
+    <div style="text-align: center; margin-top: 3rem; padding: 2rem; background: rgba(30, 41, 59, 0.6); border-radius: 16px; border: 1px solid #334155;">
+      <h3 style="color: #ffffff; margin-bottom: 0.5rem;">Cần Hỗ Trợ Kỹ Thuật Thêm?</h3>
+      <p style="color: #94a3b8; margin-bottom: 1.25rem;">Tham gia cộng đồng Zalo-Flow hoặc trò chuyện trực tiếp với Bot AI demo 24/7:</p>
+      <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+        <a href="https://zalo.me/0373315784" target="_blank" rel="noopener" class="btn-store" style="background: #0068ff;">
+          🤖 Chat Thử Với Bot Zalo AI
+        </a>
+        <a href="https://zalo.me/g/mcihan713" target="_blank" rel="noopener" class="btn-outline-custom">
+          👥 Tham Gia Nhóm Zalo Cộng Đồng
+        </a>
+        <a href="/privacy-extension.html" class="btn-outline-custom">
+          🔒 Chính Sách Quyền Riêng Tư
+        </a>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer" style="margin-top: 4rem; border-top: 1px solid #334155; padding: 2rem 0; text-align: center; color: #64748b; font-size: 0.88rem;">
+    <div class="container">
+      <p>© 2026 AIzalo.com • Phần mềm mã nguồn mở Zalo-Flow Community Edition.</p>
+      <p style="margin-top: 0.4rem;">Phục vụ mục đích học tập & nghiên cứu kỹ thuật phi thương mại. Không liên kết với Zalo hay VNG.</p>
+    </div>
+  </footer>
+
+</body>
+</html>

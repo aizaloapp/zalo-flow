@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 480" width="1000" height="480">
+  <defs>
+    <linearGradient id="bgBox" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0b1329"/>
+      <stop offset="100%" stop-color="#070a13"/>
+    </linearGradient>
+    <linearGradient id="highlightGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00d2ff"/>
+      <stop offset="100%" stop-color="#0068ff"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Container -->
+  <rect width="1000" height="480" rx="16" fill="url(#bgBox)" stroke="#334155" stroke-width="1.5"/>
+
+  <!-- Title & Header -->
+  <text x="50" y="55" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="24" font-weight="900" fill="#ffffff">
+    So Sánh Các Cách Nhận Thông Báo &amp; Quản Lý Tin Nhắn Zalo Trên Máy Tính
+  </text>
+  <text x="50" y="85" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14" fill="#94a3b8">
+    Đánh giá dựa trên mức độ ngốn RAM, tốc độ nhận diện tin mới và khả năng phản hồi khách hàng
+  </text>
+
+  <!-- Column 1: Zalo PC App -->
+  <g transform="translate(50, 115)">
+    <rect width="280" height="325" rx="12" fill="#131b2e" stroke="#1e293b" stroke-width="1.5"/>
+    <rect width="280" height="45" rx="12" fill="#1e293b"/>
+    <text x="20" y="28" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="15" font-weight="800" fill="#94a3b8">ỨNG DỤNG ZALO PC (.EXE)</text>
+
+    <!-- Content Items -->
+    <g transform="translate(20, 70)">
+      <text x="0" y="0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="700" fill="#f87171">❌ Ngốn RAM lớn:</text>
+      <text x="0" y="20" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#94a3b8">Chiếm 400MB - 800MB RAM, dễ gây giật lag máy yếu.</text>
+
+      <text x="0" y="65" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="700" fill="#f87171">❌ Che khuất màn hình:</text>
+      <text x="0" y="85" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#94a3b8">Phải Alt+Tab chuyển cửa sổ liên tục khi đang lướt web làm việc.</text>
+
+      <text x="0" y="130" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="700" fill="#fbbf24">⚠️ Hạn chế tin mẫu:</text>
+      <text x="0" y="150" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#94a3b8">Không hỗ trợ bắn kịch bản CSKH tự động ra bên ngoài.</text>
+
+      <text x="0" y="195" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="700" fill="#94a3b8">🚫 Máy công ty chặn:</text>
+      <text x="0" y="215" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#64748b">Nhiều công ty chặn quyền cài file .exe của nhân viên.</text>
+    </g>
+  </g>
+
+  <!-- Column 2: Zalo Web (chat.zalo.me) -->
+  <g transform="translate(360, 115)">
+    <rect width="280" height="325" rx="12" fill="#131b2e" stroke="#1e293b" stroke-width="1.5"/>
+    <rect width="280" height="45" rx="12" fill="#1e293b"/>
+    <text x="20" y="28" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="15" font-weight="800" fill="#94a3b8">TAB ZALO WEB TRÌNH DUYỆT</text>
+
+    <!-- Content Items -->
+    <g transform="translate(20, 70)">
+      <text x="0" y="0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="700" fill="#f87171">❌ Dễ trôi &amp; mất tab:</text>
+      <text x="0" y="20" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#94a3b8">Mở 30-50 tab làm việc thì tab Zalo bị chìm nghỉm, khó tìm.</text>
+
+      <text x="0" y="65" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="700" fill="#f87171">❌ Không có Badge đếm live:</text>
+      <text x="0" y="85" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#94a3b8">Không biết có bao nhiêu khách đang chờ trả lời nếu không click vào.</text>
+
+      <text x="0" y="130" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="700" fill="#f87171">❌ Dễ bị trình duyệt 'ru ngủ':</text>
+      <text x="0" y="150" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#94a3b8">Chrome Memory Saver tự ngủ đông tab Zalo Web gây rớt kết nối.</text>
+
+      <text x="0" y="195" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="700" fill="#fbbf24">⚠️ Thao tác thủ công:</text>
+      <text x="0" y="215" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#64748b">Vẫn phải gõ tay từng câu, không có thanh bắn tin mẫu nhanh.</text>
+    </g>
+  </g>
+
+  <!-- Column 3: AIzalo Flow Companion (Extension) - HIGHLIGHTED -->
+  <g transform="translate(670, 115)">
+    <rect width="280" height="325" rx="12" fill="#0c1d38" stroke="#00d2ff" stroke-width="2"/>
+    <rect width="280" height="45" rx="12" fill="url(#highlightGrad)"/>
+    <text x="20" y="28" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="15" font-weight="900" fill="#ffffff">AIZALO CHROME COMPANION</text>
+
+    <!-- Content Items -->
+    <g transform="translate(20, 70)">
+      <text x="0" y="0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="700" fill="#34d399">✅ Huy hiệu đỏ Live Unread:</text>
+      <text x="0" y="20" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#cbd5e1">Báo số tin chưa đọc thời gian thực ngay góc biểu tượng trình duyệt.</text>
+
+      <text x="0" y="65" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="700" fill="#34d399">✅ Bắn tin mẫu 1-Click:</text>
+      <text x="0" y="85" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#cbd5e1">Gửi bảng giá, số tài khoản, lời chào chỉ với 1 click chuột không đổi tab.</text>
+
+      <text x="0" y="130" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="700" fill="#34d399">✅ Siêu nhẹ RAM (&lt; 5MB):</text>
+      <text x="0" y="150" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#cbd5e1">Extension Manifest V3 chạy nền ngắt nghỉ thông minh, cực nhẹ.</text>
+
+      <text x="0" y="195" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="700" fill="#34d399">✅ An toàn 100% Cục Bộ:</text>
+      <text x="0" y="215" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#93c5fd">Đã Google duyệt, kết nối local, không gửi dữ liệu ra máy chủ ngoài.</text>
+    </g>
+  </g>
+</svg>
