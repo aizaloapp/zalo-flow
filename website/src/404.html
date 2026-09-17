@@ -28,9 +28,21 @@
     <div style="display: flex; justify-content: center; gap: 0.75rem; flex-wrap: wrap;">
       <a href="/" class="btn btn-primary btn-lg">← Về Trang Chủ (VI)</a>
       <a href="/en/" class="btn btn-secondary btn-lg">← Home (EN)</a>
+      <button class="btn btn-ask-ai btn-lg" data-zf-open style="cursor: pointer;">✨ Hỏi AI Trợ Lý</button>
       <a href="https://zalo.me/0373315784" target="_blank" rel="noopener" class="btn btn-zalo btn-lg">🤖 Thử Bot Zalo AI</a>
     </div>
   </div>
 
+  <!-- ZaloFlow Live Web Chat Widget (Cloudflare Ask AI Copilot Drawer) -->
+  <script src="/widget/webchat.js"
+          data-server="https://bot.aizalo.com"
+          data-title="Hỗ trợ Zalo-Flow"
+          data-subtitle="Tư vấn & Trợ lý AI 24/7"
+          data-placeholder="Hỏi bất kỳ điều gì về Zalo-Flow..."
+          data-primary-color="#0068ff"
+          data-hide-launcher="true"
+          data-greeting="Xin chào! Bạn vui lòng để lại số điện thoại Zalo để chuyên viên hỗ trợ bạn nhanh nhất nhé."
+          defer>
+  </script>
 </body>
 </html>

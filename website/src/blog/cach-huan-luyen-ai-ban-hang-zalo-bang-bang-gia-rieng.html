@@ -104,10 +104,18 @@
         <li><a href="/#faq" class="nav-link">Hỏi Đáp</a></li>
         <li><a href="/blog/" class="nav-link" style="color: var(--cyan);">Cẩm Nang (Blog)</a></li>
         <li><a href="/#community" class="nav-link">Cộng Đồng</a></li>
+                <li class="mobile-only-action">
+          <button class="btn btn-ask-ai-mobile" data-zf-open onclick="toggleMenu(false)">
+            ✨ Hỏi AI Trợ Lý
+          </button>
+        </li>
         <li class="mobile-only-action"><a href="https://zalo.me/0373315784" target="_blank" rel="noopener" class="btn btn-zalo">🤖 Thử Bot Zalo AI</a></li>
         <li class="mobile-only-action"><a href="https://github.com/aizaloapp/zalo-flow/releases/latest" target="_blank" rel="noopener" class="btn btn-primary">🪟 Tải .exe</a></li>
       </ul>
       <div class="nav-actions">
+        <button class="btn btn-ask-ai" data-zf-open title="Hỏi đáp AI về Zalo-Flow">
+          ✨ Hỏi AI
+        </button>
         <a href="https://zalo.me/0373315784" target="_blank" rel="noopener" class="btn btn-zalo">🤖 Thử Bot Zalo AI</a>
         <a href="https://github.com/aizaloapp/zalo-flow/releases/latest" target="_blank" rel="noopener" class="btn btn-primary">🪟 Tải .exe</a>
         <button class="nav-toggle" id="navToggle" aria-label="Mở menu điều hướng" onclick="toggleMenu()">
@@ -477,6 +485,17 @@ NGUYÊN TẮC BÁN HÀNG BẤT BIẾN:
     document.querySelectorAll('#navMenu a').forEach(function(l){l.addEventListener('click',function(){toggleMenu(false);});});
     document.addEventListener('keydown',function(e){if(e.key==='Escape')toggleMenu(false);});
     function copyArticleUrl(){if(navigator.clipboard){navigator.clipboard.writeText(window.location.href).then(function(){const btn=document.getElementById('btnCopyUrl'),old=btn.innerText;btn.innerText='✅ Đã sao chép!';setTimeout(function(){btn.innerText=old;},2000);});}}
+  </script>
+  <!-- ZaloFlow Live Web Chat Widget (Cloudflare Ask AI Copilot Drawer) -->
+  <script src="/widget/webchat.js"
+          data-server="https://bot.aizalo.com"
+          data-title="Hỗ trợ Zalo-Flow"
+          data-subtitle="Tư vấn & Trợ lý AI 24/7"
+          data-placeholder="Hỏi bất kỳ điều gì về Zalo-Flow..."
+          data-primary-color="#0068ff"
+          data-hide-launcher="true"
+          data-greeting="Xin chào! Bạn vui lòng để lại số điện thoại Zalo để chuyên viên hỗ trợ bạn nhanh nhất nhé."
+          defer>
   </script>
 </body>
 </html>

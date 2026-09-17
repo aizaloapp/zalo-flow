@@ -82,6 +82,11 @@
       </a>
 
       <ul class="nav-menu" id="navMenu">
+                <li class="mobile-only-action">
+          <button class="btn btn-ask-ai-mobile" data-zf-open onclick="toggleMenu(false)">
+            ✨ Ask AI Assistant
+          </button>
+        </li>
         <li class="mobile-only-action">
           <div class="lang-switcher-drawer" aria-label="Language selector">
             <a href="/blog/" class="lang-btn" title="Tiếng Việt">🇻🇳 Tiếng Việt</a>
@@ -112,6 +117,9 @@
           <span class="lang-divider">/</span>
           <a href="/en/blog/" class="lang-btn active" title="English">🇬🇧 EN</a>
         </div>
+        <button class="btn btn-ask-ai" data-zf-open title="Ask Zalo-Flow AI Assistant">
+          ✨ Ask AI
+        </button>
         <a href="https://zalo.me/0373315784" target="_blank" rel="noopener" class="btn btn-zalo">
           🤖 Try Zalo AI Bot
         </a>
@@ -200,5 +208,16 @@
     });
   </script>
   <script src="/blog-toc.js"></script>
+  <!-- ZaloFlow Live Web Chat Widget (Cloudflare Ask AI Copilot Drawer) -->
+  <script src="/widget/webchat.js"
+          data-server="https://bot.aizalo.com"
+          data-title="Zalo-Flow AI Support"
+          data-subtitle="24/7 AI Assistant & Consultation"
+          data-placeholder="Ask anything about Zalo-Flow..."
+          data-primary-color="#0068ff"
+          data-hide-launcher="true"
+          data-greeting="Hello! Please leave your Zalo phone number so our team can assist you immediately."
+          defer>
+  </script>
 </body>
 </html>
