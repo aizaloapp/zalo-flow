@@ -57,9 +57,16 @@ export class ZaloAccountManager extends EventEmitter {
       const total = accountsToLoad.length;
       logger.info(`📋 [AccountManager] Found ${total} account(s) to initialize (Limit: ${this.maxConcurrent}).`);
 
+      const seenSessions = new Set();
       for (let i = 0; i < total; i++) {
         const acc = accountsToLoad[i];
         const sessionName = acc.sessionFile || `zalo_${acc.accountUid}`;
+        if (seenSessions.has(sessionName)) {
+          logger.warn(`⚠️ [Boot Sequence] Bỏ qua tài khoản ${acc.accountUid} (${acc.displayName || ''}) vì session '${sessionName}' đã được khởi tạo bởi tài khoản khác!`);
+          continue;
+        }
+        seenSessions.add(sessionName);
+
         logger.info(`[Boot Sequence] (${i + 1}/${total}) Restoring session '${sessionName}' for UID: ${acc.accountUid}...`);
 
         if (typeof onProgress === 'function') {
