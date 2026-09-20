@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 480" width="1000" height="480">
+  <defs>
+    <linearGradient id="winnerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0084ff"/>
+      <stop offset="100%" stop-color="#00d2ff"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1000" height="480" rx="16" fill="#0b1329" stroke="#334155" stroke-width="1.5"/>
+
+  <!-- Header -->
+  <text x="500" y="45" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="22" font-weight="900" fill="#ffffff" text-anchor="middle">SO SÁNH CÁC CÁCH CẬP NHẬT KIẾN THỨC CHO CHATBOT ZALO</text>
+  <text x="500" y="70" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" fill="#94a3b8" text-anchor="middle">Lựa chọn giải pháp nạp dữ liệu nhanh, chính xác và an toàn nhất cho cá nhân &amp; doanh nghiệp</text>
+
+  <!-- 3 Columns Container -->
+  <!-- Col 1: Soạn Prompt Thủ Công -->
+  <g transform="translate(45, 95)">
+    <rect width="280" height="350" rx="12" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+    <rect width="280" height="48" rx="12" fill="#0f172a"/>
+    <rect y="36" width="280" height="12" fill="#0f172a"/>
+    <text x="140" y="30" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="700" fill="#94a3b8" text-anchor="middle">Sửa Prompt Thủ Công</text>
+
+    <!-- Content items -->
+    <g transform="translate(18, 70)" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12">
+      <text y="0" font-weight="700" fill="#f87171">❌ Rất tốn thời gian:</text>
+      <text y="20" fill="#cbd5e1">Phải tự gõ lại toàn bộ văn</text>
+      <text y="38" fill="#cbd5e1">bản hoặc copy-paste lộn xộn.</text>
+
+      <text y="75" font-weight="700" fill="#f87171">❌ Dễ làm tràn Prompt:</text>
+      <text y="95" fill="#cbd5e1">Dồn hết thông tin vào System</text>
+      <text y="113" fill="#cbd5e1">Prompt khiến AI bị lú, quên quy tắc.</text>
+
+      <text y="150" font-weight="700" fill="#f87171">❌ Không đọc được ảnh:</text>
+      <text y="170" fill="#cbd5e1">Có ảnh bảng giá chụp màn hình</text>
+      <text y="188" fill="#cbd5e1">bắt buộc phải gõ tay từng dòng.</text>
+
+      <text y="225" font-weight="700" fill="#94a3b8">⚠️ Chi phí:</text>
+      <text y="245" fill="#e2e8f0">Miễn phí nhưng cực nhọc</text>
+    </g>
+  </g>
+
+  <!-- Col 2: Nền tảng SaaS / Chatbot Cloud -->
+  <g transform="translate(360, 95)">
+    <rect width="280" height="350" rx="12" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+    <rect width="280" height="48" rx="12" fill="#0f172a"/>
+    <rect y="36" width="280" height="12" fill="#0f172a"/>
+    <text x="140" y="30" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="700" fill="#94a3b8" text-anchor="middle">Nền Tảng Cloud / SaaS</text>
+
+    <!-- Content items -->
+    <g transform="translate(18, 70)" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12">
+      <text y="0" font-weight="700" fill="#fbbf24">⚠️ Có hỗ trợ tải tệp:</text>
+      <text y="20" fill="#cbd5e1">Có mục upload file nhưng quy trình</text>
+      <text y="38" fill="#cbd5e1">indexing trên mây mất nhiều phút.</text>
+
+      <text y="75" font-weight="700" fill="#f87171">❌ Rủi ro lộ dữ liệu:</text>
+      <text y="95" fill="#cbd5e1">Bảng giá nội bộ, hợp đồng bị</text>
+      <text y="113" fill="#cbd5e1">lưu trữ trên máy chủ bên thứ ba.</text>
+
+      <text y="150" font-weight="700" fill="#f87171">❌ Ép thuê bao đắt đỏ:</text>
+      <text y="170" fill="#cbd5e1">Giới hạn số trang PDF / dung</text>
+      <text y="188" fill="#cbd5e1">lượng, tính phí 500k - 2tr/tháng.</text>
+
+      <text y="225" font-weight="700" fill="#f87171">❌ Chi phí:</text>
+      <text y="245" fill="#f87171">Thu phí định kỳ hàng tháng</text>
+    </g>
+  </g>
+
+  <!-- Col 3: Zalo-Flow Dạy Bot (Winner) -->
+  <g transform="translate(675, 95)">
+    <rect width="280" height="350" rx="12" fill="#172554" stroke="#00d2ff" stroke-width="2"/>
+    <rect width="280" height="48" rx="12" fill="url(#winnerGrad)"/>
+    <text x="140" y="30" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="15" font-weight="800" fill="#ffffff" text-anchor="middle">🏆 Zalo-Flow (Dạy Bot)</text>
+
+    <!-- Content items -->
+    <g transform="translate(18, 70)" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12">
+      <text y="0" font-weight="700" fill="#34d399">✅ Kéo thả tệp &amp; Dán ảnh Ctrl+V:</text>
+      <text y="20" fill="#e2e8f0">Hỗ trợ PDF, Word, TXT và</text>
+      <text y="38" fill="#e2e8f0">ảnh chụp màn hình bảng giá siêu tiện.</text>
+
+      <text y="75" font-weight="700" fill="#34d399">✅ AI Vision tự động trích xuất:</text>
+      <text y="95" fill="#e2e8f0">Tự động cấu trúc hóa thành bài</text>
+      <text y="113" fill="#e2e8f0">Wiki chuyên đề, không làm tràn Prompt.</text>
+
+      <text y="150" font-weight="700" fill="#34d399">✅ An toàn tuyệt đối (Local-first):</text>
+      <text y="170" fill="#e2e8f0">Lưu trữ 100% trong SQLite máy bạn.</text>
+      <text y="188" fill="#e2e8f0">Cho phép xem trước trước khi áp dụng.</text>
+
+      <text y="225" font-weight="700" fill="#34d399">⭐ Chi phí:</text>
+      <text y="245" font-weight="800" fill="#00d2ff">100% MIỄN PHÍ VĨNH VIỄN</text>
+    </g>
+  </g>
+</svg>

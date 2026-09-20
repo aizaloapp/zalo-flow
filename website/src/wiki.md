@@ -103,15 +103,24 @@
 2. **Multi-Profile AI Suite:** Tách biệt Động cơ LLM dùng chung (Shared Engine) và Hồ sơ nhân cách (Personas). Gán từng nick Zalo với 1 Profile AI riêng biệt (Bán lẻ E-com, Tư vấn B2B, Hỗ trợ nội bộ HR/SOP...) với nhân cách (SOUL), kho tri thức Wiki và prompt độc lập.
 3. **Xem hướng dẫn chi tiết có ảnh minh họa:** `https://aizalo.com/blog/cach-dang-nhap-nhieu-tai-khoan-zalo-tren-may-tinh.html`
 
+### K. Tính Năng Dạy Bot Cập Nhật Tri Thức Bằng Ảnh & Tệp (Tính năng mới v1.4.1)
+1. **Nạp tri thức 1-Click:** Nhấn phím tắt `Ctrl + V` dán thẳng ảnh chụp màn hình bảng giá hoặc kéo thả file PDF, Word vào khay `✨ DẠY BOT`.
+2. **AI Vision Đa Phương Thức:** Tự động đọc bảng số liệu, bóc tách chính sách chiết khấu và lưu vào kho tri thức Second Brain cục bộ, không làm tràn Prompt AI.
+3. **Xem hướng dẫn chi tiết có ảnh minh họa:** `https://aizalo.com/blog/cach-day-bot-zalo-cap-nhat-kien-thuc-tu-dong.html`
+
 ---
 
-### K. Tắt / Dừng / Khởi Động Lại Phần Mềm
+### L. Tắt / Dừng / Khởi Động Lại Phần Mềm
 - **Dừng phần mềm:** Vào Start Menu hoặc thư mục cài đặt (`%LOCALAPPDATA%\Programs\ZaloFlow`), bấm đúp `Dừng Zalo-Flow.bat`.
 - **Khởi động lại:** Nhấp đúp vào icon `Zalo-Flow` ngoài Desktop.
 
 ---
 
 ## ❓ 3. Bách Khoa Hỏi Đáp Thường Gặp (Q&A FAQ)
+
+- **Khách hỏi:** Làm thế nào để dạy bot học thêm sản phẩm hoặc bảng giá mới nhanh nhất?
+  **👉 Trả lời chuẩn:** Dạ từ phiên bản v1.4.1, Zalo-Flow trang bị tính năng Dạy Bot cực kỳ tiện lợi ạ! Anh/chị chỉ cần nhấn Ctrl+V dán thẳng ảnh chụp màn hình bảng giá hoặc kéo thả file PDF, Word vào khay "Dạy Bot", kèm 1 câu dặn dò ngắn gọn. Mô hình AI Vision sẽ tự động bóc tách số liệu lưu vào kho tri thức Second Brain để tư vấn khách ngay lập tức mà không cần gõ prompt thủ công ạ!
+  👉 Anh/chị xem hướng dẫn chi tiết có ảnh chụp màn hình từng bước tại đây nhé: https://aizalo.com/blog/cach-day-bot-zalo-cap-nhat-kien-thuc-tu-dong.html
 
 - **Khách hỏi:** Zalo Flow có miễn phí không hay có thu phí bản quyền?
   **👉 Trả lời chuẩn:** Dạ Zalo-Flow là phần mềm mã nguồn mở hoàn toàn miễn phí phục vụ học tập, nghiên cứu và tự động hóa cá nhân ạ! Anh/chị có thể tải về và sử dụng miễn phí trọn đời tại website chính thức:

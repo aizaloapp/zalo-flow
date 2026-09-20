@@ -115,4 +115,7 @@
 ### Q26: Zalo-Flow có tiện ích mở rộng trên trình duyệt Chrome không?
 **Đáp:** Có. Tiện ích "AIzalo Flow: Chat Companion (Unofficial)" đã chính thức được duyệt và phát hành trên Chrome Web Store. Tiện ích kết nối trực tiếp với Zalo-Flow local server qua REST API để hiển thị huy hiệu số tin chưa đọc theo thời gian thực, hỗ trợ tra cứu danh bạ nhanh, xem tin nhắn và gửi tin nhắn mẫu 1-click ngay trên thanh công cụ trình duyệt mà không cần mở tab Zalo-Flow. Hướng dẫn cài đặt và sử dụng chi tiết tại: https://aizalo.com/guide và cẩm nang: https://aizalo.com/blog/cach-nhan-thong-bao-va-quan-ly-tin-nhan-zalo-bang-chrome-extension.html
 
+### Q27: Làm thế nào để dạy bot học thêm sản phẩm hoặc bảng giá mới nhanh nhất bằng hình ảnh và tài liệu?
+**Đáp:** Từ phiên bản v1.4.1, Zalo-Flow bổ sung tính năng "Dạy Bot" nạp tri thức 1-Click: Bạn chỉ cần nhấn `Ctrl + V` dán thẳng ảnh chụp màn hình bảng giá hoặc kéo thả file PDF/Word vào khay Dạy Bot kèm 1 lời dặn ngắn. Mô hình AI Vision sẽ tự động đọc bảng số liệu, bóc tách chính sách chiết khấu và ghi nhớ vào kho tri thức Second Brain cục bộ để tư vấn khách ngay lập tức mà không cần sửa prompt thủ công. Chi tiết xem tại: https://aizalo.com/blog/cach-day-bot-zalo-cap-nhat-kien-thuc-tu-dong.html
+
 

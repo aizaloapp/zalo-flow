@@ -2,7 +2,7 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://aizalo.com/</loc>
-    <lastmod>2026-09-17</lastmod>
+    <lastmod>2026-09-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
@@ -14,9 +14,15 @@
   </url>
   <url>
     <loc>https://aizalo.com/blog/</loc>
-    <lastmod>2026-09-17</lastmod>
+    <lastmod>2026-09-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://aizalo.com/blog/cach-day-bot-zalo-cap-nhat-kien-thuc-tu-dong.html</loc>
+    <lastmod>2026-09-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
   </url>
   <url>
     <loc>https://aizalo.com/blog/cach-nhan-thong-bao-va-quan-ly-tin-nhan-zalo-bang-chrome-extension.html</loc>
@@ -32,7 +38,7 @@
   </url>
   <url>
     <loc>https://aizalo.com/blog/cach-dang-nhap-nhieu-tai-khoan-zalo-tren-may-tinh.html</loc>
-    <lastmod>2026-09-16</lastmod>
+    <lastmod>2026-09-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
@@ -50,7 +56,7 @@
   </url>
   <url>
     <loc>https://aizalo.com/blog/cach-huan-luyen-ai-ban-hang-zalo-bang-bang-gia-rieng.html</loc>
-    <lastmod>2026-09-11</lastmod>
+    <lastmod>2026-09-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
