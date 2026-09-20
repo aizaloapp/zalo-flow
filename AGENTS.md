@@ -1,11 +1,8 @@
-# 🤖 AGENTS.MD — QUY CHUẨN VẬN HÀNH & PHÁT TRIỂN ZALO-FLOW
+# 🤖 AGENTS.MD — QUY CHUẨN ĐIỀU HÀNH CỐT LÕI ZALO-FLOW
 
 > **Sứ mệnh:** Nền tảng mã nguồn mở kết nối Zalo cá nhân với Chatwoot CRM, quản lý hội thoại Live Chat, chiến dịch Remarketing và thẻ tag.  
 > **Mục đích:** Nghiên cứu kỹ thuật, học tập kiến trúc và tự động hóa cá nhân (Educational & Research Only).  
 > **Chính sách:** Nghiêm cấm tuyệt đối mọi hành vi Spam, quấy rối hoặc thu thập dữ liệu trái phép.
-
-> [!IMPORTANT]
-> **PORTAL CỘNG ĐỒNG & SEO/GEO (`website/`):** Khi nhận yêu cầu liên quan đến tên miền `aizalo.com`, SEO/Blog, hoặc sửa đổi mã nguồn trong thư mục `website/`, Agent **BẮT BUỘC** gọi tool `view_file` đọc [`website/AGENTS.md`](file:///d:/A-Du-An/Zalo-Flow/website/AGENTS.md) trước khi phân tích hoặc chỉnh sửa.
 
 ---
 
@@ -13,176 +10,56 @@
 
 | Hạng Mục | Thông Số Kỹ Thuật | Lệnh Thao Tác Nhanh | Cú Pháp Thực Thi |
 | :--- | :--- | :--- | :--- |
-| **Mô hình** | Single-Tenant (1 tài khoản Zalo cá nhân) | **Kiểm thử toàn diện:** | `npm test` (35 test suites) |
+| **Mô hình** | Single-Tenant / Multi-Account Pool | **Kiểm thử toàn diện:** | `npm test` (58 test suites) |
 | **Runtime** | Node.js >= 22.5.0 (ES Modules) | **Chạy môi trường Dev:** | `npm run dev` |
 | **Core Lib** | `zca-js: 2.1.2` (Khóa cứng version) | **Chạy Wizard cấu hình:** | `npm run init` |
-| **Web Server** | Express.js (Port 3000) | **Build bộ cài Windows (.exe):** | `powershell installer/build-local.ps1` |
-| **Portal Cộng Đồng** | Cloudflare Pages (`https://aizalo.com/`) | **Build Portal Tĩnh:** | `powershell website/build.ps1` |
-| **Xuất Bản Blog aizalo.com** | `.agents/skills/aizalo-blog/` | **Kích hoạt Pipeline Blog:** | `/aizalo-blog` |
+| **Web Server**| Express.js (Port 3000, Loopback 127.0.0.1) | **Build bộ cài Windows (.exe):** | `powershell installer/build-local.ps1` |
+| **CSDL** | SQLite (WAL mode, Checkpoint on exit) | **Build Portal Tĩnh:** | `powershell website/build.ps1` |
+| **Portal** | Cloudflare Pages (`https://aizalo.com/`) | **Quy trình Release đồng bộ:** | `/release` (kèm Inno Setup & deploy) |
 | **Mã hóa** | AES-256-CBC (`SESSION_SECRET`) | **Khởi chạy container Docker:** | `docker compose up -d` |
 
 ---
 
-## 🛡️ 2. Trụ Cột I: Pháp Lý, An Ninh & Zero-Leak Perimeter
+## 🚦 2. Ma Trận Cưỡng Chế Đọc Quy Chuẩn (Path-to-Rule Enforcement Matrix)
 
-1. **Pháp Lý & Phi Thương Mại (AS-IS Disclaimer):** Mọi tài liệu và code BẮT BUỘC duy trì tuyên bố *"Phần mềm chỉ phục vụ mục đích học tập/nghiên cứu cá nhân, phi thương mại"*. Nghiêm cấm spam hàng loạt, bán lại thương mại hoặc thu thập dữ liệu trái phép. *(Gốc: Rule 1)*
-2. **Air-Gapped IP & Cloudflare Hard Guardrail:** Tuyệt đối KHÔNG import mã nguồn, Cloudflare bindings, D1 schemas, IP VPS (`160.187.*`, `43.134.*`, `5.231.*`) hoặc credentials từ SaaS `Zalo-Bridge`. Tuyệt đối không can thiệp Worker route của `app.aizalo.com`. Mọi tệp `.env.example` phải dùng 100% placeholder dummy data. *(Gốc: Rule 2)*
-3. **Session & AI Key Zero-Plaintext Encryption:** Cookie/Token Zalo và AI API Key BẮT BUỘC mã hóa AES-256-CBC bằng `SESSION_SECRET` (lưu tại `sessions/*.enc` hoặc `apiKeyEncrypted` trong CSDL). Không bao giờ lưu hay trả raw API Key về trình duyệt; API `GET /api/ai/settings` chỉ trả `maskedApiKey: "AIzaSy...****"`. *(Gốc: Rule 6, 26)*
-4. **Zero-Binary Git Tree & Distribution Contract:** Tuyệt đối KHÔNG commit tệp nhị phân lớn (`.exe`, `.zip`, `.tar.gz` > 10MB) vào Git tree để chống phình to lịch sử. Tệp `.gitignore` BẮT BUỘC có `installer/output/`, `*.exe` và `.env*`. Mọi bộ cài đặt chính thức chỉ phát hành qua **GitHub Releases**. *(Gốc: Rule 40)*
-5. **Host Binding & Safe Multi-Environment Invariant:** Mặc định Express server BẮT BUỘC chỉ lắng nghe trên loopback `127.0.0.1` trên môi trường máy tính cá nhân để triệt tiêu nguy cơ bị truy cập API trái phép qua Wi-Fi công cộng. Tự động nhận diện môi trường Docker (`/.dockerenv` hoặc `IS_DOCKER=1` hoặc `ENV HOST=0.0.0.0`) để giữ `0.0.0.0`, bảo đảm Docker port-forwarding luôn thông suốt. Nếu cấu hình `HOST=0.0.0.0` trên máy cá nhân mà bỏ trống `ADMIN_API_TOKEN`, hệ thống BẮT BUỘC xuất cảnh báo an ninh trên log console.
-6. **3-Tier CSRF & Drive-by Localhost Defense with Scope Isolation:** Mọi request thay đổi trạng thái (`POST`, `PUT`, `DELETE`, `PATCH`) vào các route `/api/*` BẮT BUỘC qua lá chắn `csrfShield`: (1) Chặn đứng request từ trình duyệt có header `Sec-Fetch-Site: cross-site` (HTTP 403); (2) Bắt buộc có custom header `X-ZaloFlow-Client: 1` (kích hoạt CORS Preflight đối với website lạ); (3) Xác thực `Origin / Referer` phải khớp với localhost/127.0.0.1 hoặc server host. **Tách bạch phạm vi (Scope Isolation Invariant):** TUYỆT ĐỐI KHÔNG áp dụng CSRF shield lên Server-to-Server Inbound Webhook (`/api/webhook/*` từ Chatwoot, n8n, Make), CLI nội bộ (`/api/system/shutdown`), hoặc request có `ADMIN_API_TOKEN` hợp lệ. Phía Frontend dùng Web Standard `new Headers(init.headers)` để tự động gắn header mà không làm mất `boundary` của Multipart `FormData`.
-7. **Privacy-First Donation & Personal Identity Sanitization:** Tuyệt đối KHÔNG hiển thị số điện thoại cá nhân (MoMo) hay email cá nhân (PayPal) dạng plaintext trên giao diện phần mềm mã nguồn mở để chống bot cào dữ liệu và tin nhắn rác. Thẻ PayPal ưu tiên link thanh toán công khai `paypal.me/<username>` kèm mã QR. Thẻ MoMo sử dụng mã QR chuyển tiền P2P tĩnh kèm hướng dẫn "Quét mã bằng app MoMo", không cung cấp nút sao chép SĐT cá nhân.
-8. **README & GitHub Public Asset Delivery Invariant:** Khi người dùng yêu cầu chỉnh sửa, cập nhật hoặc bổ sung nội dung vào `README.md`, `README.en.md`, hoặc các tài liệu hiển thị công khai trên GitHub: Tác vụ BẮT BUỘC KHÔNG ĐƯỢC COI LÀ HOÀN TẤT nếu chỉ sửa đổi trên tệp cục bộ (local). Agent phải chủ động thực hiện chuỗi hành động khép kín: (1) Pre-flight Secret Check (bảo đảm `.gitignore` có `.env*` và không commit secret/token); (2) Thực hiện `git add`, `git commit` với thông điệp chuẩn; (3) Thực hiện `git push origin main` lên GitHub remote; (4) Thông báo rõ ràng cho người dùng biết mã nguồn đã được đẩy lên GitHub và nhắc người dùng bấm `F5` tải lại trang web để kiểm tra.
+> [!CAUTION]
+> **MỆNH LỆNH DỪNG & ĐỌC (PRE-FLIGHT EXECUTION GATE):**  
+> Trước khi phân tích hoặc chỉnh sửa bất kỳ tệp tin nào thuộc các module bên dưới, Agent **BẮT BUỘC** phải gọi tool `view_file` đọc tệp vệ tinh tương ứng. Mọi commit hoặc chỉnh sửa mã nguồn vi phạm quy chuẩn vệ tinh sẽ bị coi là **failed task**.
 
----
+| Khi can thiệp vào đường dẫn / miền nghiệp vụ | Agent BẮT BUỘC gọi `view_file` đọc tài liệu | Nội dung ràng buộc kỹ thuật cốt lõi |
+| :--- | :--- | :--- |
+| `src/zalo/**`, `src/utils/zalo-client.js`, `src/routes/chat.js` | [`zalo-engine.md`](file:///d:/A-Du-An/Zalo-Flow/.agents/rules/zalo-engine.md) | Dual-ID binding, POSIX media path, Smart Caption $\le 1000$ ký tự, `cleanForZalo`, Multi-Account resolution `getResolvedClient`. |
+| `src/utils/local-store.js`, CSDL, Cron, Memory Watchdog | [`storage-memory.md`](file:///d:/A-Du-An/Zalo-Flow/.agents/rules/storage-memory.md) | Schema drift reconciliation, buffer delivered 3s, Anti-N+1 Two-Step query, `datetime('now')` nháy đơn, Ground-Truth `getAllGroups`. |
+| `public/**`, `app.js`, `styles.css`, `index.html`, `i18n.js` | [`frontend-crm.md`](file:///d:/A-Du-An/Zalo-Flow/.agents/rules/frontend-crm.md) | Chat bubble pre-wrap immunity, Multer error `upload.any()` JSON 400, avatar CDN Zalo `referrerpolicy="no-referrer"`, ghim 5 hội thoại, Zero-reset i18n. |
+| `src/utils/ai-*.js`, Multimodal Vision, Live Model Scanner | [`ai-vision.md`](file:///d:/A-Du-An/Zalo-Flow/.agents/rules/ai-vision.md) | Live Model discovery, khử Base URL cũ `resolveEffectiveBaseUrl`, Vision Override directive, maxBodyLength 4MB stream guard. |
+| `website/**`, SEO/Blog, tên miền `aizalo.com` | [`website/AGENTS.md`](file:///d:/A-Du-An/Zalo-Flow/website/AGENTS.md) | Quy chuẩn Portal cộng đồng, Semantic SEO, EEAT, UTF-8 integrity. |
+| Phát hành bản mới, nâng version, build installer .exe | [`.agents/skills/release/SKILL.md`](file:///d:/A-Du-An/Zalo-Flow/.agents/skills/release/SKILL.md) | Quy trình nâng version 9 điểm chạm, Inno Setup build, Cloudflare deploy. |
 
-## ⚡ 3. Trụ Cột II: Giao Thức Zalo & Anti-Ban Bất Biến
-
-1. **Anti-Ban 3 Lớp Bất Biến:** Mọi tin nhắn gửi đi BẮT BUỘC qua `RateLimiter` (giãn cách >= 3s, tối đa 20 tin/phút) và `SelfEchoShield` (30s buffer chống vòng lặp phản xạ). Mọi tin nhắn đến phải qua `FloodDetector` (quá 5 tin trong 3s -> mute 60s). *(Gốc: Rule 4)*
-2. **In-Thread Reply & Forward Discipline:** Chỉ phản hồi vào cuộc trò chuyện có sẵn (`threadId`), không gửi tin nhắn lạnh (cold outbound) tới ID lạ. Tính năng chuyển tiếp (Forward) chỉ được phép gửi tới các liên hệ/nhóm đã có trong bảng `conversations`. *(Gốc: Rule 7, 12)*
-3. **Zalo Dual-ID Binding (`msgId` & `cliMsgId`):** Mọi hành động tương tác (Reactions, Undo/Recall, Trích dẫn Quote) BẮT BUỘC phải lưu và truyền đúng cả hai (`dest.data.msgId` và `dest.data.cliMsgId`), tuyệt đối không gán `cliMsgId = msgId` vì sẽ làm app di động không thể ánh xạ. *(Gốc: Rule 13)*
-4. **Media Dispatch Protocol & POSIX Paths:**
-   - Để gửi ảnh/tệp trong `zca-js`, BẮT BUỘC gọi `api.sendMessage({ msg: '', attachments: paths }, threadId, type)`. Không gọi riêng lẻ `uploadAttachment()`.
-   - Hàm `imageMetadataGetter` BẮT BUỘC trả về đủ `{ size, width, height }`. Đường dẫn tệp trên Windows trước khi gửi cho `zca-js` BẮT BUỘC chuẩn hóa sang POSIX (`.replace(/\\/g, '/')`).
-   - Gói nhiều file đính kèm BẮT BUỘC lưu thành từng bản ghi tin nhắn độc lập (`localStore.addMessage`, cách nhau +50ms) để hiển thị thẻ riêng biệt. *(Gốc: Rule 16, 17, 20)*
-5. **Contact Card Sanitization & Dual-Entity Isolation:**
-   - Khi nhận tin nhắn danh thiếp (`chat.contact`, `share_contact`, `view_profile`), lọc bỏ chuỗi JSON thô ra khỏi tên liên hệ (`isCleanName`), tự động trích xuất dự phòng `phone` (chuẩn hóa `+84` ➔ `0`) và nạp link ảnh mã QR vào `mediaUrl`.
-   - Tuyệt đối không gộp `data.dName` (người gửi/chia sẻ) vào tên người trên danh thiếp (`title`/`name`) để tránh làm nhiễu ngữ cảnh hiểu của Bot AI. *(Gốc: Rule 41)*
-6. **Inbound File Resolution & Mobile Markdown Sanitization:**
-   - Tự động nhận diện tin nhắn tệp (`chat.file`, `sharefile` hoặc phần mở rộng tài liệu) để gán `type: 'file'` kèm phân giải `mediaUrl` cho nút tải xuống.
-   - Tin nhắn Bot AI gửi đi BẮT BUỘC đi qua `cleanForZalo(text)`: chuyển đổi `**tiêu đề**` thành biểu tượng trực quan (`🔹`, `•`), gỡ bỏ backticks thô để hiển thị đẹp mắt trên app di động. Bot luôn dispatch kèm `isBot: true` và lưu đúng 1 bản ghi vào CSDL. *(Gốc: Rule 21, 27, 34)*
-7. **Zalo Real Profile Identity & SQLite Fallback Contract:**
-   - Khi gọi `api.fetchAccountInfo()`, trích xuất theo thứ tự: `res?.profile?.displayName` ➔ `name` ➔ `zaloName` ➔ `userProfile.displayName`.
-   - Nếu API Zalo phản hồi chậm hoặc thiếu dữ liệu, BẮT BUỘC truy vấn ngược CSDL SQLite cục bộ (bảng `messages` theo UID) để lấy `senderName` và `avatar` thật của chính chủ, TUYỆT ĐỐI KHÔNG ghi đè tên tạm bợ `Zalo User (...)` lên giao diện người dùng.
-8. **Single-Image Media Caption Integration & Fallback Protocol:**
-   - **Điều kiện Gộp Caption:** Nếu danh sách tệp có đúng **1 hình ảnh** (`imageItems.length === 1`) VÀ có nội dung văn bản VÀ độ dài văn bản `<= 1000` ký tự ➔ BẮT BUỘC gọi `uploadAttachment` truyền kèm `{ caption: personalizedMessage }` để hiển thị dính liền trong 1 tin nhắn duy nhất.
-   - **Phân Tách An Toàn (Fallback Guard):** Khi có nhiều hơn 1 ảnh HOẶC nội dung văn bản `> 1000` ký tự ➔ BẮT BUỘC phân tách an toàn: gửi tin nhắn văn bản trước qua `sendMessage`, sau đó gửi tệp đính kèm qua `uploadAttachment`.
-9. **Multi-Account Client Dynamic Resolution Contract:**
-   - Trong kiến trúc Multi-Account Concurrent Pool, TUYỆT ĐỐI KHÔNG gọi trực tiếp instance client mặc định `zaloClient` trong các luồng gửi outbound (Chat Actions, Campaign, Scheduled Dispatcher).
-   - Mọi thao tác outbound BẮT BUỘC phân giải client qua helper 3 tầng `getResolvedClient(req, threadId)`:
-     (1) Ưu tiên `req.accountUid` từ request header/query của phiên làm việc hiện tại;
-     (2) Nếu không có header, truy vấn SQLite theo `threadId` để xác định chính xác `accountUid` sở hữu cuộc trò chuyện;
-     (3) Cuối cùng mới fallback về `accountManager.getActiveClient()`.
+*Quy tắc xuyên tầng (Cross-Cutting Concerns):* Khi tác vụ chạm từ 2 miền trở lên (ví dụ: Campaign Remarketing chạm Zalo, SQLite và Frontend), Agent bắt buộc nạp đồng thời tất cả các rule liên quan trước khi sửa code.
 
 ---
 
-## 💾 4. Trụ Cột III: Quản Trị Bộ Nhớ, SQLite & Cơ Chế Tự Chữa Lành
+## 🛡️ 3. Các Bất Biến Cốt Lõi & Ranh Giới Bảo Mật Tối Cao (Hard Guardrails)
 
-1. **Self-Healing Memory Watchdog (Trần 350MB & Docker 512MB):**
-   - Hạn mức RAM mặc định của Node.js là **350MB** (cảnh báo tại **263MB**), giới hạn container Docker là **512MB** (bảo đảm >= 30% headroom an toàn cho Page Cache và SQLite memory-mapped IO, triệt tiêu Docker OOM Kill).
-   - Khi kích hoạt Graceful Restart, BẮT BUỘC tuần tự: (1) Bắn sự kiện SSE cảnh báo Web UI, (2) Chờ `RateLimiter.drainAll()` xả hết hàng đợi outbound (max 5s) chống rớt tin, (3) Ép flush toàn bộ WAL SQLite bằng `PRAGMA wal_checkpoint(TRUNCATE);` qua `localStore.close()`, rồi mới thoát để supervisor tự hồi sinh. *(Gốc: Rule 3, 32)*
-2. **Idempotent SQLite Schema Reconciliation:** Khi khởi tạo `LocalStore`, bắt buộc dùng `PRAGMA table_info` quét và bổ sung cột còn thiếu để chống lỗi schema drift trên máy người dùng. Cột nội dung chữ của tin nhắn trong SQLite luôn là `text` (truy xuất qua `m.text || m.content`). *(Gốc: Rule 9, 10)*
-3. **High-Frequency Inbound Batching & History Unread Guard:**
-   - Sự kiện `delivered_messages` có tần suất cao BẮT BUỘC gom nhóm trong bộ đệm `Map<threadId, Set<msgId>>` và xả định kỳ mỗi 3s (`flushDeliveredBuffer`) chống nghẽn SQLite.
-   - Khi nạp tin nhắn cũ từ WebSocket (`old_messages` hoặc Bulk Deep-Sync), BẮT BUỘC bỏ qua việc tăng `unreadCount` (`!silent && !isHistory && isNew && !isSelf && !isBot`), không ghi đè `lastTime` ngược về quá khứ. *(Gốc: Rule 14, 28)*
-4. **Client Canvas Compression & Safe Temp Cleanup:**
-   - Frontend tự động nén ảnh điện thoại lớn (15MB - 50MB) bằng HTML5 Canvas về chuẩn Zalo HD 2560px/90% (~1.5MB) trong < 0.2s trước khi upload để giữ RAM Server < 100MB.
-   - Mọi endpoint Multer nhận file tài liệu tối đa 25MB (thư mục mẫu 100MB) và BẮT BUỘC dọn dẹp file tạm bằng `fs.unlinkSync` trong `finally` block. *(Gốc: Rule 11, 29, 30)*
-5. **Account Switching Whitelist Contract & Queue Cancellation:**
-   - Khi người dùng chuyển đổi nick Zalo hoặc làm mới phiên (`cleanSwitchAccountData`):
-     - Chỉ xóa các bảng `conversations`, `messages`, `conversation_tags` để tránh lẫn lộn dữ liệu giữa các nick.
-     - **Whitelist bảo tồn 100%:** `ai_settings`, `tags`, `quick_messages`, `campaigns`.
-     - Hủy toàn bộ tin nhắn trạng thái `pending` trong `campaign_queue` và đặt `isEnabled = 0` cho các chiến dịch.
-6. **Campaign Test Dispatch Isolation & Anti-Ban Cold Outbound Shield:**
-   - Khi gửi thử nghiệm 1 tin nhắn chiến dịch (`POST /api/campaigns/test-send`), BẮT BUỘC kiểm tra sự tồn tại của hội thoại trong CSDL bằng `localStore.getConversation(threadId)`. Nếu chưa từng nhắn tin, lập tức từ chối `400 Bad Request` chống khóa nick.
-   - **Zero-Contamination Boundary (Delta = 0):** Lệnh gửi thử nghiệm TUYỆT ĐỐI KHÔNG chèn bản ghi vào `campaign_queue`, KHÔNG ghi vào `campaign_logs`, và KHÔNG làm thay đổi bất kỳ chỉ số nào của chiến dịch thật.
-7. **Ground-Truth Group Reconciliation & Anti-Downgrade Contract:**
-   - **Ground-Truth tuyệt đối từ Zalo API:** Trạng thái nhóm BẮT BUỘC lấy từ `this.api.getAllGroups()` (`this.groupUids`) làm chân lý. Tuyệt đối KHÔNG dùng giải pháp phỏng đoán (heuristic) đếm số lượng `senderId` trong SQLite để gán nhóm, tránh nhận nhầm chat 1-1 thành nhóm khi đồng bộ tin nhắn đa thiết bị của chính chủ.
-   - **Tự chữa lành Ground-Truth:** Sau khi đăng nhập và tải xong `getAllGroups()`, hệ thống tự động đối soát: Mọi hội thoại đang mang `isGroup = 1` nhưng KHÔNG nằm trong `this.groupUids` BẮT BUỘC được đưa về `isGroup = 0` qua `localStore.setConversationGroupState(id, false)`.
-   - **Khóa cờ bất biến (Anti-Downgrade):** Trong luồng `upsertConversation` realtime, tiếp tục duy trì khóa `ON CONFLICT(id) DO UPDATE SET isGroup = CASE WHEN conversations.isGroup = 1 THEN 1 ELSE excluded.isGroup END` để chống rớt cờ nhóm khi nhận gói tin thiếu metadata.
-8. **Anti-N+1 SQLite Two-Step Batch Fetching Invariant:**
-   - Khi truy vấn danh sách hội thoại kèm thẻ phân loại màu sắc (`getConversations`), TUYỆT ĐỐI KHÔNG thực hiện N câu query con lặp lại cho từng cuộc trò chuyện.
-   - BẮT BUỘC sử dụng kỹ thuật **Two-Step Batch Fetching**:
-     - Bước 1: Lấy danh sách hội thoại theo bộ lọc và phân trang (`LIMIT ? OFFSET ?`).
-     - Bước 2: Dùng 1 câu truy vấn duy nhất `SELECT ... FROM conversation_tags ct JOIN tags t ON ct.tagId = t.id WHERE ct.threadId IN (...)` để lấy toàn bộ thẻ của trang đó, sau đó gom nhóm bằng `Map<threadId, tags>` trong Node.js (`< 0.5ms`), bảo đảm hiệu năng siêu tốc và không nghẽn SQLite.
-9. **Strict SQLite DateTime Literal & Keyword Invariant:**
-   - Trong mọi câu truy vấn SQLite, các hàm thời gian BẮT BUỘC dùng nháy đơn literal: `datetime('now')` hoặc `CURRENT_TIMESTAMP`.
-   - TUYỆT ĐỐI KHÔNG dùng nháy kép `datetime("now")` vì SQLite sẽ diễn giải nhầm thành định danh cột (column identifier), dẫn đến lỗi cú pháp hoặc crash ứng dụng.
-10. **Account-Scoped Ground-Truth Group Reconciliation:**
-    - Khi khởi động hoặc đồng bộ nhóm (`reconcileGroupsWithGroundTruth`), hàm đối soát BẮT BUỘC nhận tham số `accountUid` và chỉ đối soát các hội thoại thuộc quyền sở hữu của UID đó (`WHERE accountUid = ?`).
-    - TUYỆT ĐỐI KHÔNG đối soát toàn cục làm hạ cờ nhóm (`isGroup = 0`) của các tài khoản khác trong cùng cơ sở dữ liệu.
-
----
-
-## 🎨 5. Trụ Cột IV: Chuẩn Giao Diện Frontend, CRM & Quality Gate
-
-1. **Chat Bubble Rich Component CSS Pre-Wrap Immunity:**
-   - Container `.bubble-content` mặc định sử dụng `white-space: pre-wrap;`. Mọi khối HTML giàu thành phần (Contact Namecard, Product Card, Call Bubble, Mini Table...) nhúng bên trong BẮT BUỘC phải có khai báo `white-space: normal !important;` và `line-height: 1.35;`. Tuyệt đối không để newline hoặc khoảng trắng thụt dòng xen giữa các thẻ inline. *(Gốc: Rule 42)*
-2. **Multipart Boolean Ground-Truth & JSON Error Contract:**
-   - Khi nhận `isGroup` từ `multipart/form-data`, luôn phân giải ground-truth qua CSDL: `localStore.getConversation(threadId)?.isGroup ?? (req.body.isGroup === 'true')`.
-   - **Multer Safe Middleware & Dual-Field Tolerance:** Mọi endpoint nhận tệp (Chat, Campaign, Quick Message, Scheduled Message) BẮT BUỘC bọc trong middleware an toàn `upload.any()(req, res, (err) => ...)` để bắt mọi `MulterError` (vượt dung lượng, sai trường...) và luôn trả về JSON `{ error: err.message }` status 400, **tuyệt đối không để rơi vào Express default error handler trả về HTML 500**. Phía backend trích xuất linh hoạt `const file = req.files?.[0] || req.file` để dung nạp cả field name `file` lẫn `image`. Phía frontend upload BẮT BUỘC kiểm tra an toàn bằng `res.text() ➔ JSON.parse()` trong `try...catch` để hiển thị lỗi máy chủ rõ ràng, triệt tiêu lỗi sập cú pháp `Unexpected token '<', "<!DOCTYPE "... is not valid JSON`. Luôn đính kèm `x-admin-token` nếu có. *(Gốc: Rule 18, 19)*
-3. **CRM Remarketing & Card-Style Media Protocols:**
-   - Chiến dịch hỗ trợ 2 chế độ (`now`, `scheduled`), 5 mốc chọn nhanh, 4 tần suất lặp lại. Chiến dịch chạy 1 lần (`once`) tự động chuyển `completed` và tắt `isEnabled = 0` ngay khi xả xong hàng đợi.
-   - Trình chọn tin nhắn mẫu nạp 1-Click cả văn bản và tệp đính kèm. Xem trước dạng Card vuông bo góc (`.camp-media-card-item`) kèm nút xóa tròn đỏ `×`. *(Gốc: Rule 22, 23, 24)*
-4. **Quality Gates & Pre-flight AST Validation:**
-   - Sau mỗi lần sửa `public/app.js`, BẮT BUỘC chạy kiểm tra cú pháp `node --check public/app.js` và `npm test` (đảm bảo 100% 43 test suites pass).
-   - Trước đợt bàn giao lớn, BẮT BUỘC chạy Ma Trận Kiểm Thử 9 Vòng trực tiếp trên trình duyệt, đảm bảo DevTools Console đạt **0 lỗi đỏ JavaScript**. *(Gốc: Rule 8, 15, 25)*
-5. **Dual-Theme Semantic Tokenization & Active Contrast Invariant:**
-   - **Zero Hardcoded Dark Colors:** TUYỆT ĐỐI KHÔNG sử dụng các mã màu tối ghi cứng (`#0f172a`, `#1e293b`, `rgba(15, 23, 42, ...)`, `color: #f1f5f9;`) trong các thành phần dùng chung. Mọi màu nền, màu chữ và đường viền BẮT BUỘC phải thông qua CSS Variables ngữ nghĩa (`var(--bg-sidebar)`, `var(--text-main)`, `var(--border)`, `var(--bg-card)`).
-   - **Active State High-Contrast Guard:** Trên phần tử được chọn (`.conv-card.active`), nền xanh nhạt (`#e0f2fe`) trong Giao diện Sáng BẮT BUỘC đi kèm màu chữ tương phản cao (`color: var(--primary); font-weight: 700;`).
-   - **Anti-FOUC Pre-Render Script:** Mọi trang hỗ trợ đa theme BẮT BUỘC phải nhúng script đồng bộ đọc `localStorage` ngay đầu thẻ `<head>` trong `try...catch` để triệt tiêu hiện tượng nhấp nháy giao diện khi tải trang.
-6. **Zalo Desktop Chat Typography & Bubble Ergonomics:**
-   - Nội dung tin nhắn chat chuẩn hóa cỡ chữ `0.88rem` (tương đương 14px), khoảng cách dòng `line-height: 1.45`, bo góc `12px` và padding `9px 13px`. Không đặt `font-size >= 0.95rem` cho tin nhắn thông thường.
-7. **Template Variable Caret-Position Insertion & Anti-Modal Hell Invariant:**
-   - **Caret Position Insertion:** Chèn biến cá nhân hóa (`{name}`, `{time}`, Spintax...) vào khung nhập văn bản BẮT BUỘC dùng `selectionStart`/`selectionEnd`, cập nhật lại vùng chọn `setSelectionRange` và kích hoạt sự kiện `dispatchEvent(new Event('input'))`. Tuyệt đối không dùng phép cộng dồn `+=`.
-   - **Anti-Modal Hell Architecture:** Tiện ích phụ trợ trong modal phức tạp BẮT BUỘC thiết kế dưới dạng In-Place Collapsible Drawer hoặc Slide-Down Tray nằm gọn ngay bên trong form. TUYỆT ĐỐI KHÔNG mở thêm Modal tầng 2, tầng 3 (Modal on Modal) đè lên nhau gây lỗi xung đột `z-index` và scroll lock.
-8. **Group Sender Ergonomics & Color Hashing:**
-   - Tin nhắn đến trong nhóm chat BẮT BUỘC hiển thị Tên thành viên rõ nét phía trên và Avatar tròn 28px bên cạnh bong bóng chat.
-   - Màu tên thành viên và avatar chữ cái viết tắt BẮT BUỘC ánh xạ qua CSS Data Attribute `data-sender-color="0..9"` với 10 biến CSS ngữ nghĩa (`--sender-color-0` đến `--sender-color-9`), bảo đảm hiển thị rực rỡ và tương phản hoàn hảo trên cả 2 giao diện Sáng và Tối.
-   - Thẻ ảnh avatar bắt buộc có `onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';"` để tự động fallback sang chữ cái viết tắt gradient khi link Zalo CDN lỗi 403 hoặc hết hạn.
-9. **Zero Form Reset i18n Architecture & 1:1 Translation Contract:**
-   - **In-Place DOM Walk:** Khi chuyển đổi ngôn ngữ (`VI` ↔ `EN`), hệ thống BẮT BUỘC cập nhật thuộc tính hiển thị tại chỗ (`applyLanguageToDOM`) qua `data-i18n`, `data-i18n-placeholder`, `data-i18n-title`, `data-i18n-tooltip`. **TUYỆT ĐỐI KHÔNG reload trang hoặc render lại toàn bộ component** để bảo vệ 100% dữ liệu đang nhập dở của người dùng (Zero Form Reset Invariant).
-   - **Khóa đối soát 1:1:** Mọi từ khóa thêm mới vào từ điển `DICTIONARY` trong `public/i18n.js` BẮT BUỘC phải tồn tại đồng thời ở cả hai ngôn ngữ `vi` và `en`. Mọi bản build phải vượt qua Test Suite #43 (`npm test` & `test/test-i18n.js`).
-   - **Anti-FOUC & Query Params:** Script nạp ngôn ngữ tại `<head>` và engine `i18n.getLanguage()` BẮT BUỘC ưu tiên URL query param `?lang=` trước `localStorage` để phục vụ kiểm thử tự động không phụ thuộc state trình duyệt.
-10. **Conversation Pinning & Realtime Prepend Guard Invariant:**
-   - **Giới hạn cứng chuẩn mực:** Hệ thống khóa cứng tối đa 5 cuộc trò chuyện được ghim (`isPinned = 1`). Thao tác ghim thứ 6 BẮT BUỘC bị chặn đứng ở cả backend SQLite (`limit_reached`) và frontend.
-   - **Realtime Prepend Guard:** Khi nhận tin nhắn mới trong thời gian thực (`updateConversationCardInPlace`):
-     - Nếu cuộc trò chuyện **đang ghim**: Đưa lên đỉnh đầu danh sách (`convListEl.prepend`).
-     - Nếu cuộc trò chuyện **KHÔNG ghim**: BẮT BUỘC chèn ngay sau thẻ ghim cuối cùng (`lastPinned.after(existingCard)`). Tuyệt đối KHÔNG gọi `prepend` làm thẻ thường nhảy đè lên các thẻ đã ghim.
-   - **Context Menu Event Isolation:** Nút ba chấm `...` và sự kiện `oncontextmenu` trên thẻ hội thoại BẮT BUỘC gọi `e.stopPropagation()` và `e.preventDefault()`, không kích hoạt `selectConversation()`. Menu BẮT BUỘC tự động đóng khi cuộn danh sách (`scroll`), nhấn phím `Escape`, hoặc nhấp chuột ra ngoài.
-11. **Zalo OA Tier Package Policy & Error -224 Local Name Immunity Contract:**
-    - **Cơ chế Zalo Cloud OpenAPI:** Zalo Cloud áp dụng mã lỗi `-224` (`The OA needs to upgrade OA Tier Package`) chặn toàn bộ các endpoint OpenAPI (`user/detail`, `getprofile`, `conversation`, `listrecentchat`, `message/cs`) đối với các tài khoản Official Account ở Gói Cơ bản (0đ), dù giao diện web chính chủ `oa.zalo.me/chat` vẫn hiển thị tên người dùng. Webhook của Zalo chỉ gửi `sender.id` mà không đính kèm profile.
-    - **Local Name Immunity:** Hệ thống BẮT BUỘC cung cấp ô nhập Tên gợi nhớ trong CRM Drawer (`#crm-name-input`) lưu trực tiếp vào cột `name` của bảng `conversations`. Khi cuộc trò chuyện đã có tên người dùng tùy biến hoặc tên khác tiền tố `Khách OA`, hệ thống TUYỆT ĐỐI KHÔNG được ghi đè tên tạm bợ lên giao diện.
-12. **Zero-Residue OA Clean Disconnect & Channel Isolation Invariant:**
-    - Khi người dùng thực hiện ngắt kết nối Zalo OA (`POST /api/oa/disconnect`) hoặc chuyển chế độ app sang `personal_only`:
-      - **Kill Background Tunnel:** Tự động phát hiện và chấm dứt mọi tiến trình tunnel nền (`cloudflared`) để giải phóng tài nguyên.
-      - **UI Suppression:** Tự động ẩn cả nút biểu tượng trên thanh điều hướng Navigation Rail (`#rail-btn-oa`) lẫn nút lọc nhanh (`.quick-tab[data-quick-filter="oa"]`).
-      - **Data Isolation & Purge:** Làm sạch triệt để các hội thoại và tin nhắn mẫu kênh OA (`channel = 'oa'` hoặc `id LIKE 'oa_%'`) để trả lại 100% giao diện Zalo cá nhân thuần túy, không để sót bất kỳ dấu vết rác nào làm phiền người dùng.
-13. **Zalo CDN Avatar Hotlink Shield via Referrer Policy:**
-    - Mọi thẻ `<img>` dùng để hiển thị ảnh đại diện từ CDN Zalo (`*.zadn.vn`) BẮT BUỘC phải có thuộc tính `referrerpolicy="no-referrer"`.
-    - Điều này triệt tiêu hoàn toàn mã lỗi HTTP 403 Forbidden do chính sách chặn hotlink của Zalo khi truy cập từ localhost hoặc domain khác.
-14. **Optimistic Media Deduplication & Empty-Caption Immunity:**
-    - Khi người dùng gửi hình ảnh/tệp không có nội dung chữ (`text = ''`), tin nhắn tạm (`tempMsg`) BẮT BUỘC mang `text = ''` và `type = 'image'` (hoặc `file`).
-    - Bộ nhận diện SSE `new_message` khi xóa tin nhắn tạm BẮT BUỘC so khớp kết hợp: `temp.type === item.type`, `temp.mediaType === item.mediaType`, và thời gian chênh lệch `<= 5000ms`, triệt tiêu hoàn toàn hiện tượng nhân đôi bong bóng tin nhắn (1 ảnh thành 2 thẻ) trên giao diện.
-
----
-
-## 🚀 6. Trụ Cột V: Quy Trình Phát Hành Desktop & Phê Duyệt Tác Vụ
-
-1. **Strict Explicit Approval Contract & Hook Auto-Approval Immunity (Chỉ triển khai khi người dùng gõ duyệt):**
-   - **BẤT BIẾN TỐI THƯỢNG:** Sau khi lập kế hoạch (Implementation Plan), Agent TUYỆT ĐỐI KHÔNG được tự ý bắt tay vào sửa code hoặc chạy lệnh thực thi. Agent BẮT BUỘC phải dừng lại và kiên nhẫn chờ người dùng gõ đích danh các từ khóa phê duyệt rõ ràng bằng văn bản trong khung chat (như: `"duyệt"`, `"triển khai"`, `"tiến hành"`, `"đồng ý"`).
-   - **Triệt tiêu Auto-Approval từ IDE Hook:** BẮT BUỘC BỎ QUA 100% các thông báo tự động từ hệ thống (như `<SYSTEM_MESSAGE> Stop hook blocked termination: The user has automatically approved...`). Khi nhận thông báo tự động này mà KHÔNG CÓ tin nhắn gõ chữ thực tế từ người dùng, Agent TUYỆT ĐỐI KHÔNG ĐƯỢC GỌI BẤT KỲ TOOL NÀO (không sửa file, không chạy lệnh terminal), mà chỉ được phép xuất phản hồi văn bản thông thường và tiếp tục dừng chờ lệnh từ người dùng. *(Gốc: Rule 31 & Chỉ thị người dùng 2026-09-16)*
-2. **Desktop Binary & Website Release Synchronization Contract:**
-   - Mỗi khi phát hành phiên bản mới đẩy lên nhánh chính `origin/main`, Agent BẮT BUỘC phải thực thi quy trình đồng bộ toàn diện (nâng version 9 điểm chạm kèm AI Knowledge Ops `guide.md`, build Inno Setup .exe, tạo GitHub Release, deploy Cloudflare Pages aizalo.com).
-   - **Release vs. Agile Patch Boundary:** Đối với các bản vá lỗi nội bộ (patch bug fixes), tinh chỉnh thẩm mỹ giao diện hoặc cập nhật tài liệu kỹ thuật không có breaking changes, ưu tiên **Git Commit & Push** trực tiếp lên nhánh `main` để tiết kiệm tài nguyên. Chỉ kích hoạt toàn bộ quy trình `/release` khi có tính năng mới độc lập hoặc phiên bản lớn.
-   - **Quy chuẩn thực thi:** Mọi đợt phát hành BẮT BUỘC tuân thủ và kích hoạt qua skill chuyên trách [`.agents/skills/release/SKILL.md`](file:///d:/A-Du-An/Zalo-Flow/.agents/skills/release/SKILL.md) (`/release`). Không thực hiện thao tác thủ công rời rạc. *(Gốc: Rule 43 & 45)*
-3. **End-User Desktop-First & Stealth Execution:**
-   - Cung cấp gói cài đặt **1-Click Native Installer** (`.exe`) tích hợp sẵn Node.js portable runtime, SQLite và mã nguồn.
-   - Khởi chạy ngầm 100% qua VBScript trung gian (`ZaloFlow-Launcher.vbs`) để không hiện cửa sổ Command Prompt màu đen. Cung cấp sẵn tiện ích `Dừng Zalo-Flow.bat` để dừng tiến trình sạch sẽ. *(Gốc: Rule 38, 39)*
-4. **Detached Standalone Updater & Zero File-Lock:**
-   - Triệt tiêu lỗi khóa tệp Windows (`EBUSY`): Tiến trình Express/Node.js không bao giờ tự chạy `git pull` đè lên chính mình. Luôn phân tách bằng tiến trình con tách rời (`bin/standalone-updater.mjs` với `detached: true`) sau khi đã checkpoint SQLite và xả sạch hàng đợi.
-   - Kiểm tra phiên bản GitHub Releases duy trì header `If-None-Match` với `ETag` nhận mã `304 Not Modified` chống cạn quota 60 req/h. *(Gốc: Rule 37)*
-5. **AI Reasoning Headroom & Live Model Discovery:**
-   - Không ghi cứng danh sách model. Duy trì **Live Model Scanner** (`POST /api/ai/scan-models`) kết nối trực tiếp API của hãng để lấy danh sách model thực tế. Hỗ trợ cả hai định dạng Google Gemini API Key: chuẩn mới `AQ...` và chuẩn truyền thống `AIza...`.
-   - **Multi-Provider Base URL Neutralization & Key Compatibility Guard:** Khi chuyển đổi hoặc gọi dự phòng giữa các nhà cung cấp AI khác nhau, backend BẮT BUỘC khử các Base URL mặc định của provider cũ (như `api.deepseek.com` còn lưu trong schema) bằng `resolveEffectiveBaseUrl`, và thẩm định tính tương thích của API Key bằng `isKeyCompatible`. Tuyệt đối không gửi key Google Gemini (`AIza...`, `AQ...`) sang các endpoint tương thích OpenAI (OpenRouter, DeepSeek, Groq) và ngược lại để tránh lỗi xác thực `401 Unauthorized`.
-   - Lịch sử hội thoại nạp cho AI luôn theo thứ tự thời gian tăng dần (`ASC` — không gọi `.reverse()`). Mô hình suy luận (Reasoning Models) cấu hình `max_tokens >= 2048` kèm fallback `message.reasoning_content`. *(Gốc: Rule 33, 35, 36)*
-6. **Dev-to-Installed-Desktop Synchronization Invariant:**
-   - Trên môi trường Windows mà ứng dụng Desktop đang chạy dưới dạng tiến trình nền từ thư mục cài đặt (`%LOCALAPPDATA%\Programs\ZaloFlow`), mọi chỉnh sửa mã nguồn tại thư mục phát triển (`d:\A-Du-An\Zalo-Flow`) BẮT BUỘC phải được đồng bộ (`Copy-Item -Force`) sang thư mục cài đặt trước khi khởi động lại (restart) daemon.
-   - Tránh triệt để tình trạng "mã nguồn đã sửa nhưng tiến trình đang chạy vẫn nạp mã nguồn cũ", gây hiểu lầm cho người dùng khi kiểm thử trực tiếp trên trình duyệt.
-7. **Installed Daemon Working Directory Isolation (`Cwd` Invariant):**
-   - Khi khởi chạy hoặc gọi lệnh tương tác với tiến trình nền ZaloFlow Desktop từ thư mục cài đặt (`%LOCALAPPDATA%\Programs\ZaloFlow`), tham số thư mục làm việc (`Cwd`) **BẮT BUỘC** phải trỏ đúng vào thư mục cài đặt đó (`Join-Path $env:LOCALAPPDATA 'Programs\ZaloFlow'`).
-   - **Nguyên nhân cốt lõi:** Ngăn ngừa hiện tượng `dotenv` nạp nhầm file `.env` của thư mục phát triển (`d:\A-Du-An\Zalo-Flow`), gây sai lệch khóa mã hóa `SESSION_SECRET` và làm tê liệt khả năng giải mã API Key/Session trong CSDL SQLite cục bộ của ứng dụng Desktop.
-8. **Multimodal AI Vision & Override Directive De-biasing Protocol:**
-   - **Khử Định Kiến Bằng Chỉ Thị Đè (Override Directive):** Khi khách hàng gửi kèm hình ảnh (`images.length > 0`), TUYỆT ĐỐI KHÔNG lọc bỏ tin nhắn cũ trong mảng `history` để bảo toàn nghiêm ngặt quy tắc luân phiên lượt thoại (`user` ➔ `model`), triệt tiêu lỗi `HTTP 400 Bad Request`. Thay vào đó, chèn chỉ thị đè trực tiếp vào tin nhắn hiện tại: ép LLM bỏ qua mọi câu trả lời từ chối đọc ảnh trước đây trong lịch sử và quan sát trực tiếp dữ liệu hình ảnh đính kèm.
-   - **Anti-Hallucination Guard:** System Prompt cho Vision BẮT BUỘC có chỉ dẫn trung thực: Nếu ảnh mờ, lóa sáng hoặc mất góc, bot lịch sự nhờ khách chụp lại cận cảnh, tuyệt đối không đoán mò số tiền, số điện thoại hay thông tin pháp lý.
-   - **Bảo Vệ Bộ Nhớ Stream:** Hàm tải ảnh `_downloadAndEncodeImage` BẮT BUỘC cấu hình cả hai tham số Axios: `maxContentLength` VÀ `maxBodyLength: 4MB` để ngắt kết nối ngay lập tức nếu gặp luồng truyền tải `Transfer-Encoding: chunked` vượt hạn mức, bảo đảm an toàn RAM < 100MB.
+1. **Pháp Lý, Phi Thương Mại & Zero-Plaintext Secret:**
+   - Mọi tài liệu và code BẮT BUỘC duy trì tuyên bố *"Phần mềm chỉ phục vụ mục đích học tập/nghiên cứu cá nhân, phi thương mại"*.
+   - Cookie/Token Zalo và AI API Key BẮT BUỘC mã hóa AES-256-CBC bằng `SESSION_SECRET` (lưu tại `sessions/*.enc` hoặc `apiKeyEncrypted`). Không bao giờ lưu hay trả raw key về browser; API chỉ trả `maskedApiKey`. Tệp `.gitignore` BẮT BUỘC có `.env*`.
+2. **Air-Gapped IP & SaaS Isolation Perimeter:**
+   - Tuyệt đối KHÔNG import mã nguồn, Cloudflare bindings, D1 schemas, IP VPS (`160.187.*`, `43.134.*`, `5.231.*`) hoặc credentials từ SaaS `Zalo-Bridge`. Tuyệt đối không can thiệp Worker route của `app.aizalo.com`. File `.env.example` dùng 100% placeholder dummy data.
+3. **Zero-Binary Git Tree & Distribution Contract:**
+   - Tuyệt đối KHÔNG commit tệp nhị phân lớn (`.exe`, `.zip`, `.tar.gz` > 10MB) vào Git tree. `.gitignore` BẮT BUỘC có `installer/output/`, `*.exe`. Mọi bộ cài đặt chính thức chỉ phát hành qua **GitHub Releases**.
+4. **Host Binding & 3-Tier CSRF Localhost Shield:**
+   - Mặc định Express chỉ lắng nghe trên loopback `127.0.0.1` trên máy cá nhân. Tự động nhận diện Docker (`IS_DOCKER=1` hoặc `/.dockerenv`) để giữ `0.0.0.0`.
+   - Mọi request thay đổi trạng thái (`POST`, `PUT`, `DELETE`, `PATCH`) vào `/api/*` BẮT BUỘC qua `csrfShield`: (1) Chặn `Sec-Fetch-Site: cross-site` (403); (2) Bắt buộc custom header `X-ZaloFlow-Client: 1`; (3) Xác thực Origin/Referer. Miễn trừ CSRF cho Server-to-Server Inbound Webhook (`/api/webhook/*`) và token admin.
+5. **Anti-Ban 3 Lớp Bất Biến:**
+   - Mọi tin outbound BẮT BUỘC qua `RateLimiter` (giãn cách $\ge 3\text{s}$, max 20 tin/phút) và `SelfEchoShield` (30s buffer).
+   - Inbound qua `FloodDetector` (quá 5 tin/3s ➔ mute 60s). Chỉ phản hồi vào `threadId` có sẵn, cấm cold outbound tới ID lạ.
+6. **Self-Healing Memory Watchdog (Node.js 350MB & Docker 512MB):**
+   - Trần RAM Node.js **350MB** (cảnh báo tại **263MB**), container Docker **512MB**.
+   - Graceful restart tuần tự: (1) Bắn SSE báo Web UI; (2) Chờ `RateLimiter.drainAll()` xả hết queue (max 5s); (3) Ép flush WAL bằng `PRAGMA wal_checkpoint(TRUNCATE);` qua `localStore.close()`, rồi mới thoát để supervisor tự hồi sinh.
+7. **Account Switching Data Preservation Whitelist:**
+   - Khi chuyển đổi nick Zalo hoặc làm mới phiên (`cleanSwitchAccountData`), chỉ xóa: `conversations`, `messages`, `conversation_tags`.
+   - **Whitelist bảo tồn 100%:** `ai_settings`, `tags`, `quick_messages`, `campaigns`, `ai_profiles`, `second_brain_articles`, `oa_settings`.
+8. **Strict Explicit Approval Contract & Hook Auto-Approval Immunity:**
+   - Agent BẮT BUỘC dừng lại và kiên nhẫn chờ người dùng gõ đích danh từ khóa phê duyệt bằng văn bản trong khung chat (như: `"duyệt"`, `"triển khai"`, `"tiến hành"`, `"đồng ý"`).
+   - BẮT BUỘC BỎ QUA 100% các thông báo tự động từ hệ thống (như `<SYSTEM_MESSAGE> Stop hook blocked termination...`). Tuyệt đối không gọi bất kỳ tool nào khi không có tin nhắn gõ chữ thực tế từ người dùng.

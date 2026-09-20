@@ -33,7 +33,7 @@
 1. **Yêu cầu hệ thống:** Windows 10 hoặc Windows 11 (64-bit), ổ cứng trống tối thiểu 500MB, kết nối mạng ổn định.
 2. **Quy trình cài đặt 1-Click (Chỉ mất 3 phút):**
    - **Bước 1:** Tải bộ cài đặt Windows `.exe` mới nhất tại: `https://aizalo.com/#download` hoặc GitHub Releases: `https://github.com/aizaloapp/zalo-flow/releases`.
-   - **Bước 2:** Nhấp đúp vào file `ZaloFlow-Setup-v1.4.0.exe` để cài đặt tự động (đã tích hợp sẵn Node.js Portable và SQLite, không cần cài thêm công cụ lập trình).
+   - **Bước 2:** Nhấp đúp vào file `ZaloFlow-Setup-v1.4.1.exe` để cài đặt tự động (đã tích hợp sẵn Node.js Portable và SQLite, không cần cài thêm công cụ lập trình).
    - **Bước 3:** Nhấp đúp vào biểu tượng **Zalo-Flow** ngoài Desktop để khởi động. Ứng dụng chạy ngầm và tự động mở giao diện tại `http://localhost:3000`.
    - **Xem bài viết chi tiết có ảnh minh họa:** `https://aizalo.com/blog/huong-dan-cach-tao-chatbot-zalo-ca-nhan.html`
 

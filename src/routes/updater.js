@@ -20,6 +20,7 @@ let versionCache = {
   latestVersion: null,
   releaseNotes: '',
   htmlUrl: '',
+  downloadUrl: '',
   publishedAt: null,
   etag: null,
   lastChecked: 0
@@ -80,6 +81,13 @@ function fetchGitHubRelease(cachedEtag = null) {
           try {
             const json = JSON.parse(data);
             const etag = res.headers['etag'] || null;
+            let downloadUrl = '';
+            if (Array.isArray(json.assets)) {
+              const exeAsset = json.assets.find(a => (a.name || '').endsWith('.exe'));
+              if (exeAsset && exeAsset.browser_download_url) {
+                downloadUrl = exeAsset.browser_download_url;
+              }
+            }
             resolve({
               notModified: false,
               success: true,
@@ -88,6 +96,7 @@ function fetchGitHubRelease(cachedEtag = null) {
               name: json.name || '',
               body: json.body || '',
               htmlUrl: json.html_url || '',
+              downloadUrl,
               publishedAt: json.published_at || null
             });
           } catch {
@@ -151,6 +160,7 @@ updaterRouter.get('/system/version', async (req, res) => {
         latestVersion: cleanVer || currentVersion,
         releaseNotes: ghRes.body || '',
         htmlUrl: ghRes.htmlUrl || 'https://github.com/aizaloapp/zalo-flow/releases',
+        downloadUrl: ghRes.downloadUrl || '',
         publishedAt: ghRes.publishedAt,
         etag: ghRes.etag,
         lastChecked: now
@@ -163,6 +173,7 @@ updaterRouter.get('/system/version', async (req, res) => {
   const isPackaged = process.env.ZALOFLOW_PACKAGED === '1';
   const latestVersion = versionCache.latestVersion || currentVersion;
   const hasUpdate = compareSemver(latestVersion, currentVersion) > 0;
+  const downloadUrl = versionCache.downloadUrl || (hasUpdate ? `https://github.com/aizaloapp/zalo-flow/releases/download/v${latestVersion}/ZaloFlow-Setup-v${latestVersion}.exe` : '');
 
   // Check if update lock is active
   const isUpdating = fs.existsSync(lockFile);
@@ -174,6 +185,7 @@ updaterRouter.get('/system/version', async (req, res) => {
     isPackaged,
     releaseNotes: versionCache.releaseNotes,
     htmlUrl: versionCache.htmlUrl,
+    downloadUrl,
     publishedAt: versionCache.publishedAt,
     isGitRepo,
     currentCommit,

@@ -113,6 +113,7 @@ function initApp() {
   loadAccounts();
   loadConversations();
   loadZaloProfile();
+  loadAiSettings();
   
   // Defer SSE stream connection until page load cycle completes to prevent infinite tab spinner
   if (document.readyState === 'complete') {
@@ -126,6 +127,9 @@ function initApp() {
   fetchMemoryHealth();
   setInterval(fetchMemoryHealth, 30000);
   checkAppVersion();
+  setInterval(() => {
+    checkAppVersion();
+  }, 30 * 60 * 1000);
   checkSmartOnboarding();
   updateOaTabVisibility();
 }
@@ -137,11 +141,16 @@ if (document.readyState === 'loading') {
 }
 
 // Background sync on tab focus or visibility change
+let lastAppVersionCheckTs = Date.now();
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') {
     loadConversations();
     if (state.activeThreadId) {
       loadMessages(state.activeThreadId);
+    }
+    if (Date.now() - lastAppVersionCheckTs > 15 * 60 * 1000) {
+      lastAppVersionCheckTs = Date.now();
+      checkAppVersion();
     }
   }
 });
@@ -165,6 +174,7 @@ function openModal(id) {
   if (id === 'modal-tags') renderTagsManager();
   if (id === 'modal-quick-msg') renderQuickMessagesManager();
   if (id === 'modal-ai-brain') {
+    if (typeof closeHeaderCooldownPopover === 'function') closeHeaderCooldownPopover();
     loadAiSettings();
     loadAiProfiles();
   }
@@ -186,7 +196,13 @@ async function loadAccounts() {
     if (!res.ok) return;
     const json = await res.json();
     if (json.data) {
-      state.accounts = json.data.accounts || [];
+      const accountsList = Array.isArray(json.data) 
+        ? json.data 
+        : (json.data.accounts || (Array.isArray(json.data.payload) ? json.data.payload : []));
+      state.accounts = accountsList;
+      if (json.data.activeAccountUid && !state.activeAccountUid) {
+        state.activeAccountUid = json.data.activeAccountUid;
+      }
       renderAccountRail();
       renderAccountsInLoginModal(json.data);
 
@@ -371,12 +387,20 @@ async function removeAccount(accountUid) {
       headers: getHeaders(),
       body: JSON.stringify({ cleanData: false })
     });
-    const json = await res.json();
-    if (json.success) {
-      alert('Đã đăng xuất tài khoản thành công.');
-      loadAccounts();
-      loadConversations();
+    const text = await res.text();
+    let json = {};
+    try { json = JSON.parse(text); } catch (_) { throw new Error(`Phản hồi không hợp lệ (${res.status})`); }
+    if (!res.ok || json.error) throw new Error(json.error || 'Không thể đăng xuất');
+
+    alert('Đã đăng xuất tài khoản thành công.');
+    if (state.activeAccountUid === accountUid) {
+      state.activeAccountUid = json.activeAccountUid || 'all';
+      localStorage.setItem('zaloflow_active_account', state.activeAccountUid);
     }
+    closeActiveChat();
+    await loadAccounts();
+    await loadZaloProfile();
+    await loadConversations();
   } catch (err) {
     alert('Lỗi đăng xuất tài khoản: ' + err.message);
   }
@@ -408,7 +432,9 @@ async function setDefaultAccount(accountUid) {
 function renderAccountsInLoginModal(poolData) {
   const listContainer = document.getElementById('modal-accounts-manage-list');
   if (!listContainer) return;
-  const accounts = poolData.accounts || [];
+  const accounts = Array.isArray(poolData)
+    ? poolData
+    : (poolData?.accounts || (Array.isArray(poolData?.payload) ? poolData.payload : []));
 
   if (accounts.length === 0) {
     listContainer.innerHTML = `<div style="font-size: 0.8rem; color: #94a3b8; padding: 6px 0;">Chưa có tài khoản nào được lưu.</div>`;
@@ -4316,6 +4342,9 @@ function handleStreamEvent(eventType, rawData) {
     } else if (eventType === 'zalo_profile') {
       renderZaloLoginModalState(data);
       updateZaloHeaderStatus(data);
+      if (data && data.isLoggedIn) {
+        loadAccounts();
+      }
     } else if (eventType === 'zalo_qr') {
       onZaloQrReceived(data);
     } else if (eventType === 'memory_restart') {
@@ -4329,7 +4358,11 @@ function handleStreamEvent(eventType, rawData) {
     } else if (eventType === 'startup_sync_status') {
       handleStartupSyncEvent(data);
     } else if (eventType === 'accounts_updated') {
-      state.accounts = data.accounts || [];
+      const accountsList = Array.isArray(data) ? data : (data?.accounts || (Array.isArray(data?.payload) ? data.payload : []));
+      state.accounts = accountsList;
+      if (data?.activeAccountUid && !state.activeAccountUid) {
+        state.activeAccountUid = data.activeAccountUid;
+      }
       renderAccountRail();
       renderAccountsInLoginModal(data);
     } else if (eventType === 'account_add_qr') {
@@ -4444,7 +4477,12 @@ function fallbackToSSE() {
       'zalo_qr',
       'memory_restart',
       'conversation_updated',
-      'scheduled_msg_updated'
+      'scheduled_msg_updated',
+      'accounts_updated',
+      'account_added',
+      'account_removed',
+      'active_account_switched',
+      'account_add_qr'
     ];
 
     sseEvents.forEach(evt => {
@@ -4927,7 +4965,7 @@ function switchAiMainTab(tabKey) {
 window.switchAiMainTab = switchAiMainTab;
 
 function switchKnowledgeTab(tabKey) {
-  const tabs = ['soul', 'memory', 'fewshot', 'scope', 'sim'];
+  const tabs = ['soul', 'memory', 'scope'];
   tabs.forEach(t => {
     const btn = document.getElementById(`tab-btn-${t}`);
     const pane = document.getElementById(`pane-${t}`);
@@ -4935,13 +4973,19 @@ function switchKnowledgeTab(tabKey) {
     if (pane) pane.style.display = (t === tabKey ? 'block' : 'none');
   });
 
-  if (tabKey === 'memory') renderKnowledgeQnaSummary();
-  if (tabKey === 'fewshot') renderAiExemplarPreview();
+  // Always ensure quick teach dropzone events are initialized across all profile tabs
+  if (window.initQuickTeachEvents) initQuickTeachEvents();
+
+  if (tabKey === 'memory') {
+    if (window.loadVaultStats) loadVaultStats();
+    if (window.loadVaultArticles) loadVaultArticles();
+    if (window.renderKnowledgeGraph) renderKnowledgeGraph();
+  }
   if (tabKey === 'scope') {
+    // Định hướng AI-First: Mặc định mở rộng khay Dạy Bot để người dùng sẵn sàng kéo thả tài liệu / dán ảnh
+    if (window.toggleQuickTeachDrawer) toggleQuickTeachDrawer(true);
     populateLeadTagsSelect();
     updateAiTagFilterUI();
-  }
-  if (tabKey === 'sim') {
     renderSimChat();
     setTimeout(() => document.getElementById('sim-chat-input')?.focus(), 100);
   }
@@ -4973,7 +5017,8 @@ function populateProfileModelOptions(selectedModel) {
   const select = document.getElementById('ai-profile-model-select');
   if (!select) return;
 
-  const currentVal = selectedModel !== undefined ? selectedModel : select.value;
+  const rawVal = selectedModel !== undefined ? selectedModel : select.value;
+  const currentVal = (rawVal && rawVal !== 'null' && rawVal !== 'undefined') ? String(rawVal).trim() : '';
 
   const primaryProvider = document.getElementById('ai-provider-select')?.value || aiSettingsState?.provider || 'gemini';
   const primaryModel = document.getElementById('ai-model-select')?.value || aiSettingsState?.model || 'gemini-2.5-flash';
@@ -5043,11 +5088,25 @@ function populateProfileModelOptions(selectedModel) {
   }
 
   select.innerHTML = html;
-  if (currentVal) {
-    select.value = currentVal;
-  }
+  select.value = currentVal;
 }
 window.populateProfileModelOptions = populateProfileModelOptions;
+
+function toggleProfileAdvancedOptions(force = null) {
+  const row = document.getElementById('ai-profile-advanced-row');
+  const btn = document.getElementById('btn-toggle-profile-advanced');
+  if (!row) return;
+  const isCurrentlyOpen = row.style.display !== 'none';
+  const shouldOpen = force !== null ? force : !isCurrentlyOpen;
+  row.style.display = shouldOpen ? 'flex' : 'none';
+  if (btn) {
+    const rawVal = document.getElementById('ai-profile-model-select')?.value;
+    const hasOverride = Boolean(rawVal && rawVal !== 'null' && rawVal !== 'undefined' && String(rawVal).trim() !== '');
+    btn.style.color = hasOverride ? '#fbbf24' : 'var(--text-muted)';
+    btn.innerText = hasOverride ? (shouldOpen ? '⚙️ Model Riêng: Đóng' : '⚙️ Model Riêng: BẬT') : (shouldOpen ? '⚙️ Đóng nâng cao' : '⚙️ Nâng cao');
+  }
+}
+window.toggleProfileAdvancedOptions = toggleProfileAdvancedOptions;
 
 function populateProfileSelector() {
   const select = document.getElementById('ai-profile-selector');
@@ -5078,6 +5137,9 @@ function handleAiProfileSelect(profileId) {
   activeProfileData = aiProfilesList.find(p => p.id === profileId) || null;
   populateProfileSelector();
   renderActiveProfileUI();
+  if (window.loadVaultStats) loadVaultStats(profileId);
+  if (window.loadVaultArticles) loadVaultArticles(profileId);
+  if (window.renderKnowledgeGraph) renderKnowledgeGraph(profileId);
 }
 window.handleAiProfileSelect = handleAiProfileSelect;
 
@@ -5108,9 +5170,21 @@ function renderActiveProfileUI() {
   const descInput = document.getElementById('ai-profile-desc-input');
   if (descInput) descInput.value = p.description || '';
 
-  populateProfileModelOptions(p.model || '');
+  const cleanModel = (p.model && p.model !== 'null' && p.model !== 'undefined') ? String(p.model).trim() : '';
+  populateProfileModelOptions(cleanModel);
   const modelSelect = document.getElementById('ai-profile-model-select');
-  if (modelSelect) modelSelect.value = p.model || '';
+  if (modelSelect) modelSelect.value = cleanModel;
+
+  // Đồng bộ giao diện Cài đặt nâng cao (Model Ghi Đè)
+  // Theo chuẩn AI-First & Progressive Disclosure: Mặc định luôn ẩn gọn, nút hiển thị trạng thái
+  const advRow = document.getElementById('ai-profile-advanced-row');
+  const btnAdv = document.getElementById('btn-toggle-profile-advanced');
+  const hasOverride = Boolean(cleanModel);
+  if (advRow) advRow.style.display = 'none';
+  if (btnAdv) {
+    btnAdv.style.color = hasOverride ? '#fbbf24' : 'var(--text-muted)';
+    btnAdv.innerText = hasOverride ? '⚙️ Model Riêng: BẬT' : '⚙️ Nâng cao';
+  }
 
   // Sub-tab 1: SOUL
   const soulInput = document.getElementById('ai-soul-input');
@@ -5125,42 +5199,51 @@ function renderActiveProfileUI() {
   aiSettingsState.exemplarConversation = p.fewShotPrompt || '';
   renderAiExemplarPreview();
 
-  // Sub-tab 4: Scope & Rules
+  // Sub-tab 4: Scope & Rules (Single Source of Truth)
+  const effectiveCooldown = p.adminCooldownMinutes ?? aiSettingsState.adminCooldownMinutes ?? 15;
   const adminCooldown = document.getElementById('ai-admin-cooldown');
-  if (adminCooldown) adminCooldown.value = p.adminCooldownMinutes ?? 15;
+  if (adminCooldown) adminCooldown.value = effectiveCooldown;
 
+  const effectiveDebounce = p.debounceSeconds ?? aiSettingsState.debounceSeconds ?? 3;
   const debounceSec = document.getElementById('ai-debounce-sec');
-  if (debounceSec) debounceSec.value = p.debounceSeconds ?? 3;
+  if (debounceSec) debounceSec.value = effectiveDebounce;
 
+  const effectiveAllowGroups = (p.allowGroups !== undefined) ? p.allowGroups : (aiSettingsState.allowGroups ?? 0);
   const allowGroupsCheck = document.getElementById('ai-allow-groups');
   if (allowGroupsCheck) {
-    allowGroupsCheck.checked = Boolean(p.allowGroups);
+    allowGroupsCheck.checked = Boolean(effectiveAllowGroups);
     toggleAiGroupAliasesUI();
   }
 
+  const effectiveBotAliases = p.botAliases ?? aiSettingsState.botAliases ?? '';
   const botAliasesInput = document.getElementById('ai-bot-aliases');
-  if (botAliasesInput) botAliasesInput.value = p.botAliases || '';
+  if (botAliasesInput) botAliasesInput.value = effectiveBotAliases;
 
+  const effectiveAutoTag = (p.autoTagNewLead !== undefined) ? p.autoTagNewLead : (aiSettingsState.autoTagNewLead ?? 0);
   const autoTagCheck = document.getElementById('ai-auto-tag-lead');
-  if (autoTagCheck) autoTagCheck.checked = Boolean(p.autoTagNewLead);
+  if (autoTagCheck) autoTagCheck.checked = Boolean(effectiveAutoTag);
 
   populateLeadTagsSelect();
+  const effectiveLeadTagId = p.defaultLeadTagId ?? aiSettingsState.defaultLeadTagId ?? '';
   const leadTagSelect = document.getElementById('ai-default-lead-tag-select');
-  if (leadTagSelect) leadTagSelect.value = p.defaultLeadTagId || '';
+  if (leadTagSelect) leadTagSelect.value = effectiveLeadTagId;
 
-  // Parse tag filters
-  let excludedTags = [];
-  let allowedTags = [];
-  try {
-    excludedTags = typeof p.excludedTagIds === 'string' ? JSON.parse(p.excludedTagIds || '[]') : (p.excludedTagIds || []);
-    allowedTags = typeof p.allowedTagIds === 'string' ? JSON.parse(p.allowedTagIds || '[]') : (p.allowedTagIds || []);
-  } catch {}
-  aiSettingsState.excludedTagIds = excludedTags;
-  aiSettingsState.allowedTagIds = allowedTags;
+  // Parse tag filters: ưu tiên từ p nếu có cấu hình riêng, ngược lại giữ nguyên aiSettingsState
+  if (p.excludedTagIds !== undefined && p.excludedTagIds !== null) {
+    try {
+      aiSettingsState.excludedTagIds = typeof p.excludedTagIds === 'string' ? JSON.parse(p.excludedTagIds || '[]') : p.excludedTagIds;
+    } catch {}
+  }
+  if (p.allowedTagIds !== undefined && p.allowedTagIds !== null) {
+    try {
+      aiSettingsState.allowedTagIds = typeof p.allowedTagIds === 'string' ? JSON.parse(p.allowedTagIds || '[]') : p.allowedTagIds;
+    } catch {}
+  }
 
+  const effectiveTargetMode = p.targetMode || aiSettingsState.targetMode || 'all';
   const targetModeRadios = document.querySelectorAll('input[name="ai-target-mode"]');
   targetModeRadios.forEach(r => {
-    r.checked = (r.value === (p.targetMode || 'all'));
+    r.checked = (r.value === effectiveTargetMode);
   });
   updateAiTagFilterUI();
 
@@ -5189,7 +5272,8 @@ async function saveActiveAiProfile() {
 
   const name = document.getElementById('ai-profile-name-input')?.value.trim() || 'Hồ Sơ Không Tên';
   const description = document.getElementById('ai-profile-desc-input')?.value.trim() || '';
-  const model = document.getElementById('ai-profile-model-select')?.value.trim() || '';
+  const rawModel = document.getElementById('ai-profile-model-select')?.value.trim() || '';
+  const model = (rawModel && rawModel !== 'null' && rawModel !== 'undefined') ? rawModel : '';
   const soulPrompt = document.getElementById('ai-soul-input')?.value.trim() || '';
   const memoryPrompt = document.getElementById('ai-memory-input')?.value.trim() || '';
   const scopePrompt = document.getElementById('ai-scope-input')?.value.trim() || '';
@@ -5205,7 +5289,7 @@ async function saveActiveAiProfile() {
     id: activeProfileId,
     name,
     description,
-    model: model || null,
+    model: model || '',
     soulPrompt,
     memoryPrompt,
     fewShotPrompt: aiSettingsState.exemplarConversation || '',
@@ -5236,6 +5320,34 @@ async function saveActiveAiProfile() {
         aiProfilesList.push(result.data);
       }
       activeProfileData = result.data;
+
+      // Đồng bộ sang aiSettingsState và Header controls
+      aiSettingsState.adminCooldownMinutes = adminCooldownMinutes;
+      aiSettingsState.debounceSeconds = debounceSeconds;
+      aiSettingsState.allowGroups = allowGroups;
+      aiSettingsState.botAliases = botAliases;
+      aiSettingsState.autoTagNewLead = autoTagNewLead;
+      aiSettingsState.defaultLeadTagId = defaultLeadTagId;
+      aiSettingsState.targetMode = targetMode;
+      updateGlobalAiButtonUI();
+
+      // Lưu song song vào ai_settings để Header và Backend luôn đồng nhất
+      fetch('/api/ai/settings', {
+        method: 'POST',
+        headers: { ...getHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          adminCooldownMinutes,
+          debounceSeconds,
+          allowGroups,
+          botAliases,
+          autoTagNewLead,
+          defaultLeadTagId,
+          targetMode,
+          excludedTagIds: aiSettingsState.excludedTagIds || [],
+          allowedTagIds: aiSettingsState.allowedTagIds || []
+        })
+      }).catch(e => console.warn('Background ai_settings sync failed:', e));
+
       populateProfileSelector();
       populateCrmAiProfileSelect();
       showToast(`🎉 Đã lưu Hồ Sơ "${name}" thành công!`, 'info');
@@ -5393,6 +5505,1586 @@ async function applyGoldenTemplate(templateKey) {
 }
 window.applyGoldenTemplate = applyGoldenTemplate;
 
+// =============================================================================
+// SECOND BRAIN STUDIO — WIKI VAULT, AUTONOMOUS SYNTHESIZER & KNOWLEDGE GRAPH
+// =============================================================================
+let vaultArticlesCache = [];
+let selectedArticleSlug = null;
+let teachImageBase64 = null;
+let teachImageName = null;
+let teachImageSize = null;
+let teachDocContent = null;
+let teachDocName = null;
+let teachDocSize = null;
+let pendingProposal = null;
+let vaultActiveSidebarTab = 'graph';
+let graphAnimationId = null;
+let graphNodes = [];
+let graphLinks = [];
+let graphDraggingNode = null;
+let isGraphPaused = false;
+
+// Tự động pause animation khi tab trình duyệt bị ẩn để tiết kiệm RAM & CPU
+document.addEventListener('visibilitychange', () => {
+  isGraphPaused = document.hidden;
+  if (!isGraphPaused && vaultActiveSidebarTab === 'graph') {
+    renderKnowledgeGraph();
+  }
+});
+
+function toggleQuickTeachDrawer(forceOpen = null) {
+  const body = document.getElementById('quick-teach-body');
+  const arrow = document.getElementById('quick-teach-arrow');
+  if (!body) return;
+  const isCurrentlyOpen = body.style.display !== 'none';
+  const shouldOpen = forceOpen !== null ? forceOpen : !isCurrentlyOpen;
+  
+  body.style.display = shouldOpen ? 'block' : 'none';
+  if (arrow) {
+    arrow.innerText = shouldOpen ? '▴ Thu gọn' : '▾ Mở rộng';
+  }
+}
+window.toggleQuickTeachDrawer = toggleQuickTeachDrawer;
+
+function initQuickTeachEvents() {
+  const input = document.getElementById('teach-input-text');
+  const dropzone = document.getElementById('quick-teach-dropzone');
+  if (!input || input._teachEventsBound) return;
+  input._teachEventsBound = true;
+
+  const handlePaste = (e) => {
+    const items = (e.clipboardData || window.clipboardData)?.items;
+    if (!items) return;
+    for (const item of items) {
+      if (item.type && item.type.startsWith('image/')) {
+        const file = item.getAsFile();
+        if (file) {
+          e.preventDefault();
+          toggleQuickTeachDrawer(true);
+          readTeachImageFile(file);
+          break;
+        }
+      }
+    }
+  };
+
+  input.addEventListener('paste', handlePaste);
+
+  if (dropzone) {
+    dropzone.addEventListener('paste', handlePaste);
+    dropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropzone.style.borderColor = '#c084fc';
+    });
+    dropzone.addEventListener('dragleave', () => {
+      dropzone.style.borderColor = 'rgba(168, 85, 247, 0.35)';
+    });
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.style.borderColor = 'rgba(168, 85, 247, 0.35)';
+      const file = e.dataTransfer?.files?.[0];
+      if (file) {
+        toggleQuickTeachDrawer(true);
+        processIncomingTeachFile(file);
+      }
+    });
+  }
+
+  const personaTab = document.getElementById('tab-pane-persona');
+  if (personaTab && !personaTab._teachPasteBound) {
+    personaTab._teachPasteBound = true;
+    personaTab.addEventListener('paste', (e) => {
+      if (document.activeElement?.id === 'ai-soul-input' || document.activeElement?.id === 'wiki-editor-content' || document.activeElement?.id === 'sim-chat-input') {
+        return;
+      }
+      const items = (e.clipboardData || window.clipboardData)?.items;
+      if (!items) return;
+      for (const item of items) {
+        if (item.type && item.type.startsWith('image/')) {
+          const file = item.getAsFile();
+          if (file) {
+            e.preventDefault();
+            toggleQuickTeachDrawer(true);
+            readTeachImageFile(file);
+            break;
+          }
+        }
+      }
+    });
+  }
+}
+window.initQuickTeachEvents = initQuickTeachEvents;
+
+function processIncomingTeachFile(file) {
+  if (!file) return;
+  toggleQuickTeachDrawer(true);
+
+  const isImage = file.type && file.type.startsWith('image/');
+  const isTextDoc = file.name.match(/\.(txt|md|markdown|csv|json|log)$/i) || (file.type && (file.type.includes('text') || file.type.includes('json')));
+
+  if (isImage) {
+    readTeachImageFile(file);
+  } else if (isTextDoc) {
+    readTeachDocumentFile(file);
+  } else {
+    alert('Định dạng tệp chưa được hỗ trợ. Vui lòng chọn tệp hình ảnh (PNG, JPG, WebP) hoặc tài liệu văn bản (.txt, .md, .csv, .json).');
+  }
+}
+
+function updateTeachAttachmentsBar() {
+  const bar = document.getElementById('teach-attachments-bar');
+  const docChip = document.getElementById('teach-doc-chip');
+  const imgChip = document.getElementById('teach-img-chip');
+  const docNameEl = document.getElementById('teach-doc-name');
+  const docSizeEl = document.getElementById('teach-doc-size');
+  const imgNameEl = document.getElementById('teach-img-name');
+  const imgSizeEl = document.getElementById('teach-img-size');
+  const previewImg = document.getElementById('teach-preview-img');
+
+  const hasDoc = Boolean(teachDocContent && teachDocName);
+  const hasImg = Boolean(teachImageBase64);
+
+  if (docChip) {
+    docChip.style.display = hasDoc ? 'flex' : 'none';
+    if (hasDoc) {
+      if (docNameEl) docNameEl.innerText = teachDocName;
+      if (docSizeEl) docSizeEl.innerText = `(${((teachDocSize || 0) / 1024).toFixed(1)} KB)`;
+    }
+  }
+
+  if (imgChip) {
+    imgChip.style.display = hasImg ? 'flex' : 'none';
+    if (hasImg) {
+      if (imgNameEl) imgNameEl.innerText = teachImageName || 'Ảnh đính kèm';
+      if (imgSizeEl) imgSizeEl.innerText = `(${((teachImageSize || 0) / 1024).toFixed(1)} KB)`;
+      if (previewImg) previewImg.src = teachImageBase64;
+    }
+  }
+
+  if (bar) {
+    bar.style.display = (hasDoc || hasImg) ? 'flex' : 'none';
+  }
+}
+window.updateTeachAttachmentsBar = updateTeachAttachmentsBar;
+
+function setQuickTeachPrompt(promptText) {
+  toggleQuickTeachDrawer(true);
+  const input = document.getElementById('teach-input-text');
+  if (input) {
+    input.value = promptText;
+    input.focus();
+    // Đặt con trỏ về cuối văn bản
+    input.setSelectionRange(promptText.length, promptText.length);
+  }
+}
+window.setQuickTeachPrompt = setQuickTeachPrompt;
+
+function readTeachDocumentFile(file) {
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) {
+    alert('Kích thước tệp tài liệu vượt quá 2MB. Vui lòng chọn tệp nhỏ hơn.');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = (evt) => {
+    teachDocContent = evt.target.result;
+    teachDocName = file.name;
+    teachDocSize = file.size;
+
+    updateTeachAttachmentsBar();
+
+    const input = document.getElementById('teach-input-text');
+    if (input) {
+      input.focus();
+    }
+    showToast(`📄 Đã đính kèm tệp "${file.name}" (${(file.size / 1024).toFixed(1)} KB). Bạn có thể gõ thêm câu Prompt dặn dò AI!`, 'info');
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function clearTeachDocument() {
+  teachDocContent = null;
+  teachDocName = null;
+  teachDocSize = null;
+  const fileInput = document.getElementById('teach-file-picker');
+  if (fileInput) fileInput.value = '';
+  updateTeachAttachmentsBar();
+}
+window.clearTeachDocument = clearTeachDocument;
+
+function readTeachImageFile(file) {
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) {
+    alert('Kích thước ảnh vượt quá 5MB. Vui lòng chọn ảnh nhỏ hơn.');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = (evt) => {
+    teachImageBase64 = evt.target.result;
+    teachImageName = file.name;
+    teachImageSize = file.size;
+
+    updateTeachAttachmentsBar();
+
+    const input = document.getElementById('teach-input-text');
+    if (input) {
+      input.focus();
+    }
+    showToast(`🖼️ Đã đính kèm ảnh "${file.name}". Bạn có thể gõ thêm câu Prompt dặn dò AI!`, 'info');
+  };
+  reader.readAsDataURL(file);
+}
+
+function handleTeachFilePicked(files) {
+  if (files && files[0]) {
+    processIncomingTeachFile(files[0]);
+  }
+}
+window.handleTeachFilePicked = handleTeachFilePicked;
+
+function clearTeachImage() {
+  teachImageBase64 = null;
+  teachImageName = null;
+  teachImageSize = null;
+  const fileInput = document.getElementById('teach-file-picker');
+  if (fileInput) fileInput.value = '';
+  updateTeachAttachmentsBar();
+}
+window.clearTeachImage = clearTeachImage;
+
+async function executeQuickTeach() {
+  const btn = document.getElementById('btn-teach-synthesize');
+  const input = document.getElementById('teach-input-text');
+  const prompt = input ? input.value.trim() : '';
+  const autoApply = Boolean(document.getElementById('teach-auto-apply')?.checked);
+
+  if (!prompt && !teachDocContent && !teachImageBase64) {
+    alert('Vui lòng nhập lời dặn, tải tệp hoặc đính kèm ảnh (Ctrl+V) để dạy Bot!');
+    input?.focus();
+    return;
+  }
+
+  const originalBtnText = btn ? btn.innerHTML : '<span>✨</span> Dạy Bot Ngay';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '⏳ AI Đang Xử Lý &amp; Học...';
+  }
+
+  try {
+    const profileId = activeProfileId || 'default';
+    
+    // Nếu có tài liệu đính kèm: text là nội dung tài liệu, instruction là câu Prompt của người dùng
+    // Nếu không có tài liệu đính kèm: text là câu Prompt/ghi chú
+    const textPayload = teachDocContent || (!teachImageBase64 ? prompt : '');
+    const instructionPayload = prompt;
+
+    const res = await fetch('/api/ai/vault/synthesize', {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({
+        profileId,
+        text: textPayload,
+        instruction: instructionPayload,
+        image: teachImageBase64,
+        docName: teachDocName,
+        autoApply
+      })
+    });
+
+    const result = await parseSafeJson(res);
+    if (!res.ok) {
+      throw new Error(result.error || `HTTP ${res.status}`);
+    }
+
+    const proposal = result.data;
+
+    // Trường hợp đã tự động áp dụng (Auto Apply)
+    if (proposal.applied) {
+      showToast(`🎉 ${proposal.appliedMessage || 'Đã tự động nạp tri thức vào Bot thành công!'}`, 'info');
+      if (input) input.value = '';
+      clearTeachImage();
+      clearTeachDocument();
+      await loadVaultStats(profileId);
+      await loadVaultArticles(profileId);
+      if (vaultActiveSidebarTab === 'graph') renderKnowledgeGraph(profileId);
+      if (proposal.routing === 'soul') {
+        const pIdx = aiProfilesList.findIndex(p => p.id === profileId);
+        if (pIdx !== -1) aiProfilesList[pIdx].soulPrompt = proposal.proposedContent;
+        const soulInput = document.getElementById('ai-soul-input');
+        if (soulInput) {
+          soulInput.value = proposal.proposedContent;
+          soulInput.style.transition = 'background 0.5s';
+          soulInput.style.background = 'rgba(168, 85, 247, 0.15)';
+          setTimeout(() => { soulInput.style.background = ''; }, 1500);
+        }
+        switchKnowledgeTab('soul');
+      } else {
+        switchKnowledgeTab('memory');
+        const targetSlug = proposal.targetSlug || proposal.slug;
+        if (targetSlug && window.selectVaultArticle) {
+          selectVaultArticle(targetSlug);
+        }
+      }
+      return;
+    }
+
+    // Chuẩn hóa thuộc tính từ Backend
+    const targetSlugVal = proposal.targetSlug || proposal.slug || 'bai-viet-moi';
+    const targetTitleVal = proposal.title || 'Bài viết mới';
+    const proposedContentVal = proposal.markdownContent || proposal.proposedContent || '';
+    const diffSummaryVal = proposal.diffSummary || proposal.summary || 'AI đã trích xuất và tổng hợp thông tin mới.';
+    const isSoul = proposal.action === 'MODIFY_SOUL' || proposal.routing === 'soul';
+    const routingVal = isSoul ? 'soul' : 'wiki';
+    const conflictsList = Array.isArray(proposal.conflicts) ? proposal.conflicts : (proposal.conflictReason ? [proposal.conflictReason] : []);
+    const hasConflicts = conflictsList.length > 0;
+    const expectedHashVal = proposal.currentHash || proposal.expectedHash || null;
+
+    // Trường hợp cần người dùng duyệt đề xuất qua Modal
+    pendingProposal = {
+      ...proposal,
+      profileId,
+      slug: targetSlugVal,
+      title: targetTitleVal,
+      proposedContent: proposedContentVal,
+      summary: diffSummaryVal,
+      routing: routingVal,
+      expectedHash: expectedHashVal
+    };
+
+    const modalTitle = document.getElementById('diff-modal-title');
+    const modalSubtitle = document.getElementById('diff-modal-subtitle');
+    const conflictBanner = document.getElementById('diff-conflict-banner');
+    const conflictText = document.getElementById('diff-conflict-text');
+    const summaryText = document.getElementById('diff-summary-text');
+    const routingBadge = document.getElementById('diff-routing-badge');
+    const targetSlug = document.getElementById('diff-target-slug');
+    const targetTitle = document.getElementById('diff-target-title');
+    const proposedContent = document.getElementById('diff-proposed-content');
+    const contentLen = document.getElementById('diff-content-len');
+
+    if (modalTitle) modalTitle.innerText = `Duyệt Đề Xuất Cập Nhật ${isSoul ? 'Giọng Điệu' : 'Tri Thức'}`;
+    if (modalSubtitle) modalSubtitle.innerText = `Hồ sơ: ${activeProfileData?.name || profileId} • Hành động: ${proposal.action || 'update'}`;
+    
+    if (conflictBanner) {
+      if (hasConflicts) {
+        conflictBanner.style.display = 'block';
+        if (conflictText) conflictText.innerText = conflictsList.join(' • ');
+      } else {
+        conflictBanner.style.display = 'none';
+      }
+    }
+
+    if (summaryText) summaryText.innerText = diffSummaryVal;
+    if (routingBadge) {
+      routingBadge.innerText = isSoul ? '🎭 Giọng Điệu & SOUL' : '📚 Bài Viết Wiki';
+      routingBadge.className = `ai-hub-badge ${isSoul ? 'warning' : 'success'}`;
+    }
+    if (targetSlug) targetSlug.value = targetSlugVal;
+    if (targetTitle) targetTitle.value = targetTitleVal;
+    if (proposedContent) {
+      proposedContent.value = proposedContentVal;
+      if (contentLen) contentLen.innerText = `${proposedContentVal.length} ký tự`;
+    }
+
+    openModal('modal-vault-diff');
+  } catch (err) {
+    alert('Lỗi dạy Bot học: ' + err.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = originalBtnText;
+    }
+  }
+}
+window.executeQuickTeach = executeQuickTeach;
+
+async function confirmApplyDiff() {
+  if (!pendingProposal) return;
+  const btn = document.getElementById('btn-apply-diff-confirm');
+  const originalText = btn ? btn.innerText : '✅ Duyệt & Áp Dụng Ngay';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerText = '⏳ Đang Áp Dụng...';
+  }
+
+  try {
+    const slug = document.getElementById('diff-target-slug')?.value || pendingProposal.slug;
+    const title = document.getElementById('diff-target-title')?.value || pendingProposal.title;
+    const proposedContent = document.getElementById('diff-proposed-content')?.value || pendingProposal.proposedContent;
+    const profileId = pendingProposal.profileId || activeProfileId || 'default';
+
+    const res = await fetch('/api/ai/vault/apply-diff', {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({
+        profileId,
+        slug,
+        title,
+        proposedContent,
+        expectedHash: pendingProposal.expectedHash,
+        summary: pendingProposal.summary,
+        source: 'quick_teach_confirmed',
+        routing: pendingProposal.routing
+      })
+    });
+
+    const result = await parseSafeJson(res);
+    if (!res.ok) {
+      throw new Error(result.error || `HTTP ${res.status}`);
+    }
+
+    closeModal('modal-vault-diff');
+    showToast(`🎉 Đã duyệt và cập nhật tri thức thành công!`, 'info');
+
+    // Xóa input dạy học
+    const input = document.getElementById('teach-input-text');
+    if (input) input.value = '';
+    clearTeachImage();
+    clearTeachDocument();
+
+    // Reload UI
+    await loadVaultStats(profileId);
+    await loadVaultArticles(profileId);
+    if (vaultActiveSidebarTab === 'graph') renderKnowledgeGraph(profileId);
+
+    if (pendingProposal.routing === 'soul') {
+      const pIdx = aiProfilesList.findIndex(p => p.id === profileId);
+      if (pIdx !== -1) aiProfilesList[pIdx].soulPrompt = proposedContent;
+      const soulInput = document.getElementById('ai-soul-input');
+      if (soulInput) {
+        soulInput.value = proposedContent;
+        soulInput.style.transition = 'background 0.5s';
+        soulInput.style.background = 'rgba(168, 85, 247, 0.15)';
+        setTimeout(() => { soulInput.style.background = ''; }, 1500);
+      }
+      switchKnowledgeTab('soul');
+    } else {
+      switchKnowledgeTab('memory');
+      selectVaultArticle(slug);
+    }
+
+    pendingProposal = null;
+  } catch (err) {
+    alert('Lỗi duyệt áp dụng: ' + err.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerText = originalText;
+    }
+  }
+}
+window.confirmApplyDiff = confirmApplyDiff;
+
+// -----------------------------------------------------------------------------
+// VAULT CRUD OPERATIONS (LOAD, SAVE, DELETE, EDIT ARTICLES)
+// -----------------------------------------------------------------------------
+async function loadVaultStats(profileId = null) {
+  const pId = profileId || activeProfileId || 'default';
+  try {
+    const res = await fetch(`/api/ai/vault/stats?profileId=${encodeURIComponent(pId)}`, { headers: getHeaders() });
+    const result = await parseSafeJson(res);
+    if (res.ok && result.data) {
+      const st = result.data;
+      const elArticles = document.getElementById('metric-vault-articles');
+      const elChunks = document.getElementById('metric-vault-chunks');
+      const elSize = document.getElementById('metric-vault-size');
+      if (elArticles) elArticles.innerText = `${st.articleCount || 0} Bài Viết`;
+      if (elChunks) elChunks.innerText = `${st.totalChunks || 0} Khối BM25`;
+      if (elSize) elSize.innerText = `${st.storageSizeKb || 0} KB`;
+    }
+  } catch (err) {
+    console.warn('[Vault] Failed to load stats:', err);
+  }
+}
+window.loadVaultStats = loadVaultStats;
+
+async function loadVaultArticles(profileId = null) {
+  const pId = profileId || activeProfileId || 'default';
+  const container = document.getElementById('vault-articles-container');
+  if (!container) return;
+
+  try {
+    const res = await fetch(`/api/ai/vault/files?profileId=${encodeURIComponent(pId)}`, { headers: getHeaders() });
+    const result = await parseSafeJson(res);
+    if (res.ok && Array.isArray(result.data)) {
+      vaultArticlesCache = result.data;
+      renderVaultArticlesList(vaultArticlesCache);
+      if (vaultArticlesCache.length > 0) {
+        if (!selectedArticleSlug || !vaultArticlesCache.some(a => a.slug === selectedArticleSlug)) {
+          selectedArticleSlug = vaultArticlesCache[0].slug;
+        }
+        selectVaultArticle(selectedArticleSlug);
+      } else {
+        startCreateNewArticle();
+      }
+    }
+  } catch (err) {
+    console.error('[Vault] Failed to load articles:', err);
+    container.innerHTML = `<div style="text-align: center; color: #f87171; font-size: 0.74rem; padding: 20px;">Lỗi tải bài viết: ${escapeHtml(err.message)}</div>`;
+  }
+}
+window.loadVaultArticles = loadVaultArticles;
+
+// =============================================================================
+// SAFE MARKDOWN TO HTML PARSER (XSS IMMUNITY & NOTION-LIKE BEAUTIFUL VIEW)
+// =============================================================================
+function renderSafeMarkdownToHtml(markdownText) {
+  if (!markdownText) {
+    return '<div style="text-align: center; color: var(--text-muted); padding: 40px 10px;">👈 Hãy chọn một bài viết từ danh mục bên trái hoặc bấm <strong>➕ Thêm Mới</strong> để bắt đầu.</div>';
+  }
+
+  // Lọc bỏ YAML Frontmatter (--- ... ---) ở đầu tệp để người dùng chỉ thấy nội dung văn bản thuần túy, sạch sẽ
+  const cleanMarkdown = String(markdownText || '').replace(/^---[\r\n]+[\s\S]*?[\r\n]+---[\r\n]*/, '').trim();
+
+  // 1. Bước 1: XSS Immunity — Escape toàn bộ HTML tag thô trước khi parse
+  let safe = escapeHtml(cleanMarkdown);
+
+  // 2. Bước 2: Parse Markdown Table (| Col 1 | Col 2 |)
+  safe = safe.replace(/((?:^\|[^\n]+\|\r?\n)+)/gm, (match) => {
+    const lines = match.trim().split(/\r?\n/).filter(l => l.trim().startsWith('|'));
+    if (lines.length < 2) return match;
+    
+    // Tìm hàng phân cách |---|---|
+    let sepIdx = -1;
+    for (let i = 0; i < lines.length; i++) {
+      if (/^\|(?:\s*:?-+:?\s*\|)+$/.test(lines[i].trim())) {
+        sepIdx = i;
+        break;
+      }
+    }
+
+    if (sepIdx <= 0) return match; // Không phải table hợp lệ
+
+    const headerLines = lines.slice(0, sepIdx);
+    const bodyLines = lines.slice(sepIdx + 1);
+
+    const parseRow = (rowStr, isHeader = false) => {
+      const cells = rowStr.split('|').slice(1, -1);
+      const tag = isHeader ? 'th' : 'td';
+      return `<tr>${cells.map(c => `<${tag}>${c.trim()}</${tag}>`).join('')}</tr>`;
+    };
+
+    const thead = `<thead>${headerLines.map(r => parseRow(r, true)).join('')}</thead>`;
+    const tbody = `<tbody>${bodyLines.map(r => parseRow(r, false)).join('')}</tbody>`;
+
+    return `<table>${thead}${tbody}</table>`;
+  });
+
+  // 3. Parse Headings (# H1, ## H2, ### H3)
+  safe = safe.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+  safe = safe.replace(/^## (.*$)/gim, '<h2>$1</h2>');
+  safe = safe.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+
+  // 4. Parse Blockquotes (> [!NOTE] hoặc > text)
+  safe = safe.replace(/^\> (.*$)/gim, '<blockquote>$1</blockquote>');
+
+  // 5. Parse Bold & Italic
+  safe = safe.replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>');
+  safe = safe.replace(/\*(.*?)\*/gim, '<em>$1</em>');
+
+  // 6. Parse Inline Code `code`
+  safe = safe.replace(/`([^`]+)`/gim, '<code>$1</code>');
+
+  // 7. Parse Unordered Lists (- item hoặc * item)
+  safe = safe.replace(/((?:^(?:-|\*)\s+[^\n]+\r?\n?)+)/gm, (match) => {
+    const items = match.trim().split(/\r?\n/).map(l => l.replace(/^(?:-|\*)\s+/, ''));
+    return `<ul>${items.map(it => `<li>${it}</li>`).join('')}</ul>`;
+  });
+
+  // 8. Chuyển đổi newlines thành <br> cho các đoạn văn thông thường
+  const blocks = safe.split(/\n\n+/);
+  const formattedBlocks = blocks.map(block => {
+    const trimmed = block.trim();
+    if (trimmed.startsWith('<h1') || trimmed.startsWith('<h2') || trimmed.startsWith('<h3') || 
+        trimmed.startsWith('<table') || trimmed.startsWith('<ul') || trimmed.startsWith('<blockquote')) {
+      return trimmed;
+    }
+    return `<p style="margin: 8px 0;">${trimmed.replace(/\n/g, '<br>')}</p>`;
+  });
+
+  return formattedBlocks.join('\n');
+}
+window.renderSafeMarkdownToHtml = renderSafeMarkdownToHtml;
+
+// Quản lý chế độ xem: 'preview' (Xem Đẹp) hoặc 'edit' (Chỉnh Sửa)
+let currentArticleEditorMode = 'preview';
+
+function setArticleEditorMode(mode) {
+  currentArticleEditorMode = mode;
+  const btnPrev = document.getElementById('btn-editor-mode-preview');
+  const btnEdit = document.getElementById('btn-editor-mode-edit');
+  const btnGraph = document.getElementById('btn-editor-mode-graph');
+  const previewContainer = document.getElementById('vault-editor-preview-container');
+  const formGroup = document.getElementById('vault-editor-form-group');
+  const graphContainer = document.getElementById('vault-editor-graph-container');
+  const btnQuickEdit = document.getElementById('btn-vault-quick-edit');
+  const btnSave = document.getElementById('btn-vault-save-article');
+
+  if (btnPrev) btnPrev.classList.toggle('active', mode === 'preview');
+  if (btnEdit) btnEdit.classList.toggle('active', mode === 'edit');
+  if (btnGraph) btnGraph.classList.toggle('active', mode === 'graph');
+
+  if (mode === 'preview') {
+    if (previewContainer) previewContainer.style.display = 'flex';
+    if (formGroup) formGroup.style.display = 'none';
+    if (graphContainer) graphContainer.style.display = 'none';
+    if (btnQuickEdit) btnQuickEdit.style.display = 'inline-block';
+    if (btnSave) btnSave.style.display = 'none';
+
+    // Cập nhật nội dung render sang preview
+    const titleVal = document.getElementById('vault-article-title')?.value || 'Bài Viết Chưa Đặt Tên';
+    const contentVal = document.getElementById('vault-article-content')?.value || '';
+    const tagsVal = document.getElementById('vault-article-tags')?.value || '';
+
+    const previewH1 = document.getElementById('vault-preview-h1');
+    const tagsBar = document.getElementById('vault-preview-tags-bar');
+    const previewPane = document.getElementById('vault-article-preview-pane');
+
+    if (previewH1) previewH1.innerText = titleVal;
+    if (tagsBar) {
+      const rawTags = tagsVal.split(',').map(t => t.trim()).filter(Boolean);
+      tagsBar.innerHTML = rawTags.map(t => 
+        `<span style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-size: 0.72rem; font-weight: 600; padding: 2px 8px; border-radius: 12px; border: 1px solid rgba(56, 189, 248, 0.3);">#${escapeHtml(t)}</span>`
+      ).join('');
+    }
+    if (previewPane) {
+      previewPane.innerHTML = renderSafeMarkdownToHtml(contentVal);
+    }
+  } else if (mode === 'edit') {
+    if (previewContainer) previewContainer.style.display = 'none';
+    if (formGroup) formGroup.style.display = 'flex';
+    if (graphContainer) graphContainer.style.display = 'none';
+    if (btnQuickEdit) btnQuickEdit.style.display = 'none';
+    if (btnSave) btnSave.style.display = 'inline-block';
+
+    const contentTextarea = document.getElementById('vault-article-content');
+    if (contentTextarea) {
+      updateArticleStatsLabel(contentTextarea.value);
+      contentTextarea.focus();
+    }
+  } else if (mode === 'graph') {
+    if (previewContainer) previewContainer.style.display = 'none';
+    if (formGroup) formGroup.style.display = 'none';
+    if (graphContainer) graphContainer.style.display = 'block';
+    if (btnQuickEdit) btnQuickEdit.style.display = 'none';
+    if (btnSave) btnSave.style.display = 'none';
+
+    const canvas = document.getElementById('vault-graph-canvas');
+    if (canvas && window.obsidianGraph) {
+      if (!window.obsidianGraph.canvas) {
+        window.obsidianGraph.init(canvas);
+      } else {
+        window.obsidianGraph.resize();
+        window.obsidianGraph.loadGraphData();
+      }
+    }
+  }
+}
+window.setArticleEditorMode = setArticleEditorMode;
+
+// Điều hướng Mobile Master-Detail
+function backToVaultListMobile() {
+  const grid = document.getElementById('vault-workspace-grid');
+  if (grid) {
+    grid.classList.remove('mobile-viewing-detail');
+  }
+}
+window.backToVaultListMobile = backToVaultListMobile;
+
+function openVaultArticleMobile() {
+  const grid = document.getElementById('vault-workspace-grid');
+  if (grid && window.innerWidth <= 768) {
+    grid.classList.add('mobile-viewing-detail');
+  }
+}
+
+// Thuật toán Collision-proof Auto Slug
+function generateSafeUniqueSlug(title, currentSlug = '') {
+  if (currentSlug) return currentSlug; // Giữ nguyên slug bài cũ nếu đã có
+  
+  const raw = String(title || '').trim();
+  let baseSlug = raw
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/[^a-z0-9-]/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+
+  if (!baseSlug) {
+    baseSlug = `bai-viet-${Date.now().toString(36)}`;
+  }
+
+  // Kiểm tra trùng lặp với danh sách bài viết hiện có
+  let candidate = baseSlug;
+  let counter = 2;
+  const existingSlugs = new Set((vaultArticlesCache || []).map(a => a.slug));
+  while (existingSlugs.has(candidate)) {
+    candidate = `${baseSlug}-${counter}`;
+    counter++;
+  }
+
+  return candidate;
+}
+
+// -----------------------------------------------------------------------------
+// VAULT CRUD OPERATIONS (LOAD, SAVE, DELETE, EDIT ARTICLES)
+// -----------------------------------------------------------------------------
+function renderVaultArticlesList(articles) {
+  const container = document.getElementById('vault-articles-container');
+  if (!container) return;
+
+  if (articles.length === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; color: var(--text-muted); font-size: 0.74rem; padding: 20px;">
+        Chưa có bài viết nào trong sổ tay. Bấm "+ Thêm Mới" hoặc Dạy Bot để bắt đầu.
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = articles.map(a => {
+    const isSelected = (a.slug === selectedArticleSlug);
+    const tagsHtml = Array.isArray(a.tags) && a.tags.length > 0 
+      ? a.tags.slice(0, 2).map(t => `<span style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; padding: 1px 5px; border-radius: 4px; font-size: 0.65rem;">#${escapeHtml(t)}</span>`).join(' ')
+      : '';
+
+    return `
+      <div onclick="selectVaultArticle('${escapeHtml(a.slug)}')" class="vault-article-card ${isSelected ? 'active' : ''}">
+        <div class="vault-card-title" style="font-weight: ${isSelected ? '700' : '600'}; font-size: 0.8rem; color: ${isSelected ? '#38bdf8' : 'var(--text-main)'}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+          📄 ${escapeHtml(a.title || a.slug)}
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 2px; font-size: 0.68rem; color: var(--text-muted);">
+          <span style="max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(a.summary || a.slug)}</span>
+          <div style="display: flex; gap: 3px;">${tagsHtml}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function filterVaultArticles(query) {
+  const q = String(query || '').toLowerCase().trim();
+  if (!q) {
+    renderVaultArticlesList(vaultArticlesCache);
+    return;
+  }
+  const filtered = vaultArticlesCache.filter(a => {
+    return (a.title && a.title.toLowerCase().includes(q)) ||
+           (a.slug && a.slug.toLowerCase().includes(q)) ||
+           (Array.isArray(a.tags) && a.tags.some(t => t.toLowerCase().includes(q)));
+  });
+  renderVaultArticlesList(filtered);
+}
+window.filterVaultArticles = filterVaultArticles;
+
+async function selectVaultArticle(slug) {
+  selectedArticleSlug = slug;
+  renderVaultArticlesList(vaultArticlesCache);
+  openVaultArticleMobile(); // Trượt sang màn hình chi tiết trên mobile
+
+  const pId = activeProfileId || 'default';
+  try {
+    const res = await fetch(`/api/ai/vault/file?profileId=${encodeURIComponent(pId)}&slug=${encodeURIComponent(slug)}`, { headers: getHeaders() });
+    const result = await parseSafeJson(res);
+    if (res.ok && result.data) {
+      const art = result.data;
+      const titleInput = document.getElementById('vault-article-title');
+      const slugInput = document.getElementById('vault-article-slug');
+      const tagsInput = document.getElementById('vault-article-tags');
+      const contentTextarea = document.getElementById('vault-article-content');
+      const viewingBadge = document.getElementById('vault-viewing-title-badge');
+
+      if (titleInput) titleInput.value = art.title || art.slug;
+      if (slugInput) {
+        slugInput.value = art.slug;
+        slugInput.readOnly = true;
+      }
+      if (tagsInput) tagsInput.value = Array.isArray(art.tags) ? art.tags.join(', ') : '';
+      if (contentTextarea) {
+        // Ưu tiên art.body (đã loại bỏ frontmatter) hoặc lọc sạch frontmatter để giao diện soạn thảo & xem trước thuần khiết
+        const bodyContent = (art.body !== undefined && art.body !== null) 
+          ? art.body 
+          : String(art.content || '').replace(/^---[\r\n]+[\s\S]*?[\r\n]+---[\r\n]*/, '').trim();
+        contentTextarea.value = bodyContent;
+        updateArticleStatsLabel(bodyContent);
+      }
+      if (viewingBadge) {
+        viewingBadge.innerText = art.title || art.slug;
+      }
+
+      // Mặc định luôn đưa về chế độ Xem Đẹp (Read-first Mode)
+      setArticleEditorMode('preview');
+    }
+  } catch (err) {
+    console.error('[Vault] Error reading article:', err);
+  }
+}
+window.selectVaultArticle = selectVaultArticle;
+
+function updateArticleStatsLabel(text) {
+  const statsLabel = document.getElementById('vault-article-stats-label');
+  if (!statsLabel) return;
+  const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+  const chars = text.length;
+  statsLabel.innerText = `${words} từ • ${chars} ký tự`;
+}
+
+function startCreateNewArticle() {
+  selectedArticleSlug = null;
+  renderVaultArticlesList(vaultArticlesCache);
+  openVaultArticleMobile();
+
+  const titleInput = document.getElementById('vault-article-title');
+  const slugInput = document.getElementById('vault-article-slug');
+  const tagsInput = document.getElementById('vault-article-tags');
+  const contentTextarea = document.getElementById('vault-article-content');
+  const viewingBadge = document.getElementById('vault-viewing-title-badge');
+
+  if (titleInput) titleInput.value = '';
+  if (slugInput) {
+    slugInput.value = '';
+    slugInput.readOnly = false;
+  }
+  if (tagsInput) tagsInput.value = '';
+  if (contentTextarea) {
+    contentTextarea.value = `# Tiêu Đề Bài Viết Mới\n\n| Món / Sản Phẩm | Giá Tiền | Ghi Chú |\n|---|---|---|\n| Sản phẩm A | 100.000đ | Bảo hành 12T |\n\n* Dặn dò thêm cho Bot về chính sách giao hàng, khuyến mãi...`;
+    updateArticleStatsLabel(contentTextarea.value);
+  }
+  if (viewingBadge) {
+    viewingBadge.innerText = '➕ Bài Viết Mới (Đang soạn thảo)';
+  }
+
+  // Khi tạo mới: Mở thẳng chế độ Sửa (Edit Mode) để người dùng gõ ngay
+  setArticleEditorMode('edit');
+  if (titleInput) titleInput.focus();
+}
+window.startCreateNewArticle = startCreateNewArticle;
+
+function importDocumentIntoVault(files) {
+  if (!files || !files[0]) return;
+  const file = files[0];
+  if (file.size > 2 * 1024 * 1024) {
+    alert('Kích thước tệp tài liệu vượt quá 2MB. Vui lòng chọn tệp nhỏ hơn.');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = (evt) => {
+    const raw = evt.target.result;
+    const baseName = file.name.replace(/\.[^/.]+$/, '');
+    const cleanSlug = generateSafeUniqueSlug(baseName);
+
+    selectedArticleSlug = null;
+    renderVaultArticlesList(vaultArticlesCache);
+    openVaultArticleMobile();
+
+    const titleInput = document.getElementById('vault-article-title');
+    const slugInput = document.getElementById('vault-article-slug');
+    const tagsInput = document.getElementById('vault-article-tags');
+    const contentTextarea = document.getElementById('vault-article-content');
+    const viewingBadge = document.getElementById('vault-viewing-title-badge');
+
+    if (titleInput) titleInput.value = baseName;
+    if (slugInput) {
+      slugInput.value = cleanSlug;
+      slugInput.readOnly = false;
+    }
+    if (tagsInput) tagsInput.value = 'tai-lieu, import';
+    if (contentTextarea) {
+      contentTextarea.value = raw;
+      updateArticleStatsLabel(raw);
+    }
+    if (viewingBadge) {
+      viewingBadge.innerText = baseName;
+    }
+
+    setArticleEditorMode('preview');
+    showToast(`📄 Đã nạp tệp "${file.name}". Bấm "✏️ Chỉnh Sửa" hoặc "💾 Lưu" để hoàn tất!`, 'info');
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+window.importDocumentIntoVault = importDocumentIntoVault;
+
+async function saveCurrentVaultArticle() {
+  const titleInput = document.getElementById('vault-article-title');
+  const slugInput = document.getElementById('vault-article-slug');
+  const tagsInput = document.getElementById('vault-article-tags');
+  const contentTextarea = document.getElementById('vault-article-content');
+  const btn = document.getElementById('btn-vault-save-article');
+
+  const title = titleInput ? titleInput.value.trim() : '';
+  let slug = slugInput ? slugInput.value.trim() : '';
+  const content = contentTextarea ? contentTextarea.value : '';
+  const rawTags = tagsInput ? tagsInput.value.split(',').map(t => t.trim()).filter(Boolean) : [];
+
+  if (!content) {
+    alert('Nội dung bài viết không được để trống!');
+    return;
+  }
+
+  // Tự động sinh slug nếu đang để trống
+  if (!slug) {
+    slug = generateSafeUniqueSlug(title || 'bai-viet');
+    if (slugInput) slugInput.value = slug;
+  }
+
+  const originalText = btn ? btn.innerText : '💾 Lưu Vào Sổ Tay';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerText = '⏳ Đang Lưu...';
+  }
+
+  try {
+    const profileId = activeProfileId || 'default';
+    const res = await fetch('/api/ai/vault/file', {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({
+        profileId,
+        slug,
+        title: title || slug,
+        content,
+        tags: rawTags,
+        summary: 'Lưu thủ công từ trình soạn thảo'
+      })
+    });
+
+    const result = await parseSafeJson(res);
+    if (!res.ok) {
+      throw new Error(result.error || `HTTP ${res.status}`);
+    }
+
+    showToast(`💾 Đã lưu bài viết "${result.data.title}" thành công!`, 'info');
+    selectedArticleSlug = result.data.slug;
+    await loadVaultStats(profileId);
+    await loadVaultArticles(profileId);
+    
+    // Sau khi lưu thành công: Đưa về chế độ Xem Đẹp
+    setArticleEditorMode('preview');
+  } catch (err) {
+    alert('Lỗi lưu bài viết: ' + err.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerText = originalText;
+    }
+  }
+}
+window.saveCurrentVaultArticle = saveCurrentVaultArticle;
+
+async function deleteCurrentVaultArticle() {
+  if (!selectedArticleSlug) {
+    alert('Vui lòng chọn bài viết cần xóa.');
+    return;
+  }
+
+  if (!confirm(`Bạn có chắc chắn muốn xóa bài viết "${selectedArticleSlug}" khỏi Sổ tay không?\n\nBot sẽ không còn nhớ thông tin từ bài viết này nữa.`)) {
+    return;
+  }
+
+  try {
+    const profileId = activeProfileId || 'default';
+    const res = await fetch(`/api/ai/vault/file?profileId=${encodeURIComponent(profileId)}&slug=${encodeURIComponent(selectedArticleSlug)}`, {
+      method: 'DELETE',
+      headers: getHeaders()
+    });
+
+    const result = await parseSafeJson(res);
+    if (!res.ok) {
+      throw new Error(result.error || `HTTP ${res.status}`);
+    }
+
+    showToast(`🗑️ Đã xóa bài viết thành công!`, 'info');
+    selectedArticleSlug = null;
+    await loadVaultStats(profileId);
+    await loadVaultArticles(profileId);
+    backToVaultListMobile();
+  } catch (err) {
+    alert('Lỗi xóa bài viết: ' + err.message);
+  }
+}
+window.deleteCurrentVaultArticle = deleteCurrentVaultArticle;
+
+function insertMdFormat(prefix, suffix = '') {
+  const textarea = document.getElementById('vault-article-content');
+  if (!textarea) return;
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+  const oldText = textarea.value;
+  const selectedText = oldText.substring(start, end);
+  const replacement = prefix + selectedText + suffix;
+
+  textarea.value = oldText.substring(0, start) + replacement + oldText.substring(end);
+  textarea.focus();
+  textarea.setSelectionRange(start + prefix.length, start + prefix.length + selectedText.length);
+  updateArticleStatsLabel(textarea.value);
+}
+window.insertMdFormat = insertMdFormat;
+
+// -----------------------------------------------------------------------------
+// MODAL POP-UPS: GRAPH & REVISIONS VIEWERS
+// -----------------------------------------------------------------------------
+function openVaultGraphModal() {
+  setArticleEditorMode('graph');
+}
+window.openVaultGraphModal = openVaultGraphModal;
+
+function openVaultRevisionsModal() {
+  openModal('modal-vault-revisions-viewer');
+  const targetLabel = document.getElementById('vault-revisions-target-label');
+  if (targetLabel) {
+    targetLabel.innerText = selectedArticleSlug ? `Bài viết: ${selectedArticleSlug}` : 'Tất cả các bản lưu';
+  }
+  loadVaultRevisions(selectedArticleSlug);
+}
+window.openVaultRevisionsModal = openVaultRevisionsModal;
+
+async function loadVaultRevisions(slug = null) {
+  const container = document.getElementById('vault-revisions-list') || document.getElementById('vault-revisions-container');
+  if (!container) return;
+
+  container.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 0.74rem; padding: 20px;">Đang tải lịch sử thay đổi...</div>`;
+
+  try {
+    const profileId = activeProfileId || 'default';
+    const query = slug ? `profileId=${encodeURIComponent(profileId)}&slug=${encodeURIComponent(slug)}` : `profileId=${encodeURIComponent(profileId)}`;
+    const res = await fetch(`/api/ai/vault/revisions?${query}`, { headers: getHeaders() });
+    const result = await parseSafeJson(res);
+
+    if (res.ok && Array.isArray(result.data)) {
+      const revs = result.data;
+      if (revs.length === 0) {
+        container.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 0.74rem; padding: 20px;">Chưa có bản ghi lịch sử nào cho bài viết này.</div>`;
+        return;
+      }
+
+      container.innerHTML = revs.map(r => `
+        <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 6px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-weight: 700; font-size: 0.8rem; color: #38bdf8;">#${r.id} • ${escapeHtml(r.title || r.slug)}</span>
+            <span style="font-size: 0.7rem; color: var(--text-muted);">${escapeHtml(r.createdAt || '')}</span>
+          </div>
+          <div style="font-size: 0.76rem; color: var(--text-main); line-height: 1.4;">${escapeHtml(r.summary || 'Chỉnh sửa')}</div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px solid var(--border); padding-top: 6px;">
+            <span style="font-size: 0.7rem; color: var(--text-muted);">Nguồn: ${escapeHtml(r.source || 'user')}</span>
+            <button type="button" class="filter-btn" onclick="rollbackVaultRevision(${r.id})" style="padding: 3px 10px; font-size: 0.72rem; color: #fbbf24; border-color: rgba(251, 191, 36, 0.4); font-weight: 700;">
+              ↺ Khôi Phục Bản Này
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+  } catch (err) {
+    container.innerHTML = `<div style="text-align: center; color: #f87171; font-size: 0.74rem; padding: 20px;">Lỗi tải lịch sử: ${escapeHtml(err.message)}</div>`;
+  }
+}
+window.loadVaultRevisions = loadVaultRevisions;
+
+async function rollbackVaultRevision(revisionId) {
+  if (!confirm(`Bạn có chắc chắn muốn khôi phục bài viết về phiên bản #${revisionId} không?\n\nNội dung trong kho tri thức sẽ được trở lại thời điểm đó.`)) {
+    return;
+  }
+
+  try {
+    const profileId = activeProfileId || 'default';
+    const res = await fetch('/api/ai/vault/rollback', {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ profileId, revisionId })
+    });
+
+    const result = await parseSafeJson(res);
+    if (!res.ok) {
+      throw new Error(result.error || `HTTP ${res.status}`);
+    }
+
+    showToast(`↺ Đã khôi phục bài viết về phiên bản #${revisionId}!`, 'info');
+    closeModal('modal-vault-revisions-viewer');
+    await loadVaultStats(profileId);
+    await loadVaultArticles(profileId);
+    if (result.data?.slug) {
+      selectVaultArticle(result.data.slug);
+    }
+  } catch (err) {
+    alert('Lỗi hoàn tác: ' + err.message);
+  }
+}
+window.rollbackVaultRevision = rollbackVaultRevision;
+
+// -----------------------------------------------------------------------------
+// OBSIDIAN KNOWLEDGE GRAPH VIEWER (CLEAN, INTERACTIVE & INTUITIVE)
+// -----------------------------------------------------------------------------
+class ObsidianGraphViewer {
+  constructor() {
+    this.canvas = null;
+    this.ctx = null;
+    this.nodes = [];
+    this.links = [];
+    this.filterText = '';
+    this.showLabels = true;
+    this.isFullscreen = false;
+
+    // Camera transform (Pan & Zoom)
+    this.camera = { x: 0, y: 0, zoom: 1.0 };
+    this.isPanning = false;
+    this.panStart = { x: 0, y: 0 };
+
+    // Dragging & Hover state
+    this.draggedNode = null;
+    this.hoveredNode = null;
+    this.dragStart = null;
+  }
+
+  init(canvasEl) {
+    if (!canvasEl) return;
+    this.canvas = canvasEl;
+    this.ctx = this.canvas.getContext('2d');
+    this.setupEvents();
+    this.resize();
+    this.loadGraphData();
+  }
+
+  resize() {
+    if (!this.canvas) return;
+    const rect = this.canvas.parentElement.getBoundingClientRect();
+    const width = rect.width > 0 ? rect.width : 800;
+    const height = rect.height > 0 ? rect.height : 520;
+    const dpr = window.devicePixelRatio || 1;
+
+    this.canvas.width = width * dpr;
+    this.canvas.height = height * dpr;
+    this.width = width;
+    this.height = height;
+    if (this.ctx.resetTransform) this.ctx.resetTransform();
+    this.ctx.scale(dpr, dpr);
+    this.render();
+  }
+
+  async loadGraphData(forceReset = false) {
+    const pId = activeProfileId || 'default';
+    try {
+      const res = await fetch(`/api/ai/vault/graph?profileId=${encodeURIComponent(pId)}`, { headers: getHeaders() });
+      const result = await parseSafeJson(res);
+      if (res.ok && result.data) {
+        const rawNodes = result.data.nodes || [];
+        const rawLinks = result.data.links || [];
+
+        // Lọc sạch: Chỉ giữ các nốt bài viết thực tế, loại bỏ hoàn toàn các nốt thẻ phân loại rườm rà (#tag)
+        const mdNodes = rawNodes.filter(n => !n.isTag && !String(n.id).startsWith('tag:'));
+        const mdNodeIds = new Set(mdNodes.map(n => n.id));
+
+        const validLinks = rawLinks.filter(l => {
+          const s = typeof l.source === 'object' ? l.source.id : l.source;
+          const t = typeof l.target === 'object' ? l.target.id : l.target;
+          return mdNodeIds.has(s) && mdNodeIds.has(t);
+        });
+
+        const centerX = (this.width || 800) / 2;
+        const centerY = (this.height || 520) / 2;
+
+        // Tìm node gốc index hoặc node đầu tiên
+        const indexNode = mdNodes.find(n => n.isIndex || n.id === 'index') || mdNodes[0];
+        const childNodes = mdNodes.filter(n => n !== indexNode);
+
+        // Bố cục hình quạt rẽ nhánh cố định (Deterministic Fan Layout)
+        this.nodes = mdNodes.map(n => {
+          let px, py;
+          if (n === indexNode) {
+            px = centerX - (childNodes.length > 0 ? 95 : 0);
+            py = centerY;
+          } else {
+            const childIdx = childNodes.indexOf(n);
+            const totalChildren = childNodes.length;
+            if (totalChildren === 1) {
+              px = centerX + 95;
+              py = centerY;
+            } else if (totalChildren === 2) {
+              px = centerX + 95;
+              py = (childIdx === 0) ? (centerY - 65) : (centerY + 65);
+            } else {
+              const startAngle = -0.85;
+              const endAngle = 0.85;
+              const angle = startAngle + (childIdx / Math.max(1, totalChildren - 1)) * (endAngle - startAngle);
+              px = (centerX - 95) + Math.cos(angle) * 190;
+              py = centerY + Math.sin(angle) * 190;
+            }
+          }
+
+          const isIndexNode = (n === indexNode || n.isIndex || n.id === 'index');
+          return {
+            ...n,
+            isIndex: isIndexNode,
+            x: px,
+            y: py,
+            r: isIndexNode ? 13 : 8
+          };
+        });
+
+        const nodeMap = new Map(this.nodes.map(n => [n.id, n]));
+        
+        // Nếu các bài viết chưa có liên kết cha-con, tự động kết nối về index để tạo sơ đồ cây liên kết
+        let linksToUse = validLinks.map(l => ({
+          source: nodeMap.get(typeof l.source === 'object' ? l.source.id : l.source),
+          target: nodeMap.get(typeof l.target === 'object' ? l.target.id : l.target)
+        })).filter(l => l.source && l.target);
+
+        if (linksToUse.length === 0 && indexNode && this.nodes.length > 1) {
+          const idxObj = nodeMap.get(indexNode.id);
+          linksToUse = childNodes.map(c => ({
+            source: idxObj,
+            target: nodeMap.get(c.id)
+          })).filter(l => l.source && l.target);
+        }
+
+        this.links = linksToUse;
+
+        const statsEl = document.getElementById('sb-graph-stats');
+        if (statsEl) statsEl.innerText = `${this.nodes.length} bài • ${this.links.length} liên kết`;
+
+        this.fitToView();
+        this.render();
+      }
+    } catch (err) {
+      console.error('[Vault Graph] Lỗi nạp dữ liệu:', err);
+    }
+  }
+
+  fitToView(padding = 70) {
+    if (!this.nodes || this.nodes.length === 0) return;
+    const width = this.width || 800;
+    const height = this.height || 520;
+
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    for (const n of this.nodes) {
+      if (n.x < minX) minX = n.x;
+      if (n.x > maxX) maxX = n.x;
+      if (n.y < minY) minY = n.y;
+      if (n.y > maxY) maxY = n.y;
+    }
+
+    const graphW = Math.max(maxX - minX + padding * 2, 220);
+    const graphH = Math.max(maxY - minY + padding * 2, 180);
+    const graphCenterX = (minX + maxX) / 2;
+    const graphCenterY = (minY + maxY) / 2;
+
+    const scaleX = (width * 0.78) / graphW;
+    const scaleY = (height * 0.78) / graphH;
+    const targetZoom = Math.min(1.2, Math.max(0.6, Math.min(scaleX, scaleY)));
+
+    this.camera.zoom = targetZoom;
+    this.camera.x = (width / 2) - graphCenterX * targetZoom;
+    this.camera.y = (height / 2) - graphCenterY * targetZoom;
+    this.render();
+  }
+
+  resetView() {
+    this.loadGraphData(true);
+  }
+
+  toggleFullscreen() {
+    const container = document.getElementById('vault-editor-graph-container');
+    if (!container) return;
+    if (!this.isFullscreen) {
+      if (container.requestFullscreen) container.requestFullscreen();
+      this.isFullscreen = true;
+    } else {
+      if (document.exitFullscreen) document.exitFullscreen();
+      this.isFullscreen = false;
+    }
+    setTimeout(() => this.resize(), 150);
+  }
+
+  filterNodes(text) {
+    this.filterText = (text || '').trim().toLowerCase();
+    this.render();
+  }
+
+  toggleLabels(show) {
+    this.showLabels = Boolean(show);
+    this.render();
+  }
+
+  setupEvents() {
+    if (!this.canvas) return;
+
+    if (window.ResizeObserver) {
+      const ro = new ResizeObserver(() => this.resize());
+      ro.observe(this.canvas.parentElement);
+    }
+
+    // Mouse Down
+    this.canvas.addEventListener('mousedown', e => {
+      const mouse = this.getCanvasCoords(e);
+      const clickedNode = this.findNodeAt(mouse.x, mouse.y);
+
+      if (clickedNode) {
+        this.draggedNode = clickedNode;
+        this.dragStart = { x: mouse.x, y: mouse.y };
+        this.canvas.style.cursor = 'grabbing';
+      } else {
+        this.isPanning = true;
+        this.panStart = { x: e.clientX - this.camera.x, y: e.clientY - this.camera.y };
+        this.canvas.style.cursor = 'move';
+      }
+    });
+
+    // Mouse Move
+    window.addEventListener('mousemove', e => {
+      if (!this.canvas || !document.contains(this.canvas)) return;
+
+      if (this.draggedNode) {
+        const mouse = this.getCanvasCoords(e);
+        this.draggedNode.x = mouse.x;
+        this.draggedNode.y = mouse.y;
+        this.render();
+      } else if (this.isPanning) {
+        this.camera.x = e.clientX - this.panStart.x;
+        this.camera.y = e.clientY - this.panStart.y;
+        this.render();
+      } else {
+        const rect = this.canvas.getBoundingClientRect();
+        if (e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom) {
+          const mouse = this.getCanvasCoords(e);
+          const hovered = this.findNodeAt(mouse.x, mouse.y);
+          if (hovered !== this.hoveredNode) {
+            this.hoveredNode = hovered;
+            this.canvas.style.cursor = hovered ? 'pointer' : 'grab';
+            this.render();
+          }
+        }
+      }
+    });
+
+    // Mouse Up (Click Detection)
+    window.addEventListener('mouseup', e => {
+      if (this.draggedNode) {
+        if (this.dragStart) {
+          const mouse = this.getCanvasCoords(e);
+          const dist = Math.hypot(mouse.x - this.dragStart.x, mouse.y - this.dragStart.y);
+          if (dist < 5) {
+            this.onNodeClick(this.draggedNode);
+          }
+        }
+        this.draggedNode = null;
+        this.dragStart = null;
+        this.canvas.style.cursor = 'grab';
+        this.render();
+      }
+      this.isPanning = false;
+    });
+
+    // Wheel Zoom
+    this.canvas.addEventListener('wheel', e => {
+      e.preventDefault();
+      const zoomFactor = e.deltaY < 0 ? 1.15 : 0.87;
+      const newZoom = Math.max(0.3, Math.min(3.0, this.camera.zoom * zoomFactor));
+
+      const rect = this.canvas.getBoundingClientRect();
+      const mouseScreenX = e.clientX - rect.left;
+      const mouseScreenY = e.clientY - rect.top;
+
+      this.camera.x = mouseScreenX - (mouseScreenX - this.camera.x) * (newZoom / this.camera.zoom);
+      this.camera.y = mouseScreenY - (mouseScreenY - this.camera.y) * (newZoom / this.camera.zoom);
+      this.camera.zoom = newZoom;
+      this.render();
+    }, { passive: false });
+
+    // Touch events for Mobile
+    this.canvas.addEventListener('touchstart', e => {
+      if (e.touches.length === 1) {
+        const touch = e.touches[0];
+        const mouse = this.getCanvasCoords(touch);
+        const node = this.findNodeAt(mouse.x, mouse.y);
+        if (node) {
+          this.draggedNode = node;
+          this.dragStart = { x: mouse.x, y: mouse.y };
+        } else {
+          this.isPanning = true;
+          this.panStart = { x: touch.clientX - this.camera.x, y: touch.clientY - this.camera.y };
+        }
+      }
+    }, { passive: true });
+
+    this.canvas.addEventListener('touchmove', e => {
+      if (e.touches.length === 1) {
+        const touch = e.touches[0];
+        if (this.draggedNode) {
+          const mouse = this.getCanvasCoords(touch);
+          this.draggedNode.x = mouse.x;
+          this.draggedNode.y = mouse.y;
+          this.render();
+        } else if (this.isPanning) {
+          this.camera.x = touch.clientX - this.panStart.x;
+          this.camera.y = touch.clientY - this.panStart.y;
+          this.render();
+        }
+      }
+    }, { passive: true });
+
+    this.canvas.addEventListener('touchend', e => {
+      if (this.draggedNode) {
+        if (this.dragStart && e.changedTouches.length > 0) {
+          const mouse = this.getCanvasCoords(e.changedTouches[0]);
+          const dist = Math.hypot(mouse.x - this.dragStart.x, mouse.y - this.dragStart.y);
+          if (dist < 6) this.onNodeClick(this.draggedNode);
+        }
+        this.draggedNode = null;
+        this.render();
+      }
+      this.isPanning = false;
+    });
+  }
+
+  getCanvasCoords(e) {
+    const rect = this.canvas.getBoundingClientRect();
+    const clientX = e.clientX ?? e.pageX;
+    const clientY = e.clientY ?? e.pageY;
+    const screenX = clientX - rect.left;
+    const screenY = clientY - rect.top;
+    const x = (screenX - this.camera.x) / this.camera.zoom;
+    const y = (screenY - this.camera.y) / this.camera.zoom;
+    return { x, y };
+  }
+
+  findNodeAt(x, y) {
+    for (let i = this.nodes.length - 1; i >= 0; i--) {
+      const n = this.nodes[i];
+      const dist = Math.hypot(n.x - x, n.y - y);
+      if (dist <= n.r + 8) return n;
+    }
+    return null;
+  }
+
+  onNodeClick(node) {
+    if (!node || !node.id) return;
+    setArticleEditorMode('preview');
+    selectVaultArticle(node.id);
+  }
+
+  render() {
+    const ctx = this.ctx;
+    if (!ctx || !this.width || !this.height) return;
+
+    // Nền tối Obsidian Deep Space
+    ctx.fillStyle = '#080c16';
+    ctx.fillRect(0, 0, this.width, this.height);
+
+    ctx.save();
+    ctx.translate(this.camera.x, this.camera.y);
+    ctx.scale(this.camera.zoom, this.camera.zoom);
+
+    // 1. Vẽ các đường liên kết (Links)
+    for (const link of this.links) {
+      const na = link.source;
+      const nb = link.target;
+      if (!na || !nb) continue;
+
+      const isConnectedToHovered = this.hoveredNode && (na === this.hoveredNode || nb === this.hoveredNode);
+
+      ctx.beginPath();
+      ctx.moveTo(na.x, na.y);
+      ctx.lineTo(nb.x, nb.y);
+
+      if (isConnectedToHovered) {
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 1.8;
+        ctx.globalAlpha = 0.95;
+      } else {
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+        ctx.lineWidth = 1.0;
+        ctx.globalAlpha = this.hoveredNode ? 0.3 : 0.75;
+      }
+      ctx.stroke();
+    }
+
+    ctx.globalAlpha = 1.0;
+
+    // 2. Vẽ các điểm nút (Nodes)
+    for (const n of this.nodes) {
+      const label = n.label || n.title || n.id;
+      const isMatchFilter = !this.filterText || label.toLowerCase().includes(this.filterText);
+      const isHovered = (n === this.hoveredNode);
+      const isSelected = (n.id === selectedArticleSlug);
+      const isNeighbor = this.hoveredNode && this.links.some(l => 
+        (l.source === n && l.target === this.hoveredNode) || 
+        (l.target === n && l.source === this.hoveredNode)
+      );
+
+      let alpha = 1.0;
+      if (this.filterText && !isMatchFilter) alpha = 0.15;
+      else if (this.hoveredNode && !isHovered && !isNeighbor) alpha = 0.3;
+
+      ctx.save();
+      ctx.globalAlpha = alpha;
+
+      // Hào quang nốt đang chọn hoặc hover hoặc nốt index
+      if (n.isIndex || isHovered || isSelected) {
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, n.r + (n.isIndex ? 6 : 4), 0, Math.PI * 2);
+        ctx.fillStyle = n.isIndex ? 'rgba(56, 189, 248, 0.22)' : (isSelected ? 'rgba(56, 189, 248, 0.3)' : 'rgba(255, 255, 255, 0.12)');
+        ctx.fill();
+      }
+
+      // Chấm tròn node
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+
+      if (n.isIndex) {
+        ctx.fillStyle = isHovered ? '#ffffff' : '#38bdf8';
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2.0;
+        ctx.stroke();
+      } else if (isSelected) {
+        ctx.fillStyle = '#38bdf8';
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      } else {
+        ctx.fillStyle = isHovered ? '#ffffff' : '#94a3b8';
+        ctx.fill();
+        ctx.strokeStyle = isHovered ? '#38bdf8' : '#cbd5e1';
+        ctx.lineWidth = 1.0;
+        ctx.stroke();
+      }
+
+      // Nhãn chữ
+      if (this.showLabels || isHovered || isNeighbor || isSelected) {
+        if (n.isIndex) {
+          ctx.font = 'bold 12px system-ui, -apple-system, sans-serif';
+          ctx.fillStyle = '#38bdf8';
+          ctx.textAlign = 'center';
+          ctx.fillText(label, n.x, n.y + n.r + 16);
+        } else {
+          ctx.font = `${isHovered || isSelected ? '600 ' : '400 '}11px system-ui, -apple-system, sans-serif`;
+          ctx.fillStyle = isHovered || isSelected ? '#ffffff' : '#cbd5e1';
+          ctx.textAlign = 'center';
+          ctx.fillText(label, n.x, n.y + n.r + 14);
+        }
+      }
+
+      ctx.restore();
+    }
+
+    ctx.restore();
+  }
+}
+
+// Khởi tạo instance toàn cục
+window.obsidianGraph = new ObsidianGraphViewer();
+
+function renderKnowledgeGraph(profileId = null) {
+  if (window.obsidianGraph) {
+    window.obsidianGraph.loadGraphData();
+  }
+}
+window.renderKnowledgeGraph = renderKnowledgeGraph;
+
+
 async function renderAiAccountAllocations() {
   const tbody = document.getElementById('ai-allocation-table-body');
   if (!tbody) return;
@@ -5434,13 +7126,13 @@ async function renderAiAccountAllocations() {
                   : avatarLetters}
               </div>
               <div>
-                <div style="font-weight: 700; font-size: 0.82rem; color: #f8fafc;">${escapeHtml(acc.displayName || 'Zalo Account')}</div>
+                <div class="ai-alloc-name" style="font-weight: 700; font-size: 0.82rem; color: var(--text-main);">${escapeHtml(acc.displayName || 'Zalo Account')}</div>
                 <div style="font-size: 0.71rem; color: var(--text-muted); font-family: monospace;">UID: ${escapeHtml(acc.accountUid)}</div>
               </div>
             </div>
           </td>
           <td>
-            <select class="form-select" style="font-size: 0.78rem; padding: 5px 8px; width: 100%; max-width: 240px;" onchange="assignAccountProfile('${escapeHtml(acc.accountUid)}', this.value)">
+            <select class="form-select" style="font-size: 0.78rem; padding: 5px 8px; width: 100%;" onchange="assignAccountProfile('${escapeHtml(acc.accountUid)}', this.value)">
               ${aiProfilesList.map(p => `
                 <option value="${p.id}" ${p.id === assignedId ? 'selected' : ''}>
                   ${escapeHtml(p.name || p.id)} ${p.isDefault ? '⭐ [Mặc định]' : ''}
@@ -5606,19 +7298,249 @@ function renderAiSettingsUI() {
 }
 
 function updateGlobalAiButtonUI() {
-  const btn = document.getElementById('btn-global-ai-toggle');
-  if (!btn) return;
   const isEnabled = Boolean(aiSettingsState.isEnabled);
-  btn.innerText = isEnabled ? '⚡ Bot AI: ĐANG BẬT' : '⚡ Bot AI: ĐANG TẮT';
-  btn.style.color = isEnabled ? '#34d399' : '#f87171';
-  btn.style.borderColor = isEnabled ? 'rgba(52, 211, 153, 0.4)' : 'rgba(248, 113, 113, 0.4)';
-  btn.style.background = isEnabled ? 'rgba(52, 211, 153, 0.15)' : 'rgba(248, 113, 113, 0.15)';
 
+  // 1. Nút trong Modal AI Brain
+  const btn = document.getElementById('btn-global-ai-toggle');
+  if (btn) {
+    btn.innerText = isEnabled ? '⚡ Bot AI: ĐANG BẬT' : '⚡ Bot AI: ĐANG TẮT';
+    btn.style.color = isEnabled ? '#34d399' : '#f87171';
+    btn.style.borderColor = isEnabled ? 'rgba(52, 211, 153, 0.4)' : 'rgba(248, 113, 113, 0.4)';
+    btn.style.background = isEnabled ? 'rgba(52, 211, 153, 0.15)' : 'rgba(248, 113, 113, 0.15)';
+  }
+
+  // 2. Nút Power trên Header Quick Capsule
+  const headerBtn = document.getElementById('btn-header-bot-power');
+  if (headerBtn) {
+    headerBtn.classList.toggle('off', !isEnabled);
+    const labelFull = document.getElementById('header-bot-label-full');
+    const labelMobile = document.getElementById('header-bot-label-mobile');
+    if (labelFull) labelFull.innerText = isEnabled ? 'Bot AI: BẬT' : 'Bot AI: TẮT';
+    if (labelMobile) labelMobile.innerText = isEnabled ? 'BẬT' : 'TẮT';
+  }
+
+  // 3. Đồng bộ giá trị Cooldown, Debounce, AllowGroups lên Header Controls
+  const cooldownDisp = document.getElementById('header-cooldown-display');
+  if (cooldownDisp) {
+    cooldownDisp.innerText = `${aiSettingsState.adminCooldownMinutes ?? 15}p`;
+  }
+  const headerCooldownInp = document.getElementById('header-input-cooldown');
+  if (headerCooldownInp) {
+    headerCooldownInp.value = aiSettingsState.adminCooldownMinutes ?? 15;
+  }
+  const headerDebounceInp = document.getElementById('header-input-debounce');
+  if (headerDebounceInp) {
+    headerDebounceInp.value = aiSettingsState.debounceSeconds ?? 3;
+  }
+  const headerAllowGroupsChk = document.getElementById('header-input-allow-groups');
+  if (headerAllowGroupsChk) {
+    headerAllowGroupsChk.checked = Boolean(aiSettingsState.allowGroups);
+  }
+
+  // 4. Đồng bộ Lead Tag & Target Mode lên Header
+  populateLeadTagsSelect();
+  const headerAutoTagChk = document.getElementById('header-input-auto-tag-lead');
+  if (headerAutoTagChk) {
+    headerAutoTagChk.checked = Boolean(aiSettingsState.autoTagNewLead);
+  }
+  const headerLeadTagSel = document.getElementById('header-select-lead-tag');
+  if (headerLeadTagSel) {
+    headerLeadTagSel.value = aiSettingsState.defaultLeadTagId || '';
+  }
+  const headerTargetRadios = document.querySelectorAll('input[name="header-target-mode"]');
+  headerTargetRadios.forEach(r => {
+    r.checked = (r.value === (aiSettingsState.targetMode || 'all'));
+  });
+  updateAiTagFilterUI();
+
+  // 5. Icon Bot AI trên Left Rail
   const railBtn = document.getElementById('rail-btn-ai');
   if (railBtn) {
     railBtn.style.color = isEnabled ? '#34d399' : '';
   }
 }
+
+// -----------------------------------------------------------------------------
+// Header AI Quick Capsule Controls & 2-Way Synchronization
+// -----------------------------------------------------------------------------
+async function toggleHeaderBotPower() {
+  await toggleAiAutoReply();
+}
+
+function toggleHeaderCooldownPopover(e) {
+  if (e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+  const card = document.getElementById('header-cooldown-card');
+  if (!card) return;
+  const isHidden = card.classList.contains('hidden');
+  if (isHidden) {
+    card.classList.remove('hidden');
+    setTimeout(() => {
+      document.addEventListener('click', onHeaderCooldownOutsideClick);
+    }, 10);
+  } else {
+    closeHeaderCooldownPopover();
+  }
+}
+
+function closeHeaderCooldownPopover() {
+  const card = document.getElementById('header-cooldown-card');
+  if (card) card.classList.add('hidden');
+  document.removeEventListener('click', onHeaderCooldownOutsideClick);
+}
+
+function onHeaderCooldownOutsideClick(e) {
+  const capsule = document.getElementById('header-ai-capsule');
+  if (capsule && !capsule.contains(e.target)) {
+    closeHeaderCooldownPopover();
+  }
+}
+
+function syncHeaderCooldown(val) {
+  const mins = Math.max(0, parseInt(val, 10) || 0);
+  aiSettingsState.adminCooldownMinutes = mins;
+  const display = document.getElementById('header-cooldown-display');
+  if (display) display.innerText = `${mins}p`;
+  const modalInput = document.getElementById('ai-admin-cooldown');
+  if (modalInput) modalInput.value = mins;
+}
+
+function syncHeaderDebounce(val) {
+  const secs = Math.max(1, parseInt(val, 10) || 3);
+  aiSettingsState.debounceSeconds = secs;
+  const modalInput = document.getElementById('ai-debounce-sec');
+  if (modalInput) modalInput.value = secs;
+}
+
+function syncHeaderAllowGroups(checked) {
+  aiSettingsState.allowGroups = checked ? 1 : 0;
+  const modalCheck = document.getElementById('ai-allow-groups');
+  if (modalCheck) {
+    modalCheck.checked = checked;
+    if (typeof toggleAiGroupAliasesUI === 'function') toggleAiGroupAliasesUI();
+  }
+}
+
+function syncHeaderAutoTagLead(checked) {
+  aiSettingsState.autoTagNewLead = checked ? 1 : 0;
+  const modalCheck = document.getElementById('ai-auto-tag-lead');
+  if (modalCheck) modalCheck.checked = checked;
+}
+
+function syncHeaderLeadTag(val) {
+  aiSettingsState.defaultLeadTagId = val || '';
+  const modalSelect = document.getElementById('ai-default-lead-tag-select');
+  if (modalSelect) modalSelect.value = val || '';
+}
+
+function syncHeaderTargetMode(val) {
+  aiSettingsState.targetMode = val || 'all';
+  const modalRadios = document.querySelectorAll('input[name="ai-target-mode"]');
+  modalRadios.forEach(r => {
+    r.checked = (r.value === val);
+  });
+  updateAiTagFilterUI();
+}
+
+async function saveHeaderAiSettings() {
+  const cooldownInput = document.getElementById('header-input-cooldown');
+  const debounceInput = document.getElementById('header-input-debounce');
+  const allowGroupsCheck = document.getElementById('header-input-allow-groups');
+  const autoTagCheck = document.getElementById('header-input-auto-tag-lead');
+  const leadTagSelect = document.getElementById('header-select-lead-tag');
+
+  const adminCooldownMinutes = cooldownInput ? Math.max(0, parseInt(cooldownInput.value, 10) || 15) : 15;
+  const debounceSeconds = debounceInput ? Math.max(1, parseInt(debounceInput.value, 10) || 3) : 3;
+  const allowGroups = allowGroupsCheck ? (allowGroupsCheck.checked ? 1 : 0) : 0;
+  const autoTagNewLead = autoTagCheck ? (autoTagCheck.checked ? 1 : 0) : 0;
+  const defaultLeadTagId = leadTagSelect ? leadTagSelect.value : '';
+  const targetMode = aiSettingsState.targetMode || 'all';
+
+  aiSettingsState.adminCooldownMinutes = adminCooldownMinutes;
+  aiSettingsState.debounceSeconds = debounceSeconds;
+  aiSettingsState.allowGroups = allowGroups;
+  aiSettingsState.autoTagNewLead = autoTagNewLead;
+  aiSettingsState.defaultLeadTagId = defaultLeadTagId;
+
+  // Đồng bộ sang modal inputs
+  syncHeaderCooldown(adminCooldownMinutes);
+  syncHeaderDebounce(debounceSeconds);
+  syncHeaderAllowGroups(Boolean(allowGroups));
+  syncHeaderAutoTagLead(Boolean(autoTagNewLead));
+  syncHeaderLeadTag(defaultLeadTagId);
+
+  // Đồng bộ vào activeProfileData nếu đang có profile được load
+  if (typeof activeProfileData !== 'undefined' && activeProfileData) {
+    activeProfileData.adminCooldownMinutes = adminCooldownMinutes;
+    activeProfileData.debounceSeconds = debounceSeconds;
+    activeProfileData.allowGroups = allowGroups;
+    activeProfileData.autoTagNewLead = autoTagNewLead;
+    activeProfileData.defaultLeadTagId = defaultLeadTagId;
+    activeProfileData.targetMode = targetMode;
+    activeProfileData.excludedTagIds = aiSettingsState.excludedTagIds || [];
+    activeProfileData.allowedTagIds = aiSettingsState.allowedTagIds || [];
+  }
+
+  try {
+    const res = await fetch('/api/ai/settings', {
+      method: 'POST',
+      headers: {
+        ...getHeaders(),
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        adminCooldownMinutes,
+        debounceSeconds,
+        allowGroups,
+        autoTagNewLead,
+        defaultLeadTagId,
+        targetMode,
+        excludedTagIds: aiSettingsState.excludedTagIds || [],
+        allowedTagIds: aiSettingsState.allowedTagIds || []
+      })
+    });
+    if (res.ok) {
+      if (typeof showToast === 'function') {
+        showToast(`🛡️ Đã lưu Quy tắc vận hành (Cooldown: ${adminCooldownMinutes}p)!`, 'success');
+      }
+      closeHeaderCooldownPopover();
+    } else {
+      if (typeof showToast === 'function') {
+        showToast('⚠️ Không thể lưu cài đặt AI, vui lòng thử lại', 'error');
+      }
+    }
+  } catch (err) {
+    console.error('Failed to save header AI settings:', err);
+    if (typeof showToast === 'function') {
+      showToast('⚠️ Lỗi kết nối khi lưu cài đặt AI', 'error');
+    }
+  }
+}
+
+window.toggleHeaderBotPower = toggleHeaderBotPower;
+window.toggleHeaderCooldownPopover = toggleHeaderCooldownPopover;
+window.closeHeaderCooldownPopover = closeHeaderCooldownPopover;
+window.syncHeaderCooldown = syncHeaderCooldown;
+window.syncHeaderDebounce = syncHeaderDebounce;
+window.syncHeaderAllowGroups = syncHeaderAllowGroups;
+window.syncHeaderAutoTagLead = syncHeaderAutoTagLead;
+window.syncHeaderLeadTag = syncHeaderLeadTag;
+window.syncHeaderTargetMode = syncHeaderTargetMode;
+window.saveHeaderAiSettings = saveHeaderAiSettings;
+
+function openAiStudioAtScope(e) {
+  if (e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+  closeHeaderCooldownPopover();
+  openModal('modal-ai-brain');
+  switchAiMainTab('profiles');
+  switchKnowledgeTab('scope');
+}
+window.openAiStudioAtScope = openAiStudioAtScope;
 
 async function toggleAiAutoReply() {
   aiSettingsState.isEnabled = aiSettingsState.isEnabled ? 0 : 1;
@@ -6180,37 +8102,44 @@ async function scanAvailableModels(isFallback = false) {
 // Scope & Tag Filter Handlers
 // -----------------------------------------------------------------------------
 function populateLeadTagsSelect() {
-  const select = document.getElementById('ai-default-lead-tag-select');
-  if (!select) return;
-  select.innerHTML = `
+  const optionsHtml = `
     <option value="">-- Chọn thẻ khách mới --</option>
     ${state.tags.map(t => `<option value="${t.id}">${escapeHtml(t.name)}</option>`).join('')}
   `;
+  const select = document.getElementById('ai-default-lead-tag-select');
+  if (select) select.innerHTML = optionsHtml;
+  const headerSelect = document.getElementById('header-select-lead-tag');
+  if (headerSelect) headerSelect.innerHTML = optionsHtml;
 }
 
 function updateAiTagFilterUI() {
-  const mode = document.querySelector('input[name="ai-target-mode"]:checked')?.value || 'all';
+  const mode = aiSettingsState.targetMode || document.querySelector('input[name="ai-target-mode"]:checked')?.value || 'all';
   const wrap = document.getElementById('ai-tags-selector-wrap');
   if (wrap) wrap.style.display = (mode === 'all' ? 'none' : 'flex');
+  const headerWrap = document.getElementById('header-tags-selector-wrap');
+  if (headerWrap) headerWrap.style.display = (mode === 'all' ? 'none' : 'block');
   renderAiTagsSelector();
 }
 
 function renderAiTagsSelector() {
-  const container = document.getElementById('ai-tags-selector-box');
-  if (!container) return;
-  const mode = document.querySelector('input[name="ai-target-mode"]:checked')?.value || 'all';
-  const activeArray = mode === 'blacklist' ? aiSettingsState.excludedTagIds : aiSettingsState.allowedTagIds;
+  const mode = aiSettingsState.targetMode || document.querySelector('input[name="ai-target-mode"]:checked')?.value || 'all';
+  const activeArray = mode === 'blacklist' ? (aiSettingsState.excludedTagIds || []) : (aiSettingsState.allowedTagIds || []);
 
-  container.innerHTML = state.tags.map(t => {
+  const html = state.tags.map(t => {
     const isSelected = activeArray.includes(t.id);
     return `
-      <button type="button" class="camp-tag-pill-btn ${isSelected ? 'active' : ''}" onclick="toggleAiTargetTag('${t.id}')">
+      <button type="button" class="camp-tag-pill-btn header-tag-pill ${isSelected ? 'active' : ''}" onclick="toggleAiTargetTag('${t.id}')">
         <span class="tag-dot" style="background:${t.color};"></span>
         <span>${escapeHtml(t.name)}</span>
         ${isSelected ? '<span>✓</span>' : ''}
       </button>
     `;
   }).join('');
+
+  const container = document.getElementById('ai-tags-selector-box');
+  if (container) container.innerHTML = html;
+  const headerBox = document.getElementById('header-tags-selector-box');
+  if (headerBox) headerBox.innerHTML = html;
 }
 
 function toggleAiTargetTag(tagId) {
@@ -6806,16 +8735,23 @@ async function executeAccountSwitch(cleanData = false) {
 
 async function doLogoutZalo(cleanData = false) {
   try {
+    const activeUid = state.activeAccountUid && state.activeAccountUid !== 'all' ? state.activeAccountUid : '';
     const res = await fetch('/api/zalo/logout', {
       method: 'POST',
       headers: { ...getHeaders(), 'Content-Type': 'application/json' },
-      body: JSON.stringify({ cleanData })
+      body: JSON.stringify({ accountUid: activeUid, cleanData })
     });
-    const json = await res.json();
+    const text = await res.text();
+    let json = {};
+    try { json = JSON.parse(text); } catch (_) { throw new Error(`Phản hồi không hợp lệ (${res.status})`); }
+    if (!res.ok || json.error) throw new Error(json.error || 'Lỗi đăng xuất');
+
     if (json.data) {
       renderZaloLoginModalState(json.data);
     }
     closeActiveChat();
+    await loadAccounts();
+    await loadZaloProfile();
     await loadConversations();
     alert('Đã đăng xuất tài khoản Zalo thành công.');
   } catch (e) {
@@ -7669,10 +9605,11 @@ async function checkAppVersion(force = false) {
     appVersionData = data;
 
     if (versionTextEl) {
-      versionTextEl.innerText = `v${data.currentVersion}`;
+      versionTextEl.textContent = `v${data.currentVersion}`;
     }
 
     if (versionPillEl) {
+      versionPillEl.style.display = 'inline-flex';
       if (data.hasUpdate) {
         versionPillEl.classList.add('has-update');
         versionPillEl.title = `Đã có bản cập nhật mới v${data.latestVersion}! Bấm để cập nhật ngay.`;
@@ -7681,6 +9618,21 @@ async function checkAppVersion(force = false) {
         versionPillEl.classList.remove('has-update');
         versionPillEl.title = `Zalo-Flow v${data.currentVersion} (${data.currentCommit || 'main'}). Bấm để kiểm tra bản mới.`;
         if (updateIndicatorEl) updateIndicatorEl.style.display = 'none';
+      }
+    }
+
+    // Update Banner in Sidebar (Tự động hiển thị khi có bản mới & tự biến mất khi đã cập nhật)
+    const bannerEl = document.getElementById('sidebar-update-banner');
+    const bannerVerEl = document.getElementById('update-banner-version');
+    if (bannerEl) {
+      const isDismissed = sessionStorage.getItem('dismiss_update_banner') === '1';
+      if (data.hasUpdate && !isDismissed) {
+        bannerEl.style.display = 'block';
+        if (bannerVerEl) {
+          bannerVerEl.textContent = `v${data.latestVersion}`;
+        }
+      } else {
+        bannerEl.style.display = 'none';
       }
     }
 
@@ -7695,6 +9647,15 @@ async function checkAppVersion(force = false) {
   }
 }
 
+function dismissUpdateBanner(event) {
+  if (event) event.stopPropagation();
+  const bannerEl = document.getElementById('sidebar-update-banner');
+  if (bannerEl) {
+    bannerEl.style.display = 'none';
+  }
+  sessionStorage.setItem('dismiss_update_banner', '1');
+}
+
 function renderAppUpdateModalData(data) {
   if (!data) return;
 
@@ -7706,23 +9667,23 @@ function renderAppUpdateModalData(data) {
   const githubLinkEl = document.getElementById('update-github-link');
   const startUpdateBtn = document.getElementById('btn-start-update');
 
-  if (currentVerEl) currentVerEl.innerText = `v${data.currentVersion}`;
-  if (commitEl) commitEl.innerText = `${data.currentBranch || 'main'} (${data.currentCommit || 'HEAD'})`;
-  if (latestVerEl) latestVerEl.innerText = `v${data.latestVersion}`;
+  if (currentVerEl) currentVerEl.textContent = `v${data.currentVersion}`;
+  if (commitEl) commitEl.textContent = `${data.currentBranch || 'main'} (${data.currentCommit || 'HEAD'})`;
+  if (latestVerEl) latestVerEl.textContent = `v${data.latestVersion}`;
 
   if (statusBadgeEl) {
     statusBadgeEl.classList.remove('up-to-date', 'update-ready');
     if (data.hasUpdate) {
-      statusBadgeEl.innerText = 'Có Bản Cập Nhật Mới';
+      statusBadgeEl.textContent = 'Có Bản Cập Nhật Mới';
       statusBadgeEl.classList.add('update-ready');
     } else {
-      statusBadgeEl.innerText = 'Phiên Bản Mới Nhất';
+      statusBadgeEl.textContent = 'Phiên Bản Mới Nhất';
       statusBadgeEl.classList.add('up-to-date');
     }
   }
 
   if (changelogBoxEl) {
-    changelogBoxEl.innerText = data.releaseNotes || 'Chưa có ghi chú phát hành chi tiết trên GitHub Releases.';
+    changelogBoxEl.textContent = data.releaseNotes || 'Chưa có ghi chú phát hành chi tiết trên GitHub Releases.';
   }
 
   if (githubLinkEl && data.htmlUrl) {
@@ -7735,7 +9696,8 @@ function renderAppUpdateModalData(data) {
       startUpdateBtn.style.opacity = '1';
       startUpdateBtn.style.cursor = 'pointer';
       startUpdateBtn.onclick = () => {
-        window.open(data.htmlUrl || 'https://github.com/aizaloapp/zalo-flow/releases', '_blank');
+        const downloadTarget = data.downloadUrl || data.htmlUrl || 'https://github.com/aizaloapp/zalo-flow/releases';
+        window.open(downloadTarget, '_blank');
       };
       startUpdateBtn.innerText = data.hasUpdate ? `📥 Tải Bộ Cài Đặt v${data.latestVersion}` : '📦 Xem Bản Phát Hành GitHub';
     } else if (!data.isGitRepo) {
@@ -7796,6 +9758,7 @@ async function executeAppUpdate() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'X-ZaloFlow-Client': '1',
         ...(state.adminToken ? { 'Authorization': `Bearer ${state.adminToken}` } : {})
       }
     });

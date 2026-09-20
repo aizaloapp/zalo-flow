@@ -1,14 +1,15 @@
 import fs from 'fs';
 import path from 'path';
 import EventEmitter from 'events';
-import { ZaloClient } from '../zalo-client.js';
+import { ZaloClient, zaloClient } from '../zalo-client.js';
 import { localStore } from './local-store.js';
 import { logger } from './logger.js';
 
 export class ZaloAccountManager extends EventEmitter {
-  constructor({ maxConcurrent = 3 } = {}) {
+  constructor({ maxConcurrent = 3, sessionsDir = null } = {}) {
     super();
     this.maxConcurrent = maxConcurrent;
+    this.sessionsDir = sessionsDir || path.resolve(process.cwd(), 'sessions');
     this.clients = new Map(); // Map<accountUid, ZaloClient>
     this.loginFlows = new Map(); // Map<flowId, ZaloClient>
     this.inboundHandlers = [];
@@ -36,7 +37,7 @@ export class ZaloAccountManager extends EventEmitter {
 
     try {
       const savedAccounts = localStore.getAccounts();
-      const sessionsDir = path.resolve(process.cwd(), 'sessions');
+      const sessionsDir = this.sessionsDir;
 
       // 1. Identify valid accounts to load (capped at maxConcurrent)
       let accountsToLoad = savedAccounts.slice(0, this.maxConcurrent);
@@ -88,6 +89,18 @@ export class ZaloAccountManager extends EventEmitter {
           client.onMessage(handler);
         }
 
+        // Tự động cập nhật pool khi client đăng nhập thành công (kể cả quét QR sau đó)
+        client.on('login_success', (profile) => {
+          const newUid = profile?.userId || client.accountUid;
+          if (newUid) {
+            this.clients.set(newUid, client);
+            if (!this.activeAccountUid || acc.isDefault) {
+              this.activeAccountUid = newUid;
+            }
+            this.emit('pool_updated', this.getAllProfiles());
+          }
+        });
+
         try {
           await client.initialize();
           const resolvedUid = client.userProfile?.userId || acc.accountUid;
@@ -97,7 +110,9 @@ export class ZaloAccountManager extends EventEmitter {
             this.activeAccountUid = resolvedUid;
           }
 
-          logger.info(`✅ [Boot Sequence] Account ${client.userProfile.displayName} (${resolvedUid}) online!`);
+          if (client.isLoggedIn) {
+            logger.info(`✅ [Boot Sequence] Account ${client.userProfile.displayName} (${resolvedUid}) online!`);
+          }
         } catch (initErr) {
           logger.warn(`⚠️ [Boot Sequence] Failed to initialize account ${acc.accountUid}: ${initErr.message}`);
         }
@@ -127,6 +142,9 @@ export class ZaloAccountManager extends EventEmitter {
     if (accountUid && accountUid !== 'all') {
       const c = this.clients.get(String(accountUid));
       if (c) return c;
+      if (zaloClient && (String(zaloClient.accountUid) === String(accountUid) || (zaloClient.isLoggedIn && !zaloClient.accountUid))) {
+        return zaloClient;
+      }
     }
 
     if (this.activeAccountUid && this.clients.has(this.activeAccountUid)) {
@@ -138,7 +156,10 @@ export class ZaloAccountManager extends EventEmitter {
       return this.clients.get(defaultAcc.accountUid);
     }
 
-    return this.clients.values().next().value || null;
+    const firstClient = this.clients.values().next().value;
+    if (firstClient) return firstClient;
+    if (zaloClient && zaloClient.isLoggedIn) return zaloClient;
+    return null;
   }
 
   /**
@@ -186,7 +207,7 @@ export class ZaloAccountManager extends EventEmitter {
         const newSessionName = `zalo_${newUid}`;
 
         // Rename temp session file to permanent UID session file
-        const sessionsDir = path.resolve(process.cwd(), 'sessions');
+        const sessionsDir = this.sessionsDir;
         const oldFile = path.join(sessionsDir, `${tempSessionName}.enc`);
         const newFile = path.join(sessionsDir, `${newSessionName}.enc`);
         try {
@@ -235,19 +256,34 @@ export class ZaloAccountManager extends EventEmitter {
       this.clients.delete(uid);
     }
 
-    // Delete session file
-    const sessionFile = path.resolve(process.cwd(), 'sessions', `zalo_${uid}.enc`);
-    if (fs.existsSync(sessionFile)) {
-      try {
-        fs.unlinkSync(sessionFile);
-        logger.info(`🗑️ [AccountManager] Removed session file for ${uid}`);
-      } catch {}
+    // Determine all possible session file candidates to clean up completely
+    const acc = localStore.getAccount(uid);
+    const sessionCandidates = new Set();
+    if (acc?.sessionFile) sessionCandidates.add(acc.sessionFile);
+    if (client?.sessionName) sessionCandidates.add(client.sessionName);
+    sessionCandidates.add(`zalo_${uid}`);
+    if (acc?.sessionFile === 'zalo_default' || acc?.isDefault) {
+      sessionCandidates.add('zalo_default');
+    }
+
+    const sessionsDir = this.sessionsDir;
+    for (const sName of sessionCandidates) {
+      const sFile = path.join(sessionsDir, `${sName}.enc`);
+      if (fs.existsSync(sFile)) {
+        try {
+          fs.unlinkSync(sFile);
+          logger.info(`🗑️ [AccountManager] Removed session file: ${sName}.enc`);
+        } catch (e) {
+          logger.warn(`Could not remove session file ${sFile}: ${e.message}`);
+        }
+      }
     }
 
     localStore.deleteAccount(uid, { deleteData: cleanData });
 
     if (this.activeAccountUid === uid) {
-      this.activeAccountUid = this.clients.keys().next().value || null;
+      const remainingAccounts = localStore.getAccounts();
+      this.activeAccountUid = remainingAccounts[0]?.accountUid || this.clients.keys().next().value || null;
     }
 
     this.emit('account_removed', { accountUid: uid });
@@ -276,7 +312,14 @@ export class ZaloAccountManager extends EventEmitter {
     const profiles = [];
 
     for (const acc of dbAccounts) {
-      const client = this.clients.get(acc.accountUid);
+      let client = this.clients.get(acc.accountUid);
+      if (!client && zaloClient && zaloClient.isLoggedIn) {
+        const zUid = zaloClient.accountUid || (zaloClient.userProfile && zaloClient.userProfile.userId);
+        if (String(zUid) === String(acc.accountUid) || (!zUid && acc.isDefault)) {
+          client = zaloClient;
+          this.clients.set(acc.accountUid, zaloClient);
+        }
+      }
       const isOnline = client ? client.isLoggedIn : false;
       const liveProfile = client ? client.getAccountProfile() : null;
 
@@ -295,11 +338,11 @@ export class ZaloAccountManager extends EventEmitter {
 
     // Check if there are active clients not yet saved in db
     for (const [uid, client] of this.clients.entries()) {
-      if (!profiles.some(p => p.accountUid === uid)) {
+      if (!profiles.some(p => String(p.accountUid) === String(uid))) {
         profiles.push({
           accountUid: uid,
-          displayName: client.userProfile.displayName || 'Tài khoản Zalo',
-          avatar: client.userProfile.avatar || '',
+          displayName: client.userProfile?.displayName || 'Tài khoản Zalo',
+          avatar: client.userProfile?.avatar || '',
           phone: '',
           isDefault: false,
           aiProfileId: 'default',
@@ -307,6 +350,32 @@ export class ZaloAccountManager extends EventEmitter {
           isLoggedIn: client.isLoggedIn,
           friendCount: client.friendUids ? client.friendUids.size : 0
         });
+      }
+    }
+
+    // Check if singleton zaloClient is logged in and not yet represented in profiles
+    if (zaloClient && zaloClient.isLoggedIn) {
+      const zUid = String(zaloClient.accountUid || (zaloClient.userProfile && zaloClient.userProfile.userId) || 'default');
+      if (!profiles.some(p => String(p.accountUid) === zUid)) {
+        const liveProfile = zaloClient.getAccountProfile();
+        profiles.push({
+          accountUid: zUid,
+          displayName: liveProfile?.displayName || 'Tài khoản Zalo',
+          avatar: liveProfile?.avatar || '',
+          phone: liveProfile?.phone || '',
+          isDefault: true,
+          aiProfileId: 'default',
+          status: 'online',
+          isLoggedIn: true,
+          friendCount: liveProfile?.friendCount || 0
+        });
+      }
+    }
+
+    if (!this.activeAccountUid) {
+      const onlineAcc = profiles.find(p => p.isLoggedIn);
+      if (onlineAcc) {
+        this.activeAccountUid = onlineAcc.accountUid;
       }
     }
 

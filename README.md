@@ -15,7 +15,7 @@
 [![CI Quality Gate](https://github.com/aizaloapp/zalo-flow/actions/workflows/ci.yml/badge.svg)](https://github.com/aizaloapp/zalo-flow/actions/workflows/ci.yml)
 [![Anti-Leak & Secret Scan](https://github.com/aizaloapp/zalo-flow/actions/workflows/secret-scan.yml/badge.svg)](https://github.com/aizaloapp/zalo-flow/actions/workflows/secret-scan.yml)
 [![Memory Footprint](https://img.shields.io/badge/RAM-%3C%20100MB-success.svg)](test/test-all.js)
-[![Tests Passing](https://img.shields.io/badge/Tests-56%2F56%20Passing-brightgreen.svg)](test/test-all.js)
+[![Tests Passing](https://img.shields.io/badge/Tests-58%2F58%20Passing-brightgreen.svg)](test/test-all.js)
 [![Chrome Web Store](https://img.shields.io/badge/Chrome_Web_Store-AIzalo_Flow_Companion-4285F4?logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/aizalo-flow-chat-companio/ckdbkfocakhkkpjjbcclifdkgikbelan)
 [![Docker Ready](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](docker-compose.yml)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
@@ -45,9 +45,9 @@
 
 Không cần biết Git, không cần cài Node.js, không cần mở màn hình đen Terminal:
 
-[![Tải Bản Cài Đặt Windows](https://img.shields.io/badge/Windows-Download%20Setup%20v1.4.0%20(.exe)-0068FF?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/aizaloapp/zalo-flow/releases/latest)
+[![Tải Bản Cài Đặt Windows](https://img.shields.io/badge/Windows-Download%20Setup%20v1.4.1%20(.exe)-0068FF?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/aizaloapp/zalo-flow/releases/latest)
 
-> 💡 **Tải về chạy ngay:** Bấm nút ở trên để tải file **`ZaloFlow-Setup-v1.4.0.exe`** (Chỉ **24.5MB**). Cài đặt trong 30 giây là có ngay icon Zalo-Flow ngoài Desktop!
+> 💡 **Tải về chạy ngay:** Bấm nút ở trên để tải file **`ZaloFlow-Setup-v1.4.1.exe`** (Chỉ **24.5MB**). Cài đặt trong 30 giây là có ngay icon Zalo-Flow ngoài Desktop!
 
 <br/>
 

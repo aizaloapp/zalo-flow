@@ -20,6 +20,7 @@ import quickMsgRoutes from './routes/quick-messages.js';
 import campaignRoutes from './routes/campaigns.js';
 import chatActionRoutes from './routes/chat-actions.js';
 import aiSettingsRoutes from './routes/ai-settings.js';
+import aiVaultRoutes from './routes/ai-vault.js';
 import backupRoutes from './routes/backup.js';
 import { updaterRouter } from './routes/updater.js';
 import scheduledMsgRoutes from './routes/scheduled-messages.js';
@@ -204,6 +205,18 @@ accountManager.on('active_account_switched', (data) => {
   broadcastSSE('active_account_switched', data);
 });
 
+// Đồng bộ real-time trạng thái đăng nhập của singleton zaloClient vào accountManager pool
+zaloClient.on('login_success', (profile) => {
+  const uid = profile?.userId || zaloClient.accountUid;
+  if (uid) {
+    accountManager.clients.set(String(uid), zaloClient);
+    if (!accountManager.activeAccountUid) {
+      accountManager.activeAccountUid = String(uid);
+    }
+  }
+  broadcastSSE('accounts_updated', accountManager.getAllProfiles());
+});
+
 localStore.on('messageRecalled', (data) => {
   broadcastSSE('message_recalled', data);
 });
@@ -226,6 +239,7 @@ app.use('/api', campaignRoutes);
 app.use('/api', chatActionRoutes);
 app.use('/api', scheduledMsgRoutes);
 app.use('/api', aiSettingsRoutes);
+app.use('/api', aiVaultRoutes);
 app.use('/api', backupRoutes);
 app.use('/api', updaterRouter);
 app.use('/api', oaRoutes);
@@ -457,7 +471,27 @@ app.post('/api/zalo/qr/generate', requireAuth, async (req, res) => {
           scannedUser: updatedProfile.scannedUser
         }, client.accountUid);
       }
+      if (updatedProfile.isLoggedIn) {
+        const uid = updatedProfile.userId || client.accountUid;
+        if (uid) {
+          accountManager.clients.set(String(uid), client);
+          if (!accountManager.activeAccountUid) {
+            accountManager.activeAccountUid = String(uid);
+          }
+        }
+        broadcastSSE('accounts_updated', accountManager.getAllProfiles());
+      }
     }, { cleanData });
+    if (profile.isLoggedIn) {
+      const uid = profile.userId || client.accountUid;
+      if (uid) {
+        accountManager.clients.set(String(uid), client);
+        if (!accountManager.activeAccountUid) {
+          accountManager.activeAccountUid = String(uid);
+        }
+      }
+      broadcastSSE('accounts_updated', accountManager.getAllProfiles());
+    }
     broadcastSSE('zalo_profile', profile, client.accountUid);
     res.json({ success: true, data: profile });
   } catch (err) {
@@ -469,15 +503,34 @@ app.post('/api/zalo/qr/generate', requireAuth, async (req, res) => {
 // POST /api/zalo/logout
 app.post('/api/zalo/logout', requireAuth, async (req, res) => {
   const { accountUid = null, cleanData = false } = req.body || {};
-  if (accountUid && accountUid !== 'all') {
-    const result = await accountManager.removeAccount(accountUid, { cleanData: Boolean(cleanData) });
-    return res.json({ success: true, data: result });
-  }
-  const client = accountManager.getClient() || zaloClient;
+  const targetUid = (accountUid && accountUid !== 'all')
+    ? String(accountUid)
+    : (accountManager.activeAccountUid || (zaloClient.isLoggedIn ? (zaloClient.accountUid || zaloClient.userProfile?.userId) : null));
+
+  const emptyProfile = {
+    isLoggedIn: false,
+    userId: '',
+    displayName: 'Chưa Đăng Nhập',
+    avatar: '',
+    hasQrWaiting: false,
+    qrDataUrl: null,
+    qrStatusText: ''
+  };
+
   try {
-    const profile = await client.logout({ cleanData: Boolean(cleanData) });
-    broadcastSSE('zalo_profile', profile, client.accountUid);
-    res.json({ success: true, data: profile });
+    if (targetUid) {
+      await accountManager.removeAccount(targetUid, { cleanData: Boolean(cleanData) });
+    } else {
+      const client = accountManager.getClient() || zaloClient;
+      await client.logout({ cleanData: Boolean(cleanData) });
+    }
+
+    const nextClient = accountManager.getClient();
+    const nextProfile = nextClient && nextClient.isLoggedIn ? nextClient.getAccountProfile() : emptyProfile;
+
+    broadcastSSE('zalo_profile', nextProfile, nextClient?.accountUid || '');
+    broadcastSSE('accounts_updated', accountManager.getAllProfiles());
+    res.json({ success: true, data: nextProfile, pool: accountManager.getAllProfiles() });
   } catch (err) {
     logger.error(`[Zalo Logout API] Failed: ${err.message}`);
     res.status(500).json({ error: err.message });

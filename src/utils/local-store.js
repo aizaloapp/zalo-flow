@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import { logger } from './logger.js';
+import { vaultManager } from '../services/second-brain/vault-manager.js';
 
 export class LocalStore extends EventEmitter {
   constructor(dbPath = 'data/zaloflow.db') {
@@ -17,6 +18,7 @@ export class LocalStore extends EventEmitter {
     }
 
     this.db = new DatabaseSync(dbPath);
+    this.db.exec('PRAGMA busy_timeout = 5000;');
     this.db.exec('PRAGMA journal_mode = WAL;');
     this.db.exec('PRAGMA synchronous = NORMAL;');
     this.db.exec('PRAGMA foreign_keys = ON;');
@@ -128,6 +130,20 @@ export class LocalStore extends EventEmitter {
         debounceSeconds         INTEGER DEFAULT 3,
         updatedAt               TEXT DEFAULT (datetime('now'))
       );
+
+      CREATE TABLE IF NOT EXISTS wiki_revisions (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        profileId   TEXT NOT NULL,
+        slug        TEXT NOT NULL,
+        title       TEXT DEFAULT '',
+        content     TEXT NOT NULL,
+        contentHash TEXT DEFAULT '',
+        summary     TEXT DEFAULT '',
+        source      TEXT DEFAULT 'user',
+        createdAt   TEXT DEFAULT (datetime('now'))
+      );
+      CREATE INDEX IF NOT EXISTS idx_wiki_rev_profile_slug ON wiki_revisions(profileId, slug);
+      CREATE INDEX IF NOT EXISTS idx_wiki_rev_created ON wiki_revisions(createdAt DESC);
     `);
   }
 
@@ -412,6 +428,26 @@ export class LocalStore extends EventEmitter {
         logger.info('✅ [Multi-Profile Migration] Successfully seeded default AI profile from existing ai_settings!');
       }
 
+      // Dọn dẹp dữ liệu cũ nếu model bị lưu thành chuỗi 'null' hoặc 'undefined'
+      this.db.prepare("UPDATE ai_profiles SET model = '' WHERE model = 'null' OR model = 'undefined';").run();
+
+      // Second Brain Wiki Revisions Table Reconciliation
+      this.db.exec(`
+        CREATE TABLE IF NOT EXISTS wiki_revisions (
+          id          INTEGER PRIMARY KEY AUTOINCREMENT,
+          profileId   TEXT NOT NULL,
+          slug        TEXT NOT NULL,
+          title       TEXT DEFAULT '',
+          content     TEXT NOT NULL,
+          contentHash TEXT DEFAULT '',
+          summary     TEXT DEFAULT '',
+          source      TEXT DEFAULT 'user',
+          createdAt   TEXT DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_wiki_rev_profile_slug ON wiki_revisions(profileId, slug);
+        CREATE INDEX IF NOT EXISTS idx_wiki_rev_created ON wiki_revisions(createdAt DESC);
+      `);
+
       // Scheduled Messages (1-1 Direct In-Thread Scheduling) Table & Indexes
       this.db.exec(`
         CREATE TABLE IF NOT EXISTS scheduled_messages (
@@ -650,20 +686,26 @@ export class LocalStore extends EventEmitter {
         }
       }
 
-      // Auto-detect and link existing data to primary account
-      const selfMsg = this.db.prepare("SELECT senderId, senderName FROM messages WHERE isSelf = 1 AND senderId != '' LIMIT 1").get();
-      if (selfMsg && selfMsg.senderId) {
-        const primaryUid = String(selfMsg.senderId);
-        const primaryName = selfMsg.senderName || 'Phan Lê Khoa';
-        
-        this.db.prepare(`
-          INSERT OR IGNORE INTO accounts (accountUid, displayName, sessionFile, isDefault, status)
-          VALUES (?, ?, 'zalo_default', 1, 'offline')
-        `).run(primaryUid, primaryName);
+      // Auto-detect and link existing data to primary account only if accounts table is completely empty
+      const totalAccounts = this.db.prepare("SELECT count(1) as c FROM accounts").get()?.c || 0;
+      if (totalAccounts === 0) {
+        const selfMsg = this.db.prepare("SELECT senderId, senderName FROM messages WHERE isSelf = 1 AND senderId != '' AND senderId != 'self' AND senderId != 'default' AND senderId GLOB '[0-9]*' LIMIT 1").get();
+        if (selfMsg && selfMsg.senderId) {
+          const primaryUid = String(selfMsg.senderId);
+          const primaryName = selfMsg.senderName || 'Zalo User';
+          
+          this.db.prepare(`
+            INSERT OR IGNORE INTO accounts (accountUid, displayName, sessionFile, isDefault, status)
+            VALUES (?, ?, 'zalo_default', 1, 'offline')
+          `).run(primaryUid, primaryName);
 
-        this.db.prepare("UPDATE conversations SET accountUid = ? WHERE accountUid = 'default' OR accountUid = ''").run(primaryUid);
-        this.db.prepare("UPDATE messages SET accountUid = ? WHERE accountUid = 'default' OR accountUid = ''").run(primaryUid);
+          this.db.prepare("UPDATE conversations SET accountUid = ? WHERE accountUid = 'default' OR accountUid = ''").run(primaryUid);
+          this.db.prepare("UPDATE messages SET accountUid = ? WHERE accountUid = 'default' OR accountUid = ''").run(primaryUid);
+        }
       }
+
+      // Auto-cleanup corrupted or dummy accounts (accountUid = 'self' or 'default')
+      this.db.prepare("DELETE FROM accounts WHERE accountUid = 'self' OR accountUid = 'default'").run();
 
     } catch (err) {
       logger.warn(`Migration notice: ${err.message}`);
@@ -703,6 +745,10 @@ export class LocalStore extends EventEmitter {
   upsertAccount(acc) {
     if (!acc || !acc.accountUid) return null;
     const accountUid = String(acc.accountUid);
+    if (accountUid === 'self' || accountUid === 'default') {
+      logger.warn(`[LocalStore] Blocked upserting invalid/dummy accountUid: ${accountUid}`);
+      return null;
+    }
     const existing = this.getAccount(accountUid);
     const displayName = acc.displayName !== undefined ? acc.displayName : (existing?.displayName || 'Zalo User');
     const avatar = acc.avatar !== undefined ? acc.avatar : (existing?.avatar || '');
@@ -733,12 +779,21 @@ export class LocalStore extends EventEmitter {
   deleteAccount(accountUid, { deleteData = false } = {}) {
     if (!accountUid) return false;
     const uid = String(accountUid);
+    const existing = this.getAccount(uid);
     if (deleteData) {
       this.db.prepare('DELETE FROM conversation_tags WHERE threadId IN (SELECT id FROM conversations WHERE accountUid = ?)').run(uid);
       this.db.prepare('DELETE FROM messages WHERE accountUid = ?').run(uid);
       this.db.prepare('DELETE FROM conversations WHERE accountUid = ?').run(uid);
     }
     this.db.prepare('DELETE FROM accounts WHERE accountUid = ?').run(uid);
+
+    // If the deleted account was default, promote first remaining account to default
+    if (existing?.isDefault) {
+      const remaining = this.db.prepare('SELECT accountUid FROM accounts ORDER BY createdAt ASC LIMIT 1').get();
+      if (remaining?.accountUid) {
+        this.setDefaultAccount(remaining.accountUid);
+      }
+    }
     return true;
   }
 
@@ -2184,7 +2239,10 @@ export class LocalStore extends EventEmitter {
     const icon = data.icon !== undefined ? String(data.icon).trim() : (existing?.icon || '🤖');
     const description = data.description !== undefined ? String(data.description).trim() : (existing?.description || '');
     const isDefault = data.isDefault !== undefined ? (data.isDefault ? 1 : 0) : (existing?.isDefault ? 1 : 0);
-    const model = data.model !== undefined ? String(data.model).trim() : (existing?.model || '');
+    const rawModel = data.model !== undefined ? data.model : existing?.model;
+    const model = (rawModel !== undefined && rawModel !== null && String(rawModel).trim() !== 'null' && String(rawModel).trim() !== 'undefined')
+      ? String(rawModel).trim()
+      : '';
     const temperature = data.temperature !== undefined ? Number(data.temperature) : (existing?.temperature ?? 0.7);
     const soulPrompt = data.soulPrompt !== undefined ? String(data.soulPrompt) : (existing?.soulPrompt || '');
     const memoryPrompt = data.memoryPrompt !== undefined ? String(data.memoryPrompt) : (existing?.memoryPrompt || '');
@@ -2485,7 +2543,66 @@ export class LocalStore extends EventEmitter {
     stmt.run(String(key), String(value));
     return true;
   }
+
+  // ---------------------------------------------------------------------------
+  // Second Brain Studio & Wiki Revisions Suite
+  // ---------------------------------------------------------------------------
+  recordWikiRevision({ profileId, slug, title = '', content = '', contentHash = '', summary = '', source = 'user' }) {
+    const pId = String(profileId || 'default');
+    const s = String(slug || 'index').trim();
+    const stmt = this.db.prepare(`
+      INSERT INTO wiki_revisions (profileId, slug, title, content, contentHash, summary, source, createdAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
+    `);
+    const res = stmt.run(pId, s, title || s, content, contentHash, summary, source);
+    const lastId = res.lastInsertRowid;
+    return this.getWikiRevisionById(lastId);
+  }
+
+  getWikiRevisions(profileId = 'default', slug = null, limit = 50) {
+    const pId = String(profileId || 'default');
+    const safeLimit = Math.min(Math.max(1, Number(limit) || 50), 200);
+    if (slug) {
+      const stmt = this.db.prepare(`
+        SELECT id, profileId, slug, title, contentHash, summary, source, createdAt,
+               LENGTH(content) as contentLength
+        FROM wiki_revisions
+        WHERE profileId = ? AND slug = ?
+        ORDER BY id DESC
+        LIMIT ?
+      `);
+      return stmt.all(pId, String(slug), safeLimit);
+    }
+    const stmt = this.db.prepare(`
+      SELECT id, profileId, slug, title, contentHash, summary, source, createdAt,
+             LENGTH(content) as contentLength
+      FROM wiki_revisions
+      WHERE profileId = ?
+      ORDER BY id DESC
+      LIMIT ?
+    `);
+    return stmt.all(pId, safeLimit);
+  }
+
+  getWikiRevisionById(id) {
+    if (!id) return null;
+    const stmt = this.db.prepare(`
+      SELECT * FROM wiki_revisions WHERE id = ?
+    `);
+    return stmt.get(Number(id)) || null;
+  }
+
+  deleteWikiRevisions(profileId = 'default', slug = null) {
+    const pId = String(profileId || 'default');
+    if (slug) {
+      this.db.prepare('DELETE FROM wiki_revisions WHERE profileId = ? AND slug = ?').run(pId, String(slug));
+    } else {
+      this.db.prepare('DELETE FROM wiki_revisions WHERE profileId = ?').run(pId);
+    }
+    return true;
+  }
 }
 
 export const localStore = new LocalStore();
+vaultManager.setStore(localStore);
 

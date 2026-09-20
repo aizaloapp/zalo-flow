@@ -14,6 +14,7 @@ import { csrfShield } from '../src/middleware/auth.js';
 import { oaTokenManager, AsyncMutex } from '../src/utils/oa-token-manager.js';
 import { oaDispatcher } from '../src/utils/oa-dispatcher.js';
 import { chatwootOutboundAdapter } from '../src/adapters/chatwoot-outbound.js';
+import { runSecondBrainTestSuite } from './test-second-brain-suite.js';
 import crypto from 'crypto';
 
 console.log('🧪 Starting Zalo-Flow Integrity Test Suite (Lean Chatwoot CRM + Remarketing)...\n');
@@ -34,6 +35,7 @@ const restored = loadEncryptedSession('test_session', testPassphrase);
 assert(restored !== null, 'Decrypted session is null');
 assert.strictEqual(restored.cookie, sampleSession.cookie, 'Cookie does not match');
 assert.strictEqual(restored.imei, sampleSession.imei, 'IMEI does not match');
+try { fs.unlinkSync(path.resolve(process.cwd(), 'sessions', 'test_session.enc')); } catch {}
 console.log('   ✅ Session encryption & decryption passed!\n');
 
 // -----------------------------------------------------------------------------
@@ -2475,12 +2477,18 @@ console.log('54. Testing Independent RateLimiter & Shield Isolation...');
 // -----------------------------------------------------------------------------
 console.log('55. Testing Isolated Account Removal & Destroy Lifecycle...');
 {
+  const testSessionsDir = path.resolve(process.cwd(), 'data', 'test_sessions_isolation');
+  if (!fs.existsSync(testSessionsDir)) {
+    fs.mkdirSync(testSessionsDir, { recursive: true });
+  }
+
   const { ZaloAccountManager } = await import('../src/utils/account-manager.js');
-  const pool = new ZaloAccountManager({ maxConcurrent: 3 });
+  const pool = new ZaloAccountManager({ maxConcurrent: 3, sessionsDir: testSessionsDir });
 
   let destroyed = false;
   const mockClient = {
     accountUid: 'acc_test_del',
+    sessionName: 'zalo_acc_test_del',
     isLoggedIn: true,
     destroy: async () => { destroyed = true; },
     getAccountProfile: () => ({ displayName: 'Test Del' })
@@ -2492,6 +2500,10 @@ console.log('55. Testing Isolated Account Removal & Destroy Lifecycle...');
   await pool.removeAccount('acc_test_del', { cleanData: false });
   assert.strictEqual(destroyed, true, 'Client destroy() must be invoked upon removal');
   assert.strictEqual(pool.clients.has('acc_test_del'), false, 'Client must be deleted from pool');
+
+  try {
+    fs.rmSync(testSessionsDir, { recursive: true, force: true });
+  } catch {}
 
   console.log('   ✅ Isolated Account Removal & Destroy Lifecycle passed!\n');
 }
@@ -2615,5 +2627,14 @@ Chính sách nghỉ phép 12 ngày/năm. Hotline IT: 19001234.
   console.log('   ✅ Multi-Profile AI Suite passed!\n');
 }
 
-console.log('🎉 ALL 56 INTEGRITY, SECURITY, CRM, AIZALO REMARKETING, AI SUITE, BULK DEEP-SYNC, QR AUTH, MEMORY GUARD, ZALO SANITIZER, DESKTOP PACKAGED, CLEAN SWITCH, MULTI-DEVICE SYNC, GROUP MENTION, QUICK-MSG, CAMPAIGN TEST DISPATCH, GROUP RECONCILIATION, AUTO-FALLBACK OPENROUTER, MULTIMODAL VISION, STRANGER IDENTITY, SCHEDULED MESSAGES, UNIVERSAL WIKI URL INGESTION, LIVE CHAT MEDIA CAPTION, CHAT AVATAR DYNAMIC, i18n MULTI-LANGUAGE, CSRF LOCALHOST SHIELD, PIN/CONTEXT ACTIONS, OA ISOLATION, OA MUTEX, OA ROUTING, ANTI-MOJIBAKE, UI RENDERER, MULTI-ACCOUNT POOL (51-55) & MULTI-PROFILE AI SUITE (56) TESTS PASSED 100%!');
+// -----------------------------------------------------------------------------
+// Test 57: Second Brain Studio Suite (BM25 Retriever, Vaults, Mutex, Auto-Migration & Rollback)
+// -----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// Test 58: AGENTS.md Modular Integrity, Size Ceiling & Invariant Keywords Guard
+// -----------------------------------------------------------------------------
+await import('./test-agents-rules-integrity.js');
+
+console.log('🎉 ALL 58 INTEGRITY, SECURITY, CRM, AIZALO REMARKETING, AI SUITE, BULK DEEP-SYNC, QR AUTH, MEMORY GUARD, ZALO SANITIZER, DESKTOP PACKAGED, CLEAN SWITCH, MULTI-DEVICE SYNC, GROUP MENTION, QUICK-MSG, CAMPAIGN TEST DISPATCH, GROUP RECONCILIATION, AUTO-FALLBACK OPENROUTER, MULTIMODAL VISION, STRANGER IDENTITY, SCHEDULED MESSAGES, UNIVERSAL WIKI URL INGESTION, LIVE CHAT MEDIA CAPTION, CHAT AVATAR DYNAMIC, i18n MULTI-LANGUAGE, CSRF LOCALHOST SHIELD, PIN/CONTEXT ACTIONS, OA ISOLATION, OA MUTEX, OA ROUTING, ANTI-MOJIBAKE, UI RENDERER, MULTI-ACCOUNT POOL (51-55), MULTI-PROFILE AI SUITE (56), SECOND BRAIN STUDIO SUITE (57) & RULES INTEGRITY SUITE (58) TESTS PASSED 100%!');
+
 

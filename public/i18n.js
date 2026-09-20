@@ -47,7 +47,24 @@
         theme_label_light: 'Giao diện Sáng',
         lang_toggle_title: 'Chuyển đổi ngôn ngữ / Switch Language (VI / EN)',
         donate_btn: 'Ủng Hộ',
-        donate_title: 'Ủng hộ phát triển Zalo-Flow'
+        donate_title: 'Ủng hộ phát triển Zalo-Flow',
+        ai_power_title: 'Bật/Tắt Bot AI tự động trả lời',
+        ai_rules_title: 'Xem quy tắc nhường quyền & Smart Cooldown',
+        ai_rules_heading: '🛡️ Quy Tắc Nhường Quyền & Vận Hành',
+        ai_rules_desc: 'Khi nhân viên chat trong cuộc hội thoại, Bot AI sẽ tự động im lặng để nhường quyền tư vấn.',
+        ai_cooldown_label: '⏳ Tạm dừng bot (Cooldown):',
+        ai_cooldown_sub: 'Nhường quyền khi nhân viên nhắn',
+        ai_unit_mins: 'phút',
+        ai_debounce_label: '📦 Gom tin nhắn (Debounce):',
+        ai_debounce_sub: 'Chờ khách nhắn xong mới trả lời',
+        ai_unit_secs: 'giây',
+        ai_allow_groups: '👥 Trả lời trong Nhóm Chat (khi tag @bot)',
+        ai_section_crm: '🏷️ Phân Loại & Bộ Lọc Thẻ',
+        ai_auto_tag_lead: '🏷️ Tự gắn thẻ Lead:',
+        ai_target_mode_title: '🎯 Phục vụ khách:',
+        ai_target_all: 'Tất cả',
+        ai_save_btn: '💾 Lưu Cài Đặt',
+        ai_open_studio: '⚙️ Mở AI Studio'
       },
       rail: {
         chat_tooltip: '💬 Hội Thoại',
@@ -95,7 +112,10 @@
         manage_tags_btn: '⚙️ Quản lý thẻ khách hàng',
         sync_banner_title: 'Đang đồng bộ dữ liệu Zalo...',
         sync_banner_desc: 'Đang nạp danh bạ & nhóm. Bạn có thể xem tin cũ bình thường.',
-        empty_conversations: 'Không tìm thấy cuộc trò chuyện nào phù hợp'
+        empty_conversations: 'Không tìm thấy cuộc trò chuyện nào phù hợp',
+        update_available: 'Có bản cập nhật mới',
+        update_now: '🚀 Cập Nhật Ngay',
+        update_dismiss_title: 'Ẩn tạm thời'
       },
       ctx: {
         pin_conv: 'Ghim hội thoại',
@@ -285,7 +305,24 @@
         theme_label_light: 'Light Mode',
         lang_toggle_title: 'Switch Language / Chuyển đổi ngôn ngữ (EN / VI)',
         donate_btn: 'Donate',
-        donate_title: 'Support Zalo-Flow development'
+        donate_title: 'Support Zalo-Flow development',
+        ai_power_title: 'Toggle AI auto-reply on/off',
+        ai_rules_title: 'View takeover rules & Smart Cooldown',
+        ai_rules_heading: '🛡️ Takeover Rules & Operations',
+        ai_rules_desc: 'When a human agent sends a message in the conversation, AI automatically silences itself to yield full consultation control.',
+        ai_cooldown_label: '⏳ Pause Bot (Cooldown):',
+        ai_cooldown_sub: 'Yield control on human agent message',
+        ai_unit_mins: 'min',
+        ai_debounce_label: '📦 Message Debounce:',
+        ai_debounce_sub: 'Wait for customer to finish typing',
+        ai_unit_secs: 'sec',
+        ai_allow_groups: '👥 Reply in Group Chats (when tagged)',
+        ai_section_crm: '🏷️ Tag Routing & Target Filter',
+        ai_auto_tag_lead: '🏷️ Auto-tag Lead:',
+        ai_target_mode_title: '🎯 Target Customers:',
+        ai_target_all: 'All',
+        ai_save_btn: '💾 Save Settings',
+        ai_open_studio: '⚙️ Open AI Studio'
       },
       rail: {
         chat_tooltip: '💬 Conversations',
@@ -333,7 +370,10 @@
         manage_tags_btn: '⚙️ Manage Labels',
         sync_banner_title: 'Syncing Zalo Data...',
         sync_banner_desc: 'Loading contacts & groups. You can browse chat history normally.',
-        empty_conversations: 'No matching conversations found'
+        empty_conversations: 'No matching conversations found',
+        update_available: 'Update Available',
+        update_now: '🚀 Update Now',
+        update_dismiss_title: 'Dismiss for now'
       },
       ctx: {
         pin_conv: 'Pin to top',

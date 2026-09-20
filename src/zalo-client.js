@@ -12,9 +12,11 @@ import { SelfEchoShield, defaultSelfEchoShield } from './utils/self-echo.js';
 import { FloodDetector, defaultFloodDetector } from './utils/flood-detector.js';
 import { localStore } from './utils/local-store.js';
 import { parseMessage } from './utils/message-parser.js';
+import EventEmitter from 'events';
 
-export class ZaloClient {
+export class ZaloClient extends EventEmitter {
   constructor({ sessionName = 'zalo_default', accountUid = '' } = {}) {
+    super();
     this.api = null;
     this.isLoggedIn = false;
     this.currentQrCode = null;
@@ -115,6 +117,7 @@ export class ZaloClient {
         await this.syncAccountProfile();
         this._setupListener();
         this.syncInitialContacts();
+        this.emit('login_success', this.getAccountProfile());
         return;
       } catch (err) {
         logger.warn(`Failed to restore session: ${err.message}. Generating new QR code...`);
@@ -178,6 +181,7 @@ export class ZaloClient {
       await this.syncAccountProfile();
       this._setupListener();
       this.syncInitialContacts();
+      this.emit('login_success', this.getAccountProfile());
     } catch (err) {
       logger.error(`Login failed: ${err.message}`);
     }
@@ -1495,6 +1499,7 @@ export class ZaloClient {
       await this.syncAccountProfile();
       this._setupListener();
       this.syncInitialContacts();
+      this.emit('login_success', this.getAccountProfile());
 
       if (typeof this.onQrCallback === 'function') {
         this.onQrCallback(this.getAccountProfile());

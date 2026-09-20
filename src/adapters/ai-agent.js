@@ -4,6 +4,7 @@ import { localStore } from '../utils/local-store.js';
 import { logger } from '../utils/logger.js';
 import { decryptSecret } from '../utils/ai-crypto.js';
 import { detectMention } from '../utils/mention-detector.js';
+import { vaultManager } from '../services/second-brain/vault-manager.js';
 
 export const CURATED_MODELS = {
   gemini: [
@@ -141,12 +142,17 @@ export class AiAgentAdapter extends BaseAdapter {
   constructor(options = {}) {
     super('ai_agent');
     this.localStore = options.localStore || localStore;
+    this.vaultManager = options.vaultManager || vaultManager;
     this.sessionSecret = options.sessionSecret || process.env.SESSION_SECRET;
     this._inboundBuffers = new Map(); // Map<bufferKey, string[]>
     this._inboundImageBuffers = new Map(); // Map<bufferKey, string[]> (tối đa 2 ảnh per bufferKey)
     this._debounceTimers = new Map(); // Map<bufferKey, NodeJS.Timeout>
     this._groupMentionCooldowns = new Map(); // Map<senderCooldownKey, number>
     this._triggerMessages = new Map(); // Map<bufferKey, Object>
+  }
+
+  setVaultManager(vm) {
+    this.vaultManager = vm;
   }
 
   isConfigured() {
@@ -393,6 +399,7 @@ export class AiAgentAdapter extends BaseAdapter {
       const effectiveModel = profile.model || engineSettings.model;
       const effectiveSettings = {
         ...engineSettings,
+        profileId: profile.id || 'default',
         model: effectiveModel,
         temperature: profile.temperature !== undefined ? profile.temperature : 0.7,
         soulPrompt: profile.soulPrompt !== undefined ? profile.soulPrompt : (engineSettings.soulPrompt || ''),
@@ -417,8 +424,8 @@ export class AiAgentAdapter extends BaseAdapter {
         isGroup: Boolean(isGroup)
       };
 
-      // Compile System Prompt with 4 Layers + Customer Context
-      const systemPrompt = this.compilePrompt(effectiveSettings, customerContext);
+      // Compile System Prompt with 4 Layers + Customer Context + Dynamic BM25 Context
+      const systemPrompt = this.compilePrompt(effectiveSettings, customerContext, incomingText);
 
       // Get recent conversation history (last 10 messages) for Multi-turn context
       // Note: localStore.getMessages already returns chronological order (ASC: oldest -> newest).
@@ -529,15 +536,31 @@ export class AiAgentAdapter extends BaseAdapter {
   }
 
   /**
-   * Compile System Prompt with 4 Layers: SOUL + MEMORY (with Q&A) + FEW-SHOT + SCOPE + CUSTOMER CONTEXT
+   * Compile System Prompt with 4 Layers: SOUL + DYNAMIC RAG MEMORY (with Q&A) + FEW-SHOT + SCOPE + CUSTOMER CONTEXT
    */
-  compilePrompt(customSettings = null, customerContext = null) {
+  compilePrompt(customSettings = null, customerContext = null, queryText = '') {
     let settings = customSettings;
     if (!settings || typeof settings !== 'object') {
       settings = this.localStore.getAiSettings() || {};
     }
     const soul = settings.soulPrompt?.trim() || `Bạn là chuyên viên tư vấn khách hàng Zalo chuyên nghiệp, thân thiện, trả lời ngắn gọn, đúng trọng tâm và tự nhiên bằng tiếng Việt.`;
     
+    // Dynamic RAG from Second Brain Vault (BM25 Retriever)
+    let dynamicVaultContext = '';
+    const profileId = settings.profileId || settings.id || 'default';
+    if (queryText && typeof queryText === 'string' && queryText.trim()) {
+      try {
+        const vm = this.vaultManager || vaultManager;
+        const ragResult = vm.queryContext(profileId, queryText, { topK: 3, minScore: 0.2 });
+        if (ragResult?.matched && (ragResult.contextText || ragResult.contextSnippet)) {
+          const textToInject = ragResult.contextText || ragResult.contextSnippet;
+          dynamicVaultContext = `\n\n### [TRI THỨC TRÍCH XUẤT TỰ ĐỘNG CHO CÂU HỎI HIỆN TẠI (BM25 CONTEXT)]:\n${textToInject}`;
+        }
+      } catch (err) {
+        logger.warn?.(`[AiAgent] Dynamic RAG retrieval error: ${err.message}`);
+      }
+    }
+
     // Auto-inject Q&A pairs from Quick Messages into Memory
     let qnaSection = '';
     try {
@@ -549,7 +572,9 @@ export class AiAgentAdapter extends BaseAdapter {
       }
     } catch {}
 
-    const memory = (settings.memoryPrompt?.trim() || '') + qnaSection;
+    const baseMemory = settings.memoryPrompt?.trim() || '';
+    const combinedMemory = dynamicVaultContext ? `${dynamicVaultContext}\n\n${baseMemory}`.trim() : baseMemory;
+    const memory = (combinedMemory || '') + qnaSection;
     
     let fewShot = '';
     if (settings.exemplarConversation) {

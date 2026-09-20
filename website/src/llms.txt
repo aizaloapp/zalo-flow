@@ -42,7 +42,7 @@
 10. **Tiện Ích Chrome Extension AIzalo Flow Companion:** Tiện ích mở rộng chính thức trên Chrome Web Store giúp theo dõi thông báo tin nhắn mới thời gian thực, huy hiệu đếm tin chưa đọc, tra cứu nhanh danh bạ và bắn tin nhắn mẫu tức thì ngay trên thanh công cụ trình duyệt: https://aizalo.com/guide
 
 ## Hướng Dẫn Tải Về & Cài Đặt
-- Tải gói cài đặt Windows: `https://github.com/aizaloapp/zalo-flow/releases/latest` (file `ZaloFlow-Setup-v1.4.0.exe`).
+- Tải gói cài đặt Windows: `https://github.com/aizaloapp/zalo-flow/releases/latest` (file `ZaloFlow-Setup-v1.4.1.exe`).
 - Cài đặt qua dòng lệnh: `npx zalo-flow init`
 - Cài đặt Tiện ích Chrome Extension: https://aizalo.com/guide
 - Lưu ý Windows SmartScreen: Khi xuất hiện màn hình "Windows protected your PC", bấm "More info" -> "Run anyway" (phần mềm cộng đồng chưa mua chứng chỉ thương mại Microsoft, sạch 0/70 trên VirusTotal).
