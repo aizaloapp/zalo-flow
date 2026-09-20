@@ -70,7 +70,15 @@ while ((match = linkRegex.exec(agentsContent)) !== null) {
   assert.ok(fs.existsSync(target), `Link in AGENTS.md must point to an existing file: ${target}`);
 }
 
-// 4. Zero-Loss Technical Invariant Keyword Assertions
+// 4. Check no absolute machine URLs (file:///) exist in AGENTS.md
+const fileSchemeMatches = agentsContent.match(/\[([^\]]+)\]\((file:\/\/\/[^)]+)\)/g);
+assert.strictEqual(
+  fileSchemeMatches,
+  null,
+  `AGENTS.md must NOT contain local machine 'file:///' links (found: ${fileSchemeMatches ? fileSchemeMatches.join(', ') : ''}). Use relative paths instead for cross-platform CI portability.`
+);
+
+// 5. Zero-Loss Technical Invariant Keyword Assertions
 // Combine all rule content to ensure no vital constraints are dropped
 const allRuleContents = requiredRules
   .map(f => fs.readFileSync(f, 'utf8'))
@@ -91,7 +99,8 @@ const criticalInvariants = [
   { keyword: "cleanSwitchAccountData", desc: "Account switching whitelist protection method" },
   { keyword: "Air-Gapped IP", desc: "Security perimeter isolating SaaS IP and secrets" },
   { keyword: "Zero-Binary Git Tree", desc: "Contract preventing commits of large binaries" },
-  { keyword: "Strict Explicit Approval", desc: "Absolute invariant requiring manual typed approval" }
+  { keyword: "Strict Explicit Approval", desc: "Absolute invariant requiring manual typed approval" },
+  { keyword: "Portable Repository Markdown Links", desc: "Cross-platform relative markdown link guard" }
 ];
 
 for (const { keyword, desc } of criticalInvariants) {
