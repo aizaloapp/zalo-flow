@@ -53,7 +53,17 @@ let match;
 while ((match = linkRegex.exec(agentsContent)) !== null) {
   let target = match[2];
   if (target.startsWith('file:///')) {
-    target = fileURLToPath(target.split('#')[0]);
+    const cleanUrl = target.split('#')[0];
+    const relMatch = cleanUrl.match(/(?:\.agents\/|website\/|src\/).+$/);
+    if (relMatch) {
+      target = path.resolve(rootDir, relMatch[0]);
+    } else {
+      try {
+        target = fileURLToPath(cleanUrl);
+      } catch {
+        target = path.resolve(rootDir, cleanUrl.replace(/^file:\/\/\/[a-zA-Z]:[\\/]/, ''));
+      }
+    }
   } else {
     target = path.resolve(rootDir, target.split('#')[0]);
   }
