@@ -42,6 +42,18 @@
   Content-Type: text/markdown; charset=utf-8
   X-Robots-Tag: noindex
 
+/assets/*
+  Cache-Control: public, max-age=2592000, immutable
+
+/style.css
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+
+/*.js
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+
+/widget/*
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+
 /favicon*
   Cache-Control: public, max-age=0, must-revalidate
 
