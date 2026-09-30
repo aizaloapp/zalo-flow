@@ -231,9 +231,13 @@
 
         <div class="hero-sub-actions">
           <div class="cli-snippet" onclick="navigator.clipboard.writeText('git clone https://github.com/aizaloapp/zalo-flow.git'); alert('Copied command: git clone https://github.com/aizaloapp/zalo-flow.git\n\n👉 Next steps in Terminal:\n1. cd zalo-flow\n2. npm install\n3. npm run init\n4. npm start');" title="Copy install command for macOS / Linux">
-            <span style="font-weight: 600; color: #fff;">🍏 🐧 macOS / Linux:</span>
-            <code style="color: #38bdf8; background: none; padding: 0;">git clone https://github.com/aizaloapp/zalo-flow.git</code>
-            <span style="color: var(--text-dim); font-size: 0.8rem;">(Click copy)</span>
+            <div class="cli-header">
+              <span class="cli-badge">🍏 🐧 macOS &amp; Linux</span>
+              <span class="cli-action">📋 Click copy</span>
+            </div>
+            <div class="cli-code">
+              <code>git clone https://github.com/aizaloapp/zalo-flow.git</code>
+            </div>
           </div>
           <a href="https://zalo.me/0373315784" target="_blank" rel="noopener" class="hero-sub-link">
             🤖 Chat to test Zalo AI bot live ➔

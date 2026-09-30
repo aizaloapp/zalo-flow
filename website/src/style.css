@@ -468,22 +468,73 @@ body {
 }
 
 .cli-snippet {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.75rem;
-  background: rgba(15, 23, 42, 0.9);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  padding: 0.75rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  padding: 0.65rem 1.15rem;
   border-radius: 10px;
-  font-family: var(--font-mono);
-  font-size: 0.9rem;
-  color: #38bdf8;
   cursor: pointer;
-  transition: border-color 0.2s ease;
+  transition: all 0.2s ease;
+  max-width: 480px;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: left;
 }
 
 .cli-snippet:hover {
   border-color: var(--cyan);
+  background: rgba(15, 23, 42, 1);
+  box-shadow: 0 4px 16px rgba(0, 210, 255, 0.15);
+}
+
+.cli-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.78rem;
+  line-height: 1.2;
+}
+
+.cli-badge {
+  color: #e2e8f0;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.cli-action {
+  color: var(--text-dim);
+  font-size: 0.75rem;
+  transition: color 0.2s ease;
+}
+
+.cli-snippet:hover .cli-action {
+  color: #38bdf8;
+}
+
+.cli-code {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: #38bdf8;
+  overflow-x: auto;
+  white-space: nowrap;
+  padding: 0.1rem 0;
+  scrollbar-width: none;
+}
+
+.cli-code::-webkit-scrollbar {
+  display: none;
+}
+
+.cli-code code {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  background: none;
+  padding: 0;
 }
 
 .badges-bar {
@@ -1709,13 +1760,28 @@ body {
     margin-bottom: 2rem;
   }
 
-  .hero-cta-group .btn,
-  .hero-cta-group .cli-snippet {
+  .hero-cta-group .btn {
     width: 100%;
     max-width: 340px;
     justify-content: center;
     padding: 0.75rem 1rem;
     font-size: 0.95rem;
+  }
+
+  .hero-sub-actions {
+    flex-direction: column;
+    width: 100%;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .cli-snippet {
+    max-width: 340px;
+    padding: 0.6rem 0.85rem;
+  }
+
+  .cli-code {
+    font-size: 0.76rem;
   }
 
   /* 4. Badges bar dạng Chip hiện đại */
