@@ -58,7 +58,7 @@
         "@type": "SoftwareApplication",
         "name": "Zalo-Flow",
         "applicationCategory": "BusinessApplication, CommunicationApplication",
-        "operatingSystem": "Windows 10, Windows 11, Linux, macOS (Docker)",
+        "operatingSystem": "Windows 10, Windows 11, macOS, Linux",
         "softwareVersion": "1.4.1",
         "fileSize": "25MB",
         "inLanguage": "en",
@@ -121,6 +121,14 @@
             "acceptedAnswer": {
               "@type": "Answer",
               "text": "Zalo-Flow supports multiple leading AI providers out-of-the-box: Google Gemini (Gemini 1.5 Flash, 2.5 Flash), DeepSeek (Chat, Reasoner), OpenAI (GPT-4o, GPT-4o-mini), and local offline LLMs running via Ollama."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How can I install Zalo-Flow on macOS or Linux?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Zalo-Flow is fully compatible with macOS and Linux. Ensure you have Node.js >= 22.5.0 installed, then open Terminal and run: git clone https://github.com/aizaloapp/zalo-flow.git, cd zalo-flow && npm install, and npm start. You can also run it via Docker using docker compose up -d."
             }
           }
         ]
@@ -222,9 +230,9 @@
         </div>
 
         <div class="hero-sub-actions">
-          <div class="cli-snippet" onclick="navigator.clipboard.writeText('npx zalo-flow init'); alert('Copied CLI command: npx zalo-flow init');">
-            <span>💻</span>
-            <span>npx zalo-flow init</span>
+          <div class="cli-snippet" onclick="navigator.clipboard.writeText('git clone https://github.com/aizaloapp/zalo-flow.git'); alert('Copied command: git clone https://github.com/aizaloapp/zalo-flow.git\n\n👉 Next steps in Terminal:\n1. cd zalo-flow\n2. npm install\n3. npm run init\n4. npm start');" title="Copy install command for macOS / Linux">
+            <span style="font-weight: 600; color: #fff;">🍏 🐧 macOS / Linux:</span>
+            <code style="color: #38bdf8; background: none; padding: 0;">git clone https://github.com/aizaloapp/zalo-flow.git</code>
             <span style="color: var(--text-dim); font-size: 0.8rem;">(Click copy)</span>
           </div>
           <a href="https://zalo.me/0373315784" target="_blank" rel="noopener" class="hero-sub-link">
@@ -558,6 +566,19 @@
             <summary class="faq-summary">Which AI models does Zalo-Flow support?</summary>
             <div class="faq-content">
               Zalo-Flow supports multiple leading providers: Google Gemini (ultra-fast free Gemini 1.5 Flash), DeepSeek (DeepSeek-Chat, Reasoner), OpenAI (GPT-4o, GPT-4o-mini), and local offline LLMs via Ollama.
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-summary">How can I install Zalo-Flow on macOS or Linux?</summary>
+            <div class="faq-content">
+              Zalo-Flow is fully compatible with macOS (Apple Silicon M1/M2/M3/Intel) and Linux. Since it is an open-source Node.js application, you can set it up in 3 simple steps:
+              <ol style="margin: 0.5rem 0 0.5rem 1.25rem; line-height: 1.6;">
+                <li>Install <strong>Node.js &ge; 22.5.0</strong> (recommended Node 22 LTS from <code>nodejs.org</code> or via Homebrew: <code>brew install node@22</code>).</li>
+                <li>Open Terminal and run: <code>git clone https://github.com/aizaloapp/zalo-flow.git &amp;&amp; cd zalo-flow &amp;&amp; npm install &amp;&amp; npm run init &amp;&amp; npm start</code></li>
+                <li>Open your browser at <code>http://localhost:3000</code> and scan the Zalo QR code to start.</li>
+              </ol>
+              If you prefer Docker on macOS/Linux, simply run <code>docker compose up -d</code>.
             </div>
           </details>
         </div>

@@ -44,7 +44,7 @@
 
 ## Hướng Dẫn Tải Về & Cài Đặt
 - Tải gói cài đặt Windows: `https://github.com/aizaloapp/zalo-flow/releases/latest` (file `ZaloFlow-Setup-v1.4.1.exe`).
-- Cài đặt qua dòng lệnh: `npx zalo-flow init`
+- Cài đặt cho macOS / Linux / Docker: `git clone https://github.com/aizaloapp/zalo-flow.git && cd zalo-flow && npm install && npm start` (yêu cầu Node.js >= 22.5.0)
 - Cài đặt Tiện ích Chrome Extension: https://aizalo.com/guide
 - Lưu ý Windows SmartScreen: Khi xuất hiện màn hình "Windows protected your PC", bấm "More info" -> "Run anyway" (phần mềm cộng đồng chưa mua chứng chỉ thương mại Microsoft, sạch 0/70 trên VirusTotal).
 

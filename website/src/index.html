@@ -58,7 +58,7 @@
         "@type": "SoftwareApplication",
         "name": "Zalo-Flow",
         "applicationCategory": "BusinessApplication, CommunicationApplication",
-        "operatingSystem": "Windows 10, Windows 11, Linux, macOS (via Docker)",
+        "operatingSystem": "Windows 10, Windows 11, macOS, Linux",
         "softwareVersion": "1.4.1",
         "fileSize": "25MB",
         "offers": {
@@ -119,6 +119,14 @@
             "acceptedAnswer": {
               "@type": "Answer",
               "text": "Hệ thống hỗ trợ đa nhà cung cấp AI hàng đầu hiện nay gồm Google Gemini (1.5 Flash, 2.5 Flash), DeepSeek (Chat, Reasoner), OpenAI (GPT-4o, GPT-4o-mini) và các mô hình cục bộ qua Ollama."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Tôi dùng máy tính Mac (macOS) hoặc Linux thì cài đặt như thế nào?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Zalo-Flow hỗ trợ đầy đủ trên macOS và Linux. Yêu cầu cài Node.js phiên bản >= 22.5.0, sau đó mở Terminal chạy 3 bước: git clone https://github.com/aizaloapp/zalo-flow.git, cd zalo-flow && npm install, rồi npm start để khởi chạy web tại localhost:3000. Bạn cũng có thể chạy qua Docker bằng lệnh docker compose up -d."
             }
           }
         ]
@@ -220,9 +228,9 @@
         </div>
 
         <div class="hero-sub-actions">
-          <div class="cli-snippet" onclick="navigator.clipboard.writeText('npx zalo-flow init'); alert('Đã sao chép lệnh: npx zalo-flow init');">
-            <span>💻</span>
-            <span>npx zalo-flow init</span>
+          <div class="cli-snippet" onclick="navigator.clipboard.writeText('git clone https://github.com/aizaloapp/zalo-flow.git'); alert('Đã sao chép lệnh: git clone https://github.com/aizaloapp/zalo-flow.git\n\n👉 Tiếp theo trong Terminal:\n1. cd zalo-flow\n2. npm install\n3. npm run init\n4. npm start');" title="Sao chép lệnh cài đặt cho macOS / Linux">
+            <span style="font-weight: 600; color: #fff;">🍏 🐧 macOS / Linux:</span>
+            <code style="color: #38bdf8; background: none; padding: 0;">git clone https://github.com/aizaloapp/zalo-flow.git</code>
             <span style="color: var(--text-dim); font-size: 0.8rem;">(Click copy)</span>
           </div>
           <a href="https://zalo.me/0373315784" target="_blank" rel="noopener" class="hero-sub-link">
@@ -598,6 +606,19 @@
             <summary class="faq-summary">Làm thế nào để cập nhật khi có phiên bản mới?</summary>
             <div class="faq-content">
               Khi có phiên bản cập nhật mới trên GitHub Releases, Zalo-Flow sẽ hiển thị thông báo trên giao diện web. Bản cài đặt Windows có sẵn tiện ích Standalone Updater tách rời để tự động tải và cập nhật phiên bản mới mà không làm mất dữ liệu tin nhắn cũ của bạn.
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-summary">Tôi dùng máy tính Mac (macOS) hoặc Linux thì cài đặt như thế nào?</summary>
+            <div class="faq-content">
+              Zalo-Flow hỗ trợ đầy đủ trên macOS (MacBook M1/M2/M3/Intel) và Linux. Vì Zalo-Flow là mã nguồn mở chạy trên Node.js, bạn chỉ cần thực hiện 3 bước đơn giản:
+              <ol style="margin: 0.5rem 0 0.5rem 1.25rem; line-height: 1.6;">
+                <li>Cài đặt <strong>Node.js phiên bản &ge; 22.5.0</strong> (khuyến nghị bản Node 22 LTS tại <code>nodejs.org</code> hoặc qua Homebrew <code>brew install node@22</code>).</li>
+                <li>Mở Terminal và chạy lệnh: <code>git clone https://github.com/aizaloapp/zalo-flow.git &amp;&amp; cd zalo-flow &amp;&amp; npm install &amp;&amp; npm run init &amp;&amp; npm start</code></li>
+                <li>Mở trình duyệt vào <code>http://localhost:3000</code> và quét mã QR Zalo để bắt đầu sử dụng.</li>
+              </ol>
+              Nếu sử dụng Docker, bạn chỉ cần gõ <code>docker compose up -d</code> là hoàn tất.
             </div>
           </details>
         </div>
