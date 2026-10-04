@@ -89,6 +89,11 @@ export class ZaloAccountManager extends EventEmitter {
           client.onMessage(handler);
         }
 
+        // Forward human_activity event to accountManager listeners
+        client.on('human_activity', (data) => {
+          this.emit('human_activity', data);
+        });
+
         // Tự động cập nhật pool khi client đăng nhập thành công (kể cả quét QR sau đó)
         client.on('login_success', (profile) => {
           const newUid = profile?.userId || client.accountUid;

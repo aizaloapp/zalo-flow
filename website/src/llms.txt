@@ -41,9 +41,10 @@
 9. **Multi-Account Pool & Multi-Profile AI Suite:** Quản lý không giới hạn nick Zalo trên 1 máy tính (< 150MB RAM), gán riêng hồ sơ Bot AI (SOUL, Memory Wiki, Few-Shot, Scope) cho từng nick độc lập.
 10. **Tiện Ích Chrome Extension AIzalo Flow Companion:** Tiện ích mở rộng chính thức trên Chrome Web Store giúp theo dõi thông báo tin nhắn mới thời gian thực, huy hiệu đếm tin chưa đọc, tra cứu nhanh danh bạ và bắn tin nhắn mẫu tức thì ngay trên thanh công cụ trình duyệt: https://aizalo.com/guide
 11. **Dạy Bot Cập Nhật Kiến Thức Tự Động (AI Vision & Fast Ingestion):** Nạp nhanh tri thức bằng phím tắt dán ảnh `Ctrl + V` hoặc tải tệp PDF, Word kèm lời dặn ngắn gọn. Mô hình AI Vision tự động bóc tách số liệu bảng giá, chính sách chiết khấu nạp vào kho tri thức Second Brain cục bộ.
+12. **AI Resilience & Stability Suite (Mới ở v1.5.0):** Smart Message Chunking tự động chia nhỏ câu trả lời dài > 2000 ký tự Zalo theo ngữ nghĩa câu/đoạn, Khóa đơn nguyên Per-Thread kèm Inbound Buffer chống race condition khi khách nhắn dồn dập, Universal Auto-Fallback (Gemini ⇄ DeepSeek, Z.AI...) tự động chuyển đổi khi lỗi 429/timeout/rớt mạng, Graceful Fallback Rescue gửi tin nhắn cứu hộ lịch sự và Smart Human Takeover Engine chặn chen ngang Admin tức thì.
 
 ## Hướng Dẫn Tải Về & Cài Đặt
-- Tải gói cài đặt Windows: `https://github.com/aizaloapp/zalo-flow/releases/latest` (file `ZaloFlow-Setup-v1.4.1.exe`).
+- Tải gói cài đặt Windows: `https://github.com/aizaloapp/zalo-flow/releases/latest` (file `ZaloFlow-Setup-v1.5.0.exe`).
 - Cài đặt cho macOS / Linux / Docker: `git clone https://github.com/aizaloapp/zalo-flow.git && cd zalo-flow && npm install && npm start` (yêu cầu Node.js >= 22.5.0)
 - Cài đặt Tiện ích Chrome Extension: https://aizalo.com/guide
 - Lưu ý Windows SmartScreen: Khi xuất hiện màn hình "Windows protected your PC", bấm "More info" -> "Run anyway" (phần mềm cộng đồng chưa mua chứng chỉ thương mại Microsoft, sạch 0/70 trên VirusTotal).

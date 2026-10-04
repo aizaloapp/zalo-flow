@@ -7240,6 +7240,11 @@ function renderAiSettingsUI() {
   if (fallbackCheck) fallbackCheck.checked = Boolean(aiSettingsState.fallbackEnabled);
   toggleFallbackFieldsUI();
 
+  const fallbackReplyCheck = document.getElementById('ai-fallback-reply-enabled');
+  if (fallbackReplyCheck) fallbackReplyCheck.checked = Boolean(aiSettingsState.fallbackReplyEnabled);
+  const fallbackReplyMsgInput = document.getElementById('ai-fallback-reply-message');
+  if (fallbackReplyMsgInput) fallbackReplyMsgInput.value = aiSettingsState.fallbackReplyMessage || '';
+
   const fallbackProviderSelect = document.getElementById('ai-fallback-provider-select');
   if (fallbackProviderSelect) fallbackProviderSelect.value = aiSettingsState.fallbackProvider || 'deepseek';
   populateModelOptions(document.getElementById('ai-fallback-model-select'), aiSettingsState.fallbackProvider || 'deepseek', aiSettingsState.fallbackModel);
@@ -8177,6 +8182,8 @@ async function saveKnowledgeSettings() {
     fallbackEnabled: document.getElementById('ai-fallback-enabled')?.checked ? 1 : 0,
     fallbackProvider: document.getElementById('ai-fallback-provider-select')?.value || 'deepseek',
     fallbackModel: document.getElementById('ai-fallback-model-select')?.value || 'deepseek-chat',
+    fallbackReplyEnabled: document.getElementById('ai-fallback-reply-enabled')?.checked ? 1 : 0,
+    fallbackReplyMessage: document.getElementById('ai-fallback-reply-message')?.value.trim() || '',
     adminCooldownMinutes: Number(document.getElementById('ai-admin-cooldown')?.value || 15),
     debounceSeconds: Number(document.getElementById('ai-debounce-sec')?.value || 3),
     allowGroups: document.getElementById('ai-allow-groups')?.checked ? 1 : 0,

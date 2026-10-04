@@ -238,7 +238,7 @@
             <button class="update-banner-close" onclick="dismissUpdateBanner(event)" title="Ẩn tạm thời" data-i18n-title="sidebar.update_dismiss_title">&times;</button>
           </div>
           <div class="update-banner-body">
-            <span class="update-banner-version" id="update-banner-version">v1.4.1</span>
+            <span class="update-banner-version" id="update-banner-version">v1.5.0</span>
             <button class="update-banner-btn" id="btn-banner-update-now" onclick="openAppUpdateModal()">
               <span data-i18n="sidebar.update_now">🚀 Cập Nhật Ngay</span>
             </button>
@@ -1457,6 +1457,25 @@
                     ⚡ Test Kết Nối Model Dự Phòng
                   </button>
                 </div>
+              </div>
+            </div>
+
+            <!-- GRACEFUL FALLBACK REPLY -->
+            <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border); border-radius: 12px; padding: 14px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #38bdf8; font-weight: 800; font-size: 0.84rem; text-transform: uppercase; margin: 0;">
+                  <input type="checkbox" id="ai-fallback-reply-enabled" style="accent-color: #38bdf8; width: 16px; height: 16px;">
+                  <span>🆘 3. Tin Nhắn Cứu Hộ Lịch Sự (Graceful Fallback Reply)</span>
+                </label>
+              </div>
+
+              <div style="font-size: 0.74rem; color: var(--text-muted); margin-bottom: 10px;">
+                Tự động gửi tin nhắn phản hồi lịch sự khi cả Model chính và Model dự phòng đều gặp sự cố mạng hoặc quá tải. Chỉ áp dụng cho hội thoại 1-1 riêng tư, giãn cách tối thiểu 5 phút/lần.
+              </div>
+
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" style="font-size: 0.74rem;">Nội dung tin nhắn cứu hộ:</label>
+                <textarea class="form-input" id="ai-fallback-reply-message" rows="2" style="font-size: 0.78rem; resize: vertical;" placeholder="Nhập nội dung tin nhắn cứu hộ..."></textarea>
               </div>
             </div>
 

@@ -58,3 +58,28 @@ export function maskApiKey(key) {
   if (trimmed.length <= 8) return '********';
   return `${trimmed.substring(0, 6)}...****...${trimmed.substring(trimmed.length - 4)}`;
 }
+
+/**
+ * Phân giải Base URL an toàn: Tránh trường hợp default URL của provider cũ (như DeepSeek) bị áp vào provider mới
+ * @param {string} customUrl 
+ * @param {string} provider 
+ * @returns {string}
+ */
+export function resolveEffectiveBaseUrl(customUrl, provider) {
+  const trimmed = (customUrl || '').trim();
+  if (!trimmed) return '';
+  const standardUrls = {
+    deepseek: 'api.deepseek.com',
+    zai: 'api.z.ai',
+    groq: 'api.groq.com',
+    openrouter: 'openrouter.ai',
+    ollama: 'localhost:11434'
+  };
+  for (const [p, domain] of Object.entries(standardUrls)) {
+    if (trimmed.includes(domain) && provider !== p) {
+      // URL thuộc về provider khác -> Bỏ qua để adapter tự dùng default URL của target provider!
+      return '';
+    }
+  }
+  return trimmed;
+}

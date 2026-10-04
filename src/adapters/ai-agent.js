@@ -2,9 +2,10 @@ import axios from 'axios';
 import { BaseAdapter } from './base-adapter.js';
 import { localStore } from '../utils/local-store.js';
 import { logger } from '../utils/logger.js';
-import { decryptSecret } from '../utils/ai-crypto.js';
+import { decryptSecret, resolveEffectiveBaseUrl } from '../utils/ai-crypto.js';
 import { detectMention } from '../utils/mention-detector.js';
 import { vaultManager } from '../services/second-brain/vault-manager.js';
+import { splitMessageForZalo } from '../utils/message-splitter.js';
 
 export const CURATED_MODELS = {
   gemini: [
@@ -149,6 +150,102 @@ export class AiAgentAdapter extends BaseAdapter {
     this._debounceTimers = new Map(); // Map<bufferKey, NodeJS.Timeout>
     this._groupMentionCooldowns = new Map(); // Map<senderCooldownKey, number>
     this._triggerMessages = new Map(); // Map<bufferKey, Object>
+    this._activeWorkers = new Map(); // Map<workerKey, { timestamp: number, threadId: string, accountUid: string }> (TTL 120s)
+    this._adminTakeoverTimestamps = new Map(); // Map<`${accountUid}:${threadId}`, number> (Takeover RAM cache)
+    this._fallbackReplyCooldowns = new Map(); // Map<`${accountUid}:${threadId}`, number> (5-min rescue cooldown)
+  }
+
+  /**
+   * Dọn dẹp bộ đệm RAM cache định kỳ tránh phình to bộ nhớ (Memory Guard)
+   */
+  _pruneRamMaps() {
+    const now = Date.now();
+    const maxEntries = 500;
+    if (this._adminTakeoverTimestamps.size > maxEntries) {
+      for (const [k, ts] of this._adminTakeoverTimestamps.entries()) {
+        if (now - ts > 24 * 3600 * 1000) this._adminTakeoverTimestamps.delete(k);
+      }
+    }
+    if (this._fallbackReplyCooldowns.size > maxEntries) {
+      for (const [k, ts] of this._fallbackReplyCooldowns.entries()) {
+        if (now - ts > 24 * 3600 * 1000) this._fallbackReplyCooldowns.delete(k);
+      }
+    }
+  }
+
+  /**
+   * Kích hoạt lá chắn Human Takeover tức thì khi Admin nhắn tin (từ Zalo Mobile/Desktop hoặc Web UI)
+   */
+  markHumanActivity({ accountUid = 'default', threadId, timestamp = Date.now() }) {
+    if (!threadId) return;
+    this._pruneRamMaps();
+    const cleanUid = accountUid || 'default';
+    const key = `${cleanUid}:${threadId}`;
+    this._adminTakeoverTimestamps.set(key, timestamp);
+
+    // 1. Hủy ngay lập tức mọi debounce timer đang chờ cho thread này
+    for (const bKey of Array.from(this._debounceTimers.keys())) {
+      if (bKey === threadId || bKey.startsWith(`${threadId}:`)) {
+        clearTimeout(this._debounceTimers.get(bKey));
+        this._debounceTimers.delete(bKey);
+      }
+    }
+
+    // 2. Xóa sạch hàng đợi đệm của thread này
+    for (const bKey of Array.from(this._inboundBuffers.keys())) {
+      if (bKey === threadId || bKey.startsWith(`${threadId}:`)) {
+        this._inboundBuffers.delete(bKey);
+      }
+    }
+    for (const bKey of Array.from(this._inboundImageBuffers.keys())) {
+      if (bKey === threadId || bKey.startsWith(`${threadId}:`)) {
+        this._inboundImageBuffers.delete(bKey);
+      }
+    }
+    for (const bKey of Array.from(this._triggerMessages.keys())) {
+      if (bKey === threadId || bKey.startsWith(`${threadId}:`)) {
+        this._triggerMessages.delete(bKey);
+      }
+    }
+
+    logger.info(`🛑 [AI Human Takeover] Đã ghi nhận tương tác thủ công của Admin cho ${key}. Tạm dừng Bot AI.`);
+  }
+
+  /**
+   * Kiểm tra xem Admin có đang trực tiếp trò chuyện hoặc vừa can thiệp hay không
+   * @param {string} accountUid
+   * @param {string} threadId
+   * @param {number|null} since - Nếu truyền timestamp, kiểm tra xem Admin có nhắn KỂ TỪ mốc `since` không
+   * @param {number|null} customCooldownMins
+   * @returns {boolean}
+   */
+  isHumanActive(accountUid = 'default', threadId, since = null, customCooldownMins = null) {
+    if (!threadId) return false;
+    const cleanUid = accountUid || 'default';
+    const key = `${cleanUid}:${threadId}`;
+    const ramTime = this._adminTakeoverTimestamps.get(key) || 0;
+
+    if (since !== null) {
+      if (ramTime > since) return true;
+      const dbTime = this.localStore.getLastAdminMessageTime(threadId, cleanUid);
+      return dbTime > since;
+    }
+
+    const settings = this.localStore.getAiSettings();
+    const cooldownMins = Number(customCooldownMins !== null ? customCooldownMins : (settings?.adminCooldownMinutes ?? 15));
+    if (cooldownMins <= 0) return false;
+    const cooldownMs = cooldownMins * 60 * 1000;
+    const now = Date.now();
+
+    if (now - ramTime < cooldownMs) return true;
+
+    const dbTime = this.localStore.getLastAdminMessageTime(threadId, cleanUid);
+    if (dbTime && (now - dbTime < cooldownMs)) {
+      this._adminTakeoverTimestamps.set(key, dbTime);
+      return true;
+    }
+
+    return false;
   }
 
   setVaultManager(vm) {
@@ -216,6 +313,17 @@ export class AiAgentAdapter extends BaseAdapter {
     const hasImage = Boolean((ctx.mediaType === 'image' || ctx.type === 'image') && (ctx.mediaUrl || ctx.url));
     const rawText = String(ctx.text || '').trim();
     if (!ctx || ctx.isSelf || ctx.isBot || (!rawText && !hasImage) || !ctx.threadId) {
+      return;
+    }
+
+    // Chặn đứng các tin nhắn thông báo hệ thống hoặc sự kiện kết bạn Zalo
+    if (ctx.type === 'system' || ctx.isSystem || ctx.isSystemEvent) {
+      logger.debug(`[AI Guard] Bỏ qua tin nhắn hệ thống (${ctx.threadId})`);
+      return;
+    }
+    const isSystemFriend = /^(bạn và .* đã trở thành bạn bè|các bạn đã trở thành bạn bè|hai bạn đã trở thành bạn bè|đã chấp nhận yêu cầu kết bạn|you are now connected with|đã trở thành bạn bè trên zalo)/i.test(rawText);
+    if (isSystemFriend) {
+      logger.info(`🤝 [AI Guard] Bỏ qua thông báo kết bạn hệ thống của ${ctx.threadId}`);
       return;
     }
 
@@ -289,19 +397,12 @@ export class AiAgentAdapter extends BaseAdapter {
       }
     }
 
-    // 4. Smart Cooldown Guard (Admin replied recently)
-    const cooldownMins = Number(settings.adminCooldownMinutes ?? 15);
-    if (cooldownMins > 0) {
-      const lastAdminTime = this.localStore.getLastAdminMessageTime(ctx.threadId);
-      if (lastAdminTime) {
-        const adminTimestamp = typeof lastAdminTime === 'number' ? lastAdminTime : new Date(lastAdminTime).getTime();
-        const diffMs = Date.now() - adminTimestamp;
-        if (diffMs < cooldownMins * 60 * 1000) {
-          const remainingMins = Math.ceil((cooldownMins * 60 * 1000 - diffMs) / 60000);
-          logger.info(`⏳ [AI Smart Cooldown] Admin replied recently. Bot AI paused for ${ctx.threadId} (${remainingMins}m remaining).`);
-          return;
-        }
-      }
+    const accountUid = ctx.client?.accountUid || ctx.client?.userProfile?.userId || 'default';
+
+    // 4. Smart Cooldown Guard (Human Takeover)
+    if (this.isHumanActive(accountUid, ctx.threadId)) {
+      logger.info(`⏳ [AI Smart Cooldown] Admin replied recently. Bot AI paused for ${accountUid}:${ctx.threadId}.`);
+      return;
     }
 
     // 5. Auto-tag new leads
@@ -318,15 +419,23 @@ export class AiAgentAdapter extends BaseAdapter {
       }
     }
 
-    // 6. Inbound Debounce Buffer (Aggregates rapid multi-line user messages and images)
+    // 6. Inbound Debounce Buffer & Worker State Machine (Concurrency Lock)
     const debounceSec = Math.max(1, Number(settings.debounceSeconds ?? 3));
     const bufferKey = ctx.isGroup ? `${ctx.threadId}:${ctx.senderId}` : ctx.threadId;
     const textToBuffer = (ctx.isGroup && groupMentionResult?.cleanText) ? groupMentionResult.cleanText : effectiveText;
+    const workerKey = `${accountUid}:${bufferKey}`;
+
+    // Kiểm tra xem worker cho luồng này có đang bận suy luận/gửi tin không
+    const activeWorker = this._activeWorkers.get(workerKey);
+    const isWorkerBusy = activeWorker && (Date.now() - activeWorker.timestamp < 120000); // TTL 120s
 
     if (!this._inboundBuffers.has(bufferKey)) {
       this._inboundBuffers.set(bufferKey, []);
     }
-    this._inboundBuffers.get(bufferKey).push(textToBuffer);
+    const currentBuf = this._inboundBuffers.get(bufferKey);
+    if (currentBuf.length < 5) {
+      currentBuf.push(textToBuffer);
+    }
 
     // Buffer incoming image URLs (max 2 images per debounce window)
     if (hasImage) {
@@ -353,6 +462,13 @@ export class AiAgentAdapter extends BaseAdapter {
       });
     }
 
+    // Nếu worker đang bận suy luận cho luồng này: ĐÃ ĐỆM TIN NHẮN XONG -> RETURN ngay!
+    // Worker hiện tại khi hoàn tất sẽ tự động xả đệm và xử lý tiếp trong cùng vòng lặp.
+    if (isWorkerBusy) {
+      logger.info(`📥 [AI Worker Lock] Luồng ${workerKey} đang bận suy luận. Đã đệm tin nhắn mới (${currentBuf.length} tin).`);
+      return;
+    }
+
     if (this._debounceTimers.has(bufferKey)) {
       clearTimeout(this._debounceTimers.get(bufferKey));
     }
@@ -376,7 +492,9 @@ export class AiAgentAdapter extends BaseAdapter {
         isGroup: ctx.isGroup,
         client: ctx.client,
         senderName: ctx.senderName || '',
-        triggerMsg
+        triggerMsg,
+        bufferKey,
+        workerKey
       });
     }, debounceSec * 1000);
 
@@ -386,114 +504,226 @@ export class AiAgentAdapter extends BaseAdapter {
   /**
    * Process and dispatch AI auto-reply
    */
-  async _processAutoReply({ threadId, incomingText, imageUrls = [], isGroup, client, senderName = '', triggerMsg = null }) {
+  async _processAutoReply({ threadId, incomingText, imageUrls = [], isGroup, client, senderName = '', triggerMsg = null, bufferKey = null, workerKey = null }) {
+    const myBufferKey = bufferKey || (isGroup && triggerMsg?.senderId ? `${threadId}:${triggerMsg.senderId}` : threadId);
+    const accountUid = client?.accountUid || client?.userProfile?.userId || 'default';
+    const myWorkerKey = workerKey || `${accountUid}:${myBufferKey}`;
+
+    const workerStartedAt = Date.now();
+    this._activeWorkers.set(myWorkerKey, { timestamp: workerStartedAt, threadId, accountUid });
+
+    let currentIncomingText = incomingText;
+    let currentImageUrls = imageUrls;
+    let currentTriggerMsg = triggerMsg;
+    let sentChunksCount = 0;
+    let llmStageFailed = false;
+
     try {
-      const engineSettings = this.localStore.getAiSettings();
-      if (!engineSettings || !engineSettings.isEnabled) return;
+      while (true) {
+        const engineSettings = this.localStore.getAiSettings();
+        if (!engineSettings || !engineSettings.isEnabled) break;
 
-      // Phân giải Profile theo ngữ cảnh 3 tầng: Thread Override -> Account Binding -> Global Default
-      const accountUid = client?.accountUid || '';
-      const profile = this.localStore.resolveAiProfileForContext({ threadId, accountUid });
+        // Phân giải Profile theo ngữ cảnh 3 tầng: Thread Override -> Account Binding -> Global Default
+        const profile = this.localStore.resolveAiProfileForContext({ threadId, accountUid });
 
-      // Hợp nhất Động Cơ (API Key, Fallback, Provider) với Profile (SOUL, Wiki riêng, Model, Temp)
-      const effectiveModel = profile.model || engineSettings.model;
-      const effectiveSettings = {
-        ...engineSettings,
-        profileId: profile.id || 'default',
-        model: effectiveModel,
-        temperature: profile.temperature !== undefined ? profile.temperature : 0.7,
-        soulPrompt: profile.soulPrompt !== undefined ? profile.soulPrompt : (engineSettings.soulPrompt || ''),
-        memoryPrompt: profile.memoryPrompt !== undefined ? profile.memoryPrompt : (engineSettings.memoryPrompt || ''),
-        fewShotPrompt: profile.fewShotPrompt !== undefined ? profile.fewShotPrompt : (engineSettings.fewShotPrompt || ''),
-        exemplarConversation: profile.exemplarConversation !== undefined ? profile.exemplarConversation : (engineSettings.exemplarConversation || ''),
-        scopePrompt: profile.scopePrompt !== undefined ? profile.scopePrompt : (engineSettings.scopePrompt || ''),
-        wikiSourceUrl: profile.wikiSourceUrl !== undefined ? profile.wikiSourceUrl : (engineSettings.wikiSourceUrl || '')
-      };
+        // Hợp nhất Động Cơ (API Key, Fallback, Provider) với Profile (SOUL, Wiki riêng, Model, Temp)
+        const effectiveModel = profile.model || engineSettings.model;
+        const effectiveSettings = {
+          ...engineSettings,
+          profileId: profile.id || 'default',
+          model: effectiveModel,
+          temperature: profile.temperature !== undefined ? profile.temperature : 0.7,
+          soulPrompt: profile.soulPrompt !== undefined ? profile.soulPrompt : (engineSettings.soulPrompt || ''),
+          memoryPrompt: profile.memoryPrompt !== undefined ? profile.memoryPrompt : (engineSettings.memoryPrompt || ''),
+          fewShotPrompt: profile.fewShotPrompt !== undefined ? profile.fewShotPrompt : (engineSettings.fewShotPrompt || ''),
+          exemplarConversation: profile.exemplarConversation !== undefined ? profile.exemplarConversation : (engineSettings.exemplarConversation || ''),
+          scopePrompt: profile.scopePrompt !== undefined ? profile.scopePrompt : (engineSettings.scopePrompt || ''),
+          wikiSourceUrl: profile.wikiSourceUrl !== undefined ? profile.wikiSourceUrl : (engineSettings.wikiSourceUrl || '')
+        };
 
-      // Extract Customer CRM Profile & Tags for context awareness
-      const conv = this.localStore.getConversation(threadId, accountUid);
-      const customer = typeof this.localStore.getCustomer === 'function' ? this.localStore.getCustomer(threadId, accountUid) : conv;
-      const tags = (typeof this.localStore.getConversationTags === 'function' ? this.localStore.getConversationTags(threadId) : []) || [];
-      const tagNames = tags.map(t => t.name).join(', ');
+        // Extract Customer CRM Profile & Tags for context awareness
+        const conv = this.localStore.getConversation(threadId, accountUid);
+        const customer = typeof this.localStore.getCustomer === 'function' ? this.localStore.getCustomer(threadId, accountUid) : conv;
+        const tags = (typeof this.localStore.getConversationTags === 'function' ? this.localStore.getConversationTags(threadId) : []) || [];
+        const tagNames = tags.map(t => t.name).join(', ');
 
-      const customerContext = {
-        name: senderName || (isGroup ? '' : conv?.name) || customer?.name || '',
-        phone: conv?.phone || customer?.phone || '',
-        tags: tagNames,
-        notes: conv?.notes || customer?.notes || '',
-        isGroup: Boolean(isGroup)
-      };
+        const customerContext = {
+          name: senderName || (isGroup ? '' : conv?.name) || customer?.name || '',
+          phone: conv?.phone || customer?.phone || '',
+          tags: tagNames,
+          notes: conv?.notes || customer?.notes || '',
+          isGroup: Boolean(isGroup)
+        };
 
-      // Compile System Prompt with 4 Layers + Customer Context + Dynamic BM25 Context
-      const systemPrompt = this.compilePrompt(effectiveSettings, customerContext, incomingText);
+        // Compile System Prompt with 4 Layers + Customer Context + Dynamic BM25 Context
+        const systemPrompt = this.compilePrompt(effectiveSettings, customerContext, currentIncomingText);
 
-      // Get recent conversation history (last 10 messages) for Multi-turn context
-      // Note: localStore.getMessages already returns chronological order (ASC: oldest -> newest).
-      // Filter out the current incoming message to prevent duplicating it in history and userMessage.
-      const rawHistory = this.localStore.getMessages(threadId, { limit: 10, accountUid }) || [];
-      const history = rawHistory.filter(m => m.text !== incomingText);
+        // Get recent conversation history (last 10 messages) for Multi-turn context
+        // Lọc bỏ tin nhắn hiện tại và làm sạch nhãn phân đoạn [1/3] để LLM không bắt chước
+        const rawHistory = this.localStore.getMessages(threadId, { limit: 10, accountUid }) || [];
+        const history = rawHistory
+          .filter(m => m.text !== currentIncomingText)
+          .map(m => {
+            if (m.isBot && m.text) {
+              return { ...m, text: m.text.replace(/^\[\d+\/\d+\]\s*/, '') };
+            }
+            return m;
+          });
 
-      // Format incoming text for LLM: in groups, prefix member name so AI understands who asked
-      const incomingTextForLLM = (isGroup && senderName) ? `[Thành viên: ${senderName}]: ${incomingText}` : incomingText;
+        // Format incoming text for LLM: in groups, prefix member name so AI understands who asked
+        const incomingTextForLLM = (isGroup && senderName) ? `[Thành viên: ${senderName}]: ${currentIncomingText}` : currentIncomingText;
 
-      // Tải và mã hóa hình ảnh nếu model hỗ trợ Vision
-      let images = [];
-      const visionSupported = isVisionSupported(effectiveSettings.provider, effectiveSettings.model);
-      if (Array.isArray(imageUrls) && imageUrls.length > 0) {
-        if (visionSupported) {
-          for (const url of imageUrls.slice(0, 2)) {
-            const encoded = await this._downloadAndEncodeImage(url);
-            if (encoded) images.push(encoded);
+        // Tải và mã hóa hình ảnh nếu model hỗ trợ Vision
+        let images = [];
+        const visionSupported = isVisionSupported(effectiveSettings.provider, effectiveSettings.model);
+        if (Array.isArray(currentImageUrls) && currentImageUrls.length > 0) {
+          if (visionSupported) {
+            for (const url of currentImageUrls.slice(0, 2)) {
+              const encoded = await this._downloadAndEncodeImage(url);
+              if (encoded) images.push(encoded);
+            }
+            if (images.length > 0) {
+              logger.info(`🖼️ [AI Vision] Successfully loaded ${images.length} image(s) for ${threadId}`);
+            }
+          } else {
+            logger.info(`ℹ️ [AI Vision] Provider/Model (${effectiveSettings.provider}:${effectiveSettings.model}) does not support vision. Processing text only.`);
           }
-          if (images.length > 0) {
-            logger.info(`🖼️ [AI Vision] Successfully loaded ${images.length} image(s) for ${threadId}`);
-          }
-        } else {
-          logger.info(`ℹ️ [AI Vision] Provider/Model (${effectiveSettings.provider}:${effectiveSettings.model}) does not support vision. Processing text only.`);
         }
-      }
 
-      // Xây dựng lời nhắc có Override Directive khi có ảnh đính kèm để khử định kiến (De-biasing)
-      let textForModel = incomingTextForLLM;
-      if (images.length > 0) {
-        const extraNote = imageUrls.length > 2 ? ` (Đang xem 2 ảnh đầu tiên trong ${imageUrls.length} ảnh gửi kèm)` : '';
-        textForModel = `[HỆ THỐNG: Khách hàng vừa gửi đính kèm ${images.length} hình ảnh thực tế${extraNote}. Hãy bỏ qua mọi câu trả lời từ chối đọc ảnh trước đây trong lịch sử (nếu có), quan sát trực tiếp dữ liệu hình ảnh đính kèm trong lượt chat này để đọc chữ, xem chi tiết và hỗ trợ khách hàng theo đúng yêu cầu]:\n${incomingTextForLLM}`;
-      } else if (imageUrls.length > 0 && !visionSupported) {
-        textForModel = `[HỆ THỐNG: Khách hàng vừa gửi ảnh nhưng mô hình AI hiện tại đang cấu hình ở chế độ văn bản thuần túy. Hãy lịch sự thông báo em đã nhận được hình ảnh và chuyển cho chuyên viên tư vấn hỗ trợ kiểm tra trực tiếp]:\n${incomingTextForLLM}`;
-      }
-
-      logger.info(`🧠 [AI Engine] Generating reply for ${threadId} using Profile "${profile.name}" (Model: ${effectiveSettings.provider}:${effectiveSettings.model}, Context: ${history.length} msgs)...`);
-
-      const replyText = await this.callModelWithFallback(systemPrompt, history, textForModel, effectiveSettings, { senderName: customerContext.name, images });
-
-      // Giải phóng bộ nhớ Base64 ngay lập tức cho V8 GC
-      images = null;
-
-      if (replyText && replyText.trim()) {
-        const cleanedReply = this.cleanForZalo(replyText);
-        if (client && typeof client.sendMessage === 'function') {
-          const sendOptions = {
-            isBot: true,
-            senderName: 'Bot AI (Tự động)'
-          };
-
-          // Quote original message in group so other members understand who the bot is talking to
-          if (isGroup && triggerMsg && (triggerMsg.msgId || triggerMsg.cliMsgId)) {
-            sendOptions.quote = {
-              msgId: triggerMsg.msgId,
-              cliMsgId: triggerMsg.cliMsgId,
-              content: triggerMsg.text,
-              uidFrom: triggerMsg.senderId,
-              senderName: triggerMsg.senderName
-            };
-          }
-
-          await client.sendMessage(threadId, cleanedReply, isGroup, sendOptions);
-          logger.info(`✅ [AI Auto-Reply] Sent to ${threadId}: "${cleanedReply.substring(0, 45)}..."`);
+        // Xây dựng lời nhắc có Override Directive khi có ảnh đính kèm để khử định kiến (De-biasing)
+        let textForModel = incomingTextForLLM;
+        if (images.length > 0) {
+          const extraNote = currentImageUrls.length > 2 ? ` (Đang xem 2 ảnh đầu tiên trong ${currentImageUrls.length} ảnh gửi kèm)` : '';
+          textForModel = `[HỆ THỐNG: Khách hàng vừa gửi đính kèm ${images.length} hình ảnh thực tế${extraNote}. Hãy bỏ qua mọi câu trả lời từ chối đọc ảnh trước đây trong lịch sử (nếu có), quan sát trực tiếp dữ liệu hình ảnh đính kèm trong lượt chat này để đọc chữ, xem chi tiết và hỗ trợ khách hàng theo đúng yêu cầu]:\n${incomingTextForLLM}`;
+        } else if (currentImageUrls.length > 0 && !visionSupported) {
+          textForModel = `[HỆ THỐNG: Khách hàng vừa gửi ảnh nhưng mô hình AI hiện tại đang cấu hình ở chế độ văn bản thuần túy. Hãy lịch sự thông báo em đã nhận được hình ảnh và chuyển cho chuyên viên tư vấn hỗ trợ kiểm tra trực tiếp]:\n${incomingTextForLLM}`;
         }
+
+        logger.info(`🧠 [AI Engine] Generating reply for ${threadId} using Profile "${profile.name}" (Model: ${effectiveSettings.provider}:${effectiveSettings.model}, Context: ${history.length} msgs)...`);
+
+        let replyText = null;
+        try {
+          replyText = await this.callModelWithFallback(systemPrompt, history, textForModel, effectiveSettings, {
+            senderName: customerContext.name,
+            images,
+            workerKey: myWorkerKey
+          });
+        } catch (llmErr) {
+          llmStageFailed = true;
+          throw llmErr;
+        }
+
+        // Giải phóng bộ nhớ Base64 ngay lập tức cho V8 GC
+        images = null;
+
+        if (replyText && replyText.trim()) {
+          const cleanedReply = this.cleanForZalo(replyText);
+          if (client && typeof client.sendMessage === 'function') {
+            const chunks = splitMessageForZalo(cleanedReply, 1750, 3);
+            for (let i = 0; i < chunks.length; i++) {
+              // Smart Takeover Guard: Kiểm tra xem Admin có vừa nhắn tin trong lúc LLM đang gọi hoặc giữa các chunk không
+              if (this.isHumanActive(accountUid, threadId, workerStartedAt)) {
+                logger.info(`🛑 [AI Human Takeover] Admin vừa can thiệp nhắn tin. Hủy gửi các chunk tiếp theo cho ${accountUid}:${threadId}.`);
+                break;
+              }
+
+              const sendOptions = {
+                isBot: true,
+                senderName: 'Bot AI (Tự động)'
+              };
+
+              // Quote original message in group so other members understand who the bot is talking to (chỉ gắn ở chunk đầu tiên)
+              if (i === 0 && isGroup && currentTriggerMsg && (currentTriggerMsg.msgId || currentTriggerMsg.cliMsgId)) {
+                sendOptions.quote = {
+                  msgId: currentTriggerMsg.msgId,
+                  cliMsgId: currentTriggerMsg.cliMsgId,
+                  content: currentTriggerMsg.text,
+                  uidFrom: currentTriggerMsg.senderId,
+                  senderName: currentTriggerMsg.senderName
+                };
+              }
+
+              await client.sendMessage(threadId, chunks[i], isGroup, sendOptions);
+              sentChunksCount++;
+            }
+            logger.info(`✅ [AI Auto-Reply] Sent to ${threadId}: "${cleanedReply.substring(0, 45)}..." (${sentChunksCount}/${chunks.length} phần)`);
+          }
+        }
+
+        // --- Kiểm tra xem có tin nhắn đệm tích lũy trong lúc LLM đang chạy không ---
+        const pendingTexts = this._inboundBuffers.get(myBufferKey) || [];
+        const pendingImgs = this._inboundImageBuffers.get(myBufferKey) || [];
+
+        if (pendingTexts.length === 0 && pendingImgs.length === 0) {
+          break; // Hết tin đệm, kết thúc worker
+        }
+
+        // --- Re-check aiEnabled và Admin Cooldown trước khi tiếp tục lượt tiếp theo ---
+        const latestConv = this.localStore.getConversation(threadId, accountUid);
+        if (latestConv && latestConv.aiEnabled === 0) {
+          logger.info(`⏸️ [AI Worker] Dừng xử lý đệm cho ${threadId} vì aiEnabled=0`);
+          this._inboundBuffers.delete(myBufferKey);
+          this._inboundImageBuffers.delete(myBufferKey);
+          this._triggerMessages.delete(myBufferKey);
+          break;
+        }
+
+        if (this.isHumanActive(accountUid, threadId)) {
+          logger.info(`⏸️ [AI Worker] Dừng xử lý đệm cho ${accountUid}:${threadId} vì Admin vừa chat (Human Takeover)`);
+          this._inboundBuffers.delete(myBufferKey);
+          this._inboundImageBuffers.delete(myBufferKey);
+          this._triggerMessages.delete(myBufferKey);
+          break;
+        }
+
+        // Xả đệm cho lượt lặp tiếp theo
+        const nextTexts = this._inboundBuffers.get(myBufferKey) || [];
+        this._inboundBuffers.delete(myBufferKey);
+        const nextImgs = this._inboundImageBuffers.get(myBufferKey) || [];
+        this._inboundImageBuffers.delete(myBufferKey);
+        const nextTrigger = this._triggerMessages.get(myBufferKey) || currentTriggerMsg;
+        this._triggerMessages.delete(myBufferKey);
+
+        currentIncomingText = nextTexts.join('\n') || '[Khách hàng gửi ảnh bổ sung]';
+        currentImageUrls = nextImgs;
+        currentTriggerMsg = nextTrigger;
+        this._activeWorkers.set(myWorkerKey, { timestamp: Date.now(), threadId, accountUid });
+        logger.info(`🔄 [AI Worker Drain] Tiếp tục xử lý ${nextTexts.length} tin nhắn đệm từ ${threadId}: "${currentIncomingText.slice(0, 45)}..."`);
       }
     } catch (err) {
       logger.error(`❌ [AI Engine Error] Auto-reply failed for ${threadId}: ${err.message}`);
+
+      // Graceful Fallback Reply: Chỉ gửi khi lỗi xuất phát từ LLM và CHƯA gửi được chunk nào
+      if (!isGroup && llmStageFailed && sentChunksCount === 0) {
+        try {
+          const rescueKey = `${accountUid}:${threadId}`;
+          const lastRescueTime = this._fallbackReplyCooldowns.get(rescueKey) || 0;
+          const rescueCooldownMs = 5 * 60 * 1000; // Cooldown 5 phút chống spam bot
+          const now = Date.now();
+          const rescueSettings = this.localStore.getAiSettings();
+          const isRescueEnabled = Number(rescueSettings?.fallbackReplyEnabled ?? 0) === 1;
+          const conv = this.localStore.getConversation(threadId, accountUid);
+          const isAiEnabled = !conv || conv.aiEnabled !== 0;
+          const isHumanTalking = this.isHumanActive(accountUid, threadId);
+
+          if (isRescueEnabled && isAiEnabled && !isHumanTalking && (now - lastRescueTime >= rescueCooldownMs)) {
+            this._fallbackReplyCooldowns.set(rescueKey, now);
+            const rawRescueMsg = rescueSettings.fallbackReplyMessage || 'Dạ hiện tại hệ thống AI đang quá tải trong giây lát, chuyên viên bên em đã nhận được thông tin và sẽ phản hồi lại ngay ạ!';
+            const cleanedRescue = this.cleanForZalo(rawRescueMsg);
+            if (client && typeof client.sendMessage === 'function') {
+              await client.sendMessage(threadId, cleanedRescue, false, {
+                isBot: true,
+                senderName: 'Hệ thống hỗ trợ'
+              });
+              logger.info(`🆘 [AI Graceful Fallback] Đã gửi tin nhắn cứu hộ lịch sự tới ${accountUid}:${threadId}`);
+            }
+          }
+        } catch (rescueErr) {
+          logger.warn(`[AI Graceful Fallback] Gửi tin cứu hộ thất bại cho ${threadId}: ${rescueErr.message}`);
+        }
+      }
+    } finally {
+      this._activeWorkers.delete(myWorkerKey);
     }
   }
 
@@ -615,7 +845,8 @@ export class AiAgentAdapter extends BaseAdapter {
 2. Khi muốn NHẤN MẠNH từ khóa hoặc làm nổi bật tiêu đề, hãy:
    - VIẾT HOA TỪ KHÓA QUAN TRỌNG (ví dụ: BƯỚC 1: CHUẨN BỊ, LƯU Ý, HOÀN TOÀN MIỄN PHÍ).
    - Sử dụng các biểu tượng icon sinh động ở đầu dòng (ví dụ: 🔹 Bước 1, 👉 Chú ý, 💡 Mẹo nhỏ).
-3. Luôn xuống dòng thoáng giữa các đoạn, dùng gạch đầu dòng (-) hoặc (•) cho các danh sách liệt kê để tin nhắn trên điện thoại Zalo dễ đọc nhất.`;
+3. Luôn xuống dòng thoáng giữa các đoạn, dùng gạch đầu dòng (-) hoặc (•) cho các danh sách liệt kê để tin nhắn trên điện thoại Zalo dễ đọc nhất.
+4. [ĐỘ DÀI LÝ TƯỞNG]: Diễn đạt súc tích, đi thẳng vào vấn đề, độ dài lý tưởng dưới 1.000 ký tự để khách hàng dễ đọc trọn vẹn trên màn hình điện thoại di động.`;
 
     let visionSection = '';
     if (isVisionSupported(settings.provider, settings.model)) {
@@ -956,15 +1187,17 @@ ${scope || `1. Tuyệt đối không bịa đặt số tài khoản ngân hàng,
         const fallbackKey = (rawFallbackKey && isKeyCompatible(rawFallbackKey, fallbackProvider))
           ? rawFallbackKey
           : (isSameProvider && isKeyCompatible(primaryKey, fallbackProvider) ? primaryKey : '');
-        const rawFallbackBaseUrl = (settings.fallbackBaseUrl || '').trim();
-        const fallbackBaseUrl = (rawFallbackBaseUrl.includes('deepseek.com') && fallbackProvider !== 'deepseek')
-          ? ''
-          : rawFallbackBaseUrl;
+        const fallbackBaseUrl = resolveEffectiveBaseUrl(settings.fallbackBaseUrl, fallbackProvider);
         const fallbackTimeout = Math.max(Number(settings.fallbackTimeoutMs || 30000), 30000);
 
         if (!fallbackKey && fallbackProvider !== 'ollama') {
           logger.warn(`⚠️ [AI Auto-Fallback] Bỏ qua Fallback: Nhà cung cấp dự phòng (${fallbackProvider}) chưa có API Key hợp lệ tương thích.`);
           throw primaryErr;
+        }
+
+        // Cập nhật lại worker timestamp để bảo đảm không bị quá hạn TTL 120s trong lượt fallback
+        if (extra.workerKey && this._activeWorkers?.has(extra.workerKey)) {
+          this._activeWorkers.get(extra.workerKey).timestamp = Date.now();
         }
 
         logger.info(`🛡️ [AI Auto-Fallback] Switching to fallback provider: ${fallbackProvider}:${fallbackModel}...`);

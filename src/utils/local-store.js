@@ -128,6 +128,8 @@ export class LocalStore extends EventEmitter {
         allowedTagIds           TEXT DEFAULT '[]',
         adminCooldownMinutes    INTEGER DEFAULT 15,
         debounceSeconds         INTEGER DEFAULT 3,
+        fallbackReplyEnabled    INTEGER DEFAULT 0,
+        fallbackReplyMessage    TEXT DEFAULT 'Dạ hiện tại hệ thống AI đang quá tải trong giây lát, chuyên viên bên em đã nhận được thông tin và sẽ phản hồi lại ngay ạ!',
         updatedAt               TEXT DEFAULT (datetime('now'))
       );
 
@@ -371,6 +373,8 @@ export class LocalStore extends EventEmitter {
           allowedTagIds           TEXT DEFAULT '[]',
           adminCooldownMinutes    INTEGER DEFAULT 15,
           debounceSeconds         INTEGER DEFAULT 3,
+          fallbackReplyEnabled    INTEGER DEFAULT 0,
+          fallbackReplyMessage    TEXT DEFAULT 'Dạ hiện tại hệ thống AI đang quá tải trong giây lát, chuyên viên bên em đã nhận được thông tin và sẽ phản hồi lại ngay ạ!',
           wikiSourceUrl           TEXT DEFAULT '',
           updatedAt               TEXT DEFAULT (datetime('now'))
         );
@@ -383,6 +387,8 @@ export class LocalStore extends EventEmitter {
       if (!aiCols.includes('apiKeyEncrypted'))      this.db.exec("ALTER TABLE ai_settings ADD COLUMN apiKeyEncrypted TEXT DEFAULT '';");
       if (!aiCols.includes('fallbackApiKeyEncrypted')) this.db.exec("ALTER TABLE ai_settings ADD COLUMN fallbackApiKeyEncrypted TEXT DEFAULT '';");
       if (!aiCols.includes('wikiSourceUrl'))        this.db.exec("ALTER TABLE ai_settings ADD COLUMN wikiSourceUrl TEXT DEFAULT '';");
+      if (!aiCols.includes('fallbackReplyEnabled')) this.db.exec("ALTER TABLE ai_settings ADD COLUMN fallbackReplyEnabled INTEGER DEFAULT 0;");
+      if (!aiCols.includes('fallbackReplyMessage')) this.db.exec("ALTER TABLE ai_settings ADD COLUMN fallbackReplyMessage TEXT DEFAULT 'Dạ hiện tại hệ thống AI đang quá tải trong giây lát, chuyên viên bên em đã nhận được thông tin và sẽ phản hồi lại ngay ạ!';");
 
       // Multi-Profile AI Suite Table & Reconciliation
       this.db.exec(`
@@ -979,6 +985,10 @@ export class LocalStore extends EventEmitter {
     if (accountUid && accountUid !== 'all') {
       stmt = this.db.prepare('SELECT * FROM conversations WHERE id = ? AND accountUid = ?');
       result = stmt.get(String(id), String(accountUid));
+      if (!result && accountUid !== 'default') {
+        stmt = this.db.prepare("SELECT * FROM conversations WHERE id = ? AND accountUid = 'default'");
+        result = stmt.get(String(id));
+      }
     } else {
       stmt = this.db.prepare("SELECT * FROM conversations WHERE id = ? ORDER BY CASE WHEN accountUid != 'default' THEN 0 ELSE 1 END, updatedAt DESC LIMIT 1");
       result = stmt.get(String(id));
@@ -2094,6 +2104,8 @@ export class LocalStore extends EventEmitter {
       allowedTagIds: '[]',
       adminCooldownMinutes: 15,
       debounceSeconds: 3,
+      fallbackReplyEnabled: 0,
+      fallbackReplyMessage: 'Dạ hiện tại hệ thống AI đang quá tải trong giây lát, chuyên viên bên em đã nhận được thông tin và sẽ phản hồi lại ngay ạ!',
       wikiSourceUrl: ''
     };
   }
@@ -2108,13 +2120,13 @@ export class LocalStore extends EventEmitter {
         fallbackEnabled, fallbackProvider, fallbackModel, fallbackBaseUrl, fallbackApiKeyEncrypted, fallbackTimeoutMs,
         soulPrompt, memoryPrompt, fewShotPrompt, scopePrompt, exemplarConversation,
         allowGroups, botAliases, autoTagNewLead, defaultLeadTagId, targetMode, excludedTagIds, allowedTagIds,
-        adminCooldownMinutes, debounceSeconds, wikiSourceUrl, updatedAt
+        adminCooldownMinutes, debounceSeconds, fallbackReplyEnabled, fallbackReplyMessage, wikiSourceUrl, updatedAt
       ) VALUES (
         ?, ?, ?, ?, ?, ?, ?,
         ?, ?, ?, ?, ?, ?,
         ?, ?, ?, ?, ?,
         ?, ?, ?, ?, ?, ?, ?,
-        ?, ?, ?, datetime('now')
+        ?, ?, ?, ?, ?, datetime('now')
       )
       ON CONFLICT(id) DO UPDATE SET
         isEnabled = excluded.isEnabled,
@@ -2143,6 +2155,8 @@ export class LocalStore extends EventEmitter {
         allowedTagIds = excluded.allowedTagIds,
         adminCooldownMinutes = excluded.adminCooldownMinutes,
         debounceSeconds = excluded.debounceSeconds,
+        fallbackReplyEnabled = excluded.fallbackReplyEnabled,
+        fallbackReplyMessage = excluded.fallbackReplyMessage,
         wikiSourceUrl = excluded.wikiSourceUrl,
         updatedAt = datetime('now')
     `);
@@ -2175,28 +2189,41 @@ export class LocalStore extends EventEmitter {
       typeof updated.allowedTagIds === 'string' ? updated.allowedTagIds : JSON.stringify(updated.allowedTagIds || []),
       Number(updated.adminCooldownMinutes ?? 15),
       Number(updated.debounceSeconds ?? 3),
+      updated.fallbackReplyEnabled ? 1 : 0,
+      updated.fallbackReplyMessage || 'Dạ hiện tại hệ thống AI đang quá tải trong giây lát, chuyên viên bên em đã nhận được thông tin và sẽ phản hồi lại ngay ạ!',
       updated.wikiSourceUrl || ''
     );
 
     return this.getAiSettings(id);
   }
 
-  getLastAdminMessageTime(threadId) {
+  getLastAdminMessageTime(threadId, accountUid = null) {
     if (!threadId) return 0;
-    const row = this.db.prepare(`
+    let query = `
       SELECT timestamp FROM messages 
       WHERE threadId = ? AND isSelf = 1 AND isBot = 0 
-      ORDER BY timestamp DESC LIMIT 1
-    `).get(threadId);
+    `;
+    const params = [threadId];
+    if (accountUid) {
+      query += ` AND accountUid IN (?, 'default')`;
+      params.push(accountUid);
+    }
+    query += ` ORDER BY timestamp DESC LIMIT 1`;
+    const row = this.db.prepare(query).get(...params);
     return row?.timestamp ? new Date(row.timestamp).getTime() : 0;
   }
 
-  setConversationAi(threadId, enabled) {
+  setConversationAi(threadId, enabled, accountUid = null) {
     if (!threadId) return null;
     const val = enabled ? 1 : 0;
-    this.upsertConversation({ id: threadId, name: threadId });
-    this.db.prepare(`UPDATE conversations SET aiEnabled = ?, updatedAt = datetime('now') WHERE id = ?`).run(val, threadId);
-    return this.getConversation(threadId);
+    const cleanUid = (accountUid && accountUid !== 'all') ? accountUid : 'default';
+    this.upsertConversation({ id: threadId, name: threadId, accountUid: cleanUid });
+    if (accountUid && accountUid !== 'all') {
+      this.db.prepare(`UPDATE conversations SET aiEnabled = ?, updatedAt = datetime('now') WHERE id = ? AND accountUid = ?`).run(val, threadId, accountUid);
+    } else {
+      this.db.prepare(`UPDATE conversations SET aiEnabled = ?, updatedAt = datetime('now') WHERE id = ?`).run(val, threadId);
+    }
+    return this.getConversation(threadId, accountUid);
   }
 
   // ---------------------------------------------------------------------------

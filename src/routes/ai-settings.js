@@ -3,7 +3,7 @@ import dns from 'dns';
 import { requireAuth } from '../middleware/auth.js';
 import { localStore } from '../utils/local-store.js';
 import { aiAgentAdapter, CURATED_MODELS, isKeyCompatible, GOLDEN_WIKI_TEMPLATE } from '../adapters/ai-agent.js';
-import { encryptSecret, decryptSecret, maskApiKey } from '../utils/ai-crypto.js';
+import { encryptSecret, decryptSecret, maskApiKey, resolveEffectiveBaseUrl } from '../utils/ai-crypto.js';
 import { logger } from '../utils/logger.js';
 
 const router = express.Router();
@@ -64,6 +64,15 @@ router.post('/ai/settings', requireAuth, (req, res) => {
       toSave.fallbackApiKeyEncrypted = current.fallbackApiKeyEncrypted;
     }
     delete toSave.fallbackApiKey;
+
+    // Sanitize Graceful Fallback Reply settings
+    if (payload.fallbackReplyMessage !== undefined) {
+      const cleanMsg = String(payload.fallbackReplyMessage || '').trim();
+      toSave.fallbackReplyMessage = cleanMsg.substring(0, 1000);
+    }
+    if (payload.fallbackReplyEnabled !== undefined) {
+      toSave.fallbackReplyEnabled = payload.fallbackReplyEnabled ? 1 : 0;
+    }
 
     const saved = localStore.saveAiSettings(toSave);
     logger.info(`✅ [AI Settings] Updated AI suite configuration (Provider: ${saved.provider}:${saved.model}, Enabled: ${saved.isEnabled})`);
@@ -147,25 +156,6 @@ function resolveEffectiveKey({ provider, apiKey, isFallback, primaryProvider, pr
   }
 }
 
-// Helper an toàn: Phân giải Base URL tránh trường hợp default URL của provider cũ (như DeepSeek) bị áp vào provider mới (như OpenRouter)
-function resolveEffectiveBaseUrl(customUrl, provider) {
-  const trimmed = (customUrl || '').trim();
-  if (!trimmed) return '';
-  const standardUrls = {
-    deepseek: 'api.deepseek.com',
-    zai: 'api.z.ai',
-    groq: 'api.groq.com',
-    openrouter: 'openrouter.ai',
-    ollama: 'localhost:11434'
-  };
-  for (const [p, domain] of Object.entries(standardUrls)) {
-    if (trimmed.includes(domain) && provider !== p) {
-      // URL thuộc về provider khác -> Bỏ qua để adapter tự dùng default URL của target provider!
-      return '';
-    }
-  }
-  return trimmed;
-}
 
 // -----------------------------------------------------------------------------
 // POST /api/ai/test-connection — Live Ping / Latency Test

@@ -33,7 +33,7 @@
 1. **Yêu cầu hệ thống:** Windows 10 hoặc Windows 11 (64-bit), ổ cứng trống tối thiểu 500MB, kết nối mạng ổn định.
 2. **Quy trình cài đặt 1-Click (Chỉ mất 3 phút):**
    - **Bước 1:** Tải bộ cài đặt Windows `.exe` mới nhất tại: `https://aizalo.com/#download` hoặc GitHub Releases: `https://github.com/aizaloapp/zalo-flow/releases`.
-   - **Bước 2:** Nhấp đúp vào file `ZaloFlow-Setup-v1.4.1.exe` để cài đặt tự động (đã tích hợp sẵn Node.js Portable và SQLite, không cần cài thêm công cụ lập trình).
+   - **Bước 2:** Nhấp đúp vào file `ZaloFlow-Setup-v1.5.0.exe` để cài đặt tự động (đã tích hợp sẵn Node.js Portable và SQLite, không cần cài thêm công cụ lập trình).
    - **Bước 3:** Nhấp đúp vào biểu tượng **Zalo-Flow** ngoài Desktop để khởi động. Ứng dụng chạy ngầm và tự động mở giao diện tại `http://localhost:3000`.
    - **Xem bài viết chi tiết có ảnh minh họa:** `https://aizalo.com/blog/huong-dan-cach-tao-chatbot-zalo-ca-nhan.html`
 
@@ -110,13 +110,25 @@
 
 ---
 
-### L. Tắt / Dừng / Khởi Động Lại Phần Mềm
+### L. Bộ Tính Năng AI Resilience & Stability (Tính năng mới v1.5.0)
+1. **Smart Message Chunking:** Tự động cắt câu trả lời dài > 2.000 ký tự theo đoạn văn/câu kết thúc ý, gửi 2-3 phần tuần tự kèm đánh số `(Phần X/Y)`, chống lỗi Zalo API "Nội dung quá dài".
+2. **Khóa Đơn Nguyên & Hàng Đợi Đệm (Per-Thread Inbound Lock):** Khách nhắn dồn dập nhiều câu hỏi khi bot đang suy luận sẽ được tự động đệm lại, gộp xử lý nối tiếp không bỏ sót tin nhắn và không chạy 2 LLM song song.
+3. **Universal Auto-Fallback:** Tự động chuyển sang model dự phòng (Gemini ⇄ DeepSeek, Z.AI...) khi model chính bị lỗi 429 quota hoặc timeout.
+4. **Scoped Graceful Fallback:** Tự động gửi tin nhắn cứu hộ lịch sự đến khách cá nhân khi cả 2 provider AI đều lỗi; cấm gửi vào nhóm.
+5. **Smart Human Takeover Engine:** Dừng bot AI ngay lập tức khi Admin gõ phím can thiệp trên điện thoại hoặc máy tính, kiểm tra trạng thái can thiệp trước từng chunk tin nhắn.
+
+---
+
+### M. Tắt / Dừng / Khởi Động Lại Phần Mềm
 - **Dừng phần mềm:** Vào Start Menu hoặc thư mục cài đặt (`%LOCALAPPDATA%\Programs\ZaloFlow`), bấm đúp `Dừng Zalo-Flow.bat`.
 - **Khởi động lại:** Nhấp đúp vào icon `Zalo-Flow` ngoài Desktop.
 
 ---
 
 ## ❓ 3. Bách Khoa Hỏi Đáp Thường Gặp (Q&A FAQ)
+
+- **Khách hỏi:** Khi khách nhắn nhiều câu hỏi dồn dập hoặc câu trả lời AI quá dài thì Zalo-Flow xử lý thế nào?
+  **👉 Trả lời chuẩn:** Dạ từ phiên bản v1.5.0, Zalo-Flow tích hợp bộ công cụ AI Resilience & Stability cực kỳ thông minh ạ! Khi câu trả lời dài trên 2.000 ký tự, bot tự động chia nhỏ theo đoạn văn thành các phần nối tiếp nhau mà không bị ngắt quãng. Còn khi khách gửi dồn dập nhiều tin nhắn ngắn, hệ thống sẽ tự động khóa luồng, gom hết các câu hỏi vào hàng đợi đệm để trả lời trọn vẹn từng câu mà không bị loạn hay gửi đè tin nhắn ạ!
 
 - **Khách hỏi:** Làm thế nào để dạy bot học thêm sản phẩm hoặc bảng giá mới nhanh nhất?
   **👉 Trả lời chuẩn:** Dạ từ phiên bản v1.4.1, Zalo-Flow trang bị tính năng Dạy Bot cực kỳ tiện lợi ạ! Anh/chị chỉ cần nhấn Ctrl+V dán thẳng ảnh chụp màn hình bảng giá hoặc kéo thả file PDF, Word vào khay "Dạy Bot", kèm 1 câu dặn dò ngắn gọn. Mô hình AI Vision sẽ tự động bóc tách số liệu lưu vào kho tri thức Second Brain để tư vấn khách ngay lập tức mà không cần gõ prompt thủ công ạ!

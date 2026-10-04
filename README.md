@@ -15,7 +15,7 @@
 [![CI Quality Gate](https://github.com/aizaloapp/zalo-flow/actions/workflows/ci.yml/badge.svg)](https://github.com/aizaloapp/zalo-flow/actions/workflows/ci.yml)
 [![Anti-Leak & Secret Scan](https://github.com/aizaloapp/zalo-flow/actions/workflows/secret-scan.yml/badge.svg)](https://github.com/aizaloapp/zalo-flow/actions/workflows/secret-scan.yml)
 [![Memory Footprint](https://img.shields.io/badge/RAM-%3C%20100MB-success.svg)](test/test-all.js)
-[![Tests Passing](https://img.shields.io/badge/Tests-58%2F58%20Passing-brightgreen.svg)](test/test-all.js)
+[![Tests Passing](https://img.shields.io/badge/Tests-60%2F60%20Passing-brightgreen.svg)](test/test-all.js)
 [![Chrome Web Store](https://img.shields.io/badge/Chrome_Web_Store-AIzalo_Flow_Companion-4285F4?logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/aizalo-flow-chat-companio/ckdbkfocakhkkpjjbcclifdkgikbelan)
 [![Docker Ready](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](docker-compose.yml)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
@@ -45,9 +45,9 @@
 
 Không cần biết Git, không cần cài Node.js, không cần mở màn hình đen Terminal:
 
-[![Tải Bản Cài Đặt Windows](https://img.shields.io/badge/Windows-Download%20Setup%20v1.4.1%20(.exe)-0068FF?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/aizaloapp/zalo-flow/releases/latest)
+[![Tải Bản Cài Đặt Windows](https://img.shields.io/badge/Windows-Download%20Setup%20v1.5.0%20(.exe)-0068FF?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/aizaloapp/zalo-flow/releases/latest)
 
-> 💡 **Tải về chạy ngay:** Bấm nút ở trên để tải file **`ZaloFlow-Setup-v1.4.1.exe`** (Chỉ **24.5MB**). Cài đặt trong 30 giây là có ngay icon Zalo-Flow ngoài Desktop!
+> 💡 **Tải về chạy ngay:** Bấm nút ở trên để tải file **`ZaloFlow-Setup-v1.5.0.exe`** (Chỉ **24.5MB**). Cài đặt trong 30 giây là có ngay icon Zalo-Flow ngoài Desktop!
 
 <br/>
 
@@ -61,13 +61,14 @@ Tiện ích mở rộng chính thức cho Google Chrome & Microsoft Edge đã đ
 - ⚡ **Bắn tin nhắn mẫu 1-Click:** Soạn và gửi nhanh kịch bản tư vấn khách hàng mà không cần chuyển qua lại giữa các tab.
 - 📖 **Hướng dẫn sử dụng chi tiết:** Xem tại [Hướng Dẫn Tiện Ích Chrome (aizalo.com/guide)](https://aizalo.com/guide).
 
-> 🚀 **Điểm mới trong v1.4.0:**
-> - 🧠 **Đa Hồ Sơ AI Nghiệp Vụ (Multi-Profile AI Suite):** Tách bạch Động cơ toàn cục (Shared LLM Engine: API Key, Auto-Fallback Shield) và Hồ sơ nghiệp vụ. Hỗ trợ tạo không giới hạn Persona với Nhân cách (SOUL), Kho Tri Thức (Memory/Wiki), Mẫu Hội Thoại (Few-Shot), Ranh Giới (Scope) và Model Ghi Đè riêng biệt.
-> - 📋 **4 Bộ Kịch Bản Mẫu Vàng:** Nạp 1-Click mẫu kịch bản tối ưu sẵn cho Bán hàng E-com, B2B, Trợ lý Nội bộ HR/SOP và CSKH Kỹ thuật.
-> - 🎯 **Phân Bổ Bot Zalo & Ghi Đè Hội Thoại (Cascading Resolution):** Gán từng nick Zalo trong Multi-Account Pool phụ trách Profile riêng, kèm khả năng ghi đè Profile trực tiếp cho từng cuộc trò chuyện/Khách hàng VIP ngay trong CRM Drawer.
-> - 🔄 **Đồng Bộ 2 Chiều Mini Second Brain Wiki Độc Lập:** Tự động đồng bộ tri thức Wiki cho từng Profile riêng biệt, hỗ trợ nạp Markdown từ file hoặc liên kết URL/GitHub độc lập.
-> - ⚙️ **Đồng Bộ Model Ghi Đè Thông Minh:** Tự động gom nhóm `<optgroup>` trực quan, hiển thị đầy đủ các model của Nhà cung cấp chính (Z.AI GLM / Gemini...) và phản ứng theo thời gian thực.
-> - 🧪 **Chất Lượng Đạt Chuẩn 100%:** Bổ sung Test Suite #56, vượt qua toàn diện 56/56 test suites.
+> 🚀 **Điểm mới trong v1.5.0 (AI Resilience & Stability Suite):**
+> - 🧩 **Smart Message Chunking (Chống vỡ trần 2.000 ký tự Zalo):** Tự động cắt đoạn thông minh theo ngữ nghĩa câu/đoạn (`splitMessageForZalo`), đánh số phần `(Phần X/Y)` và gửi nối tiếp mượt mà.
+> - 🔒 **Per-Thread Concurrency Lock & Inbound Buffer:** Khóa đơn nguyên chống Race Condition khi khách nhắn dồn dập; tự động đệm, gộp câu hỏi và xả tuần tự, loại bỏ hoàn toàn tình trạng gửi 2 tin chồng chéo.
+> - 🛡️ **Universal Auto-Fallback & Multi-Model Routing:** Tự động rẽ nhánh sang model dự phòng (Gemini ⇄ DeepSeek, Z.AI, OpenAI...) khi gặp lỗi 429 Quota, 500/502/503 hoặc rớt mạng quốc tế.
+> - 🆘 **Scoped Graceful Fallback Reply:** Tự động gửi tin nhắn cứu hộ lịch sự đến khách cá nhân khi cả 2 provider AI đều lỗi; cấm gửi vào nhóm, cooldown 5 phút per-thread và cấu hình trực tiếp trên Web UI.
+> - 🛑 **Smart Human Takeover Engine:** Hook thời gian thực tại WebSocket và Dashboard; tự động hủy debounce/buffer và dừng Bot AI ngay khi Admin gõ phím; kiểm tra trạng thái can thiệp trước từng chunk tin nhắn.
+> - 🛡️ **Friend Event Regex Guard:** Chặn 100% tin nhắn hệ thống Zalo khi vừa kết bạn thành công.
+> - 🧪 **Chất Lượng Đạt Chuẩn 100%:** Bổ sung Test Suite #59 & #60, vượt qua trọn vẹn **60/60 test suites PASS 100%**.
 
 </div>
 

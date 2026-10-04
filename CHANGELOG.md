@@ -4,6 +4,34 @@ Mọi thay đổi đáng chú ý của dự án **Zalo-Flow** sẽ được ghi 
 
 Định dạng dựa trên [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/), và dự án này tuân thủ [Semantic Versioning](https://semver.org/lang/vi/).
 
+## [1.5.0] - 2026-10-05
+
+### Added
+- **Smart Message Chunking (Chống vỡ trần 2.000 ký tự Zalo):**
+  - Tự động phân đoạn câu trả lời thông minh theo ranh giới đoạn văn (`\n\n`), xuống dòng (`\n`), chấm câu kết thúc ý (`. `) bằng tiện ích `splitMessageForZalo`.
+  - Giới hạn mỗi phần tối đa $\le 1.750$ ký tự, tự động đánh số `(Phần X/Y)`.
+  - Quote reply và attachments chỉ gắn vào phần đầu tiên; các phần tiếp theo gửi text nối tiếp với khoảng nghỉ an toàn 1.2s.
+- **Per-Thread Concurrency Lock & Hàng Đợi Đệm (Inbound Queue):**
+  - Khóa đơn nguyên theo thread (`_activeWorkers`), ngăn chặn triệt để race condition khi khách gửi nhiều tin nhắn ngắn dồn dập trong lúc LLM đang suy luận.
+  - Hàng đợi đệm `_threadInboundBuffers` tự động lưu trữ, gộp các câu hỏi mới phát sinh và tự động kích hoạt lượt trả lời tiếp theo trong `finally`, đảm bảo 100% không bỏ sót tin nhắn.
+- **Universal Auto-Fallback & Robust Multi-Model Routing:**
+  - Tự động rẽ nhánh sang model dự phòng (Gemini ⇄ DeepSeek, Z.AI, OpenAI...) khi model chính gặp bất kỳ lỗi nào (HTTP 429 Quota, 500/502/503, rớt mạng hoặc thu hồi token).
+  - Tự động chuẩn hóa Base URL qua `resolveEffectiveBaseUrl` và cập nhật timestamp của Worker để không bị văng trần TTL 120s.
+- **Scoped Graceful Fallback Reply (Tin Nhắn Cứu Hộ Lịch Sự):**
+  - Tự động gửi tin nhắn cứu hộ lịch sự đến khách hàng 1-1 khi cả 2 provider AI đều lỗi hoặc timeout.
+  - Lá chắn an toàn: Cấm gửi vào nhóm (`!isGroup`), chặn nếu Admin đang tiếp quản, cooldown 5 phút per-thread và cho phép bật/tắt + tùy biến câu thoại trên Web UI.
+- **Smart Human Takeover Engine (Chặn Chen Ngang Admin Triệt Để):**
+  - Hook thời gian thực tại WebSocket (`message.isSelf`) và Web UI Dashboard (`sendMessage`).
+  - Hủy ngay lập tức Debounce Timer, xóa sạch hàng đợi đệm của thread và tạm dừng Bot AI khi Admin gửi tin.
+  - Kiểm tra trạng thái can thiệp trước **từng chunk tin nhắn gửi đi**, loại bỏ triệt để hiện tượng Bot gửi tiếp chunk 2, 3 khi Admin đã can thiệp.
+  - Cô lập tuyệt đối theo từng tài khoản Multi-Account (`${accountUid}:${threadId}`).
+- **Friend Event Regex Guard:**
+  - Chặn 100% tin nhắn hệ thống Zalo khi vừa kết bạn thành công (`bạn vừa kết bạn với...`), loại bỏ hoàn toàn hiện tượng Bot tự chào ngô nghê.
+- **Kiểm Thử Toàn Diện 60/60 Test Suites:**
+  - Bổ sung Test Suite #59 (`test-ai-stability-phase1.js`) và Test Suite #60 (`test-ai-resilience-phase2.js`), bảo đảm 60/60 test suites PASS 100%.
+
+---
+
 ## [1.4.0] - 2026-09-16
 
 ### Added

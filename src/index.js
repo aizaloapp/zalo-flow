@@ -106,6 +106,14 @@ const handleInboundMessage = async (ctx) => {
 zaloClient.onMessage(handleInboundMessage);
 accountManager.onMessage(handleInboundMessage);
 
+// Smart Human Takeover Engine: Lắng nghe tương tác thủ công của Admin
+const handleHumanActivity = ({ accountUid, threadId, timestamp }) => {
+  aiAgentAdapter.markHumanActivity({ accountUid, threadId, timestamp });
+};
+zaloClient.on('human_activity', handleHumanActivity);
+accountManager.on('human_activity', handleHumanActivity);
+zaloClient.aiAgentAdapter = aiAgentAdapter;
+
 // -----------------------------------------------------------------------------
 // Realtime Stream Engine (WebSocket Primary + SSE Fallback)
 // -----------------------------------------------------------------------------

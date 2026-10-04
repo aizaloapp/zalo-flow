@@ -631,6 +631,20 @@ export class ZaloClient extends EventEmitter {
             cliMsgId: msgCliId
           });
 
+          // Kích hoạt lá chắn Human Takeover tức thì cho AI Agent:
+          this.emit('human_activity', {
+            accountUid: myAccountUid,
+            threadId,
+            timestamp: Date.now()
+          });
+          if (this.aiAgentAdapter?.markHumanActivity) {
+            this.aiAgentAdapter.markHumanActivity({
+              accountUid: myAccountUid,
+              threadId,
+              timestamp: Date.now()
+            });
+          }
+
           // Không dispatch vào inboundHandlers (tránh bot tự trả lời tin nhắn của Admin)
           return;
         }
@@ -929,6 +943,22 @@ export class ZaloClient extends EventEmitter {
         cliMsgId: outCliMsgId,
         timestamp: new Date().toISOString()
       });
+
+      // Kích hoạt lá chắn Human Takeover tức thì cho AI Agent khi Admin chat từ Web Dashboard
+      if (!isBot) {
+        this.emit('human_activity', {
+          accountUid: myAccountUid,
+          threadId,
+          timestamp: Date.now()
+        });
+        if (this.aiAgentAdapter?.markHumanActivity) {
+          this.aiAgentAdapter.markHumanActivity({
+            accountUid: myAccountUid,
+            threadId,
+            timestamp: Date.now()
+          });
+        }
+      }
 
       return res;
     });

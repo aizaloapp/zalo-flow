@@ -15,7 +15,7 @@
 [![CI Quality Gate](https://github.com/aizaloapp/zalo-flow/actions/workflows/ci.yml/badge.svg)](https://github.com/aizaloapp/zalo-flow/actions/workflows/ci.yml)
 [![Anti-Leak & Secret Scan](https://github.com/aizaloapp/zalo-flow/actions/workflows/secret-scan.yml/badge.svg)](https://github.com/aizaloapp/zalo-flow/actions/workflows/secret-scan.yml)
 [![Memory Footprint](https://img.shields.io/badge/RAM-%3C%20100MB-success.svg)](test/test-all.js)
-[![Tests Passing](https://img.shields.io/badge/Tests-58%2F58%20Passing-brightgreen.svg)](test/test-all.js)
+[![Tests Passing](https://img.shields.io/badge/Tests-60%2F60%20Passing-brightgreen.svg)](test/test-all.js)
 [![Chrome Web Store](https://img.shields.io/badge/Chrome_Web_Store-AIzalo_Flow_Companion-4285F4?logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/aizalo-flow-chat-companio/ckdbkfocakhkkpjjbcclifdkgikbelan)
 [![Docker Ready](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](docker-compose.yml)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
@@ -45,9 +45,9 @@
 
 No Git, no Node.js installation, no command line terminals required:
 
-[![Download Windows Setup](https://img.shields.io/badge/Windows-Download%20Setup%20v1.4.1%20(.exe)-0068FF?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/aizaloapp/zalo-flow/releases/latest)
+[![Download Windows Setup](https://img.shields.io/badge/Windows-Download%20Setup%20v1.5.0%20(.exe)-0068FF?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/aizaloapp/zalo-flow/releases/latest)
 
-> 💡 **Download & Run:** Click the button above to download **`ZaloFlow-Setup-v1.4.1.exe`** (Only **24.5MB**). Run the installer in 30 seconds to get your Zalo-Flow desktop assistant ready!
+> 💡 **Download & Run:** Click the button above to download **`ZaloFlow-Setup-v1.5.0.exe`** (Only **24.5MB**). Run the installer in 30 seconds to get your Zalo-Flow desktop assistant ready!
 
 <br/>
 
@@ -61,13 +61,14 @@ The official Chrome & Edge browser extension has been verified and published on 
 - ⚡ **1-Click Quick Message Dispatcher:** Send pre-configured customer care response templates without switching tabs.
 - 📖 **Detailed Setup & Permissions:** View the [Chrome Extension Guide (aizalo.com/guide)](https://aizalo.com/guide).
 
-> 🚀 **What's New in v1.4.0:**
-> - 🧠 **Multi-Profile AI Suite & 3-Tier Architecture:** Complete decoupling of Shared LLM Engine (API Key, Auto-Fallback Shield) from Business Personas. Create unlimited AI profiles with dedicated SOUL, Knowledge Memory, Few-Shot Exemplars, Scope/Rules, and Model Overrides.
-> - 📋 **4 Built-in Golden Script Templates:** 1-Click apply battle-tested prompt kits for E-com Sales, B2B Consulting, HR/SOP Internal Assistant, and Technical Support.
-> - 🎯 **Bot Account Allocation & Thread Override (Cascading Resolution):** Map multiple Zalo accounts to specific AI personas, plus override personas on individual VIP customer threads directly from the CRM Drawer.
-> - 🔄 **2-Way Mini Second Brain Wiki Synchronization:** Context-aware wiki viewer/editor synced independently for each AI persona with local .md file import and URL ingestion.
-> - ⚙️ **Dynamic Optgroup Model Override Sync:** Organizes models neatly by active Primary & Fallback providers with real-time UI synchronization.
-> - 🧪 **100% Quality Assurance:** Added Test Suite #56, passing all 56/56 test suites.
+> 🚀 **What's New in v1.5.0 (AI Resilience & Stability Suite):**
+> - 🧩 **Smart Message Chunking (Anti-2000 Char Zalo Limit):** Semantic paragraph/sentence boundary splitting (`splitMessageForZalo`), labeled sequential chunks `(Part X/Y)`, preserving quotes & attachments.
+> - 🔒 **Per-Thread Concurrency Lock & Inbound Buffer:** Single-worker per thread eliminates race conditions when customers send burst messages; auto-buffers, drains & combines incoming prompts.
+> - 🛡️ **Universal Auto-Fallback & Multi-Model Routing:** Seamless failover to secondary provider (Gemini ⇄ DeepSeek, Z.AI, OpenAI...) upon 429 Quota/Rate Limit, 500/502/503 server errors or network disconnects.
+> - 🆘 **Scoped Graceful Fallback Reply:** Gentle rescue notice sent to 1-on-1 chats when all AI providers fail (group chat immunity, 5-min cooldown, toggleable via Web UI).
+> - 🛑 **Smart Human Takeover Engine:** Real-time hook on WebSocket & Web UI dashboard; auto-cancels debounce/buffer and suppresses bot when admin types; checks intervention state before every chunk.
+> - 🛡️ **Friend Event Regex Guard:** 100% blocks automatic system friend connection events from triggering bot replies.
+> - 🧪 **100% Quality Assurance:** Added Test Suites #59 & #60, passing all **60/60 test suites PASS 100%**.
 
 </div>
 

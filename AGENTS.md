@@ -10,7 +10,7 @@
 
 | Hạng Mục | Thông Số Kỹ Thuật | Lệnh Thao Tác Nhanh | Cú Pháp Thực Thi |
 | :--- | :--- | :--- | :--- |
-| **Mô hình** | Single-Tenant / Multi-Account Pool | **Kiểm thử toàn diện:** | `npm test` (58 test suites) |
+| **Mô hình** | Single-Tenant / Multi-Account Pool | **Kiểm thử toàn diện:** | `npm test` (60 test suites) |
 | **Runtime** | Node.js >= 22.5.0 (ES Modules) | **Chạy môi trường Dev:** | `npm run dev` |
 | **Core Lib** | `zca-js: 2.1.2` (Khóa cứng version) | **Chạy Wizard cấu hình:** | `npm run init` |
 | **Web Server**| Express.js (Port 3000, Loopback 127.0.0.1) | **Build bộ cài Windows (.exe):** | `powershell installer/build-local.ps1` |
