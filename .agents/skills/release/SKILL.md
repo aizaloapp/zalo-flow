@@ -44,14 +44,14 @@ Trước khi tiến hành bất kỳ thao tác đóng gói nào, Agent **BẮT B
 
 ---
 
-### Pha 2: Nâng Version Đồng Bộ 9 Điểm Chạm
+### Pha 2: Nâng Version Đồng Bộ 10 Điểm Chạm
 
-Khi phát hành phiên bản mới `vX.X.X` (ví dụ `1.0.7`), Agent cập nhật đồng bộ các file sau:
+Khi phát hành phiên bản mới `vX.X.X` (ví dụ `1.5.0`), Agent cập nhật đồng bộ các file sau:
 
 1. **`package.json`**: Cập nhật `"version": "X.X.X"`.
 2. **`installer/setup.iss`**: Cập nhật `#define MyAppVersion "X.X.X"`.
 3. **`README.md`**:
-   - Cập nhật số lượng test trên badge (ví dụ: `40/40 Passing`).
+   - Cập nhật số lượng test trên badge (ví dụ: `60/60 Passing`).
    - Cập nhật nút tải: `ZaloFlow-Setup-vX.X.X.exe`.
    - Bổ sung mục tóm tắt tính năng mới của `vX.X.X`.
 4. **`README.en.md`**:
@@ -69,6 +69,9 @@ Khi phát hành phiên bản mới `vX.X.X` (ví dụ `1.0.7`), Agent cập nh�
    - Giúp người dùng khi bấm **🔄 Cập Nhật URL** trên Zalo-Flow là Bot AI được nạp ngay tri thức mới nhất về bản phát hành.
 9. **`CHANGELOG.md`** *(nếu có)*:
    - Thêm mốc lịch sử phiên bản `[X.X.X] - YYYY-MM-DD`.
+10. **`public/index.html`**:
+    - Cập nhật số phiên bản tại thẻ Banner thông báo cập nhật ở sidebar:
+      `<span class="update-banner-version" id="update-banner-version">vX.X.X</span>`.
 
 ---
 
@@ -89,14 +92,21 @@ Khi phát hành phiên bản mới `vX.X.X` (ví dụ `1.0.7`), Agent cập nh�
 1. **Commit & Push Git:**
    - Thêm các file thay đổi vào Git:
      ```powershell
-     git add package.json installer/setup.iss README.md README.en.md website/src/ src/ public/ test/
+     git add package.json installer/setup.iss README.md README.en.md CHANGELOG.md AGENTS.md src/ public/ test/ website/src/
      git commit -m "chore(release): vX.X.X - <Tóm tắt điểm mới>"
      git push origin main
      ```
 2. **Tạo GitHub Release qua GitHub CLI:**
-   - Xuất bản release kèm file `.exe`:
+   - Để tránh lỗi phân tích cú pháp ký tự đại diện (wildcard matching) của PowerShell khi gặp chuỗi Markdown và Emoji (`**`, `🔒`), **BẮT BUỘC** ghi nội dung release notes ra tệp tạm thời rồi sử dụng cờ `--notes-file`:
      ```powershell
-     gh release create vX.X.X installer/output/ZaloFlow-Setup-vX.X.X.exe --title "vX.X.X — <Tiêu đề phát hành>" --notes "<Nội dung tóm tắt tính năng mới>"
+     # 1. Ghi release notes ra file tạm
+     Set-Content -Path "temp/release-notes-vX.X.X.md" -Value "<Nội dung tóm tắt tính năng mới>" -Encoding UTF8
+
+     # 2. Tạo GitHub release kèm binary
+     gh release create vX.X.X installer/output/ZaloFlow-Setup-vX.X.X.exe --title "vX.X.X — <Tiêu đề phát hành>" --notes-file temp/release-notes-vX.X.X.md
+
+     # 3. Dọn dẹp file tạm
+     Remove-Item temp/release-notes-vX.X.X.md -Force
      ```
 
 ---
@@ -118,10 +128,13 @@ Khi phát hành phiên bản mới `vX.X.X` (ví dụ `1.0.7`), Agent cập nh�
 
 ### Pha 6: Đồng Bộ Mã Nguồn Dev Sang Ứng Dụng Desktop
 
-Theo quy chuẩn AGENTS.md Trụ Cột VI, Điều 6:
+> [!NOTE]
+> Thư mục cài đặt Desktop Daemon tại `%LOCALAPPDATA%\Programs\ZaloFlow` có cấu trúc thư mục phẳng trực tiếp (`src/`, `public/`, `data/`, `node.exe`), tuyệt đối **KHÔNG CÓ** thư mục trung gian `resources\app\` như ứng dụng Electron đóng gói.
+
 ```powershell
 Copy-Item -Path "d:\A-Du-An\Zalo-Flow\src\*" -Destination "$env:LOCALAPPDATA\Programs\ZaloFlow\src" -Recurse -Force
 Copy-Item -Path "d:\A-Du-An\Zalo-Flow\public\*" -Destination "$env:LOCALAPPDATA\Programs\ZaloFlow\public" -Recurse -Force
+Copy-Item -Path "d:\A-Du-An\Zalo-Flow\package.json", "d:\A-Du-An\Zalo-Flow\AGENTS.md" -Destination "$env:LOCALAPPDATA\Programs\ZaloFlow\" -Force
 ```
 
 ---

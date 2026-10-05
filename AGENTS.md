@@ -33,7 +33,7 @@
 | `public/**`, `app.js`, `styles.css`, `index.html`, `i18n.js` | [`frontend-crm.md`](.agents/rules/frontend-crm.md) | Chat bubble pre-wrap immunity, Multer error `upload.any()` JSON 400, avatar CDN Zalo `referrerpolicy="no-referrer"`, ghim 5 hội thoại, Zero-reset i18n. |
 | `src/utils/ai-*.js`, Multimodal Vision, Live Model Scanner | [`ai-vision.md`](.agents/rules/ai-vision.md) | Live Model discovery, khử Base URL cũ `resolveEffectiveBaseUrl`, Vision Override directive, maxBodyLength 4MB stream guard. |
 | `website/**`, SEO/Blog, tên miền `aizalo.com` | [`website/AGENTS.md`](website/AGENTS.md) | Quy chuẩn Portal cộng đồng, Semantic SEO, EEAT, UTF-8 integrity. |
-| Phát hành bản mới, nâng version, build installer .exe | [`.agents/skills/release/SKILL.md`](.agents/skills/release/SKILL.md) | Quy trình nâng version 9 điểm chạm, Inno Setup build, Cloudflare deploy. |
+| Phát hành bản mới, nâng version, build installer .exe | [`.agents/skills/release/SKILL.md`](.agents/skills/release/SKILL.md) | Quy trình nâng version 10 điểm chạm, Inno Setup build, Cloudflare deploy. |
 
 *Quy tắc xuyên tầng (Cross-Cutting Concerns):* Khi tác vụ chạm từ 2 miền trở lên (ví dụ: Campaign Remarketing chạm Zalo, SQLite và Frontend), Agent bắt buộc nạp đồng thời tất cả các rule liên quan trước khi sửa code.
 
