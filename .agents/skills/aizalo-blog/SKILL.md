@@ -123,11 +123,11 @@ Agent tạo thư mục `website/src/assets/blog/<slug>/` và sinh tối thiểu 
 #### 1. Rà soát Ma trận 6 điểm chạm:
 - [ ] 1. Thêm card bài viết mới lên đầu trang `website/src/blog/index.html`.
 - [ ] 2. Chèn Inbound Link và cập nhật `dateModified` trong các bài blog cũ.
-- [ ] 3. Cập nhật `website/src/sitemap.xml` (thêm URL mới, cập nhật `<lastmod>` của `/` và `/blog/`).
+- [ ] 3. Cập nhật `website/src/sitemap.xml` (thêm URL mới dạng Clean URL `https://aizalo.com/blog/<slug>`, cập nhật `<lastmod>` của `/` và `/blog/`). TUYỆT ĐỐI KHÔNG thêm đuôi `.html`.
 - [ ] 4. Cập nhật `website/src/guide.md` và `website/src/wiki.md` (Conditional AI Knowledge Ops):
        * **NẾU bài viết về TÍNH NĂNG MỚI Zalo-Flow (Feature/How-to):** BẮT BUỘC cập nhật: (1) Thêm tóm tắt tính năng ở Mục 2; (2) Thêm câu hỏi FAQ kèm Deep-Link bài blog ở Mục 3; (3) Thêm mẫu đối thoại Few-Shot ở Mục 4.
        * **NẾU bài viết về MẸO KINH DOANH / CASE STUDY MỞ RỘNG (General SEO Tips):** BỎ QUA `guide.md` & `wiki.md` để chống phình to bộ não Bot AI (Prompt Bloat Guardrail < 250 dòng).
-- [ ] 5. Cập nhật `website/src/llms.txt` và `website/src/llms-full.txt`.
+- [ ] 5. Cập nhật `website/src/llms.txt` và `website/src/llms-full.txt` (dùng Clean URLs).
 - [ ] 6. Kiểm tra chuẩn Dual-Tier CTA: Navbar mang `🤖 Thử Bot Zalo AI`, CTA Box và Floating Badge mang `🤖 Trải Nghiệm Thử Bot Zalo AI` trỏ về `https://zalo.me/0373315784`.
 - [ ] 7. Đồng bộ thư mục `website/dist/`.
 
@@ -162,10 +162,10 @@ powershell website/build.ps1
 
 #### 5. Kích Hoạt Lập Chỉ Mục Tức Thì (Instant Indexing Automation):
 Ngay sau khi lệnh deploy Cloudflare Pages hoàn tất thành công:
-1. Agent BẮT BUỘC tự động chạy lệnh bắn tín hiệu lập chỉ mục cho bài viết mới:
+1. Agent BẮT BUỘC tự động chạy lệnh bắn tín hiệu lập chỉ mục cho bài viết mới dạng Clean URL (không đuôi `.html`):
    ```powershell
-   node scripts/google-index.mjs https://aizalo.com/blog/<slug>.html
-   node scripts/indexnow.mjs https://aizalo.com/blog/<slug>.html
+   node scripts/google-index.mjs https://aizalo.com/blog/<slug>
+   node scripts/indexnow.mjs https://aizalo.com/blog/<slug>
    ```
    *(Hoặc chạy `npm run index:all` nếu có cập nhật sitemap diện rộng).*
 2. Xác nhận kết quả phản hồi đạt `200 OK` từ cả máy chủ Google Indexing API và Microsoft Bing / IndexNow.

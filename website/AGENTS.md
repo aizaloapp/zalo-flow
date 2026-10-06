@@ -130,3 +130,15 @@ Khi chuyển giao hoặc cấu hình tên miền chính (`aizalo.com`) sang Clou
      - Mobile Menu Drawer: Thẻ `<button class="btn btn-ask-ai-mobile" data-zf-open onclick="toggleMenu(false)">✨ Hỏi AI Trợ Lý</button>` (trang tiếng Anh dùng `✨ Ask AI Assistant`).
    - **Ergonomic Shortcut Discipline (No Complex Keycombos):** TUYỆT ĐỐI KHÔNG ghi cứng phím tắt phức tạp (`Ctrl + K`, `Cmd + K`) vào mã nguồn webchat của website công cộng vì dễ gây rối cho người dùng và xung đột thanh địa chỉ trình duyệt. Chỉ duy trì duy nhất phím `Escape` để đóng panel khi đang mở.
    - **Edge CDN Distribution & Backend Decoupling:** Tệp client của widget BẮT BUỘC được phân phối từ Edge CDN của Cloudflare Pages (`/widget/webchat.js`), đồng thời `website/build.ps1` phải sao chép thư mục `widget/` sang `dist/widget/`. Thuộc tính `data-server` trỏ riêng về endpoint API của bot VPS (`https://bot.aizalo.com`), bảo đảm website tải mượt mà không phụ thuộc vào tình trạng uptime của VPS bot.
+11. **Clean URLs & Zero-308 Redirect Invariant (`_worker.js` & Internal Links):**
+   - Mọi liên kết nội bộ (`<a href="...">`), thẻ `<link rel="canonical">`, `<meta property="og:url">`, Breadcrumb Schema và tệp `sitemap.xml` BẮT BUỘC sử dụng Clean URLs (không chứa đuôi `.html`).
+   - Tệp `website/src/_worker.js` BẮT BUỘC duy trì bộ lọc rewrite URL nội bộ cho các request mang đuôi `.html` (trừ `/index.html`) để Cloudflare Pages trả về **HTTP 200 OK trực tiếp**, triệt tiêu 100% mã chuyển hướng 308 gây lỗi thu thập cho AI bots (PerplexityBot, GPTBot).
+   - Bộ kiểm định `scripts/audit-aizalo.mjs` BẮT BUỘC duy trì hàm `getCanonicalUrl` chuẩn hóa Clean URLs cho cả Pass 1 và Pass 2.
+12. **RFC 9264 Link Header & q-Factor Content Negotiation Invariant:**
+   - Header `Link` trên Cloudflare Pages (`_headers`) và trong Edge Worker (`_worker.js`) BẮT BUỘC tuân thủ RFC 9264: chỉ khai báo `Link: </llms.txt>; rel="describedby"; type="text/markdown", </.well-known/api-catalog>; rel="service-desc"`. TUYỆT ĐỐI KHÔNG gắn `rel="alternate"` trùng lặp cho `llms.txt` và `llms-full.txt`.
+   - Cơ chế Content Negotiation cho AI Agent trong `_worker.js` BẮT BUỘC kiểm tra trọng số `q-factor` (RFC 7231 qua `prefersMarkdown`). Chỉ phân phối nội dung Markdown khi `q(text/markdown) >= q(text/html)`, bảo vệ người dùng duyệt web bình thường không bị nhận nhầm text Markdown thô.
+13. **Entity Shielding & Anti-Hallucination Schema Invariant:**
+   - Khối dữ liệu có cấu trúc JSON-LD trên trang chủ (`index.html`, `en/index.html`) BẮT BUỘC khai báo đầy đủ đối tượng `SoftwareApplication` và `Organization`.
+   - BẮT BUỘC chứa các thuộc tính: `name: "Zalo-Flow"`, `alternateName`, mô tả minh bạch về mục đích nghiên cứu/học tập mã nguồn mở, và mảng liên kết thực thể `sameAs` trỏ về GitHub chính thức (`https://github.com/aizaloapp/zalo-flow`, `https://github.com/aizaloapp`).
+   - *Mục đích:* Xác lập thực thể độc lập vững chắc trong Knowledge Graph của Google, Bing và các mô hình LLM, ngăn chặn dứt điểm tình trạng AI bị ngộ nhận (Brand Hallucination) với các website lừa đảo mạo danh Zalo.
+
