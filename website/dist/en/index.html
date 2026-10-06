@@ -42,7 +42,7 @@
   <meta name="theme-color" content="#070a13">
 
   <!-- Stylesheet -->
-  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/style.css?v=1.5.1">
 
   <!-- AI Agent Discovery (RFC 9264 describedby) -->
   <link rel="describedby" type="text/markdown" href="/llms.txt" title="Zalo-Flow AI Documentation">
@@ -669,47 +669,73 @@
       </div>
 
       <!-- GEO Agent Hub & LLM Jump Links (Generative Engine Optimization) -->
-      <div class="geo-footer-hub">
+      <div class="geo-footer-card">
         <!-- Row 1: Machine-Readable Context for AI Agents -->
-        <div class="geo-agent-docs">
-          <div class="geo-agent-header">
-            <span>⚡</span>
-            <span>AI Agents &amp; Machine Context</span>
+        <div class="geo-card-header">
+          <div class="geo-badge-title">
+            <span class="geo-pulse-dot"></span>
+            <span class="geo-badge-icon">⚡</span>
+            <span>AI Agents &amp; Machine-Readable Context</span>
           </div>
-          <div class="geo-agent-links">
-            <a href="/llms.txt" target="_blank" rel="noopener">llms.txt</a>
-            <a href="/llms-full.txt" target="_blank" rel="noopener">llms-full.txt</a>
-            <a href="/features.md" target="_blank" rel="noopener">features.md</a>
-            <a href="/.well-known/agent-instructions.md" target="_blank" rel="noopener">agent-instructions.md</a>
-            <a href="/openapi.json" target="_blank" rel="noopener">openapi.json</a>
+          <div class="geo-pills-list">
+            <a href="/llms.txt" target="_blank" rel="noopener" class="geo-pill">
+              <span class="geo-pill-icon">📄</span>
+              <span>llms.txt</span>
+            </a>
+            <a href="/llms-full.txt" target="_blank" rel="noopener" class="geo-pill">
+              <span class="geo-pill-icon">📚</span>
+              <span>llms-full.txt</span>
+            </a>
+            <a href="/features.md" target="_blank" rel="noopener" class="geo-pill">
+              <span class="geo-pill-icon">✨</span>
+              <span>features.md</span>
+            </a>
+            <a href="/.well-known/agent-instructions.md" target="_blank" rel="noopener" class="geo-pill">
+              <span class="geo-pill-icon">🤖</span>
+              <span>agent-instructions.md</span>
+            </a>
+            <a href="/openapi.json" target="_blank" rel="noopener" class="geo-pill">
+              <span class="geo-pill-icon">🔌</span>
+              <span>openapi.json</span>
+            </a>
           </div>
         </div>
 
+        <div class="geo-card-divider"></div>
+
         <!-- Row 2: 5 AI Assistants Jump Links with Pre-seeded Prompts -->
-        <div class="geo-ai-row">
-          <p class="geo-ai-prompt-text">
-            See what ChatGPT, Claude, Perplexity, Gemini, or Grok say about <strong>Zalo-Flow</strong>:
-          </p>
+        <div class="geo-ai-section">
+          <div class="geo-ai-info">
+            <span class="geo-ai-label">EXPLORE WITH AI ASSISTANTS</span>
+            <p class="geo-ai-prompt-text">
+              See what 5 leading AI models analyze about <strong>Zalo-Flow</strong> (Features, Anti-ban &amp; CRM):
+            </p>
+          </div>
           <div class="geo-ai-buttons">
             <a href="https://chatgpt.com/?q=Explain%20Zalo-Flow%20(https%3A%2F%2Faizalo.com%2Fen%2F)%3A%20Open-source%20personal%20Zalo%20automation%20tool%20with%20AI%2C%203-tier%20Anti-ban%20protection%2C%20and%20Chatwoot%20CRM%20integration." 
-               target="_blank" rel="noopener noreferrer" class="geo-ai-btn" aria-label="ChatGPT" title="Ask ChatGPT about Zalo-Flow">
-              <img src="/assets/logos/openai.svg" alt="ChatGPT" width="18" height="18" loading="lazy">
+               target="_blank" rel="noopener noreferrer" class="geo-ai-btn geo-btn-chatgpt" aria-label="ChatGPT" title="Ask ChatGPT about Zalo-Flow">
+              <img src="/assets/logos/openai.svg" alt="ChatGPT" width="22" height="22" loading="lazy">
+              <span class="geo-ai-btn-tooltip">ChatGPT</span>
             </a>
             <a href="https://claude.ai/new?q=Explain%20Zalo-Flow%20(https%3A%2F%2Faizalo.com%2Fen%2F)%3A%20Open-source%20personal%20Zalo%20automation%20tool%20with%20AI%2C%203-tier%20Anti-ban%20protection%2C%20and%20Chatwoot%20CRM%20integration." 
-               target="_blank" rel="noopener noreferrer" class="geo-ai-btn" aria-label="Claude" title="Ask Claude about Zalo-Flow">
-              <img src="/assets/logos/claude.svg" alt="Claude" width="18" height="18" loading="lazy">
+               target="_blank" rel="noopener noreferrer" class="geo-ai-btn geo-btn-claude" aria-label="Claude" title="Ask Claude about Zalo-Flow">
+              <img src="/assets/logos/claude.svg" alt="Claude" width="22" height="22" loading="lazy">
+              <span class="geo-ai-btn-tooltip">Claude</span>
             </a>
             <a href="https://www.perplexity.ai/search?q=Explain%20Zalo-Flow%20(https%3A%2F%2Faizalo.com%2Fen%2F)%3A%20Open-source%20personal%20Zalo%20automation%20tool%20with%20AI%2C%203-tier%20Anti-ban%20protection%2C%20and%20Chatwoot%20CRM%20integration." 
-               target="_blank" rel="noopener noreferrer" class="geo-ai-btn" aria-label="Perplexity" title="Search Perplexity for Zalo-Flow">
-              <img src="/assets/logos/perplexity.svg" alt="Perplexity" width="18" height="18" loading="lazy">
+               target="_blank" rel="noopener noreferrer" class="geo-ai-btn geo-btn-perplexity" aria-label="Perplexity" title="Search Perplexity for Zalo-Flow">
+              <img src="/assets/logos/perplexity.svg" alt="Perplexity" width="22" height="22" loading="lazy">
+              <span class="geo-ai-btn-tooltip">Perplexity</span>
             </a>
             <a href="https://www.google.com/search?udm=50&amp;q=Explain%20Zalo-Flow%20(https%3A%2F%2Faizalo.com%2Fen%2F)%3A%20Open-source%20personal%20Zalo%20automation%20tool%20with%20AI%2C%203-tier%20Anti-ban%20protection%2C%20and%20Chatwoot%20CRM%20integration." 
-               target="_blank" rel="noopener noreferrer" class="geo-ai-btn" aria-label="Google Gemini" title="View Google AI Overviews for Zalo-Flow">
-              <img src="/assets/logos/gemini.svg" alt="Google Gemini" width="18" height="18" loading="lazy">
+               target="_blank" rel="noopener noreferrer" class="geo-ai-btn geo-btn-gemini" aria-label="Google Gemini" title="View Google AI Overviews for Zalo-Flow">
+              <img src="/assets/logos/gemini.svg" alt="Google Gemini" width="22" height="22" loading="lazy">
+              <span class="geo-ai-btn-tooltip">Gemini</span>
             </a>
             <a href="https://grok.com/?q=Explain%20Zalo-Flow%20(https%3A%2F%2Faizalo.com%2Fen%2F)%3A%20Open-source%20personal%20Zalo%20automation%20tool%20with%20AI%2C%203-tier%20Anti-ban%20protection%2C%20and%20Chatwoot%20CRM%20integration." 
-               target="_blank" rel="noopener noreferrer" class="geo-ai-btn" aria-label="xAI Grok" title="Ask xAI Grok about Zalo-Flow">
-              <img src="/assets/logos/grok.svg" alt="xAI Grok" width="18" height="18" loading="lazy">
+               target="_blank" rel="noopener noreferrer" class="geo-ai-btn geo-btn-grok" aria-label="xAI Grok" title="Ask xAI Grok about Zalo-Flow">
+              <img src="/assets/logos/grok.svg" alt="xAI Grok" width="22" height="22" loading="lazy">
+              <span class="geo-ai-btn-tooltip">Grok</span>
             </a>
           </div>
         </div>
