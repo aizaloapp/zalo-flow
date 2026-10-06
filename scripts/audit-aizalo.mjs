@@ -34,6 +34,15 @@ function countWords(str) {
   return str.trim().split(/\s+/).filter(Boolean).length;
 }
 
+function getCanonicalUrl(file) {
+  if (file.isHome) return 'https://aizalo.com/';
+  if (file.isEnHome) return 'https://aizalo.com/en/';
+  if (file.rel === 'blog/index.html') return 'https://aizalo.com/blog/';
+  if (file.rel === 'en/blog/index.html') return 'https://aizalo.com/en/blog/';
+  const cleanPath = file.rel.endsWith('.html') ? file.rel.replace(/\.html$/, '') : file.rel;
+  return `https://aizalo.com/${cleanPath}`;
+}
+
 // -----------------------------------------------------------------------------
 // PASS 1: STATIC AST & SEMANTIC ANALYSIS (OFFLINE)
 // -----------------------------------------------------------------------------
@@ -118,15 +127,7 @@ for (const file of htmlFiles) {
   if (!canonicalMatch) {
     deduct('onPage', 10, `Thiếu thẻ <link rel="canonical"> trong ${file.rel}`, 'P1');
   } else {
-    const expectedCanonical = file.isHome 
-      ? 'https://aizalo.com/' 
-      : (file.isEnHome 
-          ? 'https://aizalo.com/en/' 
-          : (file.rel === 'blog/index.html' 
-              ? 'https://aizalo.com/blog/' 
-              : (file.rel === 'en/blog/index.html' 
-                  ? 'https://aizalo.com/en/blog/' 
-                  : `https://aizalo.com/${file.rel}`)));
+    const expectedCanonical = getCanonicalUrl(file);
     if (canonicalMatch[1] !== expectedCanonical) {
       deduct('onPage', 5, `Thẻ canonical trong ${file.rel} (${canonicalMatch[1]}) không khớp URL chuẩn (${expectedCanonical})`, 'P1');
     }
@@ -315,15 +316,7 @@ if (!fs.existsSync(sitemapPath)) {
 } else {
   const sitemapContent = fs.readFileSync(sitemapPath, 'utf8');
   for (const f of htmlFiles) {
-    const urlSegment = f.isHome 
-      ? 'https://aizalo.com/' 
-      : (f.isEnHome 
-          ? 'https://aizalo.com/en/' 
-          : (f.rel === 'blog/index.html' 
-              ? 'https://aizalo.com/blog/' 
-              : (f.rel === 'en/blog/index.html' 
-                  ? 'https://aizalo.com/en/blog/' 
-                  : `https://aizalo.com/${f.rel}`)));
+    const urlSegment = getCanonicalUrl(f);
     if (!sitemapContent.includes(urlSegment)) {
       deduct('technical', 5, `Trang ${f.rel} chưa được khai báo trong sitemap.xml (kỳ vọng: ${urlSegment})`, 'P1');
     }
@@ -408,17 +401,22 @@ console.log('✅ PASS 1 HOÀN TẤT!\n');
 console.log('🌐 [PASS 2] Đo Kiểm Thực Tế Trực Tuyến Trên Cloudflare Edge CDN (https://aizalo.com)...');
 
 async function runPass2() {
-  const timeoutMs = 8000;
-  async function safeFetch(url, options = {}) {
-    const controller = new AbortController();
-    const t = setTimeout(() => controller.abort(), timeoutMs);
-    try {
-      const res = await fetch(url, { ...options, signal: controller.signal });
-      clearTimeout(t);
-      return res;
-    } catch (e) {
-      clearTimeout(t);
-      return { ok: false, status: 0, error: e.message, headers: new Headers() };
+  const timeoutMs = 12000;
+  async function safeFetch(url, options = {}, retries = 1) {
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      const controller = new AbortController();
+      const t = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        const res = await fetch(url, { ...options, signal: controller.signal });
+        clearTimeout(t);
+        return res;
+      } catch (e) {
+        clearTimeout(t);
+        if (attempt === retries) {
+          return { ok: false, status: 0, error: e.message, headers: new Headers() };
+        }
+        await new Promise(r => setTimeout(r, 800));
+      }
     }
   }
 
@@ -451,15 +449,7 @@ async function runPass2() {
   // 3. Check All Sitemap URLs live status
   console.log('   ✔️ Kiểm tra mã trạng thái HTTP 200 cho toàn bộ bài viết...');
   for (const f of htmlFiles) {
-    const testUrl = f.isHome 
-      ? 'https://aizalo.com/' 
-      : (f.isEnHome 
-          ? 'https://aizalo.com/en/' 
-          : (f.rel === 'blog/index.html' 
-              ? 'https://aizalo.com/blog/' 
-              : (f.rel === 'en/blog/index.html' 
-                  ? 'https://aizalo.com/en/blog/' 
-                  : `https://aizalo.com/${f.rel}`)));
+    const testUrl = getCanonicalUrl(f);
     if (isLocalRun && (f.isEnHome || f.rel.startsWith('en/'))) {
       console.log(`   ⏭️ [PRE-DEPLOY] Bỏ qua kiểm tra Live Edge cho trang tiếng Anh chưa deploy: ${testUrl}`);
       continue;

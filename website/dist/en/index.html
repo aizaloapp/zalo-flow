@@ -44,9 +44,8 @@
   <!-- Stylesheet -->
   <link rel="stylesheet" href="/style.css">
 
-  <!-- AI Agent Alternate Formats & Discovery -->
-  <link rel="alternate" type="text/markdown" href="/llms.txt" title="Zalo-Flow AI Documentation">
-  <link rel="alternate" type="text/markdown" href="/llms-full.txt" title="Zalo-Flow Full AI Specification">
+  <!-- AI Agent Discovery (RFC 9264 describedby) -->
+  <link rel="describedby" type="text/markdown" href="/llms.txt" title="Zalo-Flow AI Documentation">
   <link rel="service-desc" type="application/json" href="/.well-known/api-catalog" title="API Catalog">
 
   <!-- Structured Data: SoftwareApplication & FAQPage & Organization -->
@@ -57,6 +56,8 @@
       {
         "@type": "SoftwareApplication",
         "name": "Zalo-Flow",
+        "alternateName": ["Zalo Flow", "AIzalo", "Zalo-Flow Open Source"],
+        "description": "Free, open-source automation tool connecting personal Zalo to Chatwoot CRM, generic webhooks and AI models (Gemini, DeepSeek, OpenAI). Educational and research use.",
         "applicationCategory": "BusinessApplication, CommunicationApplication",
         "operatingSystem": "Windows 10, Windows 11, macOS, Linux",
         "softwareVersion": "1.5.0",
@@ -68,14 +69,20 @@
           "priceCurrency": "USD"
         },
         "downloadUrl": "https://github.com/aizaloapp/zalo-flow/releases/latest",
-        "license": "https://github.com/aizaloapp/zalo-flow/blob/main/LICENSE"
+        "license": "https://github.com/aizaloapp/zalo-flow/blob/main/LICENSE",
+        "sameAs": [
+          "https://github.com/aizaloapp/zalo-flow",
+          "https://github.com/aizaloapp"
+        ]
       },
       {
         "@type": "Organization",
         "name": "AIzalo Community",
         "url": "https://aizalo.com/en/",
+        "description": "Open-source community researching personal Zalo automation and AI integrations.",
         "sameAs": [
           "https://github.com/aizaloapp/zalo-flow",
+          "https://github.com/aizaloapp",
           "https://zalo.me/g/mcihan713"
         ]
       },
@@ -469,7 +476,7 @@
         </div>
 
         <div class="grid-2">
-          <a href="/blog/cach-gui-tin-nhan-tu-dong-tren-zalo-khong-bi-khoa.html" class="card blog-card">
+          <a href="/blog/cach-gui-tin-nhan-tu-dong-tren-zalo-khong-bi-khoa" class="card blog-card">
             <span class="blog-tag">Anti-Ban Engineering</span>
             <h3 class="card-title">How To Safely Automate Zalo Messaging Without Account Restrictions</h3>
             <p class="card-desc">
@@ -482,7 +489,7 @@
             </div>
           </a>
 
-          <a href="/blog/huong-dan-cach-tao-chatbot-zalo-ca-nhan.html" class="card blog-card">
+          <a href="/blog/huong-dan-cach-tao-chatbot-zalo-ca-nhan" class="card blog-card">
             <span class="blog-tag">Installation Guide</span>
             <h3 class="card-title">How To Build A Personal Zalo Chatbot Using Zalo-Flow in 3 Minutes</h3>
             <p class="card-desc">
@@ -495,7 +502,7 @@
             </div>
           </a>
 
-          <a href="/blog/tich-hop-ai-gemini-deepseek-vao-zalo-ca-nhan.html" class="card blog-card">
+          <a href="/blog/tich-hop-ai-gemini-deepseek-vao-zalo-ca-nhan" class="card blog-card">
             <span class="blog-tag">Artificial Intelligence</span>
             <h3 class="card-title">Integrating Gemini &amp; DeepSeek AI Into Personal Zalo For Auto-Replies</h3>
             <p class="card-desc">
@@ -508,7 +515,7 @@
             </div>
           </a>
 
-          <a href="/blog/zalo-crm-la-gi-giai-phap-quan-ly-tin-nhan-cskh.html" class="card blog-card">
+          <a href="/blog/zalo-crm-la-gi-giai-phap-quan-ly-tin-nhan-cskh" class="card blog-card">
             <span class="blog-tag">Customer Care CRM</span>
             <h3 class="card-title">What Is Zalo CRM? Modern Omnichannel Messaging &amp; Lead Management</h3>
             <p class="card-desc">

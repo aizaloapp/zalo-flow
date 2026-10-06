@@ -44,9 +44,8 @@
   <!-- Stylesheet -->
   <link rel="stylesheet" href="/style.css">
 
-  <!-- AI Agent Alternate Formats & Discovery -->
-  <link rel="alternate" type="text/markdown" href="/llms.txt" title="Zalo-Flow AI Documentation">
-  <link rel="alternate" type="text/markdown" href="/llms-full.txt" title="Zalo-Flow Full AI Specification">
+  <!-- AI Agent Discovery (RFC 9264 describedby) -->
+  <link rel="describedby" type="text/markdown" href="/llms.txt" title="Zalo-Flow AI Documentation">
   <link rel="service-desc" type="application/json" href="/.well-known/api-catalog" title="API Catalog">
 
   <!-- Structured Data: SoftwareApplication & FAQPage & Organization -->
@@ -57,6 +56,8 @@
       {
         "@type": "SoftwareApplication",
         "name": "Zalo-Flow",
+        "alternateName": ["Zalo Flow", "AIzalo", "Zalo-Flow Community Edition"],
+        "description": "Phần mềm mã nguồn mở miễn phí chạy cục bộ trên máy tính người dùng kết nối Zalo cá nhân với Chatwoot CRM và AI (Gemini, DeepSeek). Dự án phi thương mại vì mục đích nghiên cứu, độc lập với VNG Corporation.",
         "applicationCategory": "BusinessApplication, CommunicationApplication",
         "operatingSystem": "Windows 10, Windows 11, macOS, Linux",
         "softwareVersion": "1.5.0",
@@ -67,14 +68,21 @@
           "priceCurrency": "VND"
         },
         "downloadUrl": "https://github.com/aizaloapp/zalo-flow/releases/latest",
-        "license": "https://github.com/aizaloapp/zalo-flow/blob/main/LICENSE"
+        "license": "https://github.com/aizaloapp/zalo-flow/blob/main/LICENSE",
+        "sameAs": [
+          "https://github.com/aizaloapp/zalo-flow",
+          "https://github.com/aizaloapp"
+        ]
       },
       {
         "@type": "Organization",
-        "name": "Cộng Đồng Zalo-Flow",
+        "name": "Cộng Đồng Zalo-Flow (AIzalo Community)",
+        "alternateName": "AIzalo Community",
         "url": "https://aizalo.com",
+        "description": "Cộng đồng mã nguồn mở phi thương mại nghiên cứu kiến trúc tự động hóa Zalo cá nhân an toàn.",
         "sameAs": [
           "https://github.com/aizaloapp/zalo-flow",
+          "https://github.com/aizaloapp",
           "https://zalo.me/g/mcihan713"
         ]
       },
@@ -468,13 +476,13 @@
 
         <div style="display: flex; justify-content: center; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 2rem;">
           <a href="/guide" class="hero-pill" style="text-decoration: none; font-size: 0.82rem; padding: 0.35rem 0.85rem; border-color: rgba(0, 210, 255, 0.4);">🌐 Tiện Ích Chrome</a>
-          <a href="/blog/cach-gui-tin-nhan-tu-dong-tren-zalo-khong-bi-khoa.html" class="hero-pill" style="text-decoration: none; font-size: 0.82rem; padding: 0.35rem 0.85rem;">🛡️ Bí Quyết Anti-Ban</a>
-          <a href="/blog/cach-huan-luyen-ai-ban-hang-zalo-bang-bang-gia-rieng.html" class="hero-pill" style="text-decoration: none; font-size: 0.82rem; padding: 0.35rem 0.85rem;">🤖 AI Bán Hàng</a>
-          <a href="/blog/cach-hen-gio-gui-tin-nhan-zalo-ca-nhan-tu-dong.html" class="hero-pill" style="text-decoration: none; font-size: 0.82rem; padding: 0.35rem 0.85rem;">⏱️ Lên Lịch Tự Động</a>
+          <a href="/blog/cach-gui-tin-nhan-tu-dong-tren-zalo-khong-bi-khoa" class="hero-pill" style="text-decoration: none; font-size: 0.82rem; padding: 0.35rem 0.85rem;">🛡️ Bí Quyết Anti-Ban</a>
+          <a href="/blog/cach-huan-luyen-ai-ban-hang-zalo-bang-bang-gia-rieng" class="hero-pill" style="text-decoration: none; font-size: 0.82rem; padding: 0.35rem 0.85rem;">🤖 AI Bán Hàng</a>
+          <a href="/blog/cach-hen-gio-gui-tin-nhan-zalo-ca-nhan-tu-dong" class="hero-pill" style="text-decoration: none; font-size: 0.82rem; padding: 0.35rem 0.85rem;">⏱️ Lên Lịch Tự Động</a>
         </div>
 
         <div class="grid-2">
-          <a href="/blog/cach-nhan-thong-bao-va-quan-ly-tin-nhan-zalo-bang-chrome-extension.html" class="card blog-card" style="border-color: rgba(0, 210, 255, 0.35);">
+          <a href="/blog/cach-nhan-thong-bao-va-quan-ly-tin-nhan-zalo-bang-chrome-extension" class="card blog-card" style="border-color: rgba(0, 210, 255, 0.35);">
             <span class="blog-tag" style="background: rgba(0, 210, 255, 0.15); color: var(--cyan); border: 1px solid rgba(0, 210, 255, 0.3);">🔥 Tiện Ích Chrome Mới</span>
             <h3 class="card-title">Cách Nhận Thông Báo &amp; Quản Lý Tin Nhắn Zalo Bằng Chrome Extension (Không Trôi Tin 2026)</h3>
             <p class="card-desc">
@@ -487,7 +495,7 @@
             </div>
           </a>
 
-          <a href="/blog/cach-gui-tin-nhan-tu-dong-tren-zalo-khong-bi-khoa.html" class="card blog-card">
+          <a href="/blog/cach-gui-tin-nhan-tu-dong-tren-zalo-khong-bi-khoa" class="card blog-card">
             <span class="blog-tag">Bí Quyết Anti-Ban</span>
             <h3 class="card-title">Cách Gửi Tin Nhắn Tự Động Trên Zalo Không Bị Khóa Tài Khoản (2026)</h3>
             <p class="card-desc">
@@ -500,7 +508,7 @@
             </div>
           </a>
 
-          <a href="/blog/cach-huan-luyen-ai-ban-hang-zalo-bang-bang-gia-rieng.html" class="card blog-card">
+          <a href="/blog/cach-huan-luyen-ai-ban-hang-zalo-bang-bang-gia-rieng" class="card blog-card">
             <span class="blog-tag" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3);">🤖 AI Bán Hàng</span>
             <h3 class="card-title">Cách Huấn Luyện AI Bán Hàng Zalo Cá Nhân Bằng Bảng Giá Riêng</h3>
             <p class="card-desc">
@@ -513,7 +521,7 @@
             </div>
           </a>
 
-          <a href="/blog/zalo-crm-la-gi-giai-phap-quan-ly-tin-nhan-cskh.html" class="card blog-card">
+          <a href="/blog/zalo-crm-la-gi-giai-phap-quan-ly-tin-nhan-cskh" class="card blog-card">
             <span class="blog-tag">Quản Trị CSKH</span>
             <h3 class="card-title">Zalo CRM Là Gì? Giải Pháp Quản Lý Tin Nhắn &amp; Chăm Sóc Khách Hàng Zalo Đỉnh Cao</h3>
             <p class="card-desc">
