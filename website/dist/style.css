@@ -1116,6 +1116,120 @@ body {
   color: var(--text-dim);
 }
 
+/* ==============================================================================
+   GEO AGENT HUB & AI JUMP LINKS
+   ============================================================================== */
+.geo-footer-hub {
+  margin-top: 2rem;
+  padding-top: 1.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  text-align: left;
+}
+
+.geo-agent-docs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.geo-agent-header {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--cyan);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  letter-spacing: 0.02em;
+}
+
+.geo-agent-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 1.25rem;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.8rem;
+}
+
+.geo-agent-links a {
+  color: var(--text-muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: rgba(255, 255, 255, 0.2);
+  transition: all 0.2s ease;
+}
+
+.geo-agent-links a:hover {
+  color: var(--cyan);
+  text-decoration-color: var(--cyan);
+}
+
+.geo-ai-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.geo-ai-prompt-text {
+  font-size: 0.84rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin: 0;
+  max-width: 520px;
+}
+
+.geo-ai-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.geo-ai-btn {
+  display: inline-flex;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(15, 23, 42, 0.8);
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.geo-ai-btn:hover {
+  background: rgba(0, 210, 255, 0.15);
+  border-color: var(--cyan);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 210, 255, 0.2);
+}
+
+.geo-ai-btn img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  transition: transform 0.2s ease;
+}
+
+.geo-ai-btn:hover img {
+  transform: scale(1.1);
+}
+
+@media (max-width: 640px) {
+  .geo-ai-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
 /* Reading Progress Bar (Top of Screen) */
 .reading-progress-bar {
   position: fixed;

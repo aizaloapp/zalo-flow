@@ -50,17 +50,20 @@
 - Lưu ý Windows SmartScreen: Khi xuất hiện màn hình "Windows protected your PC", bấm "More info" -> "Run anyway" (phần mềm cộng đồng chưa mua chứng chỉ thương mại Microsoft, sạch 0/70 trên VirusTotal).
 
 ## Cẩm Nang & Bài Viết Chuyên Sâu
-- Cách dạy bot Zalo cập nhật kiến thức tự động: https://aizalo.com/blog/cach-day-bot-zalo-cap-nhat-kien-thuc-tu-dong.html
-- Quản lý tin nhắn Zalo bằng Chrome Extension: https://aizalo.com/blog/cach-nhan-thong-bao-va-quan-ly-tin-nhan-zalo-bang-chrome-extension.html
+- Cách dạy bot Zalo cập nhật kiến thức tự động: https://aizalo.com/blog/cach-day-bot-zalo-cap-nhat-kien-thuc-tu-dong
+- Quản lý tin nhắn Zalo bằng Chrome Extension: https://aizalo.com/blog/cach-nhan-thong-bao-va-quan-ly-tin-nhan-zalo-bang-chrome-extension
 - Hướng dẫn cài đặt & sử dụng Tiện ích Chrome Extension: https://aizalo.com/guide
-- Cách đăng nhập nhiều tài khoản Zalo trên máy tính: https://aizalo.com/blog/cach-dang-nhap-nhieu-tai-khoan-zalo-tren-may-tinh.html
-- Cách huấn luyện AI bán hàng Zalo bằng bảng giá riêng: https://aizalo.com/blog/cach-huan-luyen-ai-ban-hang-zalo-bang-bang-gia-rieng.html
-- Cách hẹn giờ gửi tin nhắn Zalo cá nhân tự động: https://aizalo.com/blog/cach-hen-gio-gui-tin-nhan-zalo-ca-nhan-tu-dong.html
-- Bí quyết chống khóa nick Zalo: https://aizalo.com/blog/cach-gui-tin-nhan-tu-dong-tren-zalo-khong-bi-khoa.html
-- Hướng dẫn cài đặt 3 phút: https://aizalo.com/blog/huong-dan-cach-tao-chatbot-zalo-ca-nhan.html
-- Tích hợp Gemini & DeepSeek: https://aizalo.com/blog/tich-hop-ai-gemini-deepseek-vao-zalo-ca-nhan.html
-- Giải pháp Zalo CRM 2026: https://aizalo.com/blog/zalo-crm-la-gi-giai-phap-quan-ly-tin-nhan-cskh.html
+- Cách đăng nhập nhiều tài khoản Zalo trên máy tính: https://aizalo.com/blog/cach-dang-nhap-nhieu-tai-khoan-zalo-tren-may-tinh
+- Cách huấn luyện AI bán hàng Zalo bằng bảng giá riêng: https://aizalo.com/blog/cach-huan-luyen-ai-ban-hang-zalo-bang-bang-gia-rieng
+- Cách hẹn giờ gửi tin nhắn Zalo cá nhân tự động: https://aizalo.com/blog/cach-hen-gio-gui-tin-nhan-zalo-ca-nhan-tu-dong
+- Bí quyết chống khóa nick Zalo: https://aizalo.com/blog/cach-gui-tin-nhan-tu-dong-tren-zalo-khong-bi-khoa
+- Hướng dẫn cài đặt 3 phút: https://aizalo.com/blog/huong-dan-cach-tao-chatbot-zalo-ca-nhan
+- Tích hợp Gemini & DeepSeek: https://aizalo.com/blog/tich-hop-ai-gemini-deepseek-vao-zalo-ca-nhan
+- Giải pháp Zalo CRM 2026: https://aizalo.com/blog/zalo-crm-la-gi-giai-phap-quan-ly-tin-nhan-cskh
 
-## Tài Liệu Toàn Văn & Tri Thức Bot AI
+## Tài Liệu Toàn Văn & Tri Thức Máy Đọc (Machine-Readable Hub)
+- Đặc tả tính năng chuyên sâu (Features Specification): https://aizalo.com/features.md
+- Chỉ thị hệ thống cho AI Agents: https://aizalo.com/.well-known/agent-instructions.md
 - Tri thức Mini Second Brain Wiki (Markdown): https://aizalo.com/guide.md
+- Danh mục API OpenAPI 3.1: https://aizalo.com/openapi.json
 - Xem toàn văn chi tiết tại: https://aizalo.com/llms-full.txt

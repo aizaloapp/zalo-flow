@@ -5,17 +5,10 @@
   X-Frame-Options: SAMEORIGIN
   Referrer-Policy: strict-origin-when-cross-origin
 
-/auth.md
+/*.md
   Content-Type: text/markdown; charset=utf-8
   Access-Control-Allow-Origin: *
-
-/guide.md
-  Content-Type: text/markdown; charset=utf-8
-  Access-Control-Allow-Origin: *
-
-/wiki.md
-  Content-Type: text/markdown; charset=utf-8
-  Access-Control-Allow-Origin: *
+  Cache-Control: public, max-age=3600, stale-while-revalidate=86400
 
 /.well-known/api-catalog
   Content-Type: application/json; charset=utf-8
