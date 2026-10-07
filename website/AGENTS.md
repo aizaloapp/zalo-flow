@@ -111,10 +111,19 @@ Khi chuyển giao hoặc cấu hình tên miền chính (`aizalo.com`) sang Clou
    - Endpoint gửi dữ liệu tracking (`/api/event`) BẮT BUỘC proxy qua Cloudflare Pages Functions hoặc `website/src/_worker.js` chuyển tiếp ngầm về máy chủ Analytics.
    - Tuyệt đối không để lộ username cá nhân, subdomain trực tiếp (`dragonfarm2509.workers.dev`) trên mã nguồn công khai, bảo đảm 100% tuân thủ mô hình First-Party Tracking và quyền riêng tư.
 7. **Video Tutorial Embed & VideoObject Schema Contract:**
-   - Khi bài viết blog có video hướng dẫn minh họa thực tế, BẮT BUỘC nhúng video bằng `<iframe>` tỷ lệ khung hình 16:9 chuẩn responsive (`.video-wrapper` hoặc `aspect-ratio: 16/9; max-width: 100%; border-radius: 12px;`).
-   - Sử dụng domain tăng cường quyền riêng tư `https://www.youtube-nocookie.com/embed/{id}` và gắn cờ `loading="lazy"` cùng `title` rõ nghĩa để tối ưu điểm Core Web Vitals (LCP/TBT).
-   - BẮT BUỘC khai báo đối tượng Schema `VideoObject` theo chuẩn Schema.org bên trong mảng `@graph` của bài viết (bao gồm `name`, `description`, `thumbnailUrl`, `uploadDate`, `contentUrl`, `embedUrl`).
-   - BẮT BUỘC cập nhật `"dateModified": "YYYY-MM-DD"` của bài viết lên ngày mới nhất để gửi tín hiệu Freshness tới Googlebot và các công cụ tìm kiếm AI (GEO).
+   - **Mô Hình Phễu Đa Tầng (Full-Funnel Video Synergy):** Khi có video demo/hướng dẫn chính thức, BẮT BUỘC tích hợp đồng thời ở 2 tầng:
+     (1) **Trang Chủ (Hero Video Showcase):** Đặt tại section `#demo-video` ngay dưới Hero CTA, bọc trong Card Mock Window có 3 chấm màu điều khiển, bo góc $\ge 14\text{px}$, viền Neon Cyan phát sáng, kèm 3 mốc thời gian nhảy nhanh (Quick Timestamps) và nút neo `🎬 Xem video demo 76s ➔` tại `hero-sub-actions`.
+     (2) **Cẩm Nang Blog:** Nhúng trực tiếp tại mục hướng dẫn thực hành của bài viết liên quan nhất, thay thế hoàn toàn các khối ảnh liên kết tĩnh cũ.
+   - **Chuẩn Nhúng An Toàn & Core Web Vitals:** 
+     - BẮT BUỘC nhúng video bằng `<iframe>` tỷ lệ 16:9 chuẩn responsive (`.video-wrapper`).
+     - BẮT BUỘC dùng domain tăng cường quyền riêng tư `https://www.youtube-nocookie.com/embed/{id}` và gắn cờ `loading="lazy"` cùng thuộc tính `title` mô tả rõ nghĩa để bảo toàn điểm số PageSpeed 95+ và LCP/TBT.
+   - **Khai Báo Dữ Liệu Cấu Trúc (VideoObject Schema):**
+     - BẮT BUỘC khai báo đối tượng `VideoObject` theo chuẩn Schema.org bên trong mảng `@graph` trên CẢ Trang Chủ (`index.html`) lẫn bài viết Blog.
+     - Bao gồm đầy đủ: `name`, `description`, `thumbnailUrl`, `uploadDate`, `duration`, `contentUrl`, `embedUrl`, `publisher`.
+     - BẮT BUỘC cập nhật `"dateModified": "YYYY-MM-DD"` của bài viết lên ngày mới nhất để kích hoạt tín hiệu Freshness cho Googlebot và AI Search (GEO).
+   - **Vòng Khép Kín Sau Triển Khai (Post-Deploy Closed Loop):**
+     - Sau lệnh `npx wrangler pages deploy website/dist`, Agent BẮT BUỘC chạy ngay `node scripts/audit-aizalo.mjs` để xác minh Pass 2 Live Edge CDN đạt 100/100.
+     - Sau khi audit xanh, BẮT BUỘC kích hoạt `npm run index:all` để gửi tín hiệu lập chỉ mục tự động tức thì tới Google Indexing API và IndexNow (Bing / SearchGPT).
 8. **Blog Semantic Layout & Anti-Regression Invariant:**
    - **Footer Blog Tối Giản:** Mọi bài viết blog BẮT BUỘC chỉ sử dụng cấu trúc footer tối giản `.footer > .container > .footer-bottom`. TUYỆT ĐỐI KHÔNG mang cấu trúc `.footer-links-group` hay `.footer-col` của Landing Page vào bài viết Blog gây mất style CSS.
    - **Related Posts Grid 3 Cột:** Khối `.related-grid` BẮT BUỘC chỉ chứa đúng các thẻ con dạng `<a href="..." class="related-card">` (kèm `.related-card-badge`, `.related-card-title`, `.related-card-desc`, `.related-card-meta`). TUYỆT ĐỐI KHÔNG sử dụng class `.blog-card` hoặc nhúng ảnh thumbnail lớn `.card-thumb` làm vỡ CSS Grid 3 cột sang ngang.

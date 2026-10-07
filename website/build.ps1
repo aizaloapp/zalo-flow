@@ -45,6 +45,11 @@ if (Test-Path (Join-Path $srcDir "favicon*.*")) {
     Copy-Item -Path (Join-Path $srcDir "favicon*.*") -Destination $distDir -Force
 }
 
+# Copy OG Images at Root
+if (Test-Path (Join-Path $srcDir "og-image*.*")) {
+    Copy-Item -Path (Join-Path $srcDir "og-image*.*") -Destination $distDir -Force
+}
+
 # Copy GEO / AI Crawler, Agent Readiness & IndexNow Key text files
 if (Test-Path (Join-Path $srcDir "*.txt")) {
     Copy-Item -Path (Join-Path $srcDir "*.txt") -Destination $distDir -Force

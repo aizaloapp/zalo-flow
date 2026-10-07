@@ -58,6 +58,15 @@ try {
   deduct('technical', 10, 'Không đọc được package.json để làm mốc chân lý thực thể', 'P1');
 }
 
+// 1.1 Brand Fallback Asset Check (Rule 8)
+const brandFallbackJpg = path.join(srcDir, 'og-image.jpg');
+const brandFallbackPng = path.join(srcDir, 'og-image.png');
+if (!fs.existsSync(brandFallbackJpg) || !fs.existsSync(brandFallbackPng)) {
+  deduct('technical', 10, 'Thiếu tệp ảnh thương hiệu fallback og-image.jpg hoặc og-image.png tại root website/src (Rule 8)', 'P1');
+} else {
+  console.log('   ✔️ Brand Fallback Assets (og-image.jpg & og-image.png) verified.');
+}
+
 // 2. Discover HTML files
 const htmlFiles = [];
 if (fs.existsSync(path.join(srcDir, 'index.html'))) {
@@ -137,6 +146,34 @@ for (const file of htmlFiles) {
   if (file.isHome || file.isEnHome || file.rel === 'blog/index.html' || file.rel === 'en/blog/index.html') {
     if (!content.includes('hreflang="vi"') || !content.includes('hreflang="en"') || !content.includes('hreflang="x-default"')) {
       deduct('technical', 5, `Trang ${file.rel} thiếu bộ thẻ alternate hreflang quốc tế (vi, en, x-default)`, 'P1');
+    }
+  }
+
+  // D3. Social Preview Cards Audit (Rule 8: 4x4 Tags, Absolute URLs, No Stock, Asset Existence)
+  const socialTags = ['og:type', 'og:title', 'og:description', 'og:url', 'og:image', 'twitter:card', 'twitter:title', 'twitter:description', 'twitter:image'];
+  const stockPatterns = ['images.unsplash.com', 'unsplash.com', 'pexels.com', 'pixabay.com', 'placeholder.com', 'picsum.photos'];
+  for (const st of stockPatterns) {
+    if (content.includes(st)) {
+      deduct('onPage', 15, `Trang ${file.rel} chứa liên kết ảnh stock cấm: ${st} (Rule 8)`, 'P0');
+    }
+  }
+  for (const st of socialTags) {
+    const hasTag = new RegExp(`(?:property|name)=["']${st}["']`, 'i').test(content);
+    if (!hasTag) {
+      deduct('onPage', 5, `Trang ${file.rel} thiếu thẻ Social Card bắt buộc: ${st} (Rule 8)`, 'P1');
+    }
+  }
+  const ogImgM = content.match(/<meta\s+[^>]*?property=["']og:image["'][^>]*?content=["']([^"']+)["']/i) ||
+                 content.match(/<meta\s+[^>]*?content=["']([^"']+)["'][^>]*?property=["']og:image["']/i);
+  if (ogImgM) {
+    const imgUrl = ogImgM[1];
+    if (!imgUrl.startsWith('https://') && !imgUrl.startsWith('http://')) {
+      deduct('onPage', 10, `Thẻ og:image trong ${file.rel} dùng đường dẫn tương đối (${imgUrl}), bắt buộc dùng URL tuyệt đối có https:// (Rule 8)`, 'P0');
+    } else if (imgUrl.startsWith('https://aizalo.com/')) {
+      const localP = path.join(srcDir, imgUrl.replace('https://aizalo.com/', ''));
+      if (!fs.existsSync(localP)) {
+        deduct('onPage', 10, `Tệp ảnh og:image trong ${file.rel} không tồn tại trên ổ đĩa: ${imgUrl} (Rule 8)`, 'P0');
+      }
     }
   }
 

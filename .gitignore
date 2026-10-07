@@ -43,6 +43,7 @@ tmp/
 *.tmp
 Screenshot*.png
 test-plan.html
+video-promo/
 
 # Visual Check Artifacts
 docs/*.visual-check.*
