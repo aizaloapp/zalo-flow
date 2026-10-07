@@ -150,4 +150,10 @@ Khi chuyển giao hoặc cấu hình tên miền chính (`aizalo.com`) sang Clou
    - Khối dữ liệu có cấu trúc JSON-LD trên trang chủ (`index.html`, `en/index.html`) BẮT BUỘC khai báo đầy đủ đối tượng `SoftwareApplication` và `Organization`.
    - BẮT BUỘC chứa các thuộc tính: `name: "Zalo-Flow"`, `alternateName`, mô tả minh bạch về mục đích nghiên cứu/học tập mã nguồn mở, và mảng liên kết thực thể `sameAs` trỏ về GitHub chính thức (`https://github.com/aizaloapp/zalo-flow`, `https://github.com/aizaloapp`).
    - *Mục đích:* Xác lập thực thể độc lập vững chắc trong Knowledge Graph của Google, Bing và các mô hình LLM, ngăn chặn dứt điểm tình trạng AI bị ngộ nhận (Brand Hallucination) với các website lừa đảo mạo danh Zalo.
+14. **Global Social Preview Cards & Brand Fallback Invariant (Rule 8):**
+   - **Bộ Thẻ Chuẩn 4x4 Khóa Cứng:** Mọi trang HTML công khai BẮT BUỘC sở hữu trọn vẹn 8 thẻ xem trước: 4 thẻ Open Graph (`og:type`, `og:title`, `og:description`, `og:url`, `og:image`) và 4 thẻ Twitter Card (`twitter:card="summary_large_image"`, `twitter:title`, `twitter:description`, `twitter:image`).
+   - **Nguyên Tắc URL Tuyệt Đối & Tồn Tại Thực Tế:** Thẻ `og:image`, `twitter:image`, `og:url` bắt buộc dùng URL tuyệt đối có đầy đủ giao thức `https://aizalo.com/...`. File ảnh khai báo bắt buộc phải thực sự tồn tại trên ổ đĩa, cấm tuyệt đối đường dẫn tương đối hoặc trỏ tới file 404.
+   - **Cấm Tuyệt Đối Ảnh Stock Placeholder:** Tuyệt đối cấm liên kết ảnh stock từ `images.unsplash.com`, `pexels.com`, `pixabay.com`, v.v.
+   - **Tấm Lưới An Toàn Thương Hiệu (Brand Fallback):** Luôn duy trì tệp `og-image.jpg` và `og-image.png` (1200x630px, tỷ lệ 1.91:1) tại cả gốc `website/src/` và `website/src/assets/`. Mọi trang không có ảnh minh họa chuyên biệt bắt buộc fallback về ảnh thương hiệu này.
+   - **Gate Kiểm Định:** Bắt buộc vượt qua `node scripts/audit-social-cards.mjs` (Pass 100%) trước khi build và deploy.
 

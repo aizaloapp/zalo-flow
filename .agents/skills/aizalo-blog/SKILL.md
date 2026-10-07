@@ -72,8 +72,9 @@ Trước khi viết bài, Agent **BẮT BUỘC** gọi MCP Tool `dataforseo` đ�
 
 #### Cấu Trúc Kim Tự Tháp Ngược Bắt Buộc:
 1. **0–5 giây đầu tiên (Thỏa mãn Intent tức thì):**
-   - Thẻ `<title>`: Kiểm soát nghiêm ngặt trong khoảng **50–70 ký tự** (bao gồm hậu tố `— AIzalo.com`) chống bị Google cắt ngắn.
-   - Thẻ `H1`: Chứa từ khóa chính số 1.
+   - **Thẻ `<title>`:** Kiểm soát nghiêm ngặt trong khoảng **50–70 ký tự** (bao gồm hậu tố `— AIzalo.com`) chống bị Google cắt ngắn.
+   - **Khóa Cứng Bộ Thẻ Chuẩn 4x4 (Rule 8):** Bắt buộc có đủ 4 thẻ Open Graph (`og:type`, `og:title`, `og:description`, `og:url`, `og:image`) và 4 thẻ Twitter Card (`twitter:card="summary_large_image"`, `twitter:title`, `twitter:description`, `twitter:image`) dùng URL tuyệt đối, cấm tuyệt đối ảnh stock placeholder.
+   - **Thẻ `H1`:** Chứa từ khóa chính số 1.
    - Thẻ `<img>` Hero Banner: Đặt ngay dưới H1.
    - **GEO Direct Answer Box (`.geo-answer-box`):** Đoạn định nghĩa chuẩn xác từ **40–60 từ** đặt trong `<p class="geo-answer-text">` để cướp trích dẫn Google AI Overview và Perplexity.
    - **Key Takeaways Box (`.geo-tldr-box`):** 4 gạch đầu dòng then chốt cho người đọc vội.
@@ -142,6 +143,9 @@ const jsonMatch = html.match(/<script type=\"application\/ld\+json\">([\s\S]*?)<
 if (jsonMatch) JSON.parse(jsonMatch[1]);
 console.log('✅ AST & Schema Validation Passed!');
 "
+
+# Đo kiểm 5 Rào chắn Social Cards (Rule 8)
+node scripts/audit-social-cards.mjs
 
 # Đo kiểm toàn diện 2-Pass đảm bảo đạt 100/100 tuyệt đối
 node scripts/audit-aizalo.mjs
