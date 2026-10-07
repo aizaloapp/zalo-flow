@@ -1724,14 +1724,23 @@ body {
   font-family: var(--font-mono, monospace);
   color: var(--cyan, #00d2ff);
   margin-left: 0.35rem;
+  white-space: nowrap !important;
 }
 
 .video-card-pill {
-  font-size: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   padding: 0.2rem 0.65rem;
-  margin: 0;
-  border-color: rgba(0, 210, 255, 0.4);
-  white-space: nowrap;
+  border-radius: 9999px;
+  background: rgba(0, 132, 255, 0.12);
+  border: 1px solid rgba(0, 210, 255, 0.4);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--cyan);
+  margin: 0 !important;
+  white-space: nowrap !important;
+  flex-shrink: 0;
 }
 
 .video-card-title {
