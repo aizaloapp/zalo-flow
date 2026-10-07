@@ -156,4 +156,11 @@ Khi chuyển giao hoặc cấu hình tên miền chính (`aizalo.com`) sang Clou
    - **Cấm Tuyệt Đối Ảnh Stock Placeholder:** Tuyệt đối cấm liên kết ảnh stock từ `images.unsplash.com`, `pexels.com`, `pixabay.com`, v.v.
    - **Tấm Lưới An Toàn Thương Hiệu (Brand Fallback):** Luôn duy trì tệp `og-image.jpg` và `og-image.png` (1200x630px, tỷ lệ 1.91:1) tại cả gốc `website/src/` và `website/src/assets/`. Mọi trang không có ảnh minh họa chuyên biệt bắt buộc fallback về ảnh thương hiệu này.
    - **Gate Kiểm Định:** Bắt buộc vượt qua `node scripts/audit-social-cards.mjs` (Pass 100%) trước khi build và deploy.
+15. **Quy Chuẩn Nhúng Video YouTube Chuẩn Hóa (Standard Video Showcase Card Invariant):**
+    - **Nhất Quán Nhận Diện (Design System Consistency):** Mọi video YouTube nhúng trên Landing Page lẫn bài viết Blog BẮT BUỘC sử dụng cấu trúc khối `.video-showcase-card` chuẩn (mô phỏng cửa sổ phần mềm công nghệ cao) thay vì thẻ `<iframe>` trần hoặc inline styles rời rạc:
+      - 3 chấm tròn macOS 🔴🟡🟢 (`.video-card-controls > .video-card-dot.red/yellow/green`).
+      - Nhãn thời lượng ngắn gọn (`.video-card-tag`: `Demo 76s` hoặc `Hướng Dẫn [Thời Lượng]`) có `white-space: nowrap !important;`.
+      - Huy hiệu nổi bật (`.video-card-pill`: `⚡ Cài 1-Click`, `⚡ Tự Động Hóa 24/7`, v.v.) có `white-space: nowrap !important; margin: 0 !important;`.
+      - Tiêu đề video (`.video-card-title`): Trong bài viết Blog (`.article-body`), tiêu đề BẮT BUỘC dùng thẻ `<div class="video-card-title">` thay vì `<h2>`/`<h3>` để bảo đảm **Semantic TOC Isolation**, không làm ô nhiễm mục lục tự động `blog-toc.js`.
+      - Khung trình phát responsive 16:9 (`.video-wrapper` bo góc $\ge 10\text{px}$, viền `1px solid rgba(255, 255, 255, 0.1)`, `https://www.youtube-nocookie.com/embed/{id}`, cờ `loading="lazy"`).
 
