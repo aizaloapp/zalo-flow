@@ -120,6 +120,7 @@ Khi chuyển giao hoặc cấu hình tên miền chính (`aizalo.com`) sang Clou
    - **Khai Báo Dữ Liệu Cấu Trúc (VideoObject Schema):**
      - BẮT BUỘC khai báo đối tượng `VideoObject` theo chuẩn Schema.org bên trong mảng `@graph` trên CẢ Trang Chủ (`index.html`) lẫn bài viết Blog.
      - Bao gồm đầy đủ: `name`, `description`, `thumbnailUrl`, `uploadDate`, `duration`, `contentUrl`, `embedUrl`, `publisher`.
+     - **Quy chuẩn ISO 8601 Timezone Khóa Cứng (uploadDate Invariant):** Thuộc tính `uploadDate` BẮT BUỘC có đầy đủ ngày, giờ, phút, giây và độ lệch múi giờ theo chuẩn ISO 8601 (ví dụ: `"uploadDate": "2026-09-20T08:00:00+07:00"` hoặc UTC `Z`). Tuyệt đối KHÔNG khai báo chỉ có ngày `YYYY-MM-DD` để ngăn ngừa dứt điểm cảnh báo "Missing timezone / Invalid date-time value" từ Google Search Console.
      - BẮT BUỘC cập nhật `"dateModified": "YYYY-MM-DD"` của bài viết lên ngày mới nhất để kích hoạt tín hiệu Freshness cho Googlebot và AI Search (GEO).
    - **Vòng Khép Kín Sau Triển Khai (Post-Deploy Closed Loop):**
      - Sau lệnh `npx wrangler pages deploy website/dist`, Agent BẮT BUỘC chạy ngay `node scripts/audit-aizalo.mjs` để xác minh Pass 2 Live Edge CDN đạt 100/100.

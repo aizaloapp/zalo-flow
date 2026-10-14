@@ -141,7 +141,10 @@ const html = fs.readFileSync('website/src/blog/<slug>.html', 'utf8');
 if (html.includes('<h2') && !html.match(/<h2 id=\"[a-z0-9-]+\"/)) throw new Error('Missing static id in H2');
 const jsonMatch = html.match(/<script type=\"application\/ld\+json\">([\s\S]*?)<\/script>/);
 if (jsonMatch) JSON.parse(jsonMatch[1]);
-console.log('✅ AST & Schema Validation Passed!');
+if (html.includes('\"@type\": \"VideoObject\"') && !html.match(/\"uploadDate\":\s*\"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:[+-]\d{2}:\d{2}|Z)\"/)) {
+  throw new Error('uploadDate trong VideoObject bắt buộc phải theo chuẩn ISO 8601 kèm múi giờ (ví dụ: YYYY-MM-DDTHH:mm:ss+07:00)');
+}
+console.log('✅ AST, Schema & VideoObject Timezone Validation Passed!');
 "
 
 # Đo kiểm 5 Rào chắn Social Cards (Rule 8)

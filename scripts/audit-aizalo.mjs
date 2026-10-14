@@ -280,6 +280,18 @@ for (const file of htmlFiles) {
             }
           }
         }
+        // Check VideoObject Schema (Google Rich Results Invariant)
+        if (type === 'VideoObject') {
+          const iso8601Regex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:[+-]\d{2}:\d{2}|Z)$/;
+          if (!node.uploadDate) {
+            deduct('technical', 10, `Đối tượng VideoObject trong ${file.rel} thiếu thuộc tính bắt buộc uploadDate`, 'P1');
+          } else if (!iso8601Regex.test(node.uploadDate)) {
+            deduct('technical', 8, `Thuộc tính uploadDate ("${node.uploadDate}") trong ${file.rel} không hợp lệ hoặc thiếu múi giờ ISO 8601 (yêu cầu dạng YYYY-MM-DDTHH:mm:ss+07:00)`, 'P1');
+          }
+          if (!node.name || !node.description || !node.thumbnailUrl) {
+            deduct('technical', 5, `Đối tượng VideoObject trong ${file.rel} thiếu các trường bắt buộc cơ bản (name, description, hoặc thumbnailUrl)`, 'P1');
+          }
+        }
       }
     } catch (err) {
       deduct('technical', 15, `Lỗi cú pháp Schema JSON-LD trong ${file.rel}: ${err.message}`, 'P0');
