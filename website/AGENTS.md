@@ -77,7 +77,7 @@ Khi chuyển giao hoặc cấu hình tên miền chính (`aizalo.com`) sang Clou
    - TUYỆT ĐỐI KHÔNG sử dụng thẻ `<h2>` hoặc `<h3>` bên trong các khối phụ trợ như CTA Box, GEO Direct Answer Box, Key Takeaways Box, hay Author Bio.
    - Các tiêu đề khối phụ trợ BẮT BUỘC dùng `<div class="cta-title">`, `<div class="geo-answer-label">` hoặc `<p><strong>...</strong></p>` để bảo toàn tính thuần khiết của cây phả hệ mục lục.
 7. **Pipeline Xuất Bản Chuyên Trách (`/aizalo-blog`):**
-   - Mọi bài viết blog mới BẮT BUỘC được điều phối qua skill chuyên trách [`.agents/skills/aizalo-blog/SKILL.md`](file:///d:/A-Du-An/Zalo-Flow/.agents/skills/aizalo-blog/SKILL.md) để bảo đảm tuân thủ 100% các bước từ nghiên cứu DataForSEO, sinh ảnh SVG vector nhẹ < 5KB đến kiểm thử AST/Schema.
+   - Mọi bài viết blog mới BẮT BUỘC được điều phối qua skill chuyên trách [`../.agents/skills/aizalo-blog/SKILL.md`](../.agents/skills/aizalo-blog/SKILL.md) để bảo đảm tuân thủ 100% các bước từ nghiên cứu DataForSEO, sinh ảnh SVG vector nhẹ < 5KB đến kiểm thử AST/Schema.
 
 ---
 
@@ -169,3 +169,8 @@ Khi chuyển giao hoặc cấu hình tên miền chính (`aizalo.com`) sang Clou
     - **Khóa Cứng `width` & `height` Trên Mọi Thẻ `<img>` (Zero-CLS):** 100% thẻ `<img>` (Logo `36x36`, ảnh bìa SVG `1200x630`, sơ đồ SVG `1000x480`/`1000x500`/`1000x450`) BẮT BUỘC khai báo tường minh thuộc tính `width` và `height` khớp tỷ lệ `viewBox`.
     - **Phân Cấp Heading Tuần Tự & Điểm Ngọt `<title>`:** Mỗi trang chỉ có duy nhất 1 thẻ `<h1>` và cấm nhảy bậc tiêu đề (`H1 -> H3` hoặc `H2 -> H4`; tiêu đề phụ trang trí tại Footer/Video Card dùng `<div class="footer-title">` / `<div class="video-card-title">`). Độ dài `<title>` bài blog giữ trong điểm ngọt **50–65 ký tự**.
     - **Bảo Mật HSTS:** Duy trì header `Strict-Transport-Security: max-age=31536000; includeSubDomains; preload` trong cả `website/src/_headers` và `website/src/_worker.js`.
+17. **Chuẩn Giao Thức `geo.new v23`, `skills-discovery-0.2.0` & Citability Trang Chủ:**
+    - **Chuẩn Liên Kết `llms.txt` (`llmstxt.org`):** Mọi tài nguyên dưới các mục `##` trong `website/src/llms.txt` BẮT BUỘC định dạng bằng cú pháp liên kết Markdown `- [Tiêu đề](https://aizalo.com/...): Mô tả` (tuyệt đối không để URL trần).
+    - **Chuẩn `skills-discovery-0.2.0` & SHA-256 Digest (`A08`):** Tệp `/.well-known/agent-skills/index.json` BẮT BUỘC dùng `"$schema": "https://schemas.agentskills.io/discovery/0.2.0/schema.json"`, mỗi skill khai báo `"type": "skill-md"` trỏ tới tệp `SKILL.md` thực tế và có trường `"digest": "sha256:<hex>"` được tính tự động trên raw bytes chuẩn hóa `LF` qua `website/build.ps1`.
+    - **Header `application/linkset+json` (`A06`) & Trung Thực Local-First (`A07`):** Duy trì `Content-Type: application/linkset+json; charset=utf-8` cho `/.well-known/api-catalog` trong `_headers`. Không tạo `/.well-known/mcp/server-card.json` giả lập cho ứng dụng Local-First.
+    - **Đồng Nhất Thực Thể & Citability (`ENT-02`, `SCH-10`, `CIT-02`):** Thống nhất tên tổ chức `"AIzalo Community"` kèm `@id: "https://aizalo.com/#organization"` và node `@type: "WebSite"` trên trang chủ. Các thẻ bài viết giới thiệu (`.blog-card`) trên trang chủ dùng `<div class="card-title">` thay vì `<h3>` để bảo toàn tỷ lệ trích dẫn AI. Duy trì 3 trang tín nhiệm `/about`, `/privacy`, `/terms` trong `sitemap.xml`.
