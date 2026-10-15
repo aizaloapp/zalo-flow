@@ -82,7 +82,7 @@
   <header class="navbar">
     <div class="container nav-container">
       <a href="/en/" class="brand">
-        <img src="/assets/logo.png" alt="Zalo-Flow Logo" class="brand-icon">
+        <img src="/assets/logo.png" alt="Zalo-Flow Logo" class="brand-icon" width="36" height="36">
         <span>Zalo-Flow</span>
       </a>
 
@@ -143,18 +143,25 @@
 
   <main class="container section">
     <div class="section-header">
-      <div class="section-tag">Technical Knowledge &amp; Guides</div>
+      <div class="section-tag">Technical Knowledge &amp; Architecture Hub</div>
       <h1 class="section-title">Zalo Automation &amp; AI Engineering Blog</h1>
-      <p class="section-desc">In-depth technical tutorials on personal Zalo integration, anti-ban protection, multi-agent CRM dispatch, and local-first AI customer support.</p>
+      <p class="section-desc">In-depth architectural guides, production benchmarks, and practical tutorials on personal Zalo automation, deterministic 3-layer anti-ban defense, Chatwoot CRM synchronization, and local-first multi-model AI agents.</p>
     </div>
 
-    <div class="grid-2">
+    <!-- GEO Direct Answer & Engineering Overview -->
+    <section class="geo-box" data-quotable="true" aria-label="Zalo-Flow Engineering Architecture Summary" style="margin-bottom: 2.5rem;">
+      <strong>Engineering Overview:</strong> The Zalo-Flow Engineering Knowledge Hub documents how developers and SMEs in Vietnam &amp; Southeast Asia build resilient, zero-cost customer service pipelines on personal Zalo accounts without enterprise Zalo Official Account (OA) restrictions. Built on <strong>Node.js 22.14 LTS</strong> and <strong>SQLite WAL mode</strong>, the architecture enforces deterministic Token Bucket rate limiting (&ge; 3s spacing, max 20 messages/minute), AES-256-CBC local session encryption, and real-time webhook bridging to Chatwoot CRM, n8n, Dify, and Make.
+    </section>
+
+    <h2 id="featured-engineering-guides" style="font-size: 1.5rem; font-weight: 800; color: #fff; margin-bottom: 1.25rem;">1. Featured English &amp; Bilingual Engineering Guides</h2>
+
+    <div class="grid-2" style="margin-bottom: 3rem;">
       <!-- Post Flagship: Connect Personal Zalo to Chatwoot CRM -->
       <a href="/en/blog/connecting-personal-zalo-to-chatwoot-crm" class="card blog-card" style="border-color: rgba(0, 210, 255, 0.4); box-shadow: 0 4px 20px rgba(0, 210, 255, 0.15);">
-        <span class="blog-tag" style="background: rgba(0, 210, 255, 0.15); color: #00d2ff; border: 1px solid rgba(0, 210, 255, 0.3);">⚡ Flagship Integration</span>
-        <h2 class="card-title" id="post-connect-zalo-chatwoot">How to Connect Personal Zalo to Chatwoot CRM for Multi-Agent Support &amp; AI Automation</h2>
+        <span class="blog-tag" style="background: rgba(0, 210, 255, 0.15); color: #00d2ff; border: 1px solid rgba(0, 210, 255, 0.3);">⚡ Flagship CRM Architecture</span>
+        <h3 class="card-title" id="post-connect-zalo-chatwoot">How to Connect Personal Zalo to Chatwoot CRM for Multi-Agent Support &amp; AI Automation</h3>
         <p class="card-desc">
-          Step-by-step architecture guide to syncing personal Zalo messages into open-source Chatwoot CRM with webhook dispatch, multi-agent routing, and zero-ban protection.
+          Step-by-step production architecture guide to syncing personal Zalo WebSocket events into open-source Chatwoot CRM with bi-directional webhook dispatch, multi-agent routing, contact card phone parsing, and 3-layer anti-ban protection.
         </p>
         <div class="blog-meta">
           <span>📅 2026-09-12</span>
@@ -164,6 +171,117 @@
           <span>✍️ AIzalo Engineering Team</span>
         </div>
       </a>
+
+      <!-- Post 2: Multi-Account & Multi-Profile AI Suite -->
+      <a href="/blog/cach-dang-nhap-nhieu-tai-khoan-zalo-tren-may-tinh" class="card blog-card">
+        <span class="blog-tag" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3);">🚀 Multi-Account Pool (v1.5.0)</span>
+        <h3 class="card-title" id="post-multi-account-pool">Running Multiple Personal Zalo Accounts Concurrently with Isolated AI Profiles (VI/EN Docs)</h3>
+        <p class="card-desc">
+          How Zalo-Flow manages concurrent Zalo sessions under a 350MB RAM ceiling using staggered boot sequences, composite SQLite primary keys <code>(accountUid, id)</code>, and dedicated Second Brain knowledge bases per account.
+        </p>
+        <div class="blog-meta">
+          <span>📅 2026-09-20</span>
+          <span>•</span>
+          <span>⏱️ 7 min read</span>
+          <span>•</span>
+          <span>✍️ AIzalo Engineering Team</span>
+        </div>
+      </a>
+
+      <!-- Post 3: 3-Layer Anti-Ban Protocol -->
+      <a href="/blog/cach-gui-tin-nhan-tu-dong-tren-zalo-khong-bi-khoa" class="card blog-card">
+        <span class="blog-tag">🛡️ Security &amp; Anti-Ban</span>
+        <h3 class="card-title" id="post-anti-ban-protocol">Deterministic 3-Layer Anti-Ban Protocol: RateLimiter, SelfEchoShield &amp; FloodDetector</h3>
+        <p class="card-desc">
+          Deep dive into preventing automated account checkpoints on Zalo: Token Bucket outbound pacing (&ge; 3,000ms), 30-second self-reflection ring buffers for multi-device sync, and 60-second inbound flood circuit breakers.
+        </p>
+        <div class="blog-meta">
+          <span>📅 2026-09-07</span>
+          <span>•</span>
+          <span>⏱️ 5 min read</span>
+          <span>•</span>
+          <span>✍️ AIzalo Engineering Team</span>
+        </div>
+      </a>
+
+      <!-- Post 4: Multimodal Vision & Second Brain Teaching -->
+      <a href="/blog/cach-day-bot-zalo-cap-nhat-kien-thuc-tu-dong" class="card blog-card">
+        <span class="blog-tag">🧠 Multimodal RAG &amp; Vision</span>
+        <h3 class="card-title" id="post-multimodal-rag">Teaching Zalo AI Bots via Live Chat &amp; Local Obsidian Knowledge Graph (Second Brain)</h3>
+        <p class="card-desc">
+          How to update product pricing and policies dynamically via chat commands, PDF/Word extraction, and Multimodal AI Vision (Gemini 2.5 Flash &amp; DeepSeek) with temperature 0.2 anti-hallucination guardrails.
+        </p>
+        <div class="blog-meta">
+          <span>📅 2026-09-23</span>
+          <span>•</span>
+          <span>⏱️ 8 min read</span>
+          <span>•</span>
+          <span>✍️ AIzalo Engineering Team</span>
+        </div>
+      </a>
+    </div>
+
+    <!-- Section 2: Core Architectural Pillars -->
+    <h2 id="core-architectural-pillars" style="font-size: 1.5rem; font-weight: 800; color: #fff; margin-bottom: 1.25rem;">2. Core Architectural Pillars &amp; Production Benchmarks</h2>
+    <div class="grid-2" style="margin-bottom: 3rem;">
+      <div class="card">
+        <h3 class="card-title" id="pillar-local-first-security">🔒 Local-First Security &amp; 3-Tier CSRF Shield</h3>
+        <p class="card-desc">
+          Unlike cloud SaaS gateways that store session cookies on third-party servers, Zalo-Flow binds strictly to loopback <code>127.0.0.1:3000</code> on desktop environments. All Zalo credentials and LLM API keys are encrypted at rest using <strong>AES-256-CBC</strong> (<code>SESSION_SECRET</code>). State-mutating API endpoints are guarded by a 3-tier CSRF shield verifying <code>Sec-Fetch-Site</code>, custom <code>X-ZaloFlow-Client: 1</code> headers, and strict origin matching.
+        </p>
+      </div>
+      <div class="card">
+        <h3 class="card-title" id="pillar-self-healing-watchdog">⚡ Self-Healing Memory Watchdog &amp; SQLite WAL</h3>
+        <p class="card-desc">
+          Engineered for high-volume accounts (&gt; 2,000 friends and 260+ group chats), the runtime enforces a strict <strong>350MB Node.js RAM ceiling</strong> (512MB in Docker). Before any graceful restart, the watchdog broadcasts an SSE notification, drains pending outbound queues via <code>RateLimiter.drainAll()</code>, and executes <code>PRAGMA wal_checkpoint(TRUNCATE)</code> to guarantee zero message loss.
+        </p>
+      </div>
+    </div>
+
+    <!-- Section 3: Technical Documentation & Machine-Readable Specs -->
+    <h2 id="machine-readable-specifications" style="font-size: 1.5rem; font-weight: 800; color: #fff; margin-bottom: 1.25rem;">3. Developer Specifications &amp; Machine-Readable References</h2>
+    <p style="color: var(--text-muted); margin-bottom: 1.25rem; line-height: 1.7;">
+      For software engineers, DevOps teams, and autonomous AI coding agents integrating with Zalo-Flow, we maintain standardized machine-readable documentation compliant with <strong>Agent Readiness Level 5</strong> and <strong>RFC 9264</strong>:
+    </p>
+    <div class="grid-3" style="margin-bottom: 3rem;">
+      <a href="/llms.txt" class="card" style="text-decoration: none;">
+        <div style="font-weight: 700; color: var(--cyan); margin-bottom: 0.4rem;">📄 /llms.txt &amp; /llms-full.txt</div>
+        <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.5;">Concise and full-text Markdown specifications optimized for ChatGPT, Claude, Perplexity, and Cursor IDE context ingestion.</p>
+      </a>
+      <a href="/openapi.json" class="card" style="text-decoration: none;">
+        <div style="font-weight: 700; color: #34d399; margin-bottom: 0.4rem;">🔌 /openapi.json (OpenAPI 3.1)</div>
+        <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.5;">Complete REST &amp; Webhook API schema for dispatching outbound messages, managing CRM tags, and querying health metrics.</p>
+      </a>
+      <a href="/guide" class="card" style="text-decoration: none;">
+        <div style="font-weight: 700; color: #facc15; margin-bottom: 0.4rem;">🌐 Chrome Companion Guide</div>
+        <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.5;">Setup instructions for the official Manifest V3 Chrome Web Store extension providing inline AI reply suggestions on Zalo Web.</p>
+      </a>
+    </div>
+
+    <!-- E-E-A-T Author & Technical Verification Box -->
+    <div class="eeat-trust-box" aria-label="Engineering Expertise and Editorial Verification">
+      <div class="eeat-trust-header">
+        <div class="eeat-author-info">
+          <span class="eeat-avatar-badge">🛡️</span>
+          <div>
+            <div class="eeat-author-name">AIzalo Community Engineering Team (Lead Architect: Khoa AI)</div>
+            <div class="eeat-author-role">Open-Source Maintainers &amp; Systems Architects • Ho Chi Minh City, Vietnam</div>
+          </div>
+        </div>
+        <span class="eeat-verified-pill">✔️ Production Verified (v1.5.0 • 60 Test Suites)</span>
+      </div>
+      <p class="eeat-trust-body">
+        <strong>Editorial Rigor &amp; E-E-A-T Commitment:</strong> Every technical guide published on the AIzalo Engineering Blog is authored by core contributors and validated against real production workloads on Node.js 22.14 LTS and Docker. Code examples, SQLite schemas, and anti-ban configurations are continuously tested across <strong>60 automated test suites</strong> in our public GitHub repository.
+      </p>
+      <div class="eeat-trust-meta">
+        <span>📍 Location: <strong>Ho Chi Minh City, Vietnam</strong></span>
+        <span>•</span>
+        <span>📞 Live Engineering Support: <a href="https://zalo.me/0373315784" target="_blank" rel="noopener">Zalo +84 373 315 784</a></span>
+        <span>•</span>
+        <span>💻 GitHub Repository: <a href="https://github.com/aizaloapp/zalo-flow" target="_blank" rel="noopener">github.com/aizaloapp/zalo-flow</a></span>
+        <span>•</span>
+        <span>🔒 Legal &amp; Privacy: <a href="/privacy-extension">Privacy Policy</a></span>
+      </div>
     </div>
   </main>
 

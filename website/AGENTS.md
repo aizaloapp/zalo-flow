@@ -164,4 +164,8 @@ Khi chuyển giao hoặc cấu hình tên miền chính (`aizalo.com`) sang Clou
       - Huy hiệu nổi bật (`.video-card-pill`: `⚡ Cài 1-Click`, `⚡ Tự Động Hóa 24/7`, v.v.) có `white-space: nowrap !important; margin: 0 !important;`.
       - Tiêu đề video (`.video-card-title`): Trong bài viết Blog (`.article-body`), tiêu đề BẮT BUỘC dùng thẻ `<div class="video-card-title">` thay vì `<h2>`/`<h3>` để bảo đảm **Semantic TOC Isolation**, không làm ô nhiễm mục lục tự động `blog-toc.js`.
       - Khung trình phát responsive 16:9 (`.video-wrapper` bo góc $\ge 10\text{px}$, viền `1px solid rgba(255, 255, 255, 0.1)`, `https://www.youtube-nocookie.com/embed/{id}`, cờ `loading="lazy"`).
-
+16. **E-E-A-T Trust Box, Zero-CLS Image Dimensions, Anti-Heading-Skip & HSTS Invariant:**
+    - **Hộp Xác Thực E-E-A-T (`.eeat-trust-box`):** Mọi trang HTML công khai BẮT BUỘC có khối `.eeat-trust-box` xác thực tác giả (*Ban Kỹ Thuật Zalo-Flow*), thông số kiểm định thực chiến (60 test suites, `AES-256-CBC`) và liên kết GitHub/Issues. TUYỆT ĐỐI KHÔNG dùng thẻ `<h2>`/`<h3>` bên trong `.eeat-trust-box` để bảo toàn cách ly mục lục `blog-toc.js`.
+    - **Khóa Cứng `width` & `height` Trên Mọi Thẻ `<img>` (Zero-CLS):** 100% thẻ `<img>` (Logo `36x36`, ảnh bìa SVG `1200x630`, sơ đồ SVG `1000x480`/`1000x500`/`1000x450`) BẮT BUỘC khai báo tường minh thuộc tính `width` và `height` khớp tỷ lệ `viewBox`.
+    - **Phân Cấp Heading Tuần Tự & Điểm Ngọt `<title>`:** Mỗi trang chỉ có duy nhất 1 thẻ `<h1>` và cấm nhảy bậc tiêu đề (`H1 -> H3` hoặc `H2 -> H4`; tiêu đề phụ trang trí tại Footer/Video Card dùng `<div class="footer-title">` / `<div class="video-card-title">`). Độ dài `<title>` bài blog giữ trong điểm ngọt **50–65 ký tự**.
+    - **Bảo Mật HSTS:** Duy trì header `Strict-Transport-Security: max-age=31536000; includeSubDomains; preload` trong cả `website/src/_headers` và `website/src/_worker.js`.

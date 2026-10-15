@@ -1,4 +1,5 @@
 /*
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
   Content-Signal: search=yes, ai-train=yes, ai-input=yes
   Link: </llms.txt>; rel="describedby"; type="text/markdown", </.well-known/api-catalog>; rel="service-desc"
   X-Content-Type-Options: nosniff

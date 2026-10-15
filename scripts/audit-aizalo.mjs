@@ -177,12 +177,28 @@ for (const file of htmlFiles) {
     }
   }
 
-  // E. Heading Hierarchy (H1, H2, H3)
+  // E. Heading Hierarchy (H1, H2, H3) & Anti-Skip Check
   const h1Matches = content.match(/<h1[^>]*>/gi) || [];
   if (h1Matches.length === 0) {
     deduct('onPage', 15, `Trang ${file.rel} không có thẻ <h1> nào`, 'P0');
   } else if (h1Matches.length > 1) {
     deduct('onPage', 8, `Trang ${file.rel} có ${h1Matches.length} thẻ <h1> (yêu cầu duy nhất 1 thẻ <h1>)`, 'P1');
+  }
+
+  const allHeadings = [...content.matchAll(/<h([1-6])\b[^>]*>/gi)].map(m => parseInt(m[1], 10));
+  for (let i = 1; i < allHeadings.length; i++) {
+    if (allHeadings[i] > allHeadings[i - 1] + 1) {
+      deduct('onPage', 5, `Trang ${file.rel} bị nhảy bậc thẻ tiêu đề từ <h${allHeadings[i - 1]}> xuống thẳng <h${allHeadings[i]}>`, 'P2');
+      break;
+    }
+  }
+
+  // E2. Image Explicit Width & Height Check (Zero-CLS Gate)
+  const imgTags = content.match(/<img\b[^>]*>/gi) || [];
+  for (const imgTag of imgTags) {
+    if (!/\bwidth=["']\d+["']/i.test(imgTag) || !/\bheight=["']\d+["']/i.test(imgTag)) {
+      deduct('technical', 3, `Thẻ <img> trong ${file.rel} thiếu thuộc tính kích thước width/height tường minh: ${imgTag.slice(0, 70)}...`, 'P2');
+    }
   }
 
   // Check H2 and H3 static ID (Anti-Client-Slug Invariant)
@@ -194,13 +210,16 @@ for (const file of htmlFiles) {
     }
   }
 
-  // F. Semantic Isolation (Anti-TOC Breakage)
-  // Check if H2 or H3 is inside cta-box, geo-answer-box, or geo-tldr-box
-  const ctaBlocks = content.match(/<div class=["'][^"']*cta-box[^"']*["'][\s\S]*?<\/div>/gi) || [];
+  // F. Semantic Isolation (Anti-TOC Breakage) & E-E-A-T Trust Box Verification
+  // Check if H2 or H3 is inside cta-box, geo-answer-box, geo-tldr-box, or eeat-trust-box
+  const ctaBlocks = content.match(/<div class=["'][^"']*(?:cta-box|eeat-trust-box)[^"']*["'][\s\S]*?<\/div>/gi) || [];
   for (const b of ctaBlocks) {
     if (/<h[23][^>]*>/i.test(b)) {
-      deduct('onPage', 10, `Phát hiện thẻ H2/H3 bên trong khối CTA Box trong ${file.rel} (vi phạm Semantic Isolation, gây vỡ TOC)`, 'P0');
+      deduct('onPage', 10, `Phát hiện thẻ H2/H3 bên trong khối CTA/EEAT Box trong ${file.rel} (vi phạm Semantic Isolation, gây vỡ TOC)`, 'P0');
     }
+  }
+  if (!content.includes('eeat-trust-box')) {
+    deduct('geo', 5, `Trang ${file.rel} thiếu khối xác thực chuyên môn & tác giả E-E-A-T (.eeat-trust-box)`, 'P2');
   }
 
   // G. GEO Metrics: Direct Answer Box & Key Takeaways
@@ -404,7 +423,7 @@ if (!fs.existsSync(llmsFullPath)) {
   }
 }
 
-// Check _headers for RFC 9264 and noindex
+// Check _headers for RFC 9264, HSTS, and noindex
 const headersPath = path.join(srcDir, '_headers');
 if (!fs.existsSync(headersPath)) {
   deduct('agentReadiness', 15, 'Thiếu tệp _headers cho Cloudflare Pages', 'P1');
@@ -415,6 +434,9 @@ if (!fs.existsSync(headersPath)) {
   }
   if (!hContent.includes('X-Robots-Tag: noindex')) {
     deduct('technical', 8, 'Thiếu X-Robots-Tag: noindex cho llms-full.txt trong _headers', 'P1');
+  }
+  if (!hContent.includes('Strict-Transport-Security')) {
+    deduct('technical', 5, 'Thiếu HTTP header bảo mật Strict-Transport-Security (HSTS) trong _headers', 'P2');
   }
 }
 

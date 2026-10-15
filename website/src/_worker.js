@@ -58,6 +58,7 @@ export default {
         status: 200,
         headers: {
           "Content-Type": "text/markdown; charset=utf-8",
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
           "Vary": "Accept",
           "Cache-Control": "public, max-age=3600",
           "Content-Signal": "search=yes, ai-train=yes, ai-input=yes",

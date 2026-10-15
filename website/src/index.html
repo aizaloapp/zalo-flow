@@ -79,7 +79,20 @@
         "name": "Cộng Đồng Zalo-Flow (AIzalo Community)",
         "alternateName": "AIzalo Community",
         "url": "https://aizalo.com",
-        "description": "Cộng đồng mã nguồn mở phi thương mại nghiên cứu kiến trúc tự động hóa Zalo cá nhân an toàn.",
+        "logo": "https://aizalo.com/assets/logo.png",
+        "description": "Tổ chức kỹ thuật mã nguồn mở phi thương mại tại Việt Nam chuyên nghiên cứu kiến trúc tự động hóa Zalo cá nhân an toàn, kết nối Chatwoot CRM và trợ lý AI đa mô hình.",
+        "location": {
+          "@type": "Place",
+          "name": "TP. Hồ Chí Minh, Việt Nam"
+        },
+        "areaServed": "VN",
+        "contactPoint": {
+          "@type": "ContactPoint",
+          "contactType": "technical support",
+          "telephone": "+84-373-315-784",
+          "url": "https://zalo.me/0373315784",
+          "availableLanguage": ["Vietnamese", "English"]
+        },
         "sameAs": [
           "https://github.com/aizaloapp/zalo-flow",
           "https://github.com/aizaloapp",
@@ -167,7 +180,7 @@
   <header class="navbar">
     <div class="container nav-container">
       <a href="/" class="brand">
-        <img src="/assets/logo.png" alt="Zalo-Flow Logo" class="brand-icon">
+        <img src="/assets/logo.png" alt="Zalo-Flow Logo" class="brand-icon" width="36" height="36">
         <span>Zalo-Flow</span>
         <span class="brand-tag">v1.5.0</span>
       </a>
@@ -295,9 +308,9 @@
           </div>
         </div>
 
-        <!-- GEO Quotable Definition Box (For AI Citations) -->
-        <section class="geo-box" data-quotable="true" aria-label="Định nghĩa Zalo-Flow cho công cụ tìm kiếm AI">
-          <strong>Zalo-Flow là gì?</strong> Zalo-Flow là phần mềm mã nguồn mở (MIT + Commons Clause) giúp tạo <strong>chatbot Zalo cá nhân</strong> trả lời tin nhắn tự động 24/7 mà không cần tài khoản doanh nghiệp Zalo OA. Ứng dụng chạy trực tiếp trên máy tính Windows hoặc Docker, tiêu thụ dưới 100MB RAM, tích hợp AI thông minh (Gemini, DeepSeek) và triệt tiêu nguy cơ khóa tài khoản nhờ cơ chế Anti-ban 3 lớp (giãn cách &gt;= 3s, bộ đệm Self-Echo Shield và tự ngắt khi bị dội tin).
+        <!-- GEO Quotable Definition Box (For AI Citations & Entity Clarity: Who, What, Where) -->
+        <section class="geo-box" data-quotable="true" aria-label="Định nghĩa thực thể Zalo-Flow cho công cụ tìm kiếm AI">
+          <strong>Zalo-Flow là gì?</strong> Zalo-Flow là nền tảng phần mềm mã nguồn mở (MIT + Commons Clause) do <strong>Đội ngũ Kỹ sư AIzalo Community tại TP. Hồ Chí Minh, Việt Nam</strong> phát triển, giúp cá nhân kinh doanh và doanh nghiệp SME tạo <strong>chatbot Zalo cá nhân</strong> trả lời tin nhắn tự động 24/7 mà không cần tài khoản doanh nghiệp Zalo OA. Ứng dụng chạy cục bộ trực tiếp trên máy tính Windows, macOS, Linux hoặc Docker, tiêu thụ dưới 100MB RAM, tích hợp AI đa mô hình (Gemini, DeepSeek, OpenAI), đồng bộ Chatwoot CRM và bảo vệ tài khoản bằng cơ chế Anti-ban 3 lớp (giãn cách &gt;= 3s, bộ đệm Self-Echo Shield 30s và tự ngắt Flood Detector).
         </section>
       </div>
     </section>
@@ -316,7 +329,7 @@
             <span class="video-card-pill">⚡ Cài 1-Click</span>
           </div>
 
-          <h3 class="video-card-title" id="video-demo-van-hanh">Xem Zalo-Flow Tự Động Hóa Vận Hành</h3>
+          <div class="video-card-title" id="video-demo-van-hanh">Xem Zalo-Flow Tự Động Hóa Vận Hành</div>
 
           <div class="video-wrapper" style="margin: 0; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.1);">
             <iframe 
@@ -706,6 +719,32 @@
             </a>
           </div>
         </div>
+
+        <!-- E-E-A-T Entity & Technical Verification Box -->
+        <div class="eeat-trust-box" aria-label="Thông tin xác thực chuyên môn và đơn vị phát triển">
+          <div class="eeat-trust-header">
+            <div class="eeat-author-info">
+              <span class="eeat-avatar-badge">🛡️</span>
+              <div>
+                <div class="eeat-author-name">Đội Ngũ Kỹ Sư AIzalo Community (Lead Architect: Khoa AI)</div>
+                <div class="eeat-author-role">Đơn Vị Phát Triển &amp; Kiểm Định Kiến Trúc Zalo-Flow tại TP. Hồ Chí Minh, Việt Nam</div>
+              </div>
+            </div>
+            <span class="eeat-verified-pill">✔️ Đã Kiểm Chứng (60 Test Suites • VirusTotal 0/70)</span>
+          </div>
+          <p class="eeat-trust-body">
+            <strong>Cam kết Minh bạch &amp; Chuyên môn Kỹ thuật (E-E-A-T):</strong> Zalo-Flow (v1.5.0) là dự án mã nguồn mở được kiểm định qua <strong>60 bộ kiểm thử tự động (Unit &amp; Integration Tests)</strong> trên nền tảng Node.js 22.14 LTS và SQLite WAL. Toàn bộ mã nguồn được công khai minh bạch trên GitHub để cộng đồng kỹ sư độc lập rà soát bảo mật. Tiện ích mở rộng đi kèm đã được đội ngũ kỹ sư <strong>Google Chrome Web Store</strong> xét duyệt chính thức. Dữ liệu người dùng luôn lưu cục bộ 100% trên máy tính cá nhân với chuẩn mã hóa <strong>AES-256-CBC</strong>.
+          </p>
+          <div class="eeat-trust-meta">
+            <span>📍 Trụ sở cộng đồng: <strong>TP. Hồ Chí Minh, Việt Nam</strong></span>
+            <span>•</span>
+            <span>📞 Zalo Hỗ trợ Kỹ thuật: <a href="https://zalo.me/0373315784" target="_blank" rel="noopener">0373.315.784</a></span>
+            <span>•</span>
+            <span>💻 Mã nguồn kiểm chứng: <a href="https://github.com/aizaloapp/zalo-flow" target="_blank" rel="noopener">github.com/aizaloapp/zalo-flow</a></span>
+            <span>•</span>
+            <span>🔒 Pháp lý: <a href="/privacy-extension">Chính sách Quyền riêng tư</a></span>
+          </div>
+        </div>
       </div>
     </section>
   </main>
@@ -722,11 +761,11 @@
       <div class="footer-grid">
         <div>
           <a href="/" class="brand">
-            <img src="/assets/logo.png" alt="Zalo-Flow" class="brand-icon">
+            <img src="/assets/logo.png" alt="Zalo-Flow" class="brand-icon" width="36" height="36">
             <span>Zalo-Flow</span>
           </a>
           <p class="footer-desc">
-            Nền tảng mã nguồn mở kết nối Zalo cá nhân với Chatwoot CRM, quản lý hội thoại Live Chat, chiến dịch Remarketing và tích hợp Trợ lý AI thông minh.
+            Nền tảng mã nguồn mở do Đội ngũ Kỹ sư AIzalo Community (Việt Nam) phát triển, kết nối Zalo cá nhân với Chatwoot CRM, quản lý hội thoại Live Chat, chiến dịch Remarketing và tích hợp Trợ lý AI thông minh.
           </p>
           <p style="margin-top: 1rem; font-size: 0.8rem; color: var(--text-dim);">
             Giấy phép phát hành: <a href="https://github.com/aizaloapp/zalo-flow/blob/main/LICENSE" target="_blank" rel="noopener" style="color: var(--cyan);">MIT License with Commons Clause Condition v1.0 (Phi thương mại)</a>.
@@ -734,7 +773,7 @@
         </div>
 
         <div>
-          <h4 class="footer-title">Tài Nguyên</h4>
+          <div class="footer-title">Tài Nguyên</div>
           <ul class="footer-links">
             <li><a href="https://github.com/aizaloapp/zalo-flow/releases/latest" class="footer-link">Tải Bộ Cài Windows (.exe)</a></li>
             <li><a href="/guide" class="footer-link">Hướng Dẫn Extension Chrome</a></li>
@@ -746,12 +785,12 @@
         </div>
 
         <div>
-          <h4 class="footer-title">Cộng Đồng &amp; Pháp Lý</h4>
+          <div class="footer-title">Cộng Đồng &amp; Pháp Lý</div>
           <ul class="footer-links">
             <li><a href="https://zalo.me/g/mcihan713" target="_blank" rel="noopener" class="footer-link">Nhóm Zalo Hỗ Trợ</a></li>
             <li><a href="https://github.com/aizaloapp/zalo-flow" target="_blank" rel="noopener" class="footer-link">GitHub Repository</a></li>
             <li><a href="https://github.com/aizaloapp/zalo-flow/issues" target="_blank" rel="noopener" class="footer-link">Báo Cáo Lỗi (Issues)</a></li>
-            <li><a href="https://github.com/aizaloapp/zalo-flow/discussions" target="_blank" rel="noopener" class="footer-link">Thảo Luận (Discussions)</a></li>
+            <li><a href="https://github.com/aizaloapp/zalo-flow/releases" target="_blank" rel="noopener" class="footer-link">Nhật Ký Phát Hành (Releases)</a></li>
           </ul>
         </div>
       </div>

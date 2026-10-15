@@ -68,14 +68,14 @@ Trước khi viết bài, Agent **BẮT BUỘC** gọi MCP Tool `dataforseo` đ�
 
 ### Pha 2: Soạn Thảo Nội Dung (Inverted Pyramid Hybrid Formula)
 
-Đọc file khung xương mẫu tại: [`.agents/skills/aizalo-blog/references/post-skeleton.html`](file:///d:/A-Du-An/Zalo-Flow/.agents/skills/aizalo-blog/references/post-skeleton.html)
+Đọc file khung xương mẫu tại: [`.agents/skills/aizalo-blog/references/post-skeleton.html`](./references/post-skeleton.html)
 
 #### Cấu Trúc Kim Tự Tháp Ngược Bắt Buộc:
 1. **0–5 giây đầu tiên (Thỏa mãn Intent tức thì):**
-   - **Thẻ `<title>`:** Kiểm soát nghiêm ngặt trong khoảng **50–70 ký tự** (bao gồm hậu tố `— AIzalo.com`) chống bị Google cắt ngắn.
+   - **Thẻ `<title>`:** Kiểm soát nghiêm ngặt trong điểm ngọt **50–65 ký tự** (bao gồm hậu tố `— AIzalo.com`) để đồng thời vượt chuẩn Google SERP và bộ kiểm toán Jev-SEO chống cắt ngắn.
    - **Khóa Cứng Bộ Thẻ Chuẩn 4x4 (Rule 8):** Bắt buộc có đủ 4 thẻ Open Graph (`og:type`, `og:title`, `og:description`, `og:url`, `og:image`) và 4 thẻ Twitter Card (`twitter:card="summary_large_image"`, `twitter:title`, `twitter:description`, `twitter:image`) dùng URL tuyệt đối, cấm tuyệt đối ảnh stock placeholder.
-   - **Thẻ `H1`:** Chứa từ khóa chính số 1.
-   - Thẻ `<img>` Hero Banner: Đặt ngay dưới H1.
+   - **Thẻ `H1`:** Duy nhất 1 thẻ `<h1>` chứa từ khóa chính số 1; tuân thủ phân cấp `H1 -> H2 -> H3` tuần tự, cấm nhảy bậc (`H1 -> H3` hoặc `H2 -> H4`).
+   - **Thẻ `<img>` Khóa Cứng `width` & `height` (Zero-CLS Gate):** Mọi thẻ `<img>` (Logo `36x36`, Hero Banner `1200x630`, sơ đồ SVG `1000x480` hoặc `1000x500`) BẮT BUỘC khai báo tường minh thuộc tính `width` và `height` khớp `viewBox`.
    - **GEO Direct Answer Box (`.geo-answer-box`):** Đoạn định nghĩa chuẩn xác từ **40–60 từ** đặt trong `<p class="geo-answer-text">` để cướp trích dẫn Google AI Overview và Perplexity.
    - **Key Takeaways Box (`.geo-tldr-box`):** 4 gạch đầu dòng then chốt cho người đọc vội.
 2. **Thân bài (Storytelling Khoa AI + Hướng dẫn kỹ thuật):**
@@ -84,9 +84,9 @@ Trước khi viết bài, Agent **BẮT BUỘC** gọi MCP Tool `dataforseo` đ�
    - **Hardcoded Semantic Headings:** Mọi thẻ `<h2>`, `<h3>` phải có sẵn thuộc tính `id="tieu-de-khong-dau"` tĩnh trong HTML.
    - **Endorphin Humor & Turning Point:** Tháo nút thắt bất ngờ bằng tính năng độc quyền của Zalo-Flow (ví dụ Auto-Pause, tự nén ảnh HD...).
    - **Table Responsive Wrapper:** Mọi bảng so sánh BẮT BUỘC bọc trong `<div class="geo-table-wrapper">`.
-3. **Cuối bài (FAQ, CTA & Khối Bài Viết Liên Quan Semantic Isolation):**
+3. **Cuối bài (FAQ, CTA, E-E-A-T Trust Box & Khối Bài Viết Liên Quan Semantic Isolation):**
    - **FAQ Section:** Tối thiểu 3–4 câu hỏi trả lời chi tiết bằng `<details class="geo-faq-item">` tương ứng với Schema JSON-LD.
-   - **CTA Box:** BẮT BUỘC dùng `<div class="cta-box"><div class="cta-title">...</div>...</div>`. **TUYỆT ĐỐI KHÔNG dùng thẻ `<h2>` hoặc `<h3>` trong CTA Box** để không làm ô nhiễm bộ sinh mục lục tự động `blog-toc.js`.
+   - **CTA Box & E-E-A-T Trust Box (`.cta-box` & `.eeat-trust-box`):** Đặt cuối `.article-body`. **TUYỆT ĐỐI KHÔNG dùng thẻ `<h2>` hoặc `<h3>` bên trong `.cta-box` và `.eeat-trust-box`** (chỉ dùng `<div class="cta-title">`, `<div class="eeat-author-name">`) để bảo toàn cách ly ngữ nghĩa cho bộ sinh mục lục tự động `blog-toc.js`.
    - **Khối Bài Viết Liên Quan (`.related-posts-section`):** Đặt bên ngoài thẻ `</article>` (ngay sau `.article-layout` và trước `<footer>`), hiển thị Grid 3 bài viết ngữ cảnh liên quan nhất với tiêu đề `<h2 class="related-title" id="bai-viet-lien-quan">` để giảm Bounce Rate và tăng sức mạnh SEO internal links.
    - **Script Tương Tác UX:** BẮT BUỘC nhúng `<script src="/blog-toc.js"></script>` ở chân trang để kích hoạt Mục lục tự động và Nút Scroll-to-Top kèm Circular Reading Progress Ring.
 
@@ -94,13 +94,13 @@ Trước khi viết bài, Agent **BẮT BUỘC** gọi MCP Tool `dataforseo` đ�
 
 ### Pha 3: Sinh Bộ Tài Sản SVG Vector Độc Quyền
 
-Đọc quy chuẩn thiết kế tại: [`.agents/skills/aizalo-blog/references/svg-design-tokens.md`](file:///d:/A-Du-An/Zalo-Flow/.agents/skills/aizalo-blog/references/svg-design-tokens.md)
+Đọc quy chuẩn thiết kế tại: [`.agents/skills/aizalo-blog/references/svg-design-tokens.md`](./references/svg-design-tokens.md)
 
 Agent tạo thư mục `website/src/assets/blog/<slug>/` và sinh tối thiểu 3 file SVG vector:
 1. `anh-bia-<slug>.svg`: Kích thước `viewBox="0 0 1200 630"`, chứa badge chủ đề, tiêu đề chính 44px và mockup Zalo-Flow.
 2. `so-sanh-...svg`: Kích thước `viewBox="0 0 1000 480"`, infographic chia 3 cột so sánh.
 3. `giao-dien-...svg`: Kích thước `viewBox="0 0 1000 500"`, mockup giao diện cửa sổ Zalo-Flow desktop màu Dark/Cyan.
-*Yêu cầu kỹ thuật:* File SVG vector nhẹ < 5KB, không dùng ảnh raster ngoài, hiển thị sắc nét trên màn hình Retina/4K.
+*Yêu cầu kỹ thuật:* File SVG vector nhẹ < 5KB, không dùng ảnh raster ngoài, hiển thị sắc nét trên màn hình Retina/4K. Khi nhúng bằng thẻ `<img>`, bắt buộc ghi rõ `width` và `height` khớp với `viewBox`.
 
 ---
 
@@ -119,7 +119,7 @@ Agent tạo thư mục `website/src/assets/blog/<slug>/` và sinh tối thiểu 
 
 ### Pha 5: Ma Trận Đồng Bộ 6 Điểm Chạm, AST Validator & Deploy Guardrail
 
-Đọc bảng kiểm tra tại: [`.agents/skills/aizalo-blog/references/sync-checklist.md`](file:///d:/A-Du-An/Zalo-Flow/.agents/skills/aizalo-blog/references/sync-checklist.md)
+Đọc bảng kiểm tra tại: [`.agents/skills/aizalo-blog/references/sync-checklist.md`](./references/sync-checklist.md)
 
 #### 1. Rà soát Ma trận 6 điểm chạm:
 - [ ] 1. Thêm card bài viết mới lên đầu trang `website/src/blog/index.html`.
