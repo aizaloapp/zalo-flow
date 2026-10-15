@@ -18,7 +18,7 @@
   <!-- Open Graph / Facebook / Zalo Share -->
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://aizalo.com/en/">
-  <meta property="og:site_name" content="AIzalo — Zalo-Flow">
+  <meta property="og:site_name" content="AIzalo Community">
   <meta property="og:title" content="Zalo-Flow — Open-Source Personal Zalo Chatbot &amp; AI Automation">
   <meta property="og:description" content="Free, open-source personal Zalo automation software powered by Gemini &amp; DeepSeek AI. Features 3-layer anti-ban protection, local AES-256 encryption, and Chatwoot CRM.">
   <meta property="og:image" content="https://aizalo.com/assets/og-image.png">
@@ -48,11 +48,22 @@
   <link rel="describedby" type="text/markdown" href="/llms.txt" title="Zalo-Flow AI Documentation">
   <link rel="service-desc" type="application/json" href="/.well-known/api-catalog" title="API Catalog">
 
-  <!-- Structured Data: SoftwareApplication & FAQPage & Organization -->
+  <!-- Structured Data: WebSite, SoftwareApplication, Organization & FAQPage -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://aizalo.com/en/#website",
+        "url": "https://aizalo.com/en/",
+        "name": "AIzalo Community — Zalo-Flow",
+        "alternateName": ["AIzalo", "Zalo-Flow", "AIzalo.com"],
+        "inLanguage": "en",
+        "publisher": {
+          "@id": "https://aizalo.com/#organization"
+        }
+      },
       {
         "@type": "SoftwareApplication",
         "name": "Zalo-Flow",
@@ -70,6 +81,9 @@
         },
         "downloadUrl": "https://github.com/aizaloapp/zalo-flow/releases/latest",
         "license": "https://github.com/aizaloapp/zalo-flow/blob/main/LICENSE",
+        "author": {
+          "@id": "https://aizalo.com/#organization"
+        },
         "sameAs": [
           "https://github.com/aizaloapp/zalo-flow",
           "https://github.com/aizaloapp"
@@ -77,8 +91,9 @@
       },
       {
         "@type": "Organization",
-        "name": "AIzalo Community (Zalo-Flow Engineering Team)",
-        "alternateName": "AIzalo Community",
+        "@id": "https://aizalo.com/#organization",
+        "name": "AIzalo Community",
+        "alternateName": ["Zalo-Flow Engineering Team", "AIzalo", "Ban Kỹ Thuật Zalo-Flow"],
         "url": "https://aizalo.com/en/",
         "logo": "https://aizalo.com/assets/logo.png",
         "description": "Non-commercial open-source engineering community in Ho Chi Minh City, Vietnam researching safe personal Zalo automation, Chatwoot CRM synchronization, and multi-model AI agents.",
@@ -97,6 +112,8 @@
         "sameAs": [
           "https://github.com/aizaloapp/zalo-flow",
           "https://github.com/aizaloapp",
+          "https://chromewebstore.google.com/detail/aizalo-flow-chat-companio/ckdbkfocakhkkpjjbcclifdkgikbelan",
+          "https://www.youtube.com/@KhoaAI2509",
           "https://zalo.me/g/mcihan713"
         ]
       },
@@ -167,7 +184,7 @@
   <header class="navbar">
     <div class="container nav-container">
       <a href="/en/" class="brand">
-        <img src="/assets/logo.png" alt="Zalo-Flow Logo" class="brand-icon" width="36" height="36">
+        <img src="/assets/logo-36.png" srcset="/assets/logo-36.png 1x, /assets/logo-72.png 2x, /assets/logo-108.png 3x" alt="Zalo-Flow Logo" class="brand-icon" width="36" height="36">
         <span>Zalo-Flow</span>
         <span class="brand-tag">v1.5.0</span>
       </a>
@@ -387,7 +404,7 @@
         </div>
 
         <div class="table-scroll-hint">📱 Swipe right to view the complete comparison table →</div>
-        <div class="table-wrapper">
+        <div class="table-wrapper" role="region" tabindex="0" aria-label="Zalo-Flow Solution Comparison Matrix">
           <table class="comp-table">
             <thead>
               <tr>
@@ -492,7 +509,7 @@
         <div class="grid-2">
           <a href="/blog/cach-gui-tin-nhan-tu-dong-tren-zalo-khong-bi-khoa" class="card blog-card">
             <span class="blog-tag">Anti-Ban Engineering</span>
-            <h3 class="card-title">How To Safely Automate Zalo Messaging Without Account Restrictions</h3>
+            <div class="card-title">How To Safely Automate Zalo Messaging Without Account Restrictions</div>
             <p class="card-desc">
               Learn how Token Bucket rate limiting, Self-Echo shields, and Spintax variation maintain natural human messaging dynamics.
             </p>
@@ -505,7 +522,7 @@
 
           <a href="/blog/huong-dan-cach-tao-chatbot-zalo-ca-nhan" class="card blog-card">
             <span class="blog-tag">Installation Guide</span>
-            <h3 class="card-title">How To Build A Personal Zalo Chatbot Using Zalo-Flow in 3 Minutes</h3>
+            <div class="card-title">How To Build A Personal Zalo Chatbot Using Zalo-Flow in 3 Minutes</div>
             <p class="card-desc">
               Step-by-step walkthrough: 1-click Windows setup, bypassing Defender SmartScreen, and scanning QR codes securely.
             </p>
@@ -518,7 +535,7 @@
 
           <a href="/blog/tich-hop-ai-gemini-deepseek-vao-zalo-ca-nhan" class="card blog-card">
             <span class="blog-tag">Artificial Intelligence</span>
-            <h3 class="card-title">Integrating Gemini &amp; DeepSeek AI Into Personal Zalo For Auto-Replies</h3>
+            <div class="card-title">Integrating Gemini &amp; DeepSeek AI Into Personal Zalo For Auto-Replies</div>
             <p class="card-desc">
               Acquiring free Google AI Studio keys, tuning prompt templates, and extracting phone numbers automatically from contact cards.
             </p>
@@ -531,7 +548,7 @@
 
           <a href="/blog/zalo-crm-la-gi-giai-phap-quan-ly-tin-nhan-cskh" class="card blog-card">
             <span class="blog-tag">Customer Care CRM</span>
-            <h3 class="card-title">What Is Zalo CRM? Modern Omnichannel Messaging &amp; Lead Management</h3>
+            <div class="card-title">What Is Zalo CRM? Modern Omnichannel Messaging &amp; Lead Management</div>
             <p class="card-desc">
               Why Zalo CRM adoption is surging: Color-coded lead tagging, Chatwoot sync, and zero-cost remarketing campaigns.
             </p>
@@ -653,9 +670,11 @@
             <span>•</span>
             <span>📞 Direct Zalo Support: <a href="https://zalo.me/0373315784" target="_blank" rel="noopener">+84 373 315 784</a></span>
             <span>•</span>
+            <span>🏛️ Organization: <a href="/about">About AIzalo Community</a></span>
+            <span>•</span>
             <span>💻 Public Codebase: <a href="https://github.com/aizaloapp/zalo-flow" target="_blank" rel="noopener">github.com/aizaloapp/zalo-flow</a></span>
             <span>•</span>
-            <span>🔒 Privacy: <a href="/privacy-extension">Privacy Policy</a></span>
+            <span>🔒 Legal: <a href="/privacy">Privacy Policy</a> &amp; <a href="/terms">Terms of Service</a></span>
           </div>
         </div>
       </div>
@@ -674,7 +693,7 @@
       <div class="footer-grid">
         <div>
           <div class="footer-brand">
-            <img src="/assets/logo.png" alt="Zalo-Flow Logo" class="brand-icon" width="36" height="36">
+            <img src="/assets/logo-36.png" srcset="/assets/logo-36.png 1x, /assets/logo-72.png 2x, /assets/logo-108.png 3x" alt="Zalo-Flow Logo" class="brand-icon" width="36" height="36">
             <span>Zalo-Flow</span>
           </div>
           <p class="footer-text">
@@ -700,10 +719,13 @@
         <div>
           <div class="footer-title">Community &amp; Legal</div>
           <ul class="footer-links">
+            <li><a href="/about" class="footer-link">About AIzalo Community</a></li>
+            <li><a href="/privacy" class="footer-link">Privacy Policy</a></li>
+            <li><a href="/terms" class="footer-link">Terms of Service</a></li>
+            <li><a href="/privacy-extension" class="footer-link">Chrome Extension Privacy</a></li>
             <li><a href="https://zalo.me/g/mcihan713" target="_blank" rel="noopener" class="footer-link">Zalo Support Group</a></li>
             <li><a href="https://github.com/aizaloapp/zalo-flow" target="_blank" rel="noopener" class="footer-link">GitHub Repository</a></li>
             <li><a href="https://github.com/aizaloapp/zalo-flow/issues" target="_blank" rel="noopener" class="footer-link">Issue Tracker</a></li>
-            <li><a href="https://github.com/aizaloapp/zalo-flow/releases" target="_blank" rel="noopener" class="footer-link">Release Changelog</a></li>
           </ul>
         </div>
       </div>
@@ -754,7 +776,7 @@
           <div class="geo-ai-buttons">
             <a href="https://chatgpt.com/?q=Explain%20Zalo-Flow%20(https%3A%2F%2Faizalo.com%2Fen%2F)%3A%20Open-source%20personal%20Zalo%20automation%20tool%20with%20AI%2C%203-tier%20Anti-ban%20protection%2C%20and%20Chatwoot%20CRM%20integration." 
                target="_blank" rel="noopener noreferrer" class="geo-ai-btn geo-btn-chatgpt" aria-label="ChatGPT" title="Ask ChatGPT about Zalo-Flow">
-              <img src="/assets/logos/openai.svg" alt="ChatGPT" width="22" height="22" loading="lazy">
+              <img src="/assets/logos/openai.svg" alt="ChatGPT" width="22" height="22">
               <span class="geo-ai-btn-tooltip">ChatGPT</span>
             </a>
             <a href="https://claude.ai/new?q=Explain%20Zalo-Flow%20(https%3A%2F%2Faizalo.com%2Fen%2F)%3A%20Open-source%20personal%20Zalo%20automation%20tool%20with%20AI%2C%203-tier%20Anti-ban%20protection%2C%20and%20Chatwoot%20CRM%20integration." 

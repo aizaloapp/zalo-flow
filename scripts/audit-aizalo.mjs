@@ -75,6 +75,12 @@ if (fs.existsSync(path.join(srcDir, 'index.html'))) {
 if (fs.existsSync(path.join(srcDir, 'en', 'index.html'))) {
   htmlFiles.push({ path: path.join(srcDir, 'en', 'index.html'), rel: 'en/index.html', isHome: false, isEnHome: true, isBlogIndex: false });
 }
+for (const rootPage of ['about.html', 'privacy.html', 'terms.html']) {
+  const rpPath = path.join(srcDir, rootPage);
+  if (fs.existsSync(rpPath)) {
+    htmlFiles.push({ path: rpPath, rel: rootPage, isHome: false, isEnHome: false, isBlogIndex: false });
+  }
+}
 const blogDir = path.join(srcDir, 'blog');
 if (fs.existsSync(blogDir)) {
   const files = fs.readdirSync(blogDir).filter(f => f.endsWith('.html'));
@@ -413,6 +419,12 @@ const llmsPath = path.join(srcDir, 'llms.txt');
 const llmsFullPath = path.join(srcDir, 'llms-full.txt');
 if (!fs.existsSync(llmsPath)) {
   deduct('agentReadiness', 20, 'Thiếu tệp llms.txt (chuẩn llmstxt.org)', 'P0');
+} else {
+  const llmsContent = fs.readFileSync(llmsPath, 'utf8');
+  const mdLinks = llmsContent.match(/^\s*-\s*\[[^\]]+\]\(https?:\/\/[^)]+\)/gm) || [];
+  if (mdLinks.length < 10) {
+    deduct('agentReadiness', 10, `llms.txt thiếu định dạng liên kết Markdown chuẩn llmstxt.org (- [Title](URL): Desc), chỉ tìm thấy ${mdLinks.length} links`, 'P1');
+  }
 }
 if (!fs.existsSync(llmsFullPath)) {
   deduct('agentReadiness', 15, 'Thiếu tệp llms-full.txt tài liệu toàn văn', 'P1');
@@ -423,7 +435,7 @@ if (!fs.existsSync(llmsFullPath)) {
   }
 }
 
-// Check _headers for RFC 9264, HSTS, and noindex
+// Check _headers for RFC 9264, RFC 9727 linkset+json, HSTS, and noindex
 const headersPath = path.join(srcDir, '_headers');
 if (!fs.existsSync(headersPath)) {
   deduct('agentReadiness', 15, 'Thiếu tệp _headers cho Cloudflare Pages', 'P1');
@@ -431,6 +443,9 @@ if (!fs.existsSync(headersPath)) {
   const hContent = fs.readFileSync(headersPath, 'utf8');
   if (!hContent.includes('describedby') || !hContent.includes('/llms.txt')) {
     deduct('agentReadiness', 10, 'Thiếu RFC 9264 Link Header trỏ tới /llms.txt trong _headers', 'P1');
+  }
+  if (!hContent.includes('application/linkset+json')) {
+    deduct('agentReadiness', 5, 'Thiếu Content-Type: application/linkset+json cho /.well-known/api-catalog trong _headers (RFC 9727)', 'P2');
   }
   if (!hContent.includes('X-Robots-Tag: noindex')) {
     deduct('technical', 8, 'Thiếu X-Robots-Tag: noindex cho llms-full.txt trong _headers', 'P1');
@@ -440,7 +455,7 @@ if (!fs.existsSync(headersPath)) {
   }
 }
 
-// Check .well-known protocols
+// Check .well-known protocols & skills-discovery-0.2.0
 const wellKnownDir = path.join(srcDir, '.well-known');
 if (!fs.existsSync(wellKnownDir)) {
   deduct('agentReadiness', 20, 'Thiếu thư mục .well-known/', 'P0');
@@ -449,6 +464,23 @@ if (!fs.existsSync(wellKnownDir)) {
   for (const wf of expectedWk) {
     if (!fs.existsSync(path.join(wellKnownDir, wf))) {
       deduct('agentReadiness', 5, `Thiếu tệp giao thức .well-known/${wf}`, 'P2');
+    }
+  }
+  const skillsIdxPath = path.join(wellKnownDir, 'agent-skills', 'index.json');
+  if (fs.existsSync(skillsIdxPath)) {
+    try {
+      const skillsIdx = JSON.parse(fs.readFileSync(skillsIdxPath, 'utf8'));
+      if (!skillsIdx.$schema || !skillsIdx.$schema.includes('0.2.0') || !Array.isArray(skillsIdx.skills)) {
+        deduct('agentReadiness', 5, 'agent-skills/index.json chưa đạt chuẩn skills-discovery-0.2.0 ($schema + skills array)', 'P2');
+      } else {
+        for (const sk of skillsIdx.skills) {
+          if (!sk.digest || !sk.digest.startsWith('sha256:')) {
+            deduct('agentReadiness', 5, `Skill ${sk.name} trong agent-skills/index.json thiếu trường digest sha256`, 'P2');
+          }
+        }
+      }
+    } catch (e) {
+      deduct('agentReadiness', 8, `Lỗi JSON trong .well-known/agent-skills/index.json: ${e.message}`, 'P1');
     }
   }
 }

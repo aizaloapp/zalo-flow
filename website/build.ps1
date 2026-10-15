@@ -76,6 +76,53 @@ if (Test-Path (Join-Path $srcDir "openapi.json")) {
     Copy-Item -Path (Join-Path $srcDir "openapi.json") -Destination $distDir -Force
 }
 if (Test-Path (Join-Path $srcDir ".well-known")) {
+    # Normalize SKILL.md files to LF and auto-compute SHA-256 digests for Agent Skills Discovery 0.2.0
+    $skillsMeta = @(
+        @{
+            name = "zalo-chat-automation"
+            type = "skill-md"
+            description = "Automated conversational replies on personal Zalo accounts using connected AI models (Google Gemini, DeepSeek, OpenAI, Ollama) via Zalo-Flow Local-First Runtime."
+            relPath = ".well-known/agent-skills/zalo-chat-automation/SKILL.md"
+        },
+        @{
+            name = "zalo-crm-remarketing"
+            type = "skill-md"
+            description = "Customer segmentation, colored tag management, bidirectional Chatwoot CRM sync, and scheduled 1-to-1 or broadcast remarketing campaigns with Spintax templates."
+            relPath = ".well-known/agent-skills/zalo-crm-remarketing/SKILL.md"
+        },
+        @{
+            name = "anti-ban-delivery"
+            type = "skill-md"
+            description = "Three-layer anti-ban protection for personal Zalo automation including Token Bucket rate limiting, Self-Echo Shield, and Inbound Flood Detection."
+            relPath = ".well-known/agent-skills/anti-ban-delivery/SKILL.md"
+        }
+    )
+    $skillEntries = @()
+    foreach ($sm in $skillsMeta) {
+        $skillFile = Join-Path $srcDir ($sm.relPath -replace '/', '\')
+        if (Test-Path $skillFile) {
+            $rawText = [System.IO.File]::ReadAllText($skillFile, [System.Text.Encoding]::UTF8) -replace "`r`n", "`n"
+            $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+            [System.IO.File]::WriteAllText($skillFile, $rawText, $utf8NoBom)
+            $bytes = [System.IO.File]::ReadAllBytes($skillFile)
+            $sha256 = [System.BitConverter]::ToString([System.Security.Cryptography.SHA256]::Create().ComputeHash($bytes)).Replace("-", "").ToLowerInvariant()
+            $skillEntries += [ordered]@{
+                name = $sm.name
+                type = $sm.type
+                description = $sm.description
+                url = "https://aizalo.com/$($sm.relPath)"
+                digest = "sha256:$sha256"
+            }
+        }
+    }
+    $indexObj = [ordered]@{
+        '$schema' = "https://schemas.agentskills.io/discovery/0.2.0/schema.json"
+        skills = $skillEntries
+    }
+    $indexJson = ($indexObj | ConvertTo-Json -Depth 5) -replace "`r`n", "`n"
+    $indexFile = Join-Path $srcDir ".well-known\agent-skills\index.json"
+    [System.IO.File]::WriteAllText($indexFile, $indexJson + "`n", (New-Object System.Text.UTF8Encoding($false)))
+
     Copy-Item -Path (Join-Path $srcDir ".well-known\*") -Destination (Join-Path $distDir ".well-known\") -Recurse -Force
 }
 

@@ -3,67 +3,52 @@
 > Open-source automation platform (MIT + Commons Clause) connecting personal Zalo accounts with Chatwoot CRM and AI models (Gemini, DeepSeek, OpenAI), supporting customer care automation on Windows and Docker.
 > Nền tảng mã nguồn mở (giấy phép MIT + Commons Clause) kết nối Zalo cá nhân với Chatwoot CRM và các mô hình AI (Gemini, DeepSeek, OpenAI), hỗ trợ tự động hóa CSKH và quản lý hội thoại trên Windows và Docker.
 
-## English Overview & Fast Facts
-- **Project Name:** Zalo-Flow
-- **Website (EN):** https://aizalo.com/en/
-- **Website (VI):** https://aizalo.com/
-- **Source Code Repository:** https://github.com/aizaloapp/zalo-flow
-- **License:** MIT License with Commons Clause Condition v1.0 (100% Free for personal, research & non-commercial use).
-- **Core Architecture:** Local-First Node.js with SQLite, AES-256-CBC local encryption, memory watchdog < 350MB.
-- **Anti-Ban Protocol:** Token Bucket Rate Limiter (>= 3s pacing, max 20 msgs/min), Self-Echo Shield, Inbound Flood Detector.
-- **Supported AI Providers:** Google Gemini (1.5 Flash, 2.5 Flash), DeepSeek (Chat, Reasoner), OpenAI (GPT-4o), Ollama.
-- **CRM Integration:** Bidirectional adapter with Chatwoot CRM for multi-agent support.
+## English Overview & Core Resources
+- [Zalo-Flow Official Portal (Vietnamese)](https://aizalo.com/): Trang chủ cổng thông tin cộng đồng Zalo-Flow, tải bộ cài Windows 1-Click (.exe v1.5.0) và xem video demo vận hành thực tế.
+- [Zalo-Flow Official Portal (English)](https://aizalo.com/en/): Official English overview, architecture specifications, and quickstart documentation for Zalo-Flow.
+- [Zalo-Flow English Engineering Blog](https://aizalo.com/en/blog/): Technical guides and architectural deep-dives on connecting personal Zalo accounts to Chatwoot CRM and AI models.
+- [Connecting Personal Zalo to Chatwoot CRM (English Guide)](https://aizalo.com/en/blog/connecting-personal-zalo-to-chatwoot-crm): Step-by-step architecture guide for bidirectional Zalo-to-Chatwoot synchronization and multi-agent inbox routing.
+- [Zalo-Flow GitHub Repository](https://github.com/aizaloapp/zalo-flow): Kho mã nguồn mở chính thức (Node.js >= 22.5.0, zca-js 2.1.2, SQLite WAL, 60 automated test suites).
+- [Zalo-Flow Windows 1-Click Installer Releases](https://github.com/aizaloapp/zalo-flow/releases/latest): Tải gói cài đặt `ZaloFlow-Setup-v1.5.0.exe` kèm mã băm xác thực SHA-256 (VirusTotal 0/70).
 
+## Thông Tin Cốt Lõi & Pháp Lý (Entity & Legal Facts)
+- [Giới Thiệu Dự Án & Đội Ngũ Kỹ Sư AIzalo Community](https://aizalo.com/about): Sứ mệnh mã nguồn mở, kiến trúc kỹ thuật và quy trình kiểm định 60 bộ test tự động tại TP. Hồ Chí Minh, Việt Nam.
+- [Chính Sách Quyền Riêng Tư Toàn Diện (Privacy Policy)](https://aizalo.com/privacy): Cam kết bảo mật dữ liệu Local-First, mã hóa phiên AES-256-CBC cục bộ và minh bạch hạ tầng web.
+- [Chính Sách Quyền Riêng Tư Chrome Extension](https://aizalo.com/privacy-extension): Quy định bảo mật dữ liệu dành riêng cho tiện ích mở rộng AIzalo Flow Chat Companion trên Chrome Web Store.
+- [Điều Khoản Sử Dụng & Giấy Phép Mã Nguồn Mở (Terms & License)](https://aizalo.com/terms): Quy định sử dụng phi thương mại (MIT + Commons Clause v1.0) và chính sách nghiêm cấm Spam tuyệt đối.
 
-## Thông Tin Cốt Lõi (Fast Facts)
-- **Tên dự án:** Zalo-Flow
-- **Trang chủ:** https://aizalo.com/
-- **Kho mã nguồn:** https://github.com/aizaloapp/zalo-flow
-- **Cộng đồng Zalo hỗ trợ:** https://zalo.me/g/mcihan713
-- **Giấy phép:** MIT License with Commons Clause Condition v1.0 (Miễn phí 100% cho cá nhân, nghiên cứu, phi thương mại).
-- **Môi trường chạy:** Windows 10/11 (1-Click Installer .exe), Linux/macOS qua Docker.
-- **Tiêu thụ tài nguyên:** RAM < 100MB (Node.js trần 350MB, Docker 512MB).
-- **Mã hóa:** AES-256-CBC lưu trữ cục bộ trong SQLite.
-
-## Tính Năng Chính
+## Tính Năng Kiến Trúc Trọng Tâm (Core Capabilities)
 1. **Khay Chờ Đính Kèm & Gộp Caption Ảnh:** Xem trước ảnh trên thanh staging, nhập nội dung văn bản và gửi đồng thời cả ảnh + chữ dính liền trong 1 tin nhắn duy nhất.
 2. **Lên Lịch Hẹn Tin Nhắn 1-1:** Hẹn giờ gửi tin và tài liệu đính kèm cho từng khách hàng, thanh ghim đếm ngược thông minh và tự hủy an toàn khi khách trả lời.
 3. **Mắt Thần Multimodal AI Vision:** Tự động đọc và phân tích hình ảnh (hóa đơn, biên lai, sản phẩm, tài liệu, ảnh chụp màn hình...) gửi qua Zalo, tư vấn thông minh theo đúng nhân cách thương hiệu.
-4. **Universal Wiki URL Ingestion:** Nạp tài liệu Markdown trực tiếp từ URL bên ngoài (`aizalo.com/guide.md`) với Golden Template và SSRF Shield.
+4. **Universal Wiki URL Ingestion:** Nạp tài liệu Markdown trực tiếp từ URL bên ngoài với Golden Template và SSRF Shield.
 5. **Cơ Chế Anti-Ban 3 Lớp & Ground-Truth Group Reconciliation:**
    - Token Bucket Rate Limiter: Giãn cách tối thiểu 3 giây/tin, tối đa 20 tin/phút.
    - Self-Echo Shield: Bộ đệm 30s chống vòng lặp phản xạ bot tự nói chuyện với chính mình.
    - Flood Detector: Tự động ngắt tạm thời 60s khi bị dội tin dồn dập.
-   - Ground-Truth Reconciliation: Đồng bộ phân loại nhóm chính xác 100% theo Zalo API.
 6. **Web Dashboard Quản Trị & Tự Động Định Danh:** Giao diện Live Chat trực tiếp tại `localhost:3000`, phân loại khách hàng bằng thẻ tag màu sắc, tự động nhận diện tên và avatar thật của khách lạ.
 7. **Chiến Dịch Remarketing & Spintax:** Gửi tin nhắn chăm sóc khách hàng định kỳ kèm hình ảnh/tài liệu và đảo ngẫu nhiên cú pháp.
-8. **Mở Rộng Đội Ngũ:** Tích hợp 2 chiều với Chatwoot CRM khi cần nhiều nhân viên cùng trực 1 số Zalo.
-9. **Multi-Account Pool & Multi-Profile AI Suite:** Quản lý không giới hạn nick Zalo trên 1 máy tính (< 150MB RAM), gán riêng hồ sơ Bot AI (SOUL, Memory Wiki, Few-Shot, Scope) cho từng nick độc lập.
-10. **Tiện Ích Chrome Extension AIzalo Flow Companion:** Tiện ích mở rộng chính thức trên Chrome Web Store giúp theo dõi thông báo tin nhắn mới thời gian thực, huy hiệu đếm tin chưa đọc, tra cứu nhanh danh bạ và bắn tin nhắn mẫu tức thì ngay trên thanh công cụ trình duyệt: https://aizalo.com/guide
-11. **Dạy Bot Cập Nhật Kiến Thức Tự Động (AI Vision & Fast Ingestion):** Nạp nhanh tri thức bằng phím tắt dán ảnh `Ctrl + V` hoặc tải tệp PDF, Word kèm lời dặn ngắn gọn. Mô hình AI Vision tự động bóc tách số liệu bảng giá, chính sách chiết khấu nạp vào kho tri thức Second Brain cục bộ.
-12. **AI Resilience & Stability Suite (Mới ở v1.5.0):** Smart Message Chunking tự động chia nhỏ câu trả lời dài > 2000 ký tự Zalo theo ngữ nghĩa câu/đoạn, Khóa đơn nguyên Per-Thread kèm Inbound Buffer chống race condition khi khách nhắn dồn dập, Universal Auto-Fallback (Gemini ⇄ DeepSeek, Z.AI...) tự động chuyển đổi khi lỗi 429/timeout/rớt mạng, Graceful Fallback Rescue gửi tin nhắn cứu hộ lịch sự và Smart Human Takeover Engine chặn chen ngang Admin tức thì.
+8. **Mở Rộng Đội Ngũ Đa Nhân Viên:** Tích hợp 2 chiều với Chatwoot CRM khi cần nhiều nhân viên cùng trực 1 số Zalo.
+9. **Multi-Account Pool & Multi-Profile AI Suite:** Quản lý nhiều tài khoản Zalo trên 1 máy tính (< 150MB RAM), gán riêng hồ sơ Bot AI (SOUL, Memory Wiki, Few-Shot, Scope) cho từng nick độc lập.
+10. **AI Resilience & Stability Suite (v1.5.0):** Smart Message Chunking tự động chia nhỏ câu trả lời dài > 2000 ký tự Zalo theo ngữ nghĩa câu/đoạn, Khóa đơn nguyên Per-Thread kèm Inbound Buffer chống race condition, Universal Auto-Fallback (Gemini ⇄ DeepSeek) và Smart Human Takeover Engine chặn chen ngang Admin tức thì.
 
-## Hướng Dẫn Tải Về & Cài Đặt
-- Tải gói cài đặt Windows: `https://github.com/aizaloapp/zalo-flow/releases/latest` (file `ZaloFlow-Setup-v1.5.0.exe`).
-- Cài đặt cho macOS / Linux / Docker: `git clone https://github.com/aizaloapp/zalo-flow.git && cd zalo-flow && npm install && npm start` (yêu cầu Node.js >= 22.5.0)
-- Cài đặt Tiện ích Chrome Extension: https://aizalo.com/guide
-- Lưu ý Windows SmartScreen: Khi xuất hiện màn hình "Windows protected your PC", bấm "More info" -> "Run anyway" (phần mềm cộng đồng chưa mua chứng chỉ thương mại Microsoft, sạch 0/70 trên VirusTotal).
-
-## Cẩm Nang & Bài Viết Chuyên Sâu
-- Cách dạy bot Zalo cập nhật kiến thức tự động: https://aizalo.com/blog/cach-day-bot-zalo-cap-nhat-kien-thuc-tu-dong
-- Quản lý tin nhắn Zalo bằng Chrome Extension: https://aizalo.com/blog/cach-nhan-thong-bao-va-quan-ly-tin-nhan-zalo-bang-chrome-extension
-- Hướng dẫn cài đặt & sử dụng Tiện ích Chrome Extension: https://aizalo.com/guide
-- Cách đăng nhập nhiều tài khoản Zalo trên máy tính: https://aizalo.com/blog/cach-dang-nhap-nhieu-tai-khoan-zalo-tren-may-tinh
-- Cách huấn luyện AI bán hàng Zalo bằng bảng giá riêng: https://aizalo.com/blog/cach-huan-luyen-ai-ban-hang-zalo-bang-bang-gia-rieng
-- Cách hẹn giờ gửi tin nhắn Zalo cá nhân tự động: https://aizalo.com/blog/cach-hen-gio-gui-tin-nhan-zalo-ca-nhan-tu-dong
-- Bí quyết chống khóa nick Zalo: https://aizalo.com/blog/cach-gui-tin-nhan-tu-dong-tren-zalo-khong-bi-khoa
-- Hướng dẫn cài đặt 3 phút: https://aizalo.com/blog/huong-dan-cach-tao-chatbot-zalo-ca-nhan
-- Tích hợp Gemini & DeepSeek: https://aizalo.com/blog/tich-hop-ai-gemini-deepseek-vao-zalo-ca-nhan
-- Giải pháp Zalo CRM 2026: https://aizalo.com/blog/zalo-crm-la-gi-giai-phap-quan-ly-tin-nhan-cskh
+## Cẩm Nang & Bài Viết Chuyên Sâu (Vietnamese Documentation & Guides)
+- [Danh Mục Cẩm Nang Tự Động Hóa Zalo-Flow](https://aizalo.com/blog/): Tổng hợp toàn bộ bài viết hướng dẫn kỹ thuật tạo chatbot Zalo cá nhân, chống khóa tài khoản và quản trị CRM.
+- [Hướng Dẫn Cài Đặt & Sử Dụng Tiện Ích Chrome Extension](https://aizalo.com/guide): Tài liệu hướng dẫn chi tiết cách kết nối tiện ích AIzalo Flow Companion với máy chủ Zalo-Flow cục bộ.
+- [Cách Dạy Bot Zalo Cập Nhật Kiến Thức Tự Động Bằng AI Vision](https://aizalo.com/blog/cach-day-bot-zalo-cap-nhat-kien-thuc-tu-dong): Nạp nhanh bảng giá từ ảnh chụp màn hình (Ctrl+V) và tệp PDF/Word vào kho tri thức Second Brain.
+- [Cách Nhận Thông Báo & Quản Lý Tin Nhắn Zalo Bằng Chrome Extension](https://aizalo.com/blog/cach-nhan-thong-bao-va-quan-ly-tin-nhan-zalo-bang-chrome-extension): Theo dõi huy hiệu tin chưa đọc thời gian thực và phản hồi nhanh bằng mẫu câu 1-click trên trình duyệt.
+- [Cách Đăng Nhập Nhiều Tài Khoản Zalo Trên Máy Tính](https://aizalo.com/blog/cach-dang-nhap-nhieu-tai-khoan-zalo-tren-may-tinh): Kiến trúc Multi-Account Pool quản lý song song nhiều tài khoản Zalo cá nhân dưới 150MB RAM.
+- [Cách Huấn Luyện AI Bán Hàng Zalo Bằng Bảng Giá Riêng](https://aizalo.com/blog/cach-huan-luyen-ai-ban-hang-zalo-bang-bang-gia-rieng): Thiết lập hệ thống RAG cục bộ chống ảo giác giá (Zero Price Hallucination) và tự động bóc tách SĐT chốt đơn.
+- [Cách Hẹn Giờ Gửi Tin Nhắn Zalo Cá Nhân Tự Động](https://aizalo.com/blog/cach-hen-gio-gui-tin-nhan-zalo-ca-nhan-tu-dong): Cơ chế lên lịch tin nhắn 1-1 kèm tự động hủy thông minh khi khách hàng phản hồi sớm.
+- [Cách Gửi Tin Nhắn Tự Động Trên Zalo Không Bị Khóa Tài Khoản](https://aizalo.com/blog/cach-gui-tin-nhan-tu-dong-tren-zalo-khong-bi-khoa): Giải phẫu thuật toán Anti-ban 3 lớp (Token Bucket >= 3s, Self-Echo Shield 30s, Flood Detector) và Spintax.
+- [Hướng Dẫn Cách Tạo Chatbot Zalo Cá Nhân Trong 3 Phút](https://aizalo.com/blog/huong-dan-cach-tao-chatbot-zalo-ca-nhan): Quy trình cài đặt bộ cài Windows 1-Click (.exe) hoặc khởi chạy qua Docker không cần biết lập trình.
+- [Tích Hợp AI Gemini & DeepSeek Vào Zalo Cá Nhân](https://aizalo.com/blog/tich-hop-ai-gemini-deepseek-vao-zalo-ca-nhan): Hướng dẫn lấy API Key miễn phí và cấu hình System Prompt đóng vai chuyên viên tư vấn 24/7.
+- [Zalo CRM Là Gì? Giải Pháp Quản Lý Tin Nhắn & CSKH Zalo](https://aizalo.com/blog/zalo-crm-la-gi-giai-phap-quan-ly-tin-nhan-cskh): Phân loại khách hàng bằng thẻ tag màu sắc, đồng bộ Chatwoot CRM và chiến dịch Remarketing tự động.
 
 ## Tài Liệu Toàn Văn & Tri Thức Máy Đọc (Machine-Readable Hub)
-- Đặc tả tính năng chuyên sâu (Features Specification): https://aizalo.com/features.md
-- Chỉ thị hệ thống cho AI Agents: https://aizalo.com/.well-known/agent-instructions.md
-- Tri thức Mini Second Brain Wiki (Markdown): https://aizalo.com/guide.md
-- Danh mục API OpenAPI 3.1: https://aizalo.com/openapi.json
-- Xem toàn văn chi tiết tại: https://aizalo.com/llms-full.txt
+- [Đặc Tả Tính Năng Chuyên Sâu (Features Specification)](https://aizalo.com/features.md): Tài liệu Markdown mô tả chi tiết kiến trúc kỹ thuật và các mô-đun của Zalo-Flow.
+- [Tri Thức Mini Second Brain Wiki (Markdown Guide)](https://aizalo.com/guide.md): Kho tri thức chuẩn Markdown dùng để nạp mẫu cho tính năng Universal Wiki URL Ingestion.
+- [Chỉ Thị Hệ Thống Cho AI Agents (Agent Instructions)](https://aizalo.com/.well-known/agent-instructions.md): Hướng dẫn ngữ cảnh và quy tắc trích dẫn chính thức dành cho các tác nhân AI và công cụ tìm kiếm tạo sinh.
+- [Danh Mục Kỹ Năng AI Agent (Agent Skills Discovery 0.2.0)](https://aizalo.com/.well-known/agent-skills/index.json): Chỉ mục kỹ năng tự động hóa Zalo-Flow chuẩn Agent Skills Discovery v0.2.0 kèm mã băm SHA-256.
+- [Đặc Tả Giao Thức API OpenAPI 3.1](https://aizalo.com/openapi.json): Đặc tả REST API cục bộ và cấu trúc dữ liệu của Zalo-Flow.
+- [Tài Liệu Toàn Văn Chi Tiết (Full LLM Context)](https://aizalo.com/llms-full.txt): Bản tổng hợp toàn văn kiến trúc, hướng dẫn cài đặt và câu hỏi thường gặp của hệ sinh thái Zalo-Flow.
