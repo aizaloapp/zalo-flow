@@ -484,6 +484,25 @@ if (!fs.existsSync(wellKnownDir)) {
       deduct('agentReadiness', 5, `Thiếu tệp giao thức .well-known/${wf}`, 'P2');
     }
   }
+  const rootOpenApiPath = path.join(srcDir, 'openapi.json');
+  const wkOpenApiPath = path.join(wellKnownDir, 'openapi.json');
+  if (fs.existsSync(rootOpenApiPath) && fs.existsSync(wkOpenApiPath)) {
+    try {
+      const rootSpec = JSON.parse(fs.readFileSync(rootOpenApiPath, 'utf8'));
+      const wkSpec = JSON.parse(fs.readFileSync(wkOpenApiPath, 'utf8'));
+      if (rootSpec.openapi !== '3.0.3' || wkSpec.openapi !== '3.0.3') {
+        deduct('agentReadiness', 5, 'openapi.json hoặc .well-known/openapi.json chưa đạt chuẩn OpenAPI 3.0.3', 'P1');
+      }
+      if (rootSpec.info?.version !== pkgVersion || wkSpec.info?.version !== pkgVersion) {
+        deduct('technical', 5, `openapi.json version (${rootSpec.info?.version}) lệch với package.json (${pkgVersion})`, 'P1');
+      }
+      if (!rootSpec.info?.license?.name?.includes('Commons Clause')) {
+        deduct('technical', 5, 'openapi.json thiếu khai báo giấy phép Commons Clause (Bất biến #1)', 'P1');
+      }
+    } catch (e) {
+      deduct('agentReadiness', 8, `Lỗi JSON trong openapi.json: ${e.message}`, 'P1');
+    }
+  }
   const skillsIdxPath = path.join(wellKnownDir, 'agent-skills', 'index.json');
   if (fs.existsSync(skillsIdxPath)) {
     try {
@@ -614,6 +633,20 @@ async function runPass2() {
   const appRes = await safeFetch('https://app.aizalo.com/');
   if (appRes.status !== 0) {
     console.log(`   ✔️ SaaS app.aizalo.com hoạt động độc lập (HTTP ${appRes.status}), không bị xung đột Worker Route!`);
+  }
+
+  // 7. Check Cloud Sandbox API Gateway (RapidAPI & OpenAPI Live Endpoint)
+  if (!isLocalRun) {
+    console.log('   ✔️ Đo kiểm Cloud Sandbox API Gateway (/api/system/status)...');
+    const sbAuthRes = await safeFetch('https://aizalo.com/api/system/status', {
+      headers: { 'Authorization': 'Bearer demo' }
+    });
+    const sbUnauthRes = await safeFetch('https://aizalo.com/api/system/status');
+    if (sbAuthRes.status === 200 && sbUnauthRes.status === 401) {
+      console.log('   ✔️ Cloud Sandbox API Gateway hoạt động chính xác (200 OK có Bearer demo & 401 khi thiếu Auth)!');
+    } else {
+      deduct('agentReadiness', 10, `Cloud Sandbox API Gateway phản hồi sai trạng thái (Auth: ${sbAuthRes.status}, Unauth: ${sbUnauthRes.status})`, 'P1');
+    }
   }
 
   // ---------------------------------------------------------------------------

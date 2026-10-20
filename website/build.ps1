@@ -74,6 +74,9 @@ if (Test-Path (Join-Path $srcDir "*.md")) {
 }
 if (Test-Path (Join-Path $srcDir "openapi.json")) {
     Copy-Item -Path (Join-Path $srcDir "openapi.json") -Destination $distDir -Force
+    if (Test-Path (Join-Path $srcDir ".well-known")) {
+        Copy-Item -Path (Join-Path $srcDir "openapi.json") -Destination (Join-Path $srcDir ".well-known\openapi.json") -Force
+    }
 }
 if (Test-Path (Join-Path $srcDir ".well-known")) {
     # Normalize SKILL.md files to LF and auto-compute SHA-256 digests for Agent Skills Discovery 0.2.0

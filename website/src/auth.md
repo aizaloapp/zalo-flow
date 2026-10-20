@@ -54,7 +54,7 @@ All outbound operations are throttled to ensure account safety and prevent flood
 ## Discovery & Machine-Readable Artifacts
 
 - **API Catalog:** `https://aizalo.com/.well-known/api-catalog`
-- **OpenAPI 3.1 Specification:** `https://aizalo.com/openapi.json`
+- **OpenAPI 3.0.3 Specification:** `https://aizalo.com/openapi.json`
 - **MCP Server Card:** `https://aizalo.com/.well-known/mcp.json`
 - **A2A Agent Card:** `https://aizalo.com/.well-known/agent-card.json`
 - **LLM Summary:** `https://aizalo.com/llms.txt`
