@@ -37,4 +37,5 @@ curl -s -H "Authorization: Bearer demo" https://aizalo.com/api/system/status
 - **Anti-Ban Engineering Guide:** [https://aizalo.com/blog/cach-gui-tin-nhan-tu-dong-tren-zalo-khong-bi-khoa](https://aizalo.com/blog/cach-gui-tin-nhan-tu-dong-tren-zalo-khong-bi-khoa)
 - **Multi-Account Browser Isolation:** [https://aizalo.com/blog/cach-dang-nhap-nhieu-tai-khoan-zalo-tren-may-tinh](https://aizalo.com/blog/cach-dang-nhap-nhieu-tai-khoan-zalo-tren-may-tinh)
 - **RapidAPI Playground:** [https://rapidapi.com/lekhoa288/api/zalo-flow-personal-zalo-chatbot-and-crm](https://rapidapi.com/lekhoa288/api/zalo-flow-personal-zalo-chatbot-and-crm)
+- **Postman Public API Documentation:** [https://documenter.getpostman.com/view/59097689/2sBYHSzgRN](https://documenter.getpostman.com/view/59097689/2sBYHSzgRN)
 - **GitHub Repository:** [https://github.com/aizaloapp/zalo-flow](https://github.com/aizaloapp/zalo-flow)

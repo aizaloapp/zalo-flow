@@ -56,4 +56,5 @@ curl -s -X POST https://aizalo.com/api/messages/send \
 - **Gemini & DeepSeek Integration Guide:** [https://aizalo.com/blog/tich-hop-ai-gemini-deepseek-vao-zalo-ca-nhan](https://aizalo.com/blog/tich-hop-ai-gemini-deepseek-vao-zalo-ca-nhan)
 - **Auto Knowledge Ingestion Guide:** [https://aizalo.com/blog/cach-day-bot-zalo-cap-nhat-kien-thuc-tu-dong](https://aizalo.com/blog/cach-day-bot-zalo-cap-nhat-kien-thuc-tu-dong)
 - **RapidAPI Interactive Playground:** [https://rapidapi.com/lekhoa288/api/zalo-flow-personal-zalo-chatbot-and-crm](https://rapidapi.com/lekhoa288/api/zalo-flow-personal-zalo-chatbot-and-crm)
+- **Postman Public API Documentation:** [https://documenter.getpostman.com/view/59097689/2sBYHSzgRN](https://documenter.getpostman.com/view/59097689/2sBYHSzgRN)
 - **GitHub Repository:** [https://github.com/aizaloapp/zalo-flow](https://github.com/aizaloapp/zalo-flow)

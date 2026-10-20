@@ -42,4 +42,5 @@ curl -s -X POST https://aizalo.com/api/campaigns/broadcast \
 - **English Chatwoot CRM Bridge Guide:** [https://aizalo.com/en/blog/connecting-personal-zalo-to-chatwoot-crm](https://aizalo.com/en/blog/connecting-personal-zalo-to-chatwoot-crm)
 - **Scheduled Zalo Messaging Guide:** [https://aizalo.com/blog/cach-hen-gio-gui-tin-nhan-zalo-ca-nhan-tu-dong](https://aizalo.com/blog/cach-hen-gio-gui-tin-nhan-zalo-ca-nhan-tu-dong)
 - **RapidAPI Hub Listing:** [https://rapidapi.com/lekhoa288/api/zalo-flow-personal-zalo-chatbot-and-crm](https://rapidapi.com/lekhoa288/api/zalo-flow-personal-zalo-chatbot-and-crm)
+- **Postman Public API Documentation:** [https://documenter.getpostman.com/view/59097689/2sBYHSzgRN](https://documenter.getpostman.com/view/59097689/2sBYHSzgRN)
 - **GitHub Repository:** [https://github.com/aizaloapp/zalo-flow](https://github.com/aizaloapp/zalo-flow)
