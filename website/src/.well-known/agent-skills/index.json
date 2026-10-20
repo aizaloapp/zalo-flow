@@ -6,21 +6,21 @@
                        "type":  "skill-md",
                        "description":  "Automated conversational replies on personal Zalo accounts using connected AI models (Google Gemini, DeepSeek, OpenAI, Ollama) via Zalo-Flow Local-First Runtime.",
                        "url":  "https://aizalo.com/.well-known/agent-skills/zalo-chat-automation/SKILL.md",
-                       "digest":  "sha256:99944c22875734ba8ada53bdb2810c4e7c3dd2b1e5194a1437a7bd90e0eb526e"
+                       "digest":  "sha256:f4f4e4c7a25671d188e2100291bb8f835f089baa13876c68e718488ae5a0598f"
                    },
                    {
                        "name":  "zalo-crm-remarketing",
                        "type":  "skill-md",
                        "description":  "Customer segmentation, colored tag management, bidirectional Chatwoot CRM sync, and scheduled 1-to-1 or broadcast remarketing campaigns with Spintax templates.",
                        "url":  "https://aizalo.com/.well-known/agent-skills/zalo-crm-remarketing/SKILL.md",
-                       "digest":  "sha256:8d6c7147c028579801031099b84205f221299ce77ee42461bb55596abea8fb3a"
+                       "digest":  "sha256:2d7a02e3afe93ba3b426cf86e46af84d70dc2c3c07cc4f25226fe2527ca5a770"
                    },
                    {
                        "name":  "anti-ban-delivery",
                        "type":  "skill-md",
                        "description":  "Three-layer anti-ban protection for personal Zalo automation including Token Bucket rate limiting, Self-Echo Shield, and Inbound Flood Detection.",
                        "url":  "https://aizalo.com/.well-known/agent-skills/anti-ban-delivery/SKILL.md",
-                       "digest":  "sha256:230b03d76d7ce50423280b9473dde025c6523a62410abd328a0a8e108cf4f673"
+                       "digest":  "sha256:4cb8ab6d80618fe7e99ff1cbd91ad76f52b9789665490189975cffcc56577a63"
                    }
                ]
 }
