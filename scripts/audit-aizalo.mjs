@@ -34,6 +34,18 @@ function countWords(str) {
   return str.trim().split(/\s+/).filter(Boolean).length;
 }
 
+function decodeHtmlText(str) {
+  if (!str) return '';
+  return str
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'")
+    .normalize('NFC')
+    .trim();
+}
+
 function getCanonicalUrl(file) {
   if (file.isHome) return 'https://aizalo.com/';
   if (file.isEnHome) return 'https://aizalo.com/en/';
@@ -75,7 +87,7 @@ if (fs.existsSync(path.join(srcDir, 'index.html'))) {
 if (fs.existsSync(path.join(srcDir, 'en', 'index.html'))) {
   htmlFiles.push({ path: path.join(srcDir, 'en', 'index.html'), rel: 'en/index.html', isHome: false, isEnHome: true, isBlogIndex: false });
 }
-for (const rootPage of ['about.html', 'privacy.html', 'terms.html']) {
+for (const rootPage of ['about.html', 'privacy.html', 'terms.html', 'guide.html']) {
   const rpPath = path.join(srcDir, rootPage);
   if (fs.existsSync(rpPath)) {
     htmlFiles.push({ path: rpPath, rel: rootPage, isHome: false, isEnHome: false, isBlogIndex: false });
@@ -114,27 +126,33 @@ for (const file of htmlFiles) {
     pageIds.add(m[1]);
   }
 
-  // B. Title tag audit
+  // B. Title tag audit (Unicode NFC + HTML Entity Decoded)
   const titleMatch = content.match(/<title>([^<]+)<\/title>/i);
   if (!titleMatch) {
     deduct('onPage', 15, `Thiếu thẻ <title> trong ${file.rel}`, 'P0');
   } else {
-    const titleText = titleMatch[1].trim();
-    if (titleText.length < 30 || titleText.length > 75) {
-      deduct('onPage', 5, `Độ dài thẻ <title> trong ${file.rel} (${titleText.length} chars) nằm ngoài khoảng tối ưu 30-75 ký tự`, 'P2');
+    const titleText = decodeHtmlText(titleMatch[1]);
+    const maxTitleLen = file.isHome ? 70 : 65;
+    if (titleText.length < 15 || titleText.length > maxTitleLen) {
+      deduct('onPage', 5, `Độ dài thẻ <title> trong ${file.rel} (${titleText.length} chars) nằm ngoài khoảng tối ưu 15-${maxTitleLen} ký tự`, 'P2');
     }
   }
 
-  // C. Meta description audit
-  const metaDescMatch = content.match(/<meta\s+name=["']description["']\s+content=["']([^"']+)["']/i) ||
-                        content.match(/<meta\s+content=["']([^"']+)["']\s+name=["']description["']/i);
+  // C. Meta description audit (Unicode NFC + HTML Entity Decoded, <= 160 chars)
+  const metaDescMatch = content.match(/<meta\s+name=["']description["']\s+content=(?:"([^"]+)"|'([^']+)')/i) ||
+                        content.match(/<meta\s+content=(?:"([^"]+)"|'([^']+)')\s+name=["']description["']/i);
   if (!metaDescMatch) {
     deduct('onPage', 10, `Thiếu thẻ <meta name="description"> trong ${file.rel}`, 'P1');
   } else {
-    const desc = metaDescMatch[1].trim();
-    if (desc.length < 100 || desc.length > 175) {
-      deduct('onPage', 5, `Thẻ meta description trong ${file.rel} (${desc.length} chars) nằm ngoài khoảng tối ưu 100-175 ký tự`, 'P2');
+    const desc = decodeHtmlText(metaDescMatch[1] || metaDescMatch[2]);
+    if (desc.length < 100 || desc.length > 160) {
+      deduct('onPage', 5, `Thẻ meta description trong ${file.rel} (${desc.length} chars) nằm ngoài khoảng tối ưu 100-160 ký tự`, 'P2');
     }
+  }
+
+  // C2. First-Party Analytics Leak Guard (No dragonfarm2509.workers.dev in HTML)
+  if (content.includes('dragonfarm2509.workers.dev')) {
+    deduct('technical', 15, `Trang ${file.rel} làm lộ endpoint traks-collect.dragonfarm2509.workers.dev (bắt buộc dùng /t.js nội bộ theo Điều 5.6)`, 'P0');
   }
 
   // D. Canonical tag audit
@@ -630,6 +648,9 @@ async function runPass2() {
   const resultJson = JSON.stringify(audit, null, 2);
   fs.writeFileSync(path.join(rootDir, 'audit-result.json'), resultJson, 'utf8');
   console.log('\n💾 Đã lưu kết quả chi tiết vào audit-result.json');
+  if (audit.summary.p0.length > 0 || audit.summary.p1.length > 0 || audit.summary.p2.length > 0) {
+    process.exitCode = 1;
+  }
 }
 
 runPass2();

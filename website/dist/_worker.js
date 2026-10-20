@@ -31,6 +31,18 @@ export default {
       });
     }
 
+    // 301 Redirect Map for AI-hallucinated / legacy 404 paths observed in Traks Analytics
+    const REDIRECT_MAP = {
+      "/blog/cach-xuat-danh-sach-ban-be-zalo": "https://aizalo.com/blog/zalo-crm-la-gi-giai-phap-quan-ly-tin-nhan-cskh",
+      "/blog/huong-dan-thiet-lap-tro-ly-ky-thuat-zalo-flow": "https://aizalo.com/blog/huong-dan-cach-tao-chatbot-zalo-ca-nhan",
+      "/giai-phap/master-inbox": "https://aizalo.com/blog/zalo-crm-la-gi-giai-phap-quan-ly-tin-nhan-cskh",
+      "/contact-us": "https://aizalo.com/about"
+    };
+    const normalizedPath = url.pathname.replace(/\/+$/, "").replace(/\.html$/, "");
+    if (REDIRECT_MAP[normalizedPath]) {
+      return Response.redirect(REDIRECT_MAP[normalizedPath], 301);
+    }
+
     const accept = request.headers.get("Accept") || "";
     const userAgent = request.headers.get("User-Agent") || "";
 

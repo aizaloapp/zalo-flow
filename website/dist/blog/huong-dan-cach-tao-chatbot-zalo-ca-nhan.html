@@ -15,12 +15,12 @@
   <meta property="og:type" content="article">
   <meta property="og:url" content="https://aizalo.com/blog/huong-dan-cach-tao-chatbot-zalo-ca-nhan">
   <meta property="og:title" content="Hướng Dẫn Cách Tạo Chatbot Zalo Cá Nhân Bằng Zalo-Flow Trong 3 Phút (1-Click)">
-  <meta property="og:description" content="Từng bước cài đặt Zalo-Flow trên Windows 1-Click, xử lý cảnh báo SmartScreen và quét mã QR đăng nhập tài khoản Zalo cá nhân.">
+  <meta property="og:description" content="Hướng dẫn từng bước cách tạo chatbot Zalo cá nhân miễn phí bằng Zalo-Flow. Cài đặt 1-Click trên Windows, vượt cảnh báo SmartScreen và quét QR sử dụng ngay.">
   <meta property="og:image" content="https://aizalo.com/assets/og-image.png">
   <!-- Twitter Meta Tags -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Hướng Dẫn Cách Tạo Chatbot Zalo Cá Nhân Bằng Zalo-Flow Trong 3 Phút (1-Click)">
-  <meta name="twitter:description" content="Từng bước cài đặt Zalo-Flow trên Windows 1-Click, xử lý cảnh báo SmartScreen và quét mã QR đăng nhập tài khoản Zalo cá nhân.">
+  <meta name="twitter:description" content="Hướng dẫn từng bước cách tạo chatbot Zalo cá nhân miễn phí bằng Zalo-Flow. Cài đặt 1-Click trên Windows, vượt cảnh báo SmartScreen và quét QR sử dụng ngay.">
   <meta name="twitter:image" content="https://aizalo.com/assets/og-image.png">
 
   <!-- Favicon -->
@@ -39,7 +39,7 @@
       {
         "@type": "BlogPosting",
         "headline": "Hướng Dẫn Cách Tạo Chatbot Zalo Cá Nhân Bằng Zalo-Flow Trong 3 Phút (1-Click)",
-        "description": "Hướng dẫn từng bước cách tạo chatbot Zalo cá nhân miễn phí bằng Zalo-Flow trên Windows.",
+        "description": "Hướng dẫn từng bước cách tạo chatbot Zalo cá nhân miễn phí bằng Zalo-Flow. Cài đặt 1-Click trên Windows, vượt cảnh báo SmartScreen và quét QR sử dụng ngay.",
         "author": {
           "@type": "Organization",
           "name": "Đội ngũ Zalo-Flow (Chủ biên: Khoa AI)",
@@ -55,7 +55,7 @@
           "url": "https://aizalo.com"
         },
         "datePublished": "2026-09-07",
-        "dateModified": "2026-10-15",
+        "dateModified": "2026-10-20",
         "mainEntityOfPage": "https://aizalo.com/blog/huong-dan-cach-tao-chatbot-zalo-ca-nhan"
       },
       {
@@ -112,6 +112,7 @@
       },
       {
         "@type": "BreadcrumbList",
+        "name": "?i?u h??ng trang",
         "itemListElement": [
           {
             "@type": "ListItem",
@@ -258,41 +259,47 @@
         </div>
 
         <!-- GEO Comparison Table -->
-        <h2 id="so-sanh-zalo-flow-vs-zalo-oa">1. So Sánh: Chatbot Zalo Cá Nhân vs. Zalo OA</h2>
-      <div class="geo-table-wrapper">
+        <h2 id="so-sanh-zalo-flow-vs-zalo-oa">1. So Sánh 3 Kiến Trúc: Zalo-Flow vs. Zalo OA vs. Tool Đóng Mã Nguồn</h2>
+      <div class="geo-table-wrapper" role="region" tabindex="0" aria-label="Bảng đối chiếu 3 giải pháp tự động hóa Zalo">
         <table class="geo-table">
           <thead>
             <tr>
-              <th>Tiêu Chí So Sánh</th>
+              <th>Tiêu Chí Kỹ Thuật</th>
+              <th>Zalo-Flow (Open-Source Local-First)</th>
               <th>Zalo Official Account (Zalo OA)</th>
-              <th>Zalo-Flow (Chatbot Zalo Cá Nhân)</th>
+              <th>Tool Zalo Đóng Mã Nguồn Trôi Nổi</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td><strong>Chi phí duy trì</strong></td>
-              <td>Từ 399.000đ – 1.500.000đ/tháng + phí tin nhắn</td>
-              <td><strong>Miễn phí 100%</strong> trọn đời (Mã nguồn mở)</td>
+              <td><strong>Chi phí bản quyền</strong></td>
+              <td><strong>Miễn phí 100%</strong> trọn đời (MIT + Commons)</td>
+              <td>Từ 399.000đ – 1.500.000đ/tháng + phí tin</td>
+              <td>Thuê bao 300.000đ – 1.000.000đ/tháng</td>
             </tr>
             <tr>
               <td><strong>Điều kiện đăng ký</strong></td>
-              <td>Bắt buộc Giấy phép kinh doanh (GPKD) + xét duyệt 3–7 ngày</td>
-              <td><strong>Không cần GPKD</strong>, chỉ cần quét mã QR 15 giây</td>
+              <td><strong>Không cần GPKD</strong>, quét mã QR 15 giây</td>
+              <td>Bắt buộc Giấy phép kinh doanh (GPKD)</td>
+              <td>Không cần GPKD</td>
             </tr>
             <tr>
-              <td><strong>Giới hạn tương tác</strong></td>
-              <td>Giới hạn 4 tin/tháng, tính phí khi khách không phản hồi</td>
-              <td><strong>Không giới hạn</strong> nhắn tin 2 chiều với bạn bè/khách</td>
+              <td><strong>Lưu trữ &amp; Bảo mật</strong></td>
+              <td><strong>Cục bộ tại máy bạn</strong> (SQLite AES-256-CBC)</td>
+              <td>Lưu trên máy chủ Zalo Cloud</td>
+              <td>Lưu token trên máy chủ bên thứ ba</td>
+            </tr>
+            <tr>
+              <td><strong>Lá chắn chống khóa (Anti-Ban)</strong></td>
+              <td><strong>Anti-Ban 3 Lớp</strong> (Giãn cách 3s, Self-Echo, Flood)</td>
+              <td>Không áp dụng (API OA)</td>
+              <td>Spam dồn dập dễ bị khóa tài khoản</td>
             </tr>
             <tr>
               <td><strong>Trí tuệ nhân tạo (AI)</strong></td>
-              <td>Kịch bản nút bấm cứng nhắc hoặc mua gói API đắt đỏ</td>
-              <td>Kết nối <strong>Gemini Flash, DeepSeek</strong> tự động trả lời tự nhiên</td>
-            </tr>
-            <tr>
-              <td><strong>Nền tảng cài đặt</strong></td>
-              <td>Đám mây Zalo Cloud (phụ thuộc chính sách nhà mạng)</td>
-              <td>Cục bộ trên <strong>Windows Desktop</strong> hoặc Docker riêng tư</td>
+              <td><strong>Gemini 2.5 Flash, DeepSeek, OpenAI, Ollama</strong></td>
+              <td>Kịch bản nút bấm cứng nhắc</td>
+              <td>Cố định model, không có Vision đọc ảnh</td>
             </tr>
           </tbody>
         </table>

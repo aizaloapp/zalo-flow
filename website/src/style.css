@@ -2107,6 +2107,13 @@ body {
     font-size: 0.95rem;
   }
 
+  .hero-actions .btn-zalo,
+  .hero-cta-group .btn-zalo,
+  .cta-buttons .btn-zalo,
+  .cta-box .btn-zalo {
+    order: -1;
+  }
+
   .hero-sub-actions {
     flex-direction: column;
     width: 100%;

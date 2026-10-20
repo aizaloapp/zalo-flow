@@ -35,7 +35,18 @@
 
 ---
 
-## 4. 18 CÂU HỎI THƯỜNG GẶP (FAQ KỸ THUẬT & VẬN HÀNH)
+## 3.5. ĐỐI CHIẾU 3 KIẾN TRÚC TỰ ĐỘNG HÓA ZALO TẠI VIỆT NAM
+| Tiêu chí kỹ thuật | Zalo-Flow (Open-Source Local-First) | Zalo Official Account (Zalo OA) | Tool Zalo Đóng Mã Nguồn Trôi Nổi |
+| :--- | :--- | :--- | :--- |
+| **Chi phí bản quyền** | Miễn phí 100% (MIT + Commons Clause) | 399.000đ – 1.500.000đ/tháng + phí từng tin | Thuê bao 300.000đ – 1.000.000đ/tháng |
+| **Điều kiện đăng ký** | Tài khoản Zalo cá nhân (Không cần GPKD) | Bắt buộc Giấy phép kinh doanh (GPKD) | Tài khoản Zalo cá nhân |
+| **Lưu trữ & Bảo mật** | Local-First SQLite mã hóa AES-256-CBC tại máy người dùng | Máy chủ đám mây Zalo Cloud | Lưu token trên máy chủ bên thứ ba |
+| **Cơ chế Anti-Ban** | Anti-Ban 3 Lớp (Rate Limiter >= 3s, Self-Echo 30s, Flood Detector 60s) | Không áp dụng (API OA) | Gửi tin dồn dập dễ bị khóa nick |
+| **Tích hợp AI & CRM** | Gemini 2.5 Flash, DeepSeek, OpenAI, Ollama + Chatwoot CRM 2 chiều | Kịch bản nút bấm, tính phí theo ghế nhân viên | Cố định model, giao diện đóng kín |
+
+---
+
+## 4. 28 CÂU HỎI THƯỜNG GẶP (FAQ KỸ THUẬT & VẬN HÀNH)
 
 ### Q1: Zalo-Flow là gì và có tốn phí không?
 **Đáp:** Zalo-Flow là phần mềm mã nguồn mở hoàn toàn miễn phí 100%, biến tài khoản Zalo cá nhân thành trợ lý AI tự động trả lời và quản lý CSKH mà không cần tài khoản doanh nghiệp Zalo OA.
