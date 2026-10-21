@@ -17,6 +17,9 @@
 [![Memory Footprint](https://img.shields.io/badge/RAM-%3C%20100MB-success.svg)](test/test-all.js)
 [![Tests Passing](https://img.shields.io/badge/Tests-60%2F60%20Passing-brightgreen.svg)](test/test-all.js)
 [![Chrome Web Store](https://img.shields.io/badge/Chrome_Web_Store-AIzalo_Flow_Companion-4285F4?logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/aizalo-flow-chat-companio/ckdbkfocakhkkpjjbcclifdkgikbelan)
+[![RapidAPI Hub](https://img.shields.io/badge/RapidAPI_Hub-Zalo--Flow_API-0055DA?logo=fastapi&logoColor=white)](https://rapidapi.com/lekhoa288/api/zalo-flow-personal-zalo-chatbot-and-crm)
+[![Postman API Docs](https://img.shields.io/badge/Postman_Docs-OpenAPI_3.0-FF6C37?logo=postman&logoColor=white)](https://documenter.getpostman.com/view/59097689/2sBYHSzgRN)
+[![ClawHub Skills](https://img.shields.io/badge/ClawHub_Registry-3_AI_Agent_Skills-10B981)](https://clawhub.ai/u/aizaloapp)
 [![Docker Ready](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](docker-compose.yml)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
@@ -260,3 +263,16 @@ npm test
 
 Distributed under the **MIT License with Commons Clause Condition v1.0 (Non-Commercial)**. See [LICENSE](LICENSE) for details.  
 Contributions, adapters, and bug reports are warmly welcome! See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+---
+
+## 🌐 Official API & AI Agent Skills Ecosystem
+
+Explore the official **Zalo-Flow** ([https://aizalo.com/en/](https://aizalo.com/en/)) Cloud Sandbox API and Agentic Web Skills across global developer registries:
+
+- 🚀 **RapidAPI Hub (Interactive API Playground):** [https://rapidapi.com/lekhoa288/api/zalo-flow-personal-zalo-chatbot-and-crm](https://rapidapi.com/lekhoa288/api/zalo-flow-personal-zalo-chatbot-and-crm)
+- 📮 **Postman Public API Documentation (OpenAPI 3.0.3):** [https://documenter.getpostman.com/view/59097689/2sBYHSzgRN](https://documenter.getpostman.com/view/59097689/2sBYHSzgRN)
+- 🦞 **ClawHub Developer Profile (`@aizaloapp`):** [https://clawhub.ai/u/aizaloapp](https://clawhub.ai/u/aizaloapp)
+  - 🤖 **Skill #1 — `zalo-chat-automation`:** [https://clawhub.ai/aizaloapp/zalo-chat-automation](https://clawhub.ai/aizaloapp/zalo-chat-automation)
+  - 💼 **Skill #2 — `zalo-crm-remarketing`:** [https://clawhub.ai/aizaloapp/zalo-crm-remarketing](https://clawhub.ai/aizaloapp/zalo-crm-remarketing)
+  - 🛡️ **Skill #3 — `anti-ban-delivery`:** [https://clawhub.ai/aizaloapp/anti-ban-delivery](https://clawhub.ai/aizaloapp/anti-ban-delivery)
