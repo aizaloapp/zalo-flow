@@ -35,24 +35,71 @@ export default {
     const REDIRECT_MAP = {
       "/blog/cach-xuat-danh-sach-ban-be-zalo": "https://aizalo.com/blog/zalo-crm-la-gi-giai-phap-quan-ly-tin-nhan-cskh",
       "/blog/huong-dan-thiet-lap-tro-ly-ky-thuat-zalo-flow": "https://aizalo.com/blog/huong-dan-cach-tao-chatbot-zalo-ca-nhan",
+      "/blog/cach-training-ai-day-bot-zalo-flow": "https://aizalo.com/blog/cach-day-bot-zalo-cap-nhat-kien-thuc-tu-dong",
       "/giai-phap/master-inbox": "https://aizalo.com/blog/zalo-crm-la-gi-giai-phap-quan-ly-tin-nhan-cskh",
-      "/contact-us": "https://aizalo.com/about"
+      "/contact-us": "https://aizalo.com/about",
+      "/bl": "https://aizalo.com/blog/",
+      "/en/bl": "https://aizalo.com/en/blog/"
     };
+    const VALID_BLOG_SLUGS_VI = [
+      "cach-day-bot-zalo-cap-nhat-kien-thuc-tu-dong",
+      "cach-nhan-thong-bao-va-quan-ly-tin-nhan-zalo-bang-chrome-extension",
+      "cach-dang-nhap-nhieu-tai-khoan-zalo-tren-may-tinh",
+      "cach-huan-luyen-ai-ban-hang-zalo-bang-bang-gia-rieng",
+      "cach-hen-gio-gui-tin-nhan-zalo-ca-nhan-tu-dong",
+      "cach-gui-tin-nhan-tu-dong-tren-zalo-khong-bi-khoa",
+      "huong-dan-cach-tao-chatbot-zalo-ca-nhan",
+      "tich-hop-ai-gemini-deepseek-vao-zalo-ca-nhan",
+      "zalo-crm-la-gi-giai-phap-quan-ly-tin-nhan-cskh"
+    ];
+    const VALID_BLOG_SLUGS_EN = [
+      "connecting-personal-zalo-to-chatwoot-crm"
+    ];
     const normalizedPath = url.pathname.replace(/\/+$/, "").replace(/\.html$/, "");
-    if (REDIRECT_MAP[normalizedPath]) {
-      return Response.redirect(REDIRECT_MAP[normalizedPath], 301);
+    let redirectTarget = REDIRECT_MAP[normalizedPath] || null;
+    if (!redirectTarget && normalizedPath.startsWith("/blog/")) {
+      const slug = normalizedPath.slice(6);
+      if (slug && !VALID_BLOG_SLUGS_VI.includes(slug)) {
+        const matches = VALID_BLOG_SLUGS_VI.filter(s => s.startsWith(slug));
+        if (matches.length === 1) {
+          redirectTarget = `https://aizalo.com/blog/${matches[0]}`;
+        } else if (matches.length > 1) {
+          redirectTarget = "https://aizalo.com/blog/";
+        }
+      }
+    } else if (!redirectTarget && normalizedPath.startsWith("/en/blog/")) {
+      const slug = normalizedPath.slice(9);
+      if (slug && !VALID_BLOG_SLUGS_EN.includes(slug)) {
+        const matches = VALID_BLOG_SLUGS_EN.filter(s => s.startsWith(slug));
+        if (matches.length === 1) {
+          redirectTarget = `https://aizalo.com/en/blog/${matches[0]}`;
+        } else if (matches.length > 1) {
+          redirectTarget = "https://aizalo.com/en/blog/";
+        }
+      }
+    }
+    if (redirectTarget) {
+      const targetUrl = new URL(redirectTarget);
+      targetUrl.search = url.search;
+      return new Response(null, {
+        status: 301,
+        headers: {
+          "Location": targetUrl.href,
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
+          "X-Content-Type-Options": "nosniff"
+        }
+      });
     }
 
     // RapidAPI & OpenAPI Cloud Sandbox Gateway (100% Uptime, <20ms Edge Response)
     const apiPath = url.pathname.replace(/\/+$/, "");
-    if (
-      apiPath === "/api/system/status" ||
-      apiPath.startsWith("/api/system/") ||
-      apiPath === "/api/conversations" ||
-      apiPath.startsWith("/api/conversations/") ||
-      apiPath.startsWith("/api/messages/") ||
-      apiPath.startsWith("/api/campaigns/")
-    ) {
+    const SANDBOX_ROUTES = new Set([
+      "/api/system/status",
+      "/api/conversations",
+      "/api/messages/send",
+      "/api/campaigns/broadcast"
+    ]);
+    if (apiPath === "/api" || apiPath.startsWith("/api/")) {
       const corsHeaders = {
         "Content-Type": "application/json; charset=utf-8",
         "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
@@ -68,6 +115,16 @@ export default {
 
       if (request.method === "OPTIONS") {
         return new Response(null, { status: 204, headers: corsHeaders });
+      }
+
+      if (!SANDBOX_ROUTES.has(apiPath)) {
+        return new Response(JSON.stringify({
+          error: "endpoint_not_found",
+          sandbox: true,
+          message: "Supported Cloud Sandbox endpoints: GET /api/system/status, GET /api/conversations, POST /api/messages/send, POST /api/campaigns/broadcast",
+          openapi_spec: "https://aizalo.com/openapi.json",
+          download_url: "https://aizalo.com"
+        }, null, 2), { status: 404, headers: corsHeaders });
       }
 
       const authHeader = (request.headers.get("Authorization") || "").trim();

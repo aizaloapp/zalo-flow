@@ -1,37 +1,62 @@
 {
-  "openapi": "3.1.0",
+  "openapi": "3.0.3",
   "info": {
-    "title": "Zalo-Flow Client API",
-    "description": "OpenAPI specification for Zalo-Flow automation, messaging, and CRM bridge endpoints. This document is a discovery reference for AI agents and client applications.",
-    "version": "1.0.0",
+    "title": "Zalo-Flow Personal Zalo Chatbot & CRM Automation API",
+    "description": "Official OpenAPI specification for Zalo-Flow (https://aizalo.com) — Open-source Personal Zalo AI Chatbot (Gemini, DeepSeek, OpenAI), 3-Layer Anti-Ban Messaging, and Chatwoot CRM Bridge without requiring Zalo Official Account (OA). Pass 'Bearer demo' in the Authorization header to test the live Cloud Sandbox, or connect your self-hosted Zalo-Flow instance. For educational, technical research, and personal automation purposes only (Non-commercial, strictly no spam).",
+    "version": "1.5.0",
+    "termsOfService": "https://aizalo.com/terms",
     "contact": {
-      "name": "Zalo-Flow Community",
+      "name": "AIzalo Engineering Community",
       "url": "https://aizalo.com"
     },
     "license": {
-      "name": "MIT",
-      "url": "https://github.com/aizaloapp/zalo-flow"
+      "name": "MIT with Commons Clause (Non-Commercial & Educational Research Only)",
+      "url": "https://github.com/aizaloapp/zalo-flow/blob/main/LICENSE"
     }
+  },
+  "externalDocs": {
+    "description": "Full Zalo-Flow Setup Guide & Anti-Ban Documentation",
+    "url": "https://aizalo.com/blog/huong-dan-cach-tao-chatbot-zalo-ca-nhan"
   },
   "servers": [
     {
-      "url": "http://localhost:3000",
-      "description": "Local Zalo-Flow Desktop Client Instance"
+      "url": "https://aizalo.com",
+      "description": "Zalo-Flow Cloud Sandbox & Discovery Gateway"
     },
     {
-      "url": "https://api.aizalo.com/v1",
-      "description": "Cloud Gateway Reference (Optional Bridge)"
+      "url": "http://localhost:3000",
+      "description": "Local Self-Hosted Zalo-Flow Desktop / Docker Instance"
+    }
+  ],
+  "tags": [
+    {
+      "name": "System & Anti-Ban",
+      "description": "Health check, connection state, and 3-layer anti-ban telemetry"
+    },
+    {
+      "name": "CRM & Conversations",
+      "description": "Personal Zalo threads, customer tags, and Chatwoot CRM synchronization"
+    },
+    {
+      "name": "Messaging & CRM Remarketing",
+      "description": "Rate-limited 1-to-1 messaging and opt-in CRM tag remarketing queues (existing threads only)"
     }
   ],
   "paths": {
     "/api/system/status": {
       "get": {
-        "summary": "Check client status",
-        "description": "Returns current Zalo connection state, bot profile, and system metrics.",
+        "tags": ["System & Anti-Ban"],
+        "summary": "Get Zalo connection & 3-layer anti-ban status",
+        "description": "Returns current Zalo personal account connection state, active AI models (Gemini, DeepSeek), and 3-layer anti-ban protection metrics.",
         "operationId": "getSystemStatus",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AuthorizationHeader"
+          }
+        ],
         "responses": {
           "200": {
-            "description": "System status response",
+            "description": "System status and anti-ban telemetry",
             "content": {
               "application/json": {
                 "schema": {
@@ -39,50 +64,67 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing or invalid Authorization header"
           }
-        },
-        "security": [
-          { "BearerAuth": [] }
-        ]
+        }
       }
     },
     "/api/conversations": {
       "get": {
-        "summary": "List conversations",
-        "description": "Fetches recent conversations, threads, unread counts, and tags.",
+        "tags": ["CRM & Conversations"],
+        "summary": "List personal Zalo conversations & CRM tags",
+        "description": "Fetches recent personal Zalo conversations, group threads, unread counts, and synchronized Chatwoot CRM tags.",
         "operationId": "listConversations",
         "parameters": [
           {
+            "$ref": "#/components/parameters/AuthorizationHeader"
+          },
+          {
             "name": "limit",
             "in": "query",
-            "description": "Number of conversations to return",
+            "description": "Maximum number of conversations to return (1-50)",
             "required": false,
-            "schema": { "type": "integer", "default": 20 }
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "minimum": 1,
+              "maximum": 50
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "List of active conversations",
+            "description": "Array of active Zalo conversations",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "array",
-                  "items": { "$ref": "#/components/schemas/Conversation" }
+                  "items": {
+                    "$ref": "#/components/schemas/Conversation"
+                  }
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing or invalid Authorization header"
           }
-        },
-        "security": [
-          { "BearerAuth": [] }
-        ]
+        }
       }
     },
     "/api/messages/send": {
       "post": {
-        "summary": "Send message",
-        "description": "Dispatches a text message or attachment to a specific Zalo thread (anti-ban rate limited).",
+        "tags": ["Messaging & CRM Remarketing"],
+        "summary": "Simulate or dispatch anti-ban protected Zalo message",
+        "description": "Dispatches a text message to an existing personal Zalo thread or group, protected by Token Bucket rate limiting (min 3s delay, max 20 msgs/min) and Self-Echo Shield. On https://aizalo.com, this runs in Cloud Sandbox mode (sandbox=true, delivered=false).",
         "operationId": "sendMessage",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AuthorizationHeader"
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -95,7 +137,7 @@
         },
         "responses": {
           "200": {
-            "description": "Message dispatched successfully",
+            "description": "Message processed through anti-ban queue",
             "content": {
               "application/json": {
                 "schema": {
@@ -103,18 +145,27 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "Invalid JSON request body"
+          },
+          "401": {
+            "description": "Missing or invalid Authorization header"
           }
-        },
-        "security": [
-          { "BearerAuth": [] }
-        ]
+        }
       }
     },
     "/api/campaigns/broadcast": {
       "post": {
-        "summary": "Send broadcast campaign",
-        "description": "Enqueues a broadcast message to contacts matching specified CRM tags.",
+        "tags": ["Messaging & CRM Remarketing"],
+        "summary": "Simulate or enqueue opt-in CRM tag remarketing queue",
+        "description": "Enqueues an automated remarketing message only to existing customer threads matching a specific CRM tag with human-like spacing delay (no cold outbound to unknown IDs). On https://aizalo.com, this runs in Cloud Sandbox mode (sandbox=true, delivered=false).",
         "operationId": "sendBroadcast",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AuthorizationHeader"
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -127,27 +178,38 @@
         },
         "responses": {
           "200": {
-            "description": "Broadcast enqueued",
+            "description": "CRM tag remarketing queue processed",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": { "type": "boolean" },
-                    "queuedCount": { "type": "integer" }
-                  }
+                  "$ref": "#/components/schemas/BroadcastResponse"
                 }
               }
             }
+          },
+          "400": {
+            "description": "Invalid JSON request body"
+          },
+          "401": {
+            "description": "Missing or invalid Authorization header"
           }
-        },
-        "security": [
-          { "BearerAuth": [] }
-        ]
+        }
       }
     }
   },
   "components": {
+    "parameters": {
+      "AuthorizationHeader": {
+        "name": "Authorization",
+        "in": "header",
+        "description": "Pass 'Bearer demo' to test on the Cloud Sandbox, or 'Bearer <YOUR_ZALO_FLOW_PAT>' from your Zalo-Flow Client (https://aizalo.com).",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "default": "Bearer demo"
+        }
+      }
+    },
     "securitySchemes": {
       "BearerAuth": {
         "type": "http",
@@ -159,47 +221,90 @@
       "SystemStatus": {
         "type": "object",
         "properties": {
-          "connected": { "type": "boolean" },
-          "userName": { "type": "string" },
-          "userId": { "type": "string" },
-          "uptimeSeconds": { "type": "integer" }
+          "connected": { "type": "boolean", "example": true },
+          "sandbox": { "type": "boolean", "example": true },
+          "mode": { "type": "string", "example": "cloud_sandbox_preview" },
+          "userName": { "type": "string", "example": "Zalo-Flow AI Assistant (Sandbox)" },
+          "userId": { "type": "string", "example": "zf_84909123456" },
+          "uptimeSeconds": { "type": "integer", "example": 86420 },
+          "antiBanArchitecture": {
+            "type": "object",
+            "properties": {
+              "tokenBucketMinDelaySeconds": { "type": "integer", "example": 3 },
+              "maxMessagesPerMinute": { "type": "integer", "example": 20 },
+              "selfEchoShield": { "type": "boolean", "example": true },
+              "inboundFloodDetector": { "type": "boolean", "example": true }
+            }
+          },
+          "supportedModels": {
+            "type": "array",
+            "items": { "type": "string" },
+            "example": ["gemini-2.5-flash", "deepseek-chat", "gpt-4o-mini", "ollama-local"]
+          },
+          "licenseNotice": { "type": "string", "example": "MIT with Commons Clause — For educational, technical research, and personal automation purposes only. Strictly no spam." },
+          "clientDownloadUrl": { "type": "string", "example": "https://aizalo.com" },
+          "documentationUrl": { "type": "string", "example": "https://aizalo.com/blog/huong-dan-cach-tao-chatbot-zalo-ca-nhan" }
         }
       },
       "Conversation": {
         "type": "object",
         "properties": {
-          "threadId": { "type": "string" },
-          "name": { "type": "string" },
-          "isGroup": { "type": "boolean" },
-          "unreadCount": { "type": "integer" },
-          "lastMessage": { "type": "string" },
-          "tags": { "type": "array", "items": { "type": "string" } }
+          "threadId": { "type": "string", "example": "zalo_thread_1001" },
+          "name": { "type": "string", "example": "Nguyễn Minh Anh (Khách VIP)" },
+          "isGroup": { "type": "boolean", "example": false },
+          "unreadCount": { "type": "integer", "example": 1 },
+          "lastMessage": { "type": "string", "example": "Shop gửi giúp mình bảng giá sỉ qua Zalo nhé!" },
+          "tags": {
+            "type": "array",
+            "items": { "type": "string" },
+            "example": ["vip", "lead-moi"]
+          }
         }
       },
       "SendMessageRequest": {
         "type": "object",
         "required": ["threadId", "message"],
         "properties": {
-          "threadId": { "type": "string" },
-          "message": { "type": "string" },
-          "isGroup": { "type": "boolean" }
+          "threadId": { "type": "string", "example": "zalo_thread_1001" },
+          "message": { "type": "string", "example": "Dạ shop gửi anh/chị bảng giá ưu đãi mới nhất ạ!" },
+          "isGroup": { "type": "boolean", "default": false }
         }
       },
       "SendMessageResponse": {
         "type": "object",
         "properties": {
-          "success": { "type": "boolean" },
-          "msgId": { "type": "string" },
-          "cliMsgId": { "type": "string" }
+          "success": { "type": "boolean", "example": true },
+          "sandbox": { "type": "boolean", "example": true },
+          "delivered": { "type": "boolean", "example": false },
+          "mode": { "type": "string", "example": "cloud_sandbox_preview" },
+          "msgId": { "type": "string", "example": "zf_msg_1729430000" },
+          "cliMsgId": { "type": "string", "example": "cli_1729430000" },
+          "threadId": { "type": "string", "example": "zalo_thread_1001" },
+          "antiBanStatus": { "type": "string", "example": "passed_token_bucket_3s" },
+          "note": { "type": "string", "example": "Sandbox simulation only (delivered=false). To dispatch live personal Zalo messages with AES-256 local session encryption, run Zalo-Flow Desktop/Docker client from https://aizalo.com" }
         }
       },
       "BroadcastRequest": {
         "type": "object",
         "required": ["tagId", "message"],
         "properties": {
-          "tagId": { "type": "string" },
-          "message": { "type": "string" },
+          "tagId": { "type": "string", "example": "vip" },
+          "message": { "type": "string", "example": "{Chào|Xin chào} {anh/chị|bạn}, shop đang có ưu đãi riêng cho khách VIP!" },
           "delaySeconds": { "type": "integer", "default": 5 }
+        }
+      },
+      "BroadcastResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "sandbox": { "type": "boolean", "example": true },
+          "delivered": { "type": "boolean", "example": false },
+          "mode": { "type": "string", "example": "cloud_sandbox_preview" },
+          "tagId": { "type": "string", "example": "vip" },
+          "queuedCount": { "type": "integer", "example": 12 },
+          "estimatedSpacingSeconds": { "type": "integer", "example": 5 },
+          "note": { "type": "string", "example": "Sandbox simulation only (delivered=false). Broadcasts on Zalo-Flow Local Client only target existing CRM threads tagged by the user (zero cold spam)." },
+          "documentationUrl": { "type": "string", "example": "https://aizalo.com/blog/cach-gui-tin-nhan-tu-dong-tren-zalo-khong-bi-khoa" }
         }
       }
     }
